@@ -25,6 +25,25 @@ const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
             res.setHeader('x-request-id', id);
             return id;
           },
+          // desenvolvimento: saída colorida e em uma linha; produção segue em JSON para o coletor
+          transport:
+            config.get('NODE_ENV', { infer: true }) === 'development'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    singleLine: true,
+                    translateTime: 'HH:MM:ss.l',
+                    ignore: 'pid,hostname,req,res',
+                  },
+                }
+              : undefined,
+          // o log de requisição já traz método, url, status e duração na mensagem
+          customSuccessMessage: (req, res, ms) => `${req.method} ${req.url} ${res.statusCode} ${Math.round(ms)}ms`,
+          customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode} failed`,
+          serializers: {
+            req: (req) => ({ id: req.id, method: req.method, url: req.url }),
+            res: (res) => ({ statusCode: res.statusCode }),
+          },
           redact: ['req.headers.authorization', 'req.headers.cookie'],
           autoLogging: { ignore: (req) => isHealthRequest(req.url) },
         },
