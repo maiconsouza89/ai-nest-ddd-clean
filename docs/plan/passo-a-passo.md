@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 3 de 12 fases concluídas · 9 de 39 passos concluídos · **Fase atual:** 4
+**Progresso geral:** 3 de 12 fases concluídas · 10 de 39 passos concluídos · **Fase atual:** 4
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -296,7 +296,7 @@ npx depcruise --init
 >
 > - [x] Passo 8: instalar o Nest e subir a aplicação
 > - [x] Passo 9: `OrdersModule`, controller e DTO HTTP
-> - [ ] Passo 10: erros de domínio viram status HTTP
+> - [x] Passo 10: erros de domínio viram status HTTP
 > - [ ] Passo 11: teste e2e do fluxo principal
 
 ### Passo 8: instalar o Nest e subir a aplicação

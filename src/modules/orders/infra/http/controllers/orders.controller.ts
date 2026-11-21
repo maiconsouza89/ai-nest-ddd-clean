@@ -1,12 +1,14 @@
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Param, Post, UseFilters } from '@nestjs/common';
 import type { Actor } from '../../../../../shared/application/actor';
 import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
 import { CreateOrderUseCase } from '../../../application/use-cases/create-order.use-case';
 import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case';
 import { CreateOrderRequest } from '../dtos/create-order.request';
+import { OrdersDomainErrorFilter } from '../filters/domain-error.filter';
 
 @Controller('orders')
+@UseFilters(OrdersDomainErrorFilter)
 export class OrdersController {
   constructor(
     private readonly createOrder: CreateOrderUseCase,
