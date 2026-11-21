@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 9 de 12 fases concluídas · 26 de 39 passos concluídos · **Fase atual:** 10
+**Progresso geral:** 9 de 12 fases concluídas · 27 de 39 passos concluídos · **Fase atual:** 10
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -719,7 +719,7 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 > - [x] Passo 24: `AggregateRoot` e eventos de domínio
 > - [x] Passo 25: outbox
 > - [x] Passo 26: worker de publicação
-> - [ ] Passo 27: consumidores idempotentes
+> - [x] Passo 27: consumidores idempotentes
 > - [ ] Passo 28: fluxos por evento e grafo sem ciclos
 > - [ ] Passo 29: versionamento de contratos e testes de contrato
 

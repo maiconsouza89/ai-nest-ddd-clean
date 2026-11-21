@@ -4,6 +4,7 @@ import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { validateEnv } from '../config/env.validation';
 import { OutboxMessageOrmEntity } from './outbox-message.orm-entity';
+import { ProcessedEventOrmEntity } from './processed-event.orm-entity';
 
 config({ path: ['.env.local', '.env'], quiet: true });
 const env = validateEnv(process.env);
@@ -11,7 +12,7 @@ const env = validateEnv(process.env);
 export default new DataSource({
   type: 'postgres',
   url: env.DATABASE_URL,
-  entities: [OutboxMessageOrmEntity],
+  entities: [OutboxMessageOrmEntity, ProcessedEventOrmEntity],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'shared_migrations',
 });
