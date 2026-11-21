@@ -1,4 +1,5 @@
 import { IdGenerator } from '../../../../shared/application/ports/id-generator';
+import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
 import { Order } from '../../domain/entities/order.entity';
 import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
 import { OrderRepository } from '../../domain/repositories/order.repository';
@@ -10,6 +11,7 @@ export class CreateOrderUseCase {
     private readonly repo: OrderRepository,
     private readonly catalog: PriceCatalog,
     private readonly ids: IdGenerator,
+    private readonly tx: TransactionManager,
   ) {}
 
   async execute(input: CreateOrderInput) {
@@ -22,7 +24,7 @@ export class CreateOrderUseCase {
       order.addItem(item.productId, item.qty, price);
     }
 
-    await this.repo.save(order);
+    await this.tx.run(() => this.repo.save(order));
     return { id: order.id };
   }
 }

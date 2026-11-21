@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { currentManager } from '../../../../../shared/infra/database/transaction-context';
 import { Order } from '../../../domain/entities/order.entity';
 import { OrderRepository } from '../../../domain/repositories/order.repository';
 import { OrderOrmEntity } from './entities/order.orm-entity';
@@ -9,9 +10,9 @@ import { OrderMapper } from './typeorm-order.mapper';
 export class TypeOrmOrderRepository implements OrderRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  // passo 20: passa a usar a transação ativa
+  // usa a transação ativa, se houver
   private get repo() {
-    return this.dataSource.manager.getRepository(OrderOrmEntity);
+    return currentManager(this.dataSource).getRepository(OrderOrmEntity);
   }
 
   async save(order: Order) {

@@ -1,4 +1,5 @@
 import { IdGenerator } from '../../../../shared/application/ports/id-generator';
+import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
 import { User } from '../../domain/entities/user.entity';
 import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error';
 import { UserRepository } from '../../domain/repositories/user.repository';
@@ -11,6 +12,7 @@ export class RegisterUserUseCase {
     private readonly users: UserRepository,
     private readonly hasher: PasswordHasher,
     private readonly ids: IdGenerator,
+    private readonly tx: TransactionManager,
   ) {}
 
   async execute(input: RegisterUserInput) {
@@ -25,7 +27,7 @@ export class RegisterUserUseCase {
       input.name,
       await this.hasher.hash(input.password),
     );
-    await this.users.save(user);
+    await this.tx.run(() => this.users.save(user));
     return { id: user.id };
   }
 }

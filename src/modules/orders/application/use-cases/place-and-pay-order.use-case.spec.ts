@@ -1,3 +1,4 @@
+import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { Money } from '../../../../shared/domain/money.vo';
 import { Order } from '../../domain/entities/order.entity';
 import { NotOrderOwnerError } from '../../domain/errors/not-order-owner.error';
@@ -16,7 +17,8 @@ async function setup() {
   const order = Order.create('o1', 'u1');
   order.addItem('p1', 1, Money.fromCents(100));
   await repo.save(order);
-  return { repo, place: new PlaceOrderUseCase(repo), pay: new PayOrderUseCase(repo) };
+  const tx = new FakeTransactionManager();
+  return { repo, tx, place: new PlaceOrderUseCase(repo, tx), pay: new PayOrderUseCase(repo, tx) };
 }
 
 describe('PlaceOrderUseCase', () => {
@@ -35,6 +37,12 @@ describe('PlaceOrderUseCase', () => {
     const { repo, place } = await setup();
     await place.execute({ orderId: 'o1', actor: admin });
     expect((await repo.findById('o1'))!.status).toBe(OrderStatus.PLACED);
+  });
+
+  it('carrega, altera e salva dentro de uma transação', async () => {
+    const { tx, place } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+    expect(tx.runs).toBe(1);
   });
 
   it('pedido inexistente lança OrderNotFoundError', async () => {

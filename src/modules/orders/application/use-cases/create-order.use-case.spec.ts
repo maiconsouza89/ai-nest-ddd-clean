@@ -1,4 +1,5 @@
 import { FakePriceCatalog } from '../../../../../test/fakes/fake-price-catalog';
+import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
 import { Money } from '../../../../shared/domain/money.vo';
 import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
@@ -13,8 +14,9 @@ function setup() {
       ['p2', Money.fromCents(250)],
     ]),
   );
-  const useCase = new CreateOrderUseCase(repo, catalog, new SequentialIdGenerator());
-  return { repo, useCase };
+  const tx = new FakeTransactionManager();
+  const useCase = new CreateOrderUseCase(repo, catalog, new SequentialIdGenerator(), tx);
+  return { repo, tx, useCase };
 }
 
 describe('CreateOrderUseCase', () => {
@@ -33,6 +35,12 @@ describe('CreateOrderUseCase', () => {
     expect(saved).not.toBeNull();
     expect(saved!.customerId).toBe('u1');
     expect(saved!.total.cents).toBe(450);
+  });
+
+  it('grava dentro de uma transação', async () => {
+    const { tx, useCase } = setup();
+    await useCase.execute({ customerId: 'u1', items: [{ productId: 'p1', qty: 1 }] });
+    expect(tx.runs).toBe(1);
   });
 
   it('lança ProductNotFoundError para produto desconhecido e não salva', async () => {

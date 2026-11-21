@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
+import { TransactionManager } from '../../../shared/application/ports/transaction-manager';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
 import { PasswordHasher } from '../application/ports/password-hasher';
 import { TokenIssuer } from '../application/ports/token-issuer';
@@ -23,9 +24,13 @@ import { AuthController } from './http/controllers/auth.controller';
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: RegisterUserUseCase,
-      useFactory: (users: UserRepository, hasher: PasswordHasher, ids: IdGenerator) =>
-        new RegisterUserUseCase(users, hasher, ids),
-      inject: [UserRepository, PasswordHasher, IdGenerator],
+      useFactory: (
+        users: UserRepository,
+        hasher: PasswordHasher,
+        ids: IdGenerator,
+        tx: TransactionManager,
+      ) => new RegisterUserUseCase(users, hasher, ids, tx),
+      inject: [UserRepository, PasswordHasher, IdGenerator, TransactionManager],
     },
     {
       provide: LoginUseCase,

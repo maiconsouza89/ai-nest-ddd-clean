@@ -1,5 +1,6 @@
 import { FakePasswordHasher } from '../../../../../test/fakes/fake-password-hasher';
 import { FakeTokenIssuer } from '../../../../../test/fakes/fake-token-issuer';
+import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
 import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
@@ -13,9 +14,11 @@ function setup() {
   const users = new InMemoryUserRepository();
   const hasher = new FakePasswordHasher();
   const tokens = new FakeTokenIssuer();
+  const tx = new FakeTransactionManager();
   return {
     tokens,
-    register: new RegisterUserUseCase(users, hasher, new SequentialIdGenerator('user')),
+    tx,
+    register: new RegisterUserUseCase(users, hasher, new SequentialIdGenerator('user'), tx),
     login: new LoginUseCase(users, hasher, tokens),
   };
 }
@@ -26,6 +29,12 @@ describe('RegisterUserUseCase', () => {
     expect(await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' })).toEqual({
       id: 'user-1',
     });
+  });
+
+  it('grava dentro de uma transação', async () => {
+    const { register, tx } = setup();
+    await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
+    expect(tx.runs).toBe(1);
   });
 
   it('rejeita e-mail repetido, ignorando caixa e espaços', async () => {

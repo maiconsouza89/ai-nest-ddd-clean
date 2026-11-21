@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TransactionManager } from '../../application/ports/transaction-manager';
 import { EnvironmentVariables } from '../config/env.validation';
+import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -16,5 +19,7 @@ import { EnvironmentVariables } from '../config/env.validation';
       }),
     }),
   ],
+  providers: [{ provide: TransactionManager, useClass: TypeOrmTransactionManager }],
+  exports: [TransactionManager],
 })
 export class DatabaseModule {}

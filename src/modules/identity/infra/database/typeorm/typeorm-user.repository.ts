@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
+import { currentManager } from '../../../../../shared/infra/database/transaction-context';
 import { User } from '../../../domain/entities/user.entity';
 import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error';
 import { UserRepository } from '../../../domain/repositories/user.repository';
@@ -13,8 +14,9 @@ const UNIQUE_VIOLATION = '23505';
 export class TypeOrmUserRepository implements UserRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  // usa a transação ativa, se houver
   private get repo() {
-    return this.dataSource.manager.getRepository(UserOrmEntity);
+    return currentManager(this.dataSource).getRepository(UserOrmEntity);
   }
 
   async save(user: User) {
