@@ -108,6 +108,12 @@ describe('Orders (e2e)', () => {
 
     const again = await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).expect(409);
     expect(again.body.code).toBe('ORDER_ALREADY_PAID');
+
+    // um evento só, mesmo com a segunda tentativa recusada
+    const events = await app
+      .get(DataSource)
+      .query(`SELECT type, version FROM shared.outbox WHERE payload->>'orderId' = $1`, [id]);
+    expect(events).toEqual([{ type: 'orders.order-paid', version: 1 }]);
   });
 
   it('o pedido pertence ao usuário do token, não a um id enviado pelo cliente', async () => {

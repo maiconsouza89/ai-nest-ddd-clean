@@ -65,7 +65,7 @@ export class Order extends AggregateRoot {
     if (this._status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
     if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
     this._status = OrderStatus.PAID;
-    this.record(new OrderPaid(this.id));
+    this.record(new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency));
   }
 
   isOwnedBy(userId: string) {

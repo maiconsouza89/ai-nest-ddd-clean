@@ -1,3 +1,6 @@
+import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
+import { FixedClock } from '../../../../../test/fakes/fixed-clock';
+import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
 import { FakeStockGateway } from '../../../../../test/fakes/fake-stock-gateway';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { Money } from '../../../../shared/domain/money.vo';
@@ -21,12 +24,14 @@ async function setup(outOfStock = false) {
   await repo.save(order);
   const tx = new FakeTransactionManager();
   const stock = new FakeStockGateway(outOfStock);
+  const outbox = new FakeOutbox();
   return {
     repo,
     tx,
     stock,
+    outbox,
     place: new PlaceOrderUseCase(repo, stock, tx),
-    pay: new PayOrderUseCase(repo, tx),
+    pay: new PayOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
   };
 }
 
@@ -93,6 +98,29 @@ describe('PayOrderUseCase', () => {
     await place.execute({ orderId: 'o1', actor: owner });
     await pay.execute({ orderId: 'o1', actor: admin });
     expect((await repo.findById('o1'))!.status).toBe(OrderStatus.PAID);
+  });
+
+  it('pagar grava o contrato OrderPaidV1 na outbox', async () => {
+    const { place, pay, outbox } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+    await pay.execute({ orderId: 'o1', actor: owner });
+
+    expect(outbox.events).toEqual([
+      {
+        eventId: 'evt-1',
+        type: 'orders.order-paid',
+        version: 1,
+        occurredAt: '2026-01-01T12:00:00.000Z',
+        payload: { orderId: 'o1', customerId: 'u1', totalCents: 100, currency: 'BRL' },
+      },
+    ]);
+  });
+
+  it('pagamento recusado não grava evento', async () => {
+    const { place, pay, outbox } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+    await expect(pay.execute({ orderId: 'o1', actor: other })).rejects.toThrow(NotOrderOwnerError);
+    expect(outbox.events).toEqual([]);
   });
 
   it('pedido inexistente lança OrderNotFoundError', async () => {

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Clock } from '../../../shared/application/ports/clock';
+import { Outbox } from '../../../shared/application/ports/outbox';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../../shared/application/ports/transaction-manager';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
@@ -55,9 +57,14 @@ import { OrdersController } from './http/controllers/orders.controller';
     },
     {
       provide: PayOrderUseCase,
-      useFactory: (repo: OrderRepository, tx: TransactionManager) =>
-        new PayOrderUseCase(repo, tx),
-      inject: [OrderRepository, TransactionManager],
+      useFactory: (
+        repo: OrderRepository,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        tx: TransactionManager,
+      ) => new PayOrderUseCase(repo, outbox, ids, clock, tx),
+      inject: [OrderRepository, Outbox, IdGenerator, Clock, TransactionManager],
     },
   ],
 })

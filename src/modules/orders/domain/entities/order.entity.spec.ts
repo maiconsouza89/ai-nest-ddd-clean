@@ -62,7 +62,7 @@ describe('Order', () => {
     const o = placed();
     o.pay();
 
-    expect(o.pullEvents()).toEqual([new OrderPaid('o1')]);
+    expect(o.pullEvents()).toEqual([new OrderPaid('o1', 'u1', 100, 'BRL')]);
     expect(o.pullEvents()).toEqual([]);
   });
 
