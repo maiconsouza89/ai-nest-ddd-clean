@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -7,7 +7,7 @@ import { configureApp } from '../src/app.setup';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
 
 describe('Auth (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   const server = () => app.getHttpServer();
 
   beforeAll(async () => {

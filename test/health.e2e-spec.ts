@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
@@ -7,7 +7,7 @@ import { RedisHealthIndicator } from '../src/shared/infra/health/redis-health.in
 import { configureApp } from '../src/app.setup';
 
 describe('Health (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   let dbUp = true;
   let redisUp = true;
 

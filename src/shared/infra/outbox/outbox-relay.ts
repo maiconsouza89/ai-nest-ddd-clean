@@ -69,7 +69,7 @@ export class OutboxRelay {
     const now = this.clock.now();
     // as linhas ficam travadas até o commit; esta transação não é propagada aos handlers
     return this.dataSource.transaction(async (em) => {
-      const rows: PendingRow[] = await em.query(CLAIM_SQL, [now, this.options.batchSize]);
+      const rows = await em.query<PendingRow[]>(CLAIM_SQL, [now, this.options.batchSize]);
       for (const row of rows) {
         try {
           await runInEventTrace(
@@ -100,11 +100,11 @@ export class OutboxRelay {
   /** Apaga os eventos publicados há mais que o tempo de retenção. */
   async cleanup(): Promise<number> {
     const limit = new Date(this.clock.now().getTime() - this.options.retentionMs);
-    const [, deleted] = await this.dataSource.query(
+    const [, deleted] = await this.dataSource.query<[unknown, number]>(
       `DELETE FROM shared.outbox WHERE "publishedAt" < $1`,
       [limit],
     );
-    return deleted as number;
+    return deleted;
   }
 
   private async recordFailure(em: EntityManager, row: PendingRow, error: unknown, now: Date) {

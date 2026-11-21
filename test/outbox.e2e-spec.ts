@@ -1,5 +1,5 @@
 import './helpers/enable-outbox-worker';
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
@@ -15,7 +15,7 @@ import { waitFor } from './helpers/wait-for';
 jest.setTimeout(20_000); // o evento passa pelo relay (poll de 1s) e pela fila antes do efeito
 
 describe('Outbox worker (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   const sentEmails: Email[] = [];
 
   beforeAll(async () => {

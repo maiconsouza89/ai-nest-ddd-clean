@@ -43,8 +43,12 @@ const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
             `${req.method} ${req.url} ${res.statusCode} ${Math.round(ms)}ms`,
           customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode} failed`,
           serializers: {
-            req: (req) => ({ id: req.id, method: req.method, url: req.url }),
-            res: (res) => ({ statusCode: res.statusCode }),
+            req: (req: { id: unknown; method: string; url: string }) => ({
+              id: req.id,
+              method: req.method,
+              url: req.url,
+            }),
+            res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
           },
           redact: ['req.headers.authorization', 'req.headers.cookie'],
           autoLogging: { ignore: (req) => isHealthRequest(req.url) },

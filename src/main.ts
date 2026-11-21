@@ -17,4 +17,4 @@ async function bootstrap() {
   if (config.get('NODE_ENV', { infer: true }) !== 'production') setupSwagger(app);
   await app.listen(config.get('PORT', { infer: true }));
 }
-bootstrap();
+void bootstrap();

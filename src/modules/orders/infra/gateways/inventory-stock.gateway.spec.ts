@@ -7,7 +7,7 @@ describe('InventoryStockGateway', () => {
 
   it('usa o id do pedido como referência da reserva', async () => {
     const reserve = jest.fn().mockResolvedValue({ ok: true });
-    const gateway = new InventoryStockGateway({ reserve } as InventoryFacade);
+    const gateway = new InventoryStockGateway({ reserve });
 
     await gateway.reserve('o1', items);
 

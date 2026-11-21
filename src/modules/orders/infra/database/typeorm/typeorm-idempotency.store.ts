@@ -23,7 +23,7 @@ export class TypeOrmIdempotencyStore implements IdempotencyStore {
     );
     if (claimed.length > 0) return 'first';
 
-    const [existing] = await manager.query(
+    const [existing] = await manager.query<{ fingerprint: string }[]>(
       `SELECT "fingerprint" FROM "orders"."idempotency_keys" WHERE "actorId" = $1 AND "key" = $2`,
       [actorId, key],
     );

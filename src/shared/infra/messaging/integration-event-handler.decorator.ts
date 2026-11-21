@@ -20,5 +20,5 @@ export function IntegrationEventHandler(subscription: EventSubscription): Method
 }
 
 export function subscriptionOf(handler: object): EventSubscription | undefined {
-  return Reflect.getMetadata(SUBSCRIPTIONS, handler);
+  return Reflect.getMetadata(SUBSCRIPTIONS, handler) as EventSubscription | undefined;
 }

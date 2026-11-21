@@ -1,15 +1,10 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './test-app';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { registerAndLogin } from './auth';
 
 /** Insere um produto no catalog, com estoque no inventory, direto no banco. Devolve o id. */
-export async function seedProduct(
-  app: INestApplication,
-  priceCents = 1000,
-  stock = 100,
-  name = 'Produto',
-) {
+export async function seedProduct(app: TestApp, priceCents = 1000, stock = 100, name = 'Produto') {
   const id = crypto.randomUUID();
   await app
     .get(DataSource)
@@ -28,7 +23,7 @@ export async function seedProduct(
 }
 
 /** Cadastra um usuário admin e devolve o header Authorization (o papel vai no token, então loga de novo). */
-export async function registerAdmin(app: INestApplication) {
+export async function registerAdmin(app: TestApp) {
   const user = await registerAndLogin(app);
   await app
     .get(DataSource)

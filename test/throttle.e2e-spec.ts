@@ -1,11 +1,11 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import IORedis from 'ioredis';
 import request from 'supertest';
 import { configureApp } from '../src/app.setup';
 
 describe('Rate limiting (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   let previous: string | undefined;
 
   // os contadores ficam no Redis e sobrevivem entre execuções: sem limpar, a segunda rodada em 60s já começa bloqueada

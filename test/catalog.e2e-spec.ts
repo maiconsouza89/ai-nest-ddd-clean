@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -7,7 +7,7 @@ import { registerAndLogin } from './helpers/auth';
 import { registerAdmin } from './helpers/catalog';
 
 describe('Catalog (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   const server = () => app.getHttpServer();
 
   beforeAll(async () => {

@@ -41,7 +41,8 @@ export class EventSubscriptions implements OnApplicationBootstrap {
     const consumers = new Map<string, EventConsumer>();
     for (const { instance } of this.discovery.getProviders()) {
       if (!instance || typeof instance !== 'object') continue;
-      for (const method of this.scanner.getAllMethodNames(Object.getPrototypeOf(instance))) {
+      const prototype = Object.getPrototypeOf(instance) as object | null;
+      for (const method of this.scanner.getAllMethodNames(prototype)) {
         const handler = (instance as Record<string, (e: IntegrationEvent) => Promise<unknown>>)[
           method
         ];

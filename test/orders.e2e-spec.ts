@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -10,7 +10,7 @@ import { DataSource } from 'typeorm';
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;
 
 describe('Orders (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   const server = () => app.getHttpServer();
   let productId: string;
 

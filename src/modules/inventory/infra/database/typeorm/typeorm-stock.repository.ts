@@ -26,7 +26,7 @@ export class TypeOrmStockRepository implements StockRepository {
       .returning('id')
       .execute();
     // sem linha devolvida, a referência já existia
-    if (res.raw.length === 0) return false;
+    if ((res.raw as unknown[]).length === 0) return false;
 
     if (items.length > 0) {
       await manager.insert(
@@ -47,10 +47,11 @@ export class TypeOrmStockRepository implements StockRepository {
       .where('"referenceId" = :referenceId AND "releasedAt" IS NULL', { referenceId })
       .returning('id')
       .execute();
-    if (res.raw.length === 0) return null;
+    const released = res.raw as { id: string }[];
+    if (released.length === 0) return null;
 
     const items = await manager.find(ReservationItemOrmEntity, {
-      where: { reservationId: res.raw[0].id },
+      where: { reservationId: released[0].id },
     });
     return items.map((i) => ({ productId: i.productId, qty: i.qty }));
   }

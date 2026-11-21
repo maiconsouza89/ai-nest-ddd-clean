@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
@@ -7,7 +7,7 @@ import { configureApp } from '../src/app.setup';
 import { setupSwagger } from '../src/shared/infra/http/swagger.setup';
 
 describe('Docs (e2e)', () => {
-  let app: INestApplication;
+  let app: TestApp;
   let document: ReturnType<typeof setupSwagger>;
 
   beforeAll(async () => {

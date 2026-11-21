@@ -46,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
     if (typeof sub !== 'string' || !validRoles) throw new Error('invalid claims');
     return {
       id: sub,
-      roles: roles as string[],
+      roles,
       ...(typeof tenantId === 'string' ? { tenantId } : {}),
     };
   }
