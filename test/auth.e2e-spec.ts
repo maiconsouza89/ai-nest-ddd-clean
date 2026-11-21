@@ -4,11 +4,11 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { registerAndLogin, uniqueEmail } from './helpers/auth';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   const server = () => app.getHttpServer();
-  const uniqueEmail = () => `user-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -80,5 +80,55 @@ describe('Auth (e2e)', () => {
       .post('/v1/auth/register')
       .send({ name: 'Ana', email: uniqueEmail(), password: 'secret-123', roles: ['admin'] })
       .expect(400);
+  });
+
+  describe('guard global', () => {
+    const forge = (secret: string, payload: Record<string, unknown>, options = {}) =>
+      new JwtService({ secret }).signAsync(payload, options);
+    const secret = () => process.env.JWT_SECRET as string;
+    const call = (token?: string, scheme = 'Bearer') => {
+      const req = request(server()).get('/v1/orders');
+      return token ? req.set('Authorization', `${scheme} ${token}`) : req;
+    };
+
+    it('aceita um token válido e usa o sub como dono', async () => {
+      const user = await registerAndLogin(app);
+      await call(user.token).expect(200);
+    });
+
+    it('rejeita sem header, com esquema errado e com lixo', async () => {
+      await call().expect(401);
+      const user = await registerAndLogin(app);
+      await call(user.token, 'Basic').expect(401);
+      await call('not.a.jwt').expect(401);
+    });
+
+    it('rejeita token assinado com outro segredo', async () => {
+      const token = await forge('x'.repeat(40), { sub: 'u1', roles: [] }, { expiresIn: 60 });
+      await call(token).expect(401);
+    });
+
+    it('rejeita token expirado', async () => {
+      const exp = Math.floor(Date.now() / 1000) - 60;
+      const token = await forge(secret(), { sub: 'u1', roles: [], exp });
+      await call(token).expect(401);
+    });
+
+    it('rejeita token assinado com outro algoritmo, mesmo com o segredo certo', async () => {
+      const token = await forge(secret(), { sub: 'u1', roles: [] }, { algorithm: 'HS512', expiresIn: 60 });
+      await call(token).expect(401);
+    });
+
+    it('rejeita token válido sem sub ou com roles malformado', async () => {
+      await call(await forge(secret(), { roles: [] }, { expiresIn: 60 })).expect(401);
+      await call(await forge(secret(), { sub: 'u1', roles: 'admin' }, { expiresIn: 60 })).expect(401);
+    });
+
+    it('as rotas de auth continuam públicas', async () => {
+      await request(server())
+        .post('/v1/auth/login')
+        .send({ email: uniqueEmail(), password: 'secret-123' })
+        .expect(401); // credenciais inválidas, não "sem token"
+    });
   });
 });

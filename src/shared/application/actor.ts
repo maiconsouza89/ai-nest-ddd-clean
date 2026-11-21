@@ -1,1 +1,1 @@
-export type Actor = { id: string; roles: string[] };
+export type Actor = { id: string; roles: string[]; tenantId?: string };

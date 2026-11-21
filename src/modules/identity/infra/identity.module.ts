@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
-import { EnvironmentVariables } from '../../../shared/infra/config/env.validation';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
 import { PasswordHasher } from '../application/ports/password-hasher';
 import { TokenIssuer } from '../application/ports/token-issuer';
@@ -17,16 +14,7 @@ import { TypeOrmUserRepository } from './database/typeorm/typeorm-user.repositor
 import { AuthController } from './http/controllers/auth.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserOrmEntity]),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService<EnvironmentVariables, true>) => ({
-        secret: cfg.getOrThrow('JWT_SECRET'),
-        signOptions: { expiresIn: cfg.getOrThrow('JWT_EXPIRES_IN_SECONDS') },
-      }),
-    }),
-  ],
+  imports: [TypeOrmModule.forFeature([UserOrmEntity])],
   controllers: [AuthController],
   providers: [
     { provide: UserRepository, useClass: TypeOrmUserRepository },

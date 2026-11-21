@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { IdentityModule } from './modules/identity/infra/identity.module';
 import { OrdersModule } from './modules/orders/infra/orders.module';
-import { DevAuthGuard } from './shared/infra/auth/dev-auth.guard';
+import { AuthModule } from './shared/infra/auth/auth.module';
 import { validateEnv } from './shared/infra/config/env.validation';
 import { DatabaseModule } from './shared/infra/database/database.module';
 
@@ -16,10 +15,10 @@ import { DatabaseModule } from './shared/infra/database/database.module';
       ignoreEnvFile: process.env.NODE_ENV === 'production',
       validate: validateEnv,
     }),
+    AuthModule,
     DatabaseModule,
     IdentityModule,
     OrdersModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: DevAuthGuard }],
 })
 export class AppModule {}

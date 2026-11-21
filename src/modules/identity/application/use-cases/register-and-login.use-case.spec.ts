@@ -70,6 +70,18 @@ describe('LoginUseCase', () => {
     );
   });
 
+  it('verifica a senha mesmo quando o e-mail não existe (tempo igual)', async () => {
+    const users = new InMemoryUserRepository();
+    const hasher = new FakePasswordHasher();
+    const verify = jest.spyOn(hasher, 'verify');
+    const login = new LoginUseCase(users, hasher, new FakeTokenIssuer());
+
+    await expect(login.execute({ email: 'ghost@x.com', password: 'secret-123' })).rejects.toThrow(
+      InvalidCredentialsError,
+    );
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
+
   it.each(['ghost@x.com', 'not-an-email'])('rejeita "%s" com a mesma resposta', async (email) => {
     const { login } = setup();
     await expect(login.execute({ email, password: 'secret-123' })).rejects.toThrow(
