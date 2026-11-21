@@ -937,7 +937,7 @@ export class ExpirePendingOrdersJob {
 }
 ```
 
-O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
+Este projeto usa os Job Schedulers do BullMQ (o `@Cron` abaixo é só a comparação). O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
 
 Com o BullMQ, o agendador vira um job scheduler registrado na subida, e o processor tem o mesmo papel do job com `@Cron`: só chamar o caso de uso.
 

@@ -4,7 +4,6 @@ import { FakeLogger } from '../../../../../../test/fakes/fake-logger';
 import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
 import { Money } from '../../../../../shared/domain/money.vo';
 import { SystemClock } from '../../../../../shared/infra/clock/system-clock';
-import { PgAdvisoryLock } from '../../../../../shared/infra/database/pg-advisory-lock';
 import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
 import { UuidV7Generator } from '../../../../../shared/infra/ids/uuid-v7.generator';
 import { TypeOrmOutbox } from '../../../../../shared/infra/outbox/typeorm-outbox';
@@ -63,37 +62,5 @@ describe('Jobs de pedidos com Postgres (integração)', () => {
       stale,
     ]);
     expect(rows).toEqual([{ type: 'orders.order-cancelled' }]);
-  });
-
-  describe('PgAdvisoryLock', () => {
-    it('só uma execução por vez entra; a concorrente é recusada sem rodar', async () => {
-      const lock = new PgAdvisoryLock(ds);
-      let release!: () => void;
-      const gate = new Promise<void>((resolve) => (release = resolve));
-      let entered!: () => void;
-      const started = new Promise<void>((resolve) => (entered = resolve));
-
-      const first = lock.runExclusive('job', async () => {
-        entered();
-        await gate;
-      });
-      await started;
-
-      const secondRan = jest.fn();
-      expect(await lock.runExclusive('job', async () => secondRan())).toBe(false);
-      expect(secondRan).not.toHaveBeenCalled();
-      // outra chave não é afetada
-      expect(await lock.runExclusive('other', async () => {})).toBe(true);
-
-      release();
-      expect(await first).toBe(true);
-      // liberado ao terminar, e também quando fn lança
-      await expect(
-        lock.runExclusive('job', async () => {
-          throw new Error('x');
-        }),
-      ).rejects.toThrow('x');
-      expect(await lock.runExclusive('job', async () => {})).toBe(true);
-    });
   });
 });

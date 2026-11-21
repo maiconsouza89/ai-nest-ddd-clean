@@ -11,7 +11,6 @@ import { ProcessedEventOrmEntity } from '../outbox/processed-event.orm-entity';
 import { TypeOrmProcessedEvents } from '../outbox/typeorm-processed-events';
 import { IdempotentConsumer } from '../../application/idempotent-consumer';
 import { TypeOrmOutbox } from '../outbox/typeorm-outbox';
-import { PgAdvisoryLock } from './pg-advisory-lock';
 import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
 
 @Global()
@@ -31,7 +30,6 @@ import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
   ],
   providers: [
     { provide: TransactionManager, useClass: TypeOrmTransactionManager },
-    PgAdvisoryLock,
     { provide: Outbox, useClass: TypeOrmOutbox },
     { provide: ProcessedEvents, useClass: TypeOrmProcessedEvents },
     {
@@ -41,6 +39,6 @@ import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
       inject: [TransactionManager, ProcessedEvents, Logger],
     },
   ],
-  exports: [TransactionManager, Outbox, IdempotentConsumer, PgAdvisoryLock],
+  exports: [TransactionManager, Outbox, IdempotentConsumer],
 })
 export class DatabaseModule {}

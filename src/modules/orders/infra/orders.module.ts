@@ -2,6 +2,7 @@ import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MessagingModule } from '../../../shared/infra/messaging/messaging.module';
 import { Clock } from '../../../shared/application/ports/clock';
 import { Logger } from '../../../shared/application/ports/logger';
 import { Outbox } from '../../../shared/application/ports/outbox';
@@ -34,7 +35,7 @@ import { CatalogPriceAdapter } from './gateways/catalog-price.adapter';
 import { InventoryStockGateway } from './gateways/inventory-stock.gateway';
 import { ResilientPaymentGateway } from './gateways/resilient-payment.gateway';
 import { SimulatedPaymentGateway } from './gateways/simulated-payment.gateway';
-import { ExpirePendingOrdersJob } from './jobs/expire-pending-orders.job';
+import { ExpirePendingOrdersProcessor } from './jobs/expire-pending-orders.processor';
 import { OrdersController } from './http/controllers/orders.controller';
 
 // pedidos tratados por execução do job; o excedente fica para a próxima
@@ -49,7 +50,7 @@ const IDEMPOTENCY_KEY_TTL_MS = 24 * 60 * 60 * 1000;
 const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity])],
+  imports: [MessagingModule, TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity])],
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
@@ -172,7 +173,7 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
         ConfigService,
       ],
     },
-    ExpirePendingOrdersJob,
+    ExpirePendingOrdersProcessor,
   ],
 })
 export class OrdersModule {}

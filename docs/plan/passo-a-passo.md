@@ -32,7 +32,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | 🔄 |
 | 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 11 de 13 fases concluídas · 38 de 42 passos concluídos · **Fase atual:** 12
+**Progresso geral:** 11 de 13 fases concluídas · 39 de 42 passos concluídos · **Fase atual:** 12
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -938,7 +938,7 @@ Limite conhecido: a invalidação chega quando a outbox entrega o evento (cerca 
 > **Status:** 🔄 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
 > - [x] Passo 38: BullMQ como transporte dos eventos
-> - [ ] Passo 39: jobs agendados com Job Schedulers
+> - [x] Passo 39: jobs agendados com Job Schedulers
 > - [ ] Passo 40: rate limit com storage no Redis
 
 Depende do passo 35, que coloca o Redis no ar. A outbox continua sendo a fonte da verdade: o Redis não participa da transação do Postgres, então nenhum caso de uso coloca job direto na fila.
@@ -993,6 +993,8 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 - Opcional: a limpeza da outbox (hoje um `setInterval` no `OutboxWorker`) pode virar outro scheduler.
 
 **Pronto quando:** com duas instâncias no ar, cada disparo expira os pedidos uma vez só, e o caso de uso e o teste com `FixedClock` continuam iguais.
+
+**Como ficou:** `ExpirePendingOrdersProcessor` (`orders/infra/jobs/`) registra o scheduler na fila `jobs.orders` e processa o job, ligado por `JOBS_ENABLED`. Se o Redis estiver fora na subida, a aplicação falha em vez de seguir sem agendador. `@nestjs/schedule` e `PgAdvisoryLock` foram removidos. A limpeza da outbox continua no `setInterval`. Teste de integração com duas instâncias em `expire-pending-orders.processor.int-spec.ts`.
 
 ### Passo 40: rate limit com storage no Redis
 

@@ -16,6 +16,6 @@ import { EventWorkers } from './event-workers';
     BullMqPublisher,
     { provide: EventPublisher, useExisting: BullMqPublisher },
   ],
-  exports: [EventPublisher],
+  exports: [EventPublisher, BullMqConnection],
 })
 export class MessagingModule {}
