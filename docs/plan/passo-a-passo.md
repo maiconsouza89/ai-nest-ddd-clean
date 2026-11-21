@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 4 de 12 fases concluídas · 14 de 39 passos concluídos · **Fase atual:** 5
+**Progresso geral:** 4 de 12 fases concluídas · 15 de 39 passos concluídos · **Fase atual:** 5
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -429,7 +429,7 @@ Poucos testes e2e bastam, só para os fluxos críticos.
 > - [x] Passo 12: configuração validada
 > - [x] Passo 13: Postgres e TypeORM
 > - [x] Passo 14: repositório TypeORM do `Order`
-> - [ ] Passo 15: migrations por módulo
+> - [x] Passo 15: migrations por módulo
 > - [ ] Passo 16: testes de integração com Testcontainers
 
 ### Passo 12: configuração validada
