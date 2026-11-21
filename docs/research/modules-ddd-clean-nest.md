@@ -1,0 +1,1161 @@
+# Guia: módulos com DDD e Clean Architecture no NestJS
+
+Nov 20, 2026 · @Maicon Souza da Silva
+
+## Visão geral
+
+Cada módulo é organizado em camadas, com as regras de negócio no centro e o NestJS e o TypeORM restritos à infra. O sistema todo funciona como um monólito modular: cada módulo é dono dos seus dados e só conversa com os outros por contratos.
+
+**Quando é de fato um monólito modular:** é monólito porque tudo sobe em um único deploy e roda em um processo. É modular só enquanto as fronteiras forem respeitadas na prática: dados próprios por módulo, comunicação só por contratos e regras no CI barrando imports proibidos. Pastas por módulo, sozinhas, não bastam. Agregados e `AggregateRoot` organizam o código dentro de cada módulo, mas não são o que torna o sistema modular.
+
+**Princípios**
+
+- **Regra de dependência:** as dependências apontam para dentro. Infra depende de application, que depende de domain. O domain não depende de ninguém.
+- **Nest só na infra:** domain e application são TypeScript puro, sem decorators e sem imports de `@nestjs/*` ou `typeorm`.
+- **Módulos independentes:** cada módulo tem schema, migrations e contratos próprios. Nada de FK, join ou transação entre módulos.
+- **Pragmatismo:** a estrutura completa vale para módulos com regra de negócio. Cadastros simples podem ser CRUD direto.
+
+**Versões de referência:** TypeORM 1.x, que exige Node.js 20 ou superior, com `@nestjs/typeorm` 11.0.1 ou superior. As versões 10 e 11.0.0 do `@nestjs/typeorm` quebram na inicialização com o TypeORM 1.0. Revisado em novembro de 2026 contra a documentação oficial (ver Referências).
+
+## Estrutura de pastas
+
+Um módulo completo tem quatro partes: domain, application, infra (organizada por tipo e depois por tecnologia) e contracts.
+
+```
+src/
+├── modules/
+│   ├── identity/                       # usuários, senhas, emissão do JWT
+│   ├── inventory/
+│   └── orders/
+│       ├── domain/
+│       │   ├── entities/
+│       │   │   ├── order.entity.ts
+│       │   │   └── order-item.entity.ts
+│       │   ├── value-objects/
+│       │   │   └── order-status.vo.ts
+│       │   ├── services/
+│       │   │   └── discount-policy.ts
+│       │   ├── errors/
+│       │   │   └── order-already-paid.error.ts
+│       │   └── repositories/
+│       │       └── order.repository.ts
+│       ├── application/
+│       │   ├── use-cases/
+│       │   │   └── create-order.use-case.ts
+│       │   ├── queries/
+│       │   │   └── order.queries.ts
+│       │   ├── ports/
+│       │   │   ├── price-catalog.ts
+│       │   │   └── stock.gateway.ts
+│       │   └── dtos/
+│       │       └── create-order.input.ts
+│       ├── infra/
+│       │   ├── database/typeorm/
+│       │   │   ├── entities/
+│       │   │   │   ├── order.orm-entity.ts
+│       │   │   │   └── order-item.orm-entity.ts
+│       │   │   ├── migrations/
+│       │   │   ├── orders.data-source.ts
+│       │   │   ├── typeorm-order.repository.ts
+│       │   │   └── typeorm-order.mapper.ts
+│       │   ├── gateways/
+│       │   │   ├── catalog-price.adapter.ts
+│       │   │   └── inventory-stock.gateway.ts
+│       │   ├── http/
+│       │   │   ├── controllers/orders.controller.ts
+│       │   │   ├── dtos/create-order.request.ts
+│       │   │   └── filters/domain-error.filter.ts
+│       │   └── orders.module.ts
+│       └── contracts/
+│           ├── orders.facade.ts
+│           └── events/order-paid.event.ts
+└── shared/
+    ├── domain/
+    │   ├── aggregate-root.ts
+    │   ├── domain-error.ts
+    │   └── money.vo.ts
+    ├── application/
+    │   ├── actor.ts
+    │   ├── page.ts
+    │   └── ports/
+    │       ├── clock.ts
+    │       ├── id-generator.ts
+    │       └── transaction-manager.ts
+    └── infra/
+        ├── auth/
+        └── database/
+```
+
+| Pasta | Responsabilidade | Pode importar Nest/TypeORM? |
+| --- | --- | --- |
+| domain | Entidades, value objects, erros e contratos de repositório | Não |
+| application | Casos de uso, queries, ports e DTOs simples | Não |
+| infra | Repositórios concretos, controllers, módulo Nest, adapters | Sim |
+| contracts | Facade e eventos que outros módulos podem usar | Não |
+| shared | Código comum a todos os módulos, separado pelas mesmas camadas | Só em shared/infra |
+
+## Camadas
+
+Domain guarda as regras, application orquestra, e a infra liga tudo ao Nest com `useFactory`.
+
+### Domain: entidade com as regras
+
+```ts
+export class Order extends AggregateRoot {
+  private constructor(
+    readonly id: string,
+    readonly customerId: string,
+    private items: OrderItem[],
+    private status: OrderStatus,
+    readonly version: number,
+  ) { super(); }
+
+  // criação: aplica as regras de um pedido novo
+  static create(id: string, customerId: string) {
+    return new Order(id, customerId, [], OrderStatus.DRAFT, 0);
+  }
+
+  // reconstrução a partir do banco: usada só pelo mapper
+  static restore(p: OrderProps) {
+    return new Order(p.id, p.customerId, p.items, p.status, p.version);
+  }
+
+  place() {
+    if (this.status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
+    if (this.items.length === 0) throw new EmptyOrderError();
+    this.status = OrderStatus.PLACED;
+  }
+
+  pay() {
+    if (this.status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
+    if (this.status !== OrderStatus.PLACED) throw new OrderNotPayableError();
+    this.status = OrderStatus.PAID;
+    this.record(new OrderPaid(this.id));
+  }
+}
+```
+
+`create` aplica as regras de criação. `restore` só reconstrói o estado salvo, para o mapper não repetir validações nem disparar eventos.
+
+### Domain: contrato do repositório
+
+Use `abstract class`, não `interface`. A interface some em runtime e não serve como token de injeção. A classe abstrata é TypeScript puro e funciona como token sem o domain importar o Nest. A documentação oficial do Nest recomenda esse uso quando o mesmo artefato é contrato e token.
+
+```ts
+export abstract class OrderRepository {
+  abstract save(order: Order): Promise<void>;
+  abstract findById(id: string): Promise<Order | null>;
+}
+```
+
+### Application: caso de uso sem decorators
+
+```ts
+export class CreateOrderUseCase {
+  constructor(
+    private readonly repo: OrderRepository,
+    private readonly catalog: PriceCatalog, // port: o preço vem do catálogo
+    private readonly ids: IdGenerator,
+  ) {}
+
+  async execute(input: CreateOrderInput) {
+    const order = Order.create(this.ids.next(), input.customerId);
+    const prices = await this.catalog.pricesOf(input.items.map(i => i.productId));
+
+    for (const item of input.items) {
+      const price = prices.get(item.productId);
+      if (!price) throw new ProductNotFoundError(item.productId);
+      order.addItem(item.productId, item.qty, price);
+    }
+
+    await this.repo.save(order);
+    return { id: order.id };
+  }
+}
+```
+
+O preço nunca vem do cliente. A requisição traz só `productId` e quantidade, e o caso de uso busca o preço por um port.
+
+### Infra: controller
+
+O DTO HTTP tem `class-validator` e fica na infra. O controller converte para o input simples da application.
+
+```ts
+@Controller('orders')
+export class OrdersController {
+  constructor(private readonly createOrder: CreateOrderUseCase) {}
+
+  @Post()
+  create(@Body() body: CreateOrderRequest, @CurrentUser() actor: Actor) {
+    return this.createOrder.execute({ customerId: actor.id, items: body.items });
+  }
+}
+```
+
+### Infra: módulo Nest
+
+É aqui que contratos são ligados às implementações.
+
+```ts
+@Module({
+  imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity]), CatalogModule],
+  controllers: [OrdersController],
+  providers: [
+    { provide: OrderRepository, useClass: TypeOrmOrderRepository },
+    { provide: PriceCatalog, useClass: CatalogPriceAdapter },
+    { provide: IdGenerator, useClass: UuidV7Generator },
+    {
+      provide: CreateOrderUseCase,
+      useFactory: (repo: OrderRepository, catalog: PriceCatalog, ids: IdGenerator) =>
+        new CreateOrderUseCase(repo, catalog, ids),
+      inject: [OrderRepository, PriceCatalog, IdGenerator],
+    },
+  ],
+})
+export class OrdersModule {}
+```
+
+O `inject` entrega as dependências na mesma ordem dos parâmetros da factory.
+
+### Infra: erros de domínio para HTTP
+
+O domain lança erros próprios. Um exception filter na infra traduz para o status HTTP, assim o domain nunca conhece `HttpException`.
+
+## Persistência com TypeORM
+
+A entidade do TypeORM é um modelo de persistência, separado da entidade de domínio. O mapper converte entre as duas.
+
+```ts
+@Injectable()
+export class TypeOrmOrderRepository implements OrderRepository {
+  constructor(private readonly dataSource: DataSource) {}
+
+  // usa a transação ativa, se houver (ver Transações)
+  private get repo() {
+    const manager = txStore.getStore() ?? this.dataSource.manager;
+    return manager.getRepository(OrderOrmEntity);
+  }
+
+  async save(order: Order) {
+    await this.repo.save(OrderMapper.toPersistence(order));
+  }
+
+  async findById(id: string) {
+    const raw = await this.repo.findOne({ where: { id }, relations: { items: true } });
+    return raw ? OrderMapper.toDomain(raw) : null;
+  }
+}
+```
+
+O repositório pega o `EntityManager` da transação ativa. Se injetar o `Repository` direto com `@InjectRepository`, ele roda fora da transação do caso de uso.
+
+**Regras**
+
+- Nunca devolva a ORM entity como se fosse a entidade de domínio. Se misturar, trocar de ORM deixa de ser simples.
+- O mapper fica junto da tecnologia (`infra/database/typeorm/`), porque conhece o formato de persistência dela.
+- `bigint` e `numeric` chegam como `string`. O driver `pg` não converte inteiros de 64 bits para `number` porque haveria perda de precisão. Converta no mapper.
+- Itens filhos do agregado precisam de `orphanedRowAction: 'delete'`. Sem isso, um item removido do array não é apagado no `save()`.
+
+```ts
+// order.orm-entity.ts
+@OneToMany(() => OrderItemOrmEntity, i => i.order, { cascade: true })
+items: OrderItemOrmEntity[];
+
+// order-item.orm-entity.ts
+@ManyToOne(() => OrderOrmEntity, o => o.items, {
+  onDelete: 'CASCADE',
+  orphanedRowAction: 'delete',
+})
+order: OrderOrmEntity;
+```
+
+**Trocar de ORM** (por exemplo, para Prisma) muda só a infra: o repositório concreto, o mapper, o modelo de banco e o `useClass` no módulo. Domain, casos de uso e controller continuam iguais.
+
+## Módulos independentes
+
+Cada módulo tem seu próprio schema no Postgres, suas migrations e seus contratos. Nenhum outro módulo acessa esses dados diretamente.
+
+### Schema por módulo
+
+```ts
+@Entity({ name: 'orders', schema: 'orders' })
+export class OrderOrmEntity { ... }
+```
+
+A primeira migration do módulo cria o schema:
+
+```ts
+await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS orders`);
+```
+
+### Migrations por módulo
+
+Um DataSource por módulo, usado só pela CLI, com tabela de controle própria. Como ele conhece apenas as entidades do módulo, o `migration:generate` não mexe nas tabelas dos outros.
+
+```ts
+export default new DataSource({
+  type: 'postgres',
+  url: process.env.DATABASE_URL,
+  entities: [OrderOrmEntity, OrderItemOrmEntity],
+  migrations: [__dirname + '/migrations/*.{ts,js}'],
+  migrationsTableName: 'orders_migrations',
+});
+```
+
+```json
+"mig:orders:gen": "typeorm-ts-node-commonjs migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
+"mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
+```
+
+**Cuidados com migrations**
+
+- `synchronize: false` fora de testes locais. O schema muda só por migration.
+- A primeira migration do módulo é criada vazia com `migration:create`, só para o `CREATE SCHEMA`. As outras vêm do `migration:generate`.
+- Revise toda migration gerada antes do commit. O generate compara entidades e banco, e pode propor alterações inesperadas.
+- Rode as migrations no pipeline de deploy, com `migrationsRun: false` na aplicação.
+
+### Conexão no Nest
+
+| Opção | Como | Quando usar |
+| --- | --- | --- |
+| Conexão única | `autoLoadEntities: true` e cada módulo usa `forFeature` | Padrão, mais simples |
+| Conexão por módulo | `forRootAsync({ name: 'orders' })`, `forFeature([...], 'orders')`, `@InjectRepository(Entity, 'orders')` | Isolamento máximo, permite usuário de banco por módulo |
+
+### Regras de independência
+
+- **Sem FK entre schemas.** Guarde só o ID do outro módulo (`customerId`).
+- **Sem join entre módulos.** Use a facade ou uma cópia local atualizada por eventos.
+- **Outros módulos só importam de `contracts/`.**
+- **Sem transação entre módulos.** Use eventos com outbox quando precisar de consistência.
+- Configurações comuns (conexão, `DataSource` global) ficam em `src/shared/infra/database/`.
+
+**Trade-off:** ganha isolamento e facilidade para extrair um módulo como microsserviço. Perde joins e transações entre módulos e passa a lidar com consistência eventual.
+
+## Itens comuns entre módulos (shared kernel)
+
+O `shared` guarda só blocos técnicos que valem igual para todos os módulos. Conceitos de negócio ficam no módulo dono.
+
+| Vai para `shared` | Não vai para `shared` |
+| --- | --- |
+| `AggregateRoot`, `DomainError`, `Money`, `Page`, `Actor` | Conceitos de negócio de um módulo (`Customer`, `Product`) |
+| Ports: `Clock`, `IdGenerator`, `TransactionManager`, `Logger` | Regras específicas de um módulo |
+| Infra: guard de auth, exception filter, outbox, configuração do banco | Repositórios ou entidades de qualquer módulo |
+| Value objects com a mesma regra em todo lugar (`Email`, `Cpf`) | Tipos que só parecem iguais, mas têm regras diferentes em cada módulo |
+
+Cada módulo tem a própria visão de um conceito. Para o catálogo, `Product` tem descrição e fotos. Para orders, basta `productId` e o preço da compra.
+
+**Regras do shared**
+
+- Mantenha pequeno e estável. Qualquer mudança afeta todos os módulos.
+- Siga as mesmas camadas (`shared/domain`, `shared/application`, `shared/infra`).
+- O shared nunca importa nada de `modules/`.
+- Na dúvida, duplique. Duplicar um tipo simples custa menos que acoplar módulos.
+- Dado usado por vários módulos (como o nome do produto) tem um único dono. Os outros consultam pela facade ou mantêm uma cópia local atualizada por eventos.
+
+## Autenticação e ownership
+
+Autenticação (quem é você) fica na infra. Ownership (você pode mexer neste recurso?) é regra de negócio e fica em application ou domain.
+
+### 1. Autenticação na infra
+
+O módulo `identity` é dono dos usuários e emite o JWT. Um guard global em `shared/infra/auth` valida o token e coloca o usuário no request. Os outros módulos nunca consultam a tabela de usuários.
+
+```ts
+// shared/application/actor.ts (tipo puro)
+export type Actor = { id: string; roles: string[]; tenantId?: string };
+
+// shared/infra/auth/current-user.decorator.ts
+export const CurrentUser = createParamDecorator(
+  (_, ctx: ExecutionContext): Actor => ctx.switchToHttp().getRequest().user,
+);
+```
+
+**Protegido por padrão:** registre o guard com `APP_GUARD`, que permite injeção de dependência, e marque as rotas abertas com `@Public()`. Toda rota nova já nasce protegida.
+
+**Pacote oficial:** a documentação atual do Nest apresenta o `@nestjs/authentication`. Ele registra um guard global, oferece `@Public()` e `@CurrentUser()`, e suporta sessão por cookie ou JWT com refresh token de uso único. Se adotar, o `validate()` do provider fica no módulo `identity`, e o controller continua convertendo o usuário em `Actor` antes de chamar o caso de uso.
+
+### 2. O controller repassa o ator como dado puro
+
+```ts
+@Post(':id/pay')
+pay(@Param('id') id: string, @CurrentUser() actor: Actor) {
+  return this.payOrder.execute({ orderId: id, actor });
+}
+```
+
+### 3. Ownership no caso de uso
+
+A entidade guarda só o ID do dono, sem FK para o schema de `identity`.
+
+```ts
+// domain
+isOwnedBy(userId: string) {
+  return this.customerId === userId;
+}
+
+// application
+const order = await this.repo.findById(orderId);
+if (!order) throw new OrderNotFoundError();
+
+const isAdmin = actor.roles.includes('admin');
+if (!order.isOwnedBy(actor.id) && !isAdmin) throw new NotOrderOwnerError();
+```
+
+O exception filter traduz `NotOrderOwnerError` para 403.
+
+### Dicas
+
+- **Roles simples** (só admin acessa a rota): `RolesGuard` na infra.
+- **Regras por recurso** (dono, mesma empresa, mesmo time): sempre no caso de uso ou no domínio.
+- **Listagens:** filtre na query (`findByCustomer(actor.id)`), nunca carregue tudo para filtrar depois.
+- **Esconder existência do recurso:** devolva 404 em vez de 403.
+- **Dados do dono** (nome, e-mail): facade de `identity/contracts` ou cópia local alimentada pelo evento `UserRegistered`.
+- **Multi-tenant:** `tenantId` vem no token e vai em toda entidade e toda query.
+
+## Agregados e comunicação entre módulos
+
+OrderItem não é submódulo: é parte do agregado Order. Stock é outro módulo (`inventory`), com regras e ciclo de vida próprios.
+
+**Como decidir:** se muda junto com o pai e as regras dependem dele (total, limite de itens), fica no mesmo agregado. Se tem regras próprias e vive sozinho, vira outro módulo.
+
+**Regras de agregado (Vaughn Vernon):** proteja as invariantes dentro do agregado, mantenha agregados pequenos, referencie outros agregados só por ID e altere um agregado por transação. Entre agregados, use consistência eventual.
+
+### Order e OrderItem (mesmo agregado)
+
+```ts
+addItem(productId: string, qty: number, unitPrice: Money) {
+  if (this.status !== 'DRAFT') throw new OrderNotEditableError();
+  const existing = this.items.find(i => i.productId === productId);
+  existing
+    ? existing.increase(qty)
+    : this.items.push(new OrderItem(productId, qty, unitPrice));
+}
+
+get total() {
+  return this.items.reduce((sum, i) => sum.add(i.subtotal), Money.zero());
+}
+```
+
+- Não existe `OrderItemRepository`. O `OrderRepository` salva pedido e itens juntos, na mesma transação.
+- No TypeORM, `@OneToMany` com `cascade: true` na ORM entity. O mapper converte os dois.
+- O item guarda só o `productId` e uma cópia do preço no momento da compra.
+
+### Stock via port e gateway
+
+Orders declara o que precisa num port. O adapter na infra de orders chama a facade de `inventory`.
+
+```ts
+// orders/application/ports/stock.gateway.ts
+export abstract class StockGateway {
+  abstract reserve(orderId: string, items: { productId: string; qty: number }[]): Promise<void>;
+}
+
+// orders/infra/gateways/inventory-stock.gateway.ts
+export class InventoryStockGateway implements StockGateway {
+  constructor(private readonly inventory: InventoryFacade) {}
+
+  reserve(orderId: string, items: { productId: string; qty: number }[]) {
+    return this.inventory.reserve({ referenceId: orderId, items });
+  }
+}
+```
+
+O `orderId` vai como `referenceId` da reserva. Se a chamada for repetida por retry ou timeout, o inventory reconhece a referência e não reserva de novo.
+
+### Síncrono ou por eventos
+
+| Abordagem | Como funciona | Prós | Contras |
+| --- | --- | --- | --- |
+| Síncrona | Caso de uso chama `stock.reserve()` e depois salva o pedido | Simples, resposta imediata | Se o save falhar, sobra reserva sem pedido; precisa compensação |
+| Por eventos | Pedido salvo como `PENDING` publica `OrderPlaced`; inventory responde `StockReserved` ou `StockReservationFailed`; pedido confirma ou cancela | Robusto, módulos desacoplados | Consistência eventual, mais peças (outbox, handlers) |
+
+**Sugestão:** comece síncrono em sistemas pequenos e migre para eventos quando precisar de resiliência ou de extrair o módulo. Como orders depende só do port `StockGateway`, a troca não afeta domain nem casos de uso.
+
+## Dependências e contratos entre módulos
+
+### Dependência circular
+
+Se orders chama inventory e inventory chama orders, o Nest exige `forwardRef`. Isso é sinal de fronteira errada, não um problema técnico a contornar.
+
+**Regra:** o grafo de imports entre módulos deve ser acíclico. Uma direção pode ser síncrona (facade); a volta é sempre por evento.
+
+```ts
+// orders -> inventory: síncrono, via facade
+@Module({ imports: [InventoryModule], ... })
+export class OrdersModule {}
+
+// inventory -> orders: por evento, sem importar OrdersModule
+export class OnOrderCancelledHandler {
+  constructor(private readonly release: ReleaseStockUseCase) {}
+  handle(e: OrderCancelled) { return this.release.execute(e.orderId); }
+}
+```
+
+Outras saídas: mover o conceito compartilhado para o módulo certo, ou criar um terceiro módulo que orquestra os dois (saga). No CI, ative a regra `no-circular` do `dependency-cruiser`.
+
+**Como um módulo expõe a facade:** o contrato fica em `contracts/` como classe abstrata, e o módulo Nest exporta só ele.
+
+```ts
+// inventory/contracts/inventory.facade.ts (TypeScript puro)
+export abstract class InventoryFacade {
+  abstract reserve(cmd: ReserveStockCommand): Promise<void>;
+}
+
+// inventory/infra/inventory.module.ts
+@Module({
+  providers: [
+    /* repositórios e casos de uso do inventory */
+    {
+      provide: InventoryFacade,
+      useFactory: (reserve: ReserveStockUseCase) => new InventoryFacadeImpl(reserve),
+      inject: [ReserveStockUseCase],
+    },
+  ],
+  exports: [InventoryFacade], // nada além da facade sai do módulo
+})
+export class InventoryModule {}
+```
+
+### Versionamento de eventos e facades
+
+Eventos e facades em `contracts/` são a API pública do módulo. Trate como tal.
+
+```ts
+export type OrderPaidV1 = {
+  eventId: string;      // único por evento, base da idempotência
+  type: 'orders.order-paid';
+  version: 1;
+  occurredAt: string;   // ISO 8601
+  payload: { orderId: string; customerId: string; totalCents: number };
+};
+```
+
+- **Payload só com primitivos.** Nunca exponha a entidade de domínio no evento.
+- **Mudança aditiva** (campo novo opcional): mesma versão.
+- **Mudança que quebra** (renomear, remover, mudar tipo): publique a v2 junto com a v1 até todos os consumidores migrarem, depois remova a v1.
+- **Facades:** adicione métodos novos em vez de mudar assinaturas existentes.
+
+### Versionamento da API HTTP
+
+O Nest tem versionamento nativo. Pela URI, a versão entra no caminho (`/v1/orders`), depois do prefixo global.
+
+```ts
+// main.ts
+app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+
+// infra/http/controllers
+@Controller({ path: 'orders', version: '1' })
+export class OrdersV1Controller { /* ... */ }
+
+@Controller({ path: 'orders', version: '2' })
+export class OrdersV2Controller { /* ... */ }
+```
+
+- **A versão é assunto da infra.** V1 e v2 têm controllers e DTOs próprios, mas chamam os mesmos casos de uso.
+- **Mudança aditiva** (campo novo opcional na resposta): mesma versão.
+- **Mudança que quebra:** nova versão, mantendo a anterior até os clientes migrarem. Avise o fim da antiga com antecedência, por exemplo com o header `Sunset`.
+- **Rotas técnicas** como `/health` usam `VERSION_NEUTRAL` e ficam sem versão.
+
+## Transações, concorrência e eventos
+
+### Transações sem Nest na application
+
+Um port `TransactionManager` na application e a implementação na infra. O `AsyncLocalStorage` guarda o `EntityManager` da transação, e os repositórios usam ele quando existir.
+
+```ts
+// shared/application/ports/transaction-manager.ts
+export abstract class TransactionManager {
+  abstract run<T>(work: () => Promise<T>): Promise<T>;
+}
+
+// caso de uso
+await this.tx.run(async () => {
+  await this.orders.save(order);
+  await this.outbox.add(order.pullEvents());
+});
+
+// infra
+export const txStore = new AsyncLocalStorage<EntityManager>();
+
+run(work) {
+  return this.dataSource.transaction(em => txStore.run(em, work));
+}
+
+// no repositório
+private get manager() {
+  return txStore.getStore() ?? this.dataSource.manager;
+}
+```
+
+**Alternativa pronta:** o plugin `@nestjs-cls/transactional`, com o adapter `@nestjs-cls/transactional-adapter-typeorm`, faz essa propagação via `AsyncLocalStorage`. Mantenha o port `TransactionManager` na application e use o plugin só na implementação.
+
+**Regra:** uma transação altera um agregado só. Gravar a outbox junto é a exceção, porque ela não é um agregado.
+
+### Concorrência (optimistic locking)
+
+Evita que duas requisições leiam o mesmo estoque e as duas reservem. O update só acontece se a versão não mudou.
+
+```ts
+const res = await manager.update(
+  StockOrmEntity,
+  { id: s.id, version: s.version },
+  { available: s.available, version: s.version + 1 },
+);
+if (res.affected === 0) throw new ConcurrencyError(); // recarrega e tenta de novo
+```
+
+**Atenção:** o `@VersionColumn` do TypeORM incrementa a versão, mas o `save()` não bloqueia conflitos sozinho. Por isso o `WHERE version` manual.
+
+Use o mesmo `WHERE version` no repositório de qualquer agregado que possa ser editado em paralelo, como o `Order`. Por isso a entidade carrega `version`.
+
+**Para estoque, um update atômico condicional é mais simples:** o banco só debita se houver saldo, sem precisar ler antes.
+
+```ts
+const res = await manager
+  .createQueryBuilder()
+  .update(StockOrmEntity)
+  .set({ available: () => 'available - :qty' })
+  .where('product_id = :productId AND available >= :qty', { productId, qty })
+  .execute();
+
+if (res.affected === 0) throw new InsufficientStockError();
+```
+
+### CQRS leve
+
+- **Escrita:** passa pelo agregado e pelo repositório.
+- **Leitura:** vai direto ao banco com query builder e devolve DTO pronto, sem montar agregados.
+
+```ts
+export abstract class OrderQueries {
+  abstract listByCustomer(customerId: string, page: PageRequest): Promise<Page<OrderListItem>>;
+}
+```
+
+Isso é só separar leitura de escrita no código. CQRS completo, com modelos e bancos separados, adiciona complexidade e só compensa em contextos específicos.
+
+### Eventos de domínio com outbox
+
+A entidade registra o evento, mas não publica.
+
+```ts
+export abstract class AggregateRoot {
+  private events: DomainEvent[] = [];
+  protected record(e: DomainEvent) { this.events.push(e); }
+  pullEvents() { const e = this.events; this.events = []; return e; }
+}
+```
+
+**Por que a entidade não publica direto:** se publicasse e o `save` falhasse em seguida, os outros módulos reagiriam a algo que não foi salvo. Registrando primeiro, o evento só sai se a transação confirmar.
+
+1. O caso de uso salva o agregado e grava os eventos na tabela `outbox`, na mesma transação.
+2. Um worker lê a outbox, publica (EventEmitter, RabbitMQ, Kafka) e marca como enviado.
+3. Resultado: nunca salva sem publicar, nem publica sem salvar.
+
+**Worker resiliente**
+
+- **Várias instâncias:** busque lotes com `FOR UPDATE SKIP LOCKED` (`.setLock('pessimistic_write').setOnLocked('skip_locked')`), assim dois workers nunca pegam o mesmo evento.
+- **Falhas:** retry com backoff exponencial e contador de tentativas. Depois de N falhas, mova o evento para uma fila de mensagens mortas.
+- **Ordem:** publique em ordem de criação por agregado quando o consumidor depender da sequência.
+- **Limpeza:** apague ou arquive os eventos já publicados periodicamente.
+
+### Idempotência
+
+O outbox entrega “pelo menos uma vez”, então um evento pode chegar duplicado.
+
+```ts
+// processed_events tem UNIQUE (event_id, consumer)
+await this.tx.run(async () => {
+  // INSERT ... ON CONFLICT DO NOTHING: só o primeiro consegue inserir
+  const first = await this.processed.tryMark(event.eventId, 'inventory');
+  if (!first) return; // já processado
+  await this.reserveStock.execute(event.payload);
+});
+```
+
+A constraint `UNIQUE` resolve a corrida entre duas entregas simultâneas. Checar com `exists` antes de processar não resolve.
+
+No HTTP, o cliente envia o header `Idempotency-Key`, descrito em um draft da IETF que ainda não virou RFC. Guarde a chave com uma impressão digital do corpo, a resposta e um prazo de expiração. Mesma chave e mesmo corpo: devolva a resposta salva. Mesma chave com corpo diferente: rejeite.
+
+## Paginação
+
+Paginação é assunto de leitura: fica nas queries (CQRS leve), não nos repositórios do domínio.
+
+**Tipos puros em `shared/application`:**
+
+```ts
+export type PageRequest = { page: number; limit: number };
+export type Page<T> = { items: T[]; total: number; page: number; limit: number };
+```
+
+**DTO HTTP em `shared/infra/http`:**
+
+```ts
+export class PaginationQuery {
+  @Type(() => Number) @IsInt() @Min(1) page = 1;
+  @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
+}
+```
+
+Os valores padrão e o `@Type` só funcionam com `ValidationPipe({ transform: true })`.
+
+**Query na infra:**
+
+```ts
+async listByCustomer(customerId: string, { page, limit }: PageRequest): Promise<Page<OrderListItem>> {
+  const [rows, total] = await this.repo.createQueryBuilder('o')
+    .where('o.customerId = :customerId', { customerId })
+    .orderBy('o.createdAt', 'DESC')
+    .skip((page - 1) * limit)
+    .take(limit)
+    .getManyAndCount();
+  return { items: rows.map(toListItem), total, page, limit };
+}
+```
+
+| Tipo | Como | Quando usar |
+| --- | --- | --- |
+| Offset | `page` e `limit` | Telas com número de página, listas pequenas ou médias |
+| Cursor | `after=<id>` | Listas grandes e scroll infinito; não fica lento nem pula itens. UUID v7 ajuda por ser ordenado por tempo |
+
+**Por que cursor escala melhor:** com offset, o banco ainda percorre as linhas puladas, e inserções entre uma página e outra fazem itens repetirem ou sumirem. A busca por chave (keyset) evita os dois problemas.
+
+```ts
+// cursor = createdAt e id do último item da página anterior
+qb.where('(o.createdAt, o.id) < (:createdAt, :id)', cursor)
+  .orderBy('o.createdAt', 'DESC')
+  .addOrderBy('o.id', 'DESC') // desempate estável
+  .take(limit);
+```
+
+Com UUID v7, o próprio `id` já é ordenado por tempo e pode ser o cursor sozinho.
+
+Sempre limite o valor máximo de `limit`.
+
+## Modelagem do domínio
+
+### Dinheiro
+
+`0.1 + 0.2` dá `0.30000000000000004`. Use um value object em centavos (inteiro).
+
+```ts
+export class Money {
+  private constructor(readonly cents: number, readonly currency: string) {}
+
+  static fromCents(cents: number, currency = 'BRL') {
+    if (!Number.isSafeInteger(cents)) throw new InvalidMoneyError();
+    return new Money(cents, currency);
+  }
+  static zero(currency = 'BRL') { return new Money(0, currency); }
+
+  add(o: Money) {
+    this.assertSameCurrency(o);
+    return new Money(this.cents + o.cents, this.currency);
+  }
+  times(qty: number) {
+    if (!Number.isInteger(qty)) throw new InvalidMoneyError();
+    return new Money(this.cents * qty, this.currency);
+  }
+  private assertSameCurrency(o: Money) {
+    if (o.currency !== this.currency) throw new CurrencyMismatchError();
+  }
+}
+```
+
+Somar moedas diferentes é erro, não conversão implícita.
+
+No banco: `bigint` em centavos ou `numeric(12,2)`.
+
+Para dividir valores (parcelas, rateio), crie um método `allocate` que distribui os centavos que sobram. Dividir e arredondar cada parte faz a soma não fechar.
+
+### IdGenerator e Clock
+
+```ts
+export abstract class Clock { abstract now(): Date; }
+export abstract class IdGenerator { abstract next(): string; }
+```
+
+- Nos testes, `FixedClock` e IDs previsíveis deixam os resultados estáveis.
+- UUID v7 é ordenado por tempo, então os índices ficam mais eficientes que com v4. O pacote `uuid` já oferece.
+
+A RFC 9562 (2024), que padronizou o v7, aponta a baixa localidade de índice do v4 como motivo para preferir versões ordenadas por tempo.
+
+### Padrão de erros
+
+| Opção | Vantagem | Desvantagem |
+| --- | --- | --- |
+| Exceptions | Simples, menos código | Erro não aparece no tipo de retorno |
+| Result/Either | Erro explícito no tipo | Código mais verboso |
+
+**Sugestão:** exceptions com uma classe base. O filter mapeia `code` para status HTTP numa tabela só.
+
+```ts
+export abstract class DomainError extends Error {
+  abstract readonly code: string; // 'ORDER_ALREADY_PAID'
+}
+```
+
+### Onde validar
+
+| Tipo | Exemplo | Onde |
+| --- | --- | --- |
+| Formato | Campo obrigatório, e-mail válido, tamanho máximo | DTO HTTP (`class-validator`) |
+| Invariante | Quantidade maior que zero, pedido pago não muda | Entidade ou value object |
+| Depende de dados | E-mail único, estoque disponível | Caso de uso (consulta o repositório) |
+
+O domínio valida de novo mesmo que o DTO já tenha validado, porque ele também é chamado por jobs e eventos. Para unicidade, mantenha também uma constraint `UNIQUE` no banco como última barreira.
+
+### Domain services
+
+Para regras que envolvem mais de um agregado e não pertencem a nenhum deles. São classes puras em `domain/services`: recebem dados prontos e não acessam repositório.
+
+```ts
+export class DiscountPolicy {
+  calculate(order: Order, tier: CustomerTier): Money {
+    if (tier === 'GOLD' && order.total.cents >= 50_000) {
+      return Money.fromCents(Math.round(order.total.cents * 0.1));
+    }
+    return Money.zero();
+  }
+}
+```
+
+O caso de uso carrega os dados e chama o serviço. Não abuse: se a regra cabe numa entidade, ela fica na entidade.
+
+### Auditoria e soft delete
+
+- **`createdAt` e `updatedAt`:** detalhe técnico, ficam na ORM entity (`@CreateDateColumn`, `@UpdateDateColumn`). Só vão para o domínio se alguma regra depender deles.
+- **Quem fez (`createdBy`):** a infra preenche lendo o `Actor` do contexto (`AsyncLocalStorage`), num subscriber do TypeORM ou no repositório.
+- **Exclusão com significado de negócio** (cancelar, arquivar): modele como estado no domínio (`order.cancel()`), não como `deletedAt`.
+- **Soft delete técnico:** `@DeleteDateColumn` e `softDelete()` no repositório. O TypeORM já ignora registros excluídos nas consultas.
+- **Histórico completo de mudanças:** tabela de auditoria alimentada pelos eventos de domínio.
+
+## Infra: configuração, jobs, cache e serviços externos
+
+Tudo aqui é porta de entrada ou adaptador. Nenhum deles contém regra de negócio.
+
+### Configuração
+
+O `@nestjs/config` carrega as variáveis de ambiente, valida na subida e expõe configurações tipadas por módulo.
+
+**1. Registro global, na raiz (`app.module.ts`)**
+
+```ts
+ConfigModule.forRoot({
+  isGlobal: true,                        // não precisa importar em cada módulo
+  cache: true,                           // lê process.env uma vez só
+  envFilePath: ['.env.local', '.env'],   // se repetir, vale o primeiro arquivo
+  ignoreEnvFile: process.env.NODE_ENV === 'production', // em produção, só variáveis do ambiente
+  validate: validateEnv,                 // se falhar, a aplicação não sobe
+}),
+```
+
+**2. Validação (`shared/infra/config/env.validation.ts`)**
+
+```ts
+class EnvironmentVariables {
+  @IsEnum(['development', 'test', 'production']) NODE_ENV: string;
+  @IsInt() @Min(1) PORT: number;
+  @IsString() @IsNotEmpty() DATABASE_URL: string;
+  @IsString() @IsNotEmpty() JWT_SECRET: string;
+}
+
+export function validateEnv(config: Record<string, unknown>) {
+  const env = plainToInstance(EnvironmentVariables, config, { enableImplicitConversion: true });
+  const errors = validateSync(env, { skipMissingProperties: false });
+  if (errors.length) throw new Error(errors.toString());
+  return env;
+}
+```
+
+**3. Configuração por módulo:** cada módulo declara a sua com `registerAs` e registra com `ConfigModule.forFeature`. A application recebe valores simples pelo construtor, sem conhecer o `ConfigService`.
+
+**Cuidados**
+
+- Versione um `.env.example` com todas as chaves e sem valores reais. O `.env` fica no `.gitignore`.
+- O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv`.
+
+```ts
+export const ordersConfig = registerAs('orders', () => ({
+  maxItems: Number(process.env.ORDERS_MAX_ITEMS ?? 50),
+}));
+
+// no módulo: imports: [ConfigModule.forFeature(ordersConfig)]
+{
+  provide: AddOrderItemUseCase,
+  useFactory: (repo: OrderRepository, cfg: ConfigType<typeof ordersConfig>) =>
+    new AddOrderItemUseCase(repo, { maxItems: cfg.maxItems }),
+  inject: [OrderRepository, ordersConfig.KEY],
+}
+```
+
+Injetar `ordersConfig.KEY` com `ConfigType` mantém a tipagem e evita chaves em string como `config.get('orders.maxItems')`.
+
+### Jobs, cron e workers
+
+São portas de entrada, como o controller: ficam em `infra/jobs` ou `infra/queues` e só chamam casos de uso.
+
+```ts
+@Injectable()
+export class ExpirePendingOrdersJob {
+  constructor(private readonly expire: ExpirePendingOrdersUseCase) {}
+
+  @Cron('*/5 * * * *')
+  run() {
+    return this.expire.execute();
+  }
+}
+```
+
+O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
+
+### Cache
+
+Um adapter que envolve a implementação de leitura. A application não sabe que existe cache.
+
+```ts
+export class CachedOrderQueries implements OrderQueries {
+  constructor(private readonly inner: OrderQueries, private readonly cache: Cache) {}
+
+  async getSummary(id: string) {
+    const key = `orders:summary:${id}`;
+    const hit = await this.cache.get<OrderSummary>(key);
+    if (hit) return hit;
+    const fresh = await this.inner.getSummary(id);
+    await this.cache.set(key, fresh, 60_000);
+    return fresh;
+  }
+}
+```
+
+Invalide pelo evento (`OrderPaid` remove a chave). Use cache só no lado de leitura, nunca para carregar agregados que serão alterados.
+
+### Serviços externos
+
+Ports na application (`StorageGateway`, `EmailSender`, `PaymentGateway`) e adapters na infra (`S3StorageGateway`, `SesEmailSender`). O adapter traduz os erros do fornecedor para erros próprios. Nos testes, use implementações fake.
+
+**Resiliência nas chamadas externas**
+
+- **Timeout em toda chamada.** Sem ele, uma dependência lenta prende conexões e derruba a aplicação.
+- **Retry com backoff só em operações idempotentes.** Repetir uma cobrança sem chave de idempotência pode cobrar duas vezes.
+- **Circuit breaker** (por exemplo, `opossum`) para dependências instáveis: depois de várias falhas, ele para de chamar por um tempo e responde rápido com erro.
+
+### Seeds
+
+- **Dados obrigatórios** para o sistema funcionar (categorias padrão, tipos fixos): vão em migration.
+- **Dados de desenvolvimento e teste:** seeds por módulo em `infra/database/typeorm/seeds`, com script próprio (`seed:orders`) e usando upsert para poder rodar mais de uma vez.
+
+## Qualidade
+
+### Testes por camada
+
+| Camada | Tipo | Como |
+| --- | --- | --- |
+| Domain | Unitário | Puro, sem mocks |
+| Casos de uso | Unitário | Repositórios em memória |
+| Repositórios e mappers | Integração | Postgres real com Testcontainers e migrations aplicadas |
+| Contratos entre módulos | Contrato | Exemplos versionados de eventos e chamadas da facade, validados por quem publica e por quem consome |
+| Fluxos críticos | E2E | Poucos, via HTTP |
+
+```ts
+it('não paga duas vezes', () => {
+  const order = makeOrder();
+  order.pay();
+  expect(() => order.pay()).toThrow(OrderAlreadyPaidError);
+});
+```
+
+Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas.
+
+### Regras de arquitetura no CI
+
+Com `dependency-cruiser`, rodando `depcruise src` no pipeline. Se alguém quebrar a regra, o build falha.
+
+```js
+forbidden: [
+  { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
+  {
+    name: 'domain-e-application-sem-framework',
+    severity: 'error',
+    from: { path: '/(domain|application)/' },
+    to: { path: 'node_modules/(@nestjs|typeorm)' },
+  },
+  {
+    name: 'domain-nao-conhece-camadas-externas',
+    severity: 'error',
+    from: { path: '/domain/' },
+    to: { path: '/(application|infra)/' },
+  },
+  {
+    name: 'application-nao-conhece-infra',
+    severity: 'error',
+    from: { path: '/application/' },
+    to: { path: '/infra/' },
+  },
+  {
+    name: 'contracts-sem-domain-e-infra',
+    severity: 'error',
+    from: { path: '/contracts/' },
+    to: { path: '/(domain|infra)/' },
+  },
+  {
+    name: 'modulos-so-via-contracts',
+    severity: 'error',
+    from: { path: '^src/modules/([^/]+)/' },
+    to: {
+      path: '^src/modules/[^/]+/',
+      pathNot: ['^src/modules/$1/', '^src/modules/[^/]+/contracts/'],
+    },
+  },
+],
+```
+
+As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem `severity: 'error'`, a violação vira só aviso e o build não falha.
+
+### Observabilidade
+
+- **Tracing distribuído:** OpenTelemetry com auto-instrumentação para Node. Ele propaga o contexto no padrão W3C (`traceparent`) entre serviços e dispensa um correlation id feito à mão.
+- **Logs ligados ao trace:** inclua o `traceId` em todo log e copie para os metadados de cada evento da outbox. Assim dá para seguir uma requisição por todos os módulos.
+- **Logs estruturados:** JSON com `nestjs-pino`.
+- **Na application:** se precisar logar, use um port `Logger`, sem importar o Nest.
+
+## Operação
+
+### Swagger
+
+Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por módulo (`@ApiTags('orders')`). O plugin da CLI do Nest infere boa parte dos tipos e reduz decorators.
+
+### Health, rate limit e segurança básica
+
+| Item | Ferramenta | Observação |
+| --- | --- | --- |
+| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco e fila com `pingCheck`) |
+| Desligamento gracioso | `app.enableShutdownHooks()` | Termina requisições e jobs em andamento e fecha conexões antes de o processo sair |
+| Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis). Atrás de proxy, configure `trust proxy` |
+| Headers de segurança | `helmet` | `app.use(helmet())` no `main.ts` |
+| CORS | `app.enableCors()` | Só origens conhecidas |
+| Entrada HTTP | `ValidationPipe` global | `whitelist`, `forbidNonWhitelisted` e `transform` ativos |
+
+### Extrair um módulo para microsserviço
+
+Como o módulo já é isolado, a extração muda só a infra:
+
+1. O módulo ganha deploy próprio, e o schema dele vai para um banco separado.
+2. Nos módulos que usam a facade, o adapter troca a chamada em memória por um cliente HTTP ou gRPC, implementando o mesmo port.
+3. Os eventos passam do barramento em memória para um broker. Com outbox, só muda o publicador.
+4. O serviço novo valida o JWT sozinho, com chave compartilhada ou JWKS.
+
+Domain e application não mudam. É o retorno de todo o isolamento feito antes.
+
+## Pragmatismo e checklist
+
+### Nem todo módulo precisa de DDD
+
+Se o módulo só valida campos (categorias, configurações, cadastros simples), use controller, service e repositório TypeORM, ainda dentro da pasta do módulo e respeitando o isolamento. Quando surgir regra de negócio, evolua para a estrutura completa.
+
+### Gerador de módulos
+
+Com Plop, `npx plop module` cria toda a estrutura padrão com os nomes certos.
+
+```js
+plop.setGenerator('module', {
+  prompts: [{ type: 'input', name: 'name', message: 'Nome do módulo' }],
+  actions: [{
+    type: 'addMany',
+    destination: 'src/modules/{{kebabCase name}}',
+    base: 'templates/module',
+    templateFiles: 'templates/module/**',
+  }],
+});
+```
+
+### Checklist de um módulo novo
+
+**Arquitetura**
+
+- [ ] domain e application sem imports de `@nestjs/*` ou `typeorm`
+- [ ] Repositórios e ports como `abstract class`; casos de uso registrados com `useFactory`
+- [ ] Comunicação com outros módulos só por `contracts/` (facade e eventos)
+- [ ] Grafo de módulos sem ciclos e sem `forwardRef`
+- [ ] Nada de negócio no `shared`
+- [ ] Regras do `dependency-cruiser` com `severity: 'error'` passando no CI
+
+**Domínio**
+
+- [ ] Entidades com `create` (regras) e `restore` (reconstrução)
+- [ ] Validação em três níveis: DTO, entidade e caso de uso
+- [ ] Valores monetários com `Money`; preços calculados no servidor, nunca recebidos do cliente
+- [ ] Ownership verificado no caso de uso e filtro de dono nas queries
+- [ ] Erros de domínio mapeados no exception filter
+
+**Persistência**
+
+- [ ] `@nestjs/typeorm` 11.0.1 ou superior com TypeORM 1.x
+- [ ] ORM entities separadas, com mapper e `orphanedRowAction: 'delete'` nos filhos
+- [ ] Repositórios usando o `EntityManager` da transação ativa
+- [ ] Schema próprio, DataSource da CLI, migrations revisadas e `synchronize: false`
+- [ ] Nenhuma FK, join ou transação com outros módulos
+- [ ] Optimistic locking ou update atômico onde há disputa
+- [ ] Listagens paginadas com `limit` máximo
+
+**Eventos e integração**
+
+- [ ] Eventos com `eventId`, `type` e `version`, payload só com primitivos
+- [ ] Outbox com `SKIP LOCKED`, retry e fila de mensagens mortas
+- [ ] Handlers idempotentes por constraint `UNIQUE`
+- [ ] Chamadas externas com timeout; retry só em operações idempotentes
+
+**Operação**
+
+- [ ] Variáveis de ambiente validadas na subida
+- [ ] `.env.example` versionado, `.env` fora do Git
+- [ ] Rotas públicas versionadas (`/v1`), com aviso antes de remover versões
+- [ ] `ValidationPipe` global com `whitelist`, `forbidNonWhitelisted` e `transform`
+- [ ] Guard de autenticação global, `helmet` e rate limit com storage compartilhado
+- [ ] Jobs e workers só chamam casos de uso; cron sem duplicar entre instâncias
+- [ ] Health check com liveness e readiness, e desligamento gracioso
+- [ ] Testes de domínio, casos de uso, integração e contratos
+
+## Referências
+
+Fontes consultadas na revisão de novembro de 2026.
+
+**Documentação oficial**
+
+- [NestJS: Custom providers](https://docs.nestjs.com/fundamentals/custom-providers)
+- [NestJS: Circular dependency](https://docs.nestjs.com/fundamentals/circular-dependency)
+- [NestJS: Guards](https://docs.nestjs.com/guards)
+- [NestJS: Authentication](https://docs.nestjs.com/security/authentication)
+- [NestJS: Validation](https://docs.nestjs.com/techniques/validation)
+- [NestJS: Configuration](https://docs.nestjs.com/techniques/configuration)
+- [NestJS: Versioning](https://docs.nestjs.com/techniques/versioning)
+- [NestJS: Database (TypeORM)](https://docs.nestjs.com/techniques/sql)
+- [NestJS: Task scheduling](https://docs.nestjs.com/techniques/task-scheduling)
+- [NestJS: Health checks (Terminus)](https://docs.nestjs.com/recipes/terminus)
+- [NestJS: Rate limiting](https://docs.nestjs.com/security/rate-limiting)
+- [TypeORM: Entities](https://typeorm.io/docs/entity/entities)
+- [TypeORM: Migrations setup](https://typeorm.io/docs/migrations/setup)
+- [TypeORM: Generating migrations](https://typeorm.io/docs/migrations/generating)
+- [TypeORM: Upgrading from 0.3 to 1.0](https://typeorm.io/docs/releases/1.0/upgrading-from-0.3/)
+- [TypeORM 1.0 is here](https://typeorm.io/blog/typeorm-1-0)
+- [nestjs-cls: Transactional plugin](https://papooch.github.io/nestjs-cls/plugins/available-plugins/transactional)
+- [nestjs-cls: TypeORM adapter](https://papooch.github.io/nestjs-cls/plugins/available-plugins/transactional/typeorm-adapter)
+- [dependency-cruiser](https://github.com/sverweij/dependency-cruiser)
+- [dependency-cruiser: rules tutorial](https://raw.githubusercontent.com/sverweij/dependency-cruiser/HEAD/doc/rules-tutorial.md)
+- [Testcontainers for Node.js: PostgreSQL](https://node.testcontainers.org/modules/postgresql/)
+- [BullMQ: Job Schedulers](https://docs.bullmq.io/guide/job-schedulers/)
+- [BullMQ: Repeatable (legado)](https://docs.bullmq.io/guide/jobs/repeatable)
+- [OpenTelemetry JS: Propagation](https://opentelemetry.io/docs/languages/js/propagation/)
+- [pg-types (node-postgres)](https://www.npmjs.com/package/pg-types)
+
+**Padrões e especificações**
+
+- [Robert C. Martin: The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Vaughn Vernon: Effective Aggregate Design, parte II](https://www.dddcommunity.org/wp-content/uploads/files/pdf_articles/Vernon_2011_2.pdf)
+- [Kamil Grzybek: Modular Monolith with DDD](https://github.com/kgrzybek/modular-monolith-with-ddd)
+- [Chris Richardson: Transactional outbox](https://microservices.io/patterns/data/transactional-outbox)
+- [Martin Fowler: CQRS](https://www.martinfowler.com/bliki/CQRS.html)
+- [Martin Fowler: Quantity e Money](https://www.martinfowler.com/eaaDev/Quantity.html)
+- [Markus Winand: No offset (keyset pagination)](https://use-the-index-luke.com/no-offset)
+- [RFC 9562: UUIDs](https://www.rfc-editor.org/rfc/rfc9562.html)
+- [IETF draft: The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/)
