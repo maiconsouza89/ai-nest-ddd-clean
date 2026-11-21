@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { seconds, ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { IdentityModule } from './modules/identity/infra/identity.module';
@@ -30,6 +31,7 @@ import { OutboxModule } from './shared/infra/outbox/outbox.module';
         skipIf: () => config.get('THROTTLE_ENABLED', { infer: true }) === 'false',
       }),
     }),
+    ScheduleModule.forRoot(),
     ObservabilityModule,
     AuthModule,
     ClockModule,

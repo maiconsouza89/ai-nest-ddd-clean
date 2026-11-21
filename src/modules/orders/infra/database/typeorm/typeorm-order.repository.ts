@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In, LessThan } from 'typeorm';
 import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
 import { currentManager } from '../../../../../shared/infra/database/transaction-context';
 import { Order } from '../../../domain/entities/order.entity';
 import { OrderRepository } from '../../../domain/repositories/order.repository';
+import { EXPIRABLE_STATUSES } from '../../../domain/value-objects/order-status.vo';
 import { OrderOrmEntity } from './entities/order.orm-entity';
 import { OrderMapper } from './typeorm-order.mapper';
 
@@ -32,5 +33,15 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async findById(id: string) {
     const raw = await this.repo.findOne({ where: { id }, relations: { items: true } });
     return raw ? OrderMapper.toDomain(raw) : null;
+  }
+
+  async findStaleIds(cutoff: Date, limit: number) {
+    const rows = await this.repo.find({
+      select: { id: true },
+      where: { status: In([...EXPIRABLE_STATUSES]), updatedAt: LessThan(cutoff) },
+      order: { updatedAt: 'ASC' },
+      take: limit,
+    });
+    return rows.map((r) => r.id);
   }
 }

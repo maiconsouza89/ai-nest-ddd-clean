@@ -62,12 +62,11 @@ describe('PayOrderUseCase com Postgres (integração)', () => {
 
   it('falha ao gravar o pedido não cria linha na outbox', async () => {
     const id = await placedOrder();
-    const failingRepo: OrderRepository = {
-      findById: (orderId) => repo.findById(orderId),
+    const failingRepo: OrderRepository = Object.assign(Object.create(repo), {
       save: async () => {
         throw new Error('falha no save');
       },
-    };
+    });
 
     await expect(useCase(failingRepo, outbox).execute({ orderId: id, actor })).rejects.toThrow(
       'falha no save',

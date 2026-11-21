@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Clock } from '../../../shared/application/ports/clock';
+import { Logger } from '../../../shared/application/ports/logger';
 import { Outbox } from '../../../shared/application/ports/outbox';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../../shared/application/ports/transaction-manager';
+import { EnvironmentVariables } from '../../../shared/infra/config/env.validation';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
 import { CatalogFacade } from '../../catalog/contracts/catalog.facade';
 import { InventoryFacade } from '../../inventory/contracts/inventory.facade';
@@ -12,6 +15,7 @@ import { PriceCatalog } from '../application/ports/price-catalog';
 import { StockGateway } from '../application/ports/stock-gateway';
 import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case';
 import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case';
+import { ExpirePendingOrdersUseCase } from '../application/use-cases/expire-pending-orders.use-case';
 import { PayOrderUseCase } from '../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../application/use-cases/place-order.use-case';
 import { OrderRepository } from '../domain/repositories/order.repository';
@@ -21,7 +25,11 @@ import { TypeOrmOrderQueries } from './database/typeorm/typeorm-order.queries';
 import { TypeOrmOrderRepository } from './database/typeorm/typeorm-order.repository';
 import { CatalogPriceAdapter } from './gateways/catalog-price.adapter';
 import { InventoryStockGateway } from './gateways/inventory-stock.gateway';
+import { ExpirePendingOrdersJob } from './jobs/expire-pending-orders.job';
 import { OrdersController } from './http/controllers/orders.controller';
+
+// pedidos tratados por execução do job; o excedente fica para a próxima
+const EXPIRATION_BATCH_SIZE = 100;
 
 @Module({
   imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity])],
@@ -78,6 +86,32 @@ import { OrdersController } from './http/controllers/orders.controller';
       ) => new CancelOrderUseCase(repo, outbox, ids, clock, tx),
       inject: [OrderRepository, Outbox, IdGenerator, Clock, TransactionManager],
     },
+    {
+      provide: ExpirePendingOrdersUseCase,
+      useFactory: (
+        repo: OrderRepository,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        tx: TransactionManager,
+        logger: Logger,
+        config: ConfigService<EnvironmentVariables, true>,
+      ) =>
+        new ExpirePendingOrdersUseCase(repo, outbox, ids, clock, tx, logger, {
+          maxIdleMs: config.getOrThrow('ORDER_EXPIRATION_MINUTES', { infer: true }) * 60_000,
+          batchSize: EXPIRATION_BATCH_SIZE,
+        }),
+      inject: [
+        OrderRepository,
+        Outbox,
+        IdGenerator,
+        Clock,
+        TransactionManager,
+        Logger,
+        ConfigService,
+      ],
+    },
+    ExpirePendingOrdersJob,
   ],
 })
 export class OrdersModule {}

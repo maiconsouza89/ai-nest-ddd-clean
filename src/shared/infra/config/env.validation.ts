@@ -48,6 +48,15 @@ export class EnvironmentVariables {
   @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
   LOG_LEVEL: string = 'info';
 
+  // desliga os jobs agendados (ex.: instâncias que só atendem HTTP)
+  @IsIn(['true', 'false'])
+  JOBS_ENABLED: string = 'true';
+
+  // pedidos em DRAFT/PLACED parados por mais tempo que isso são cancelados
+  @IsInt()
+  @Min(1)
+  ORDER_EXPIRATION_MINUTES: number = 1440;
+
   @IsIn(['true', 'false'])
   THROTTLE_ENABLED: string = 'true';
 }
