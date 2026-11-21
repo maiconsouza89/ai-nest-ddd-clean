@@ -30,9 +30,9 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | ✅ |
 | 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | ✅ |
-| 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | 🟡 |
+| 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ✅ |
 
-**Progresso geral:** 12 de 13 fases concluídas · 41 de 42 passos concluídos · **Fase atual:** 13
+**Progresso geral:** 13 de 13 fases concluídas · 42 de 42 passos concluídos · **Fase atual:** roteiro concluído
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -1014,10 +1014,10 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 
 ## Fase 13: escala do time
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 41: gerador de módulos
-> - [ ] Passo 42: evoluções sob demanda
+> - [x] Passo 42: evoluções sob demanda
 
 ### Passo 41: gerador de módulos
 
@@ -1046,3 +1046,5 @@ Só adote estes itens quando a necessidade aparecer:
 | Módulo com carga ou time próprio | Extrair para microsserviço trocando só adapters e publicador | Operação |
 
 O último item é o retorno de todo o isolamento construído antes: domain e application não mudam.
+
+**Como ficou:** lista revisada em 2026-11-21. O cancelamento com significado de negócio já existe (`order.cancel()`, com o evento `OrderCancelled` e o erro `OrderNotCancellableError`). Os outros itens ficam como referência até que a necessidade apareça.
