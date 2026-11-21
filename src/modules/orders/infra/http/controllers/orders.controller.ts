@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query, UseFilters } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Actor } from '../../../../../shared/application/actor';
 import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
 import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
@@ -10,6 +11,8 @@ import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.us
 import { CreateOrderRequest } from '../dtos/create-order.request';
 import { OrdersDomainErrorFilter } from '../filters/domain-error.filter';
 
+@ApiTags('orders')
+@ApiBearerAuth()
 @Controller('orders')
 @UseFilters(OrdersDomainErrorFilter)
 export class OrdersController {

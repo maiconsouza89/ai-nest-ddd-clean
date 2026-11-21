@@ -1,1 +1,15 @@
-{ "sourceRoot": "src" }
+{
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "classValidatorShim": true,
+          "introspectComments": true,
+          "dtoFileNameSuffix": [".request.ts", ".requests.ts", ".query.ts"]
+        }
+      }
+    ]
+  }
+}
