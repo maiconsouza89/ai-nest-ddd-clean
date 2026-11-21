@@ -10,6 +10,7 @@ const STATUS: Record<string, number> = {
   ORDER_NOT_EDITABLE: 409,
   ORDER_NOT_PAYABLE: 409,
   EMPTY_ORDER: 422,
+  CONCURRENCY_CONFLICT: 409,
 };
 
 @Catch(DomainError)

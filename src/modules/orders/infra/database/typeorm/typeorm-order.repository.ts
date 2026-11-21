@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
 import { currentManager } from '../../../../../shared/infra/database/transaction-context';
 import { Order } from '../../../domain/entities/order.entity';
 import { OrderRepository } from '../../../domain/repositories/order.repository';
@@ -16,7 +17,16 @@ export class TypeOrmOrderRepository implements OrderRepository {
   }
 
   async save(order: Order) {
-    await this.repo.save(OrderMapper.toPersistence(order));
+    const next = order.version + 1;
+    if (order.version > 0) {
+      // só avança se ninguém gravou desde que o pedido foi carregado
+      const res = await this.repo.update(
+        { id: order.id, version: order.version },
+        { version: next },
+      );
+      if (res.affected === 0) throw new ConcurrencyError();
+    }
+    await this.repo.save({ ...OrderMapper.toPersistence(order), version: next });
   }
 
   async findById(id: string) {

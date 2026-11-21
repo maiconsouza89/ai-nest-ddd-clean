@@ -11,6 +11,7 @@ export type OrderProps = {
   customerId: string;
   items: OrderItem[];
   status: OrderStatus;
+  version: number;
 };
 
 export class Order {
@@ -19,14 +20,16 @@ export class Order {
     readonly customerId: string,
     private _items: OrderItem[],
     private _status: OrderStatus,
+    // versão lida do banco, usada na checagem de concorrência otimista
+    readonly version: number,
   ) {}
 
   static create(id: string, customerId: string) {
-    return new Order(id, customerId, [], OrderStatus.DRAFT);
+    return new Order(id, customerId, [], OrderStatus.DRAFT, 0);
   }
 
   static restore(p: OrderProps) {
-    return new Order(p.id, p.customerId, p.items, p.status);
+    return new Order(p.id, p.customerId, p.items, p.status, p.version);
   }
 
   get status() {

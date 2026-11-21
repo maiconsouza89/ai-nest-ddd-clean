@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
+import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
 import { Money } from '../../../../../shared/domain/money.vo';
 import { Order } from '../../../domain/entities/order.entity';
 import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
@@ -77,12 +78,49 @@ describe('TypeOrmOrderRepository (integração)', () => {
     // reconstrói o pedido sem o p2 e salva: a linha tem que sumir
     const loaded = (await repo.findById(order.id))!;
     const p1 = loaded.items.find((i) => i.productId === 'p1')!;
-    await repo.save(Order.restore({ id: loaded.id, customerId: loaded.customerId, status: loaded.status, items: [p1] }));
+    await repo.save(
+      Order.restore({
+        id: loaded.id,
+        customerId: loaded.customerId,
+        status: loaded.status,
+        items: [p1],
+        version: loaded.version,
+      }),
+    );
 
     expect(await itemRows(order.id)).toEqual([{ productId: 'p1' }]);
   });
 
   it('devolve null para pedido inexistente', async () => {
     expect(await repo.findById(newId())).toBeNull();
+  });
+
+  describe('concorrência otimista', () => {
+    it('grava a versão: 1 na criação e +1 a cada save', async () => {
+      const order = Order.create(newId(), 'u1');
+      order.addItem('p1', 1, Money.fromCents(100));
+      await repo.save(order);
+      expect((await repo.findById(order.id))!.version).toBe(1);
+
+      const loaded = (await repo.findById(order.id))!;
+      loaded.place();
+      await repo.save(loaded);
+      expect((await repo.findById(order.id))!.version).toBe(2);
+    });
+
+    it('a segunda de duas cópias carregadas do mesmo pedido recebe ConcurrencyError', async () => {
+      const order = Order.create(newId(), 'u1');
+      order.addItem('p1', 1, Money.fromCents(100));
+      await repo.save(order);
+
+      const a = (await repo.findById(order.id))!;
+      const b = (await repo.findById(order.id))!;
+      a.place();
+      b.place();
+
+      await repo.save(a);
+      await expect(repo.save(b)).rejects.toThrow(ConcurrencyError);
+      expect((await repo.findById(order.id))!.version).toBe(2);
+    });
   });
 });

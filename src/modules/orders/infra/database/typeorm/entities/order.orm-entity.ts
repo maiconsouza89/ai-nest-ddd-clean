@@ -21,6 +21,10 @@ export class OrderOrmEntity {
   @Column('varchar')
   status!: string;
 
+  // controle de concorrência otimista, mantido pelo repositório
+  @Column('int', { default: 0 })
+  version!: number;
+
   @OneToMany(() => OrderItemOrmEntity, (item) => item.order, { cascade: true })
   items!: Relation<OrderItemOrmEntity[]>;
 
