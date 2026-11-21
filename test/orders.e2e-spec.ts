@@ -4,17 +4,20 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { registerAndLogin } from './helpers/auth';
+import { seedProduct } from './helpers/catalog';
 
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;
 
 describe('Orders (e2e)', () => {
   let app: INestApplication;
   const server = () => app.getHttpServer();
+  let productId: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();
+    productId = await seedProduct(app, 1000);
   });
 
   afterAll(() => app.close());
@@ -23,10 +26,24 @@ describe('Orders (e2e)', () => {
     const res = await request(server())
       .post('/v1/orders')
       .set(user.auth)
-      .send({ items: [{ productId: 'p1', qty: 2 }] })
+      .send({ items: [{ productId, qty: 2 }] })
       .expect(201);
     return res.body.id as string;
   }
+
+  it('usa o preço do catálogo e rejeita produto inexistente (404)', async () => {
+    const user = await registerAndLogin(app);
+    await createOrder(user);
+    const list = await request(server()).get('/v1/orders').set(user.auth).expect(200);
+    expect(list.body.items[0]).toMatchObject({ itemCount: 1, totalCents: 2000 });
+
+    const res = await request(server())
+      .post('/v1/orders')
+      .set(user.auth)
+      .send({ items: [{ productId: crypto.randomUUID(), qty: 1 }] })
+      .expect(404);
+    expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+  });
 
   it('rejeita requisição sem token', () =>
     request(server()).post('/v1/orders').send({ items: [] }).expect(401));
@@ -36,7 +53,7 @@ describe('Orders (e2e)', () => {
     await request(server())
       .post('/v1/orders')
       .set(user.auth)
-      .send({ items: [{ productId: 'p1', qty: 1 }], extra: true })
+      .send({ items: [{ productId, qty: 1 }], extra: true })
       .expect(400);
   });
 

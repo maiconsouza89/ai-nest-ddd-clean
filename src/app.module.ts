@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CatalogModule } from './modules/catalog/catalog.module';
 import { IdentityModule } from './modules/identity/infra/identity.module';
 import { OrdersModule } from './modules/orders/infra/orders.module';
 import { AuthModule } from './shared/infra/auth/auth.module';
@@ -17,6 +18,7 @@ import { DatabaseModule } from './shared/infra/database/database.module';
     }),
     AuthModule,
     DatabaseModule,
+    CatalogModule,
     IdentityModule,
     OrdersModule,
   ],

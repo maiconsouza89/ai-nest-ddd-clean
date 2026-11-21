@@ -14,7 +14,9 @@
     "mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
     "test:int": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex '.*\\.int-spec\\.ts$'",
     "mig:identity:gen": "typeorm-ts-node-commonjs migration:generate src/modules/identity/infra/database/typeorm/migrations/change -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
-    "mig:identity:run": "typeorm-ts-node-commonjs migration:run -d src/modules/identity/infra/database/typeorm/identity.data-source.ts"
+    "mig:identity:run": "typeorm-ts-node-commonjs migration:run -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
+    "mig:catalog:gen": "typeorm-ts-node-commonjs migration:generate src/modules/catalog/database/migrations/change -d src/modules/catalog/database/catalog.data-source.ts",
+    "mig:catalog:run": "typeorm-ts-node-commonjs migration:run -d src/modules/catalog/database/catalog.data-source.ts"
   },
   "keywords": [],
   "author": "",

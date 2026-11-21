@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../../shared/application/ports/transaction-manager';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
+import { CatalogFacade } from '../../catalog/contracts/catalog.facade';
 import { OrderQueries } from '../application/queries/order.queries';
 import { PriceCatalog } from '../application/ports/price-catalog';
 import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case';
@@ -13,7 +14,7 @@ import { OrderItemOrmEntity } from './database/typeorm/entities/order-item.orm-e
 import { OrderOrmEntity } from './database/typeorm/entities/order.orm-entity';
 import { TypeOrmOrderQueries } from './database/typeorm/typeorm-order.queries';
 import { TypeOrmOrderRepository } from './database/typeorm/typeorm-order.repository';
-import { StaticPriceCatalog } from './gateways/static-price-catalog';
+import { CatalogPriceAdapter } from './gateways/catalog-price.adapter';
 import { OrdersController } from './http/controllers/orders.controller';
 
 @Module({
@@ -22,7 +23,11 @@ import { OrdersController } from './http/controllers/orders.controller';
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
     { provide: OrderQueries, useClass: TypeOrmOrderQueries },
-    { provide: PriceCatalog, useClass: StaticPriceCatalog },
+    {
+      provide: PriceCatalog,
+      useFactory: (catalog: CatalogFacade) => new CatalogPriceAdapter(catalog),
+      inject: [CatalogFacade],
+    },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: CreateOrderUseCase,

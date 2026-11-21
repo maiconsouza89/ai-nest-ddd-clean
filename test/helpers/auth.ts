@@ -16,6 +16,8 @@ export async function registerAndLogin(app: INestApplication) {
     .send({ email, password })
     .expect(200);
   return {
+    email,
+    password,
     id: reg.body.id as string,
     token: login.body.accessToken as string,
     auth: { Authorization: `Bearer ${login.body.accessToken}` },

@@ -26,12 +26,12 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 6. Leitura | Queries e paginação | nenhuma | ✅ |
 | 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | ✅ |
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ✅ |
-| 9. Vários módulos | Facades e ports entre módulos | nenhuma | ⬜ |
+| 9. Vários módulos | Facades e ports entre módulos | nenhuma | 🟡 |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ⬜ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 8 de 12 fases concluídas · 21 de 39 passos concluídos · **Fase atual:** 9
+**Progresso geral:** 8 de 12 fases concluídas · 22 de 39 passos concluídos · **Fase atual:** 9
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -663,9 +663,9 @@ await manager.getRepository(OrderOrmEntity).save({ ...OrderMapper.toPersistence(
 
 ## Fase 9: vários módulos conversando
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 22: módulo `catalog` como CRUD simples, com facade
+> - [x] Passo 22: módulo `catalog` como CRUD simples, com facade
 > - [ ] Passo 23: módulo `inventory` e reserva síncrona
 
 ### Passo 22: módulo `catalog` como CRUD simples, com facade
@@ -685,7 +685,7 @@ export abstract class CatalogFacade {
 
 - `CatalogModule` exporta **só** a `CatalogFacade`.
 - Em orders, o `CatalogPriceAdapter` em `infra/gateways/` implementa `PriceCatalog`, chama a facade e converte centavos em `Money`.
-- `OrdersModule` importa `CatalogModule` e troca o `useClass` do `PriceCatalog`.
+- `OrdersModule` troca o provider do `PriceCatalog` pelo adapter, injetando a `CatalogFacade`. O `CatalogModule` é `@Global` e entra pelo `AppModule`: a regra `modulos-so-via-contracts` proíbe o orders de importar o arquivo do módulo, então ele só enxerga a facade de `contracts/`.
 
 O contrato expõe só primitivos. A regra `contracts-sem-domain-e-infra` impede usar até o `Money` do shared ali.
 
