@@ -56,7 +56,11 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
   beforeAll(async () => {
     ({ ds, stop: stopDb } = await startOutboxDatabase());
     await ds.query(`CREATE TABLE IF NOT EXISTS shared.effects (event_id text, note text)`);
-    idempotent = new IdempotentConsumer(new TypeOrmTransactionManager(ds), new TypeOrmProcessedEvents(ds), logger);
+    idempotent = new IdempotentConsumer(
+      new TypeOrmTransactionManager(ds),
+      new TypeOrmProcessedEvents(ds),
+      logger,
+    );
     redis = await startRedis();
     app = await Test.createTestingModule({
       imports: [
@@ -88,7 +92,10 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
     payload: {},
   });
   const effectCount = async (e: IntegrationEvent) =>
-    Number((await ds.query(`SELECT count(*) FROM shared.effects WHERE event_id = $1`, [e.eventId]))[0].count);
+    Number(
+      (await ds.query(`SELECT count(*) FROM shared.effects WHERE event_id = $1`, [e.eventId]))[0]
+        .count,
+    );
 
   it('um consumidor que falha não impede os outros de receberem o evento', async () => {
     const e = event();
@@ -112,6 +119,8 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
   });
 
   it('evento sem assinante é aceito sem enfileirar nada', async () => {
-    await expect(publisher.publish({ ...event(), type: 'test.nobody-listens' })).resolves.toBeUndefined();
+    await expect(
+      publisher.publish({ ...event(), type: 'test.nobody-listens' }),
+    ).resolves.toBeUndefined();
   });
 });

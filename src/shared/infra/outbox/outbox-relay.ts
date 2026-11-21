@@ -78,11 +78,17 @@ export class OutboxRelay {
             { 'messaging.message.id': row.id, 'messaging.operation': 'process' },
             () => {
               // dentro do span do evento: o log leva o trace da requisição que o originou
-              this.logger.info({ eventId: row.id, type: row.type, attempt: row.attempts + 1 }, 'delivering event');
+              this.logger.info(
+                { eventId: row.id, type: row.type, attempt: row.attempts + 1 },
+                'delivering event',
+              );
               return this.publisher.publish(toEvent(row));
             },
           );
-          await em.query(`UPDATE shared.outbox SET "publishedAt" = $2 WHERE id = $1`, [row.id, now]);
+          await em.query(`UPDATE shared.outbox SET "publishedAt" = $2 WHERE id = $1`, [
+            row.id,
+            now,
+          ]);
         } catch (error) {
           await this.recordFailure(em, row, error, now);
         }

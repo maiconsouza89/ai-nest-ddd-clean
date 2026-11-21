@@ -22,10 +22,7 @@ export class InMemoryOrderRepository implements OrderRepository {
 
   async findStaleIds(cutoff: Date, limit: number) {
     return [...this.orders.values()]
-      .filter(
-        ({ order, savedAt }) =>
-          EXPIRABLE_STATUSES.includes(order.status) && savedAt < cutoff,
-      )
+      .filter(({ order, savedAt }) => EXPIRABLE_STATUSES.includes(order.status) && savedAt < cutoff)
       .sort((a, b) => a.savedAt.getTime() - b.savedAt.getTime())
       .slice(0, limit)
       .map(({ order }) => order.id);

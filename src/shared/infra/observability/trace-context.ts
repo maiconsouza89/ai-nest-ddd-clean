@@ -1,4 +1,11 @@
-import { context, propagation, ROOT_CONTEXT, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import {
+  context,
+  propagation,
+  ROOT_CONTEXT,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api';
 
 /** `traceparent` do span ativo, para gravar junto do evento. */
 export function currentTraceparent(): string | undefined {
@@ -17,7 +24,9 @@ export function runInEventTrace<T>(
   attributes: Record<string, string | number>,
   work: () => Promise<T>,
 ): Promise<T> {
-  const parent = traceparent ? propagation.extract(ROOT_CONTEXT, { traceparent }) : context.active();
+  const parent = traceparent
+    ? propagation.extract(ROOT_CONTEXT, { traceparent })
+    : context.active();
   return trace
     .getTracer('outbox')
     .startActiveSpan(name, { kind: SpanKind.CONSUMER, attributes }, parent, async (span) => {

@@ -22,9 +22,10 @@ describe('TypeOrmOrderRepository (integração)', () => {
   const newId = () => crypto.randomUUID();
 
   const itemRows = (orderId: string) =>
-    ds.query('SELECT "productId" FROM orders.order_items WHERE "orderId" = $1 ORDER BY "productId"', [
-      orderId,
-    ]);
+    ds.query(
+      'SELECT "productId" FROM orders.order_items WHERE "orderId" = $1 ORDER BY "productId"',
+      [orderId],
+    );
 
   it('salva e busca um pedido com itens', async () => {
     const order = Order.create(newId(), 'u1');

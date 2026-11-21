@@ -16,13 +16,17 @@ describe('InventoryFacade (contrato)', () => {
     );
 
   it('reserva possível devolve { ok: true }', async () => {
-    expect(await facade().reserve({ referenceId: 'o1', items: [{ productId: 'p1', qty: 1 }] })).toEqual({
+    expect(
+      await facade().reserve({ referenceId: 'o1', items: [{ productId: 'p1', qty: 1 }] }),
+    ).toEqual({
       ok: true,
     });
   });
 
   it('falta de estoque devolve { ok: false, reason, productId }, sem lançar', async () => {
-    expect(await facade().reserve({ referenceId: 'o1', items: [{ productId: 'p1', qty: 3 }] })).toEqual({
+    expect(
+      await facade().reserve({ referenceId: 'o1', items: [{ productId: 'p1', qty: 3 }] }),
+    ).toEqual({
       ok: false,
       reason: 'INSUFFICIENT_STOCK',
       productId: 'p1',

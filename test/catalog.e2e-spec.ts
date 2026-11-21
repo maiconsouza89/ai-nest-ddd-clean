@@ -45,7 +45,10 @@ describe('Catalog (e2e)', () => {
       .expect(200);
 
     const user = await registerAndLogin(app);
-    const got = await request(server()).get(`/v1/products/${created.body.id}`).set(user.auth).expect(200);
+    const got = await request(server())
+      .get(`/v1/products/${created.body.id}`)
+      .set(user.auth)
+      .expect(200);
     expect(got.body.priceCents).toBe(400);
 
     const list = await request(server()).get('/v1/products?limit=100').set(user.auth).expect(200);
@@ -54,7 +57,11 @@ describe('Catalog (e2e)', () => {
 
   it('valida o corpo e o id', async () => {
     const admin = await registerAdmin(app);
-    await request(server()).post('/v1/products').set(admin).send({ name: 'X', priceCents: -1 }).expect(400);
+    await request(server())
+      .post('/v1/products')
+      .set(admin)
+      .send({ name: 'X', priceCents: -1 })
+      .expect(400);
     await request(server()).get('/v1/products/nao-e-uuid').set(admin).expect(400);
     await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
   });

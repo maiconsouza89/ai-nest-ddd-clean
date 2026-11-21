@@ -25,7 +25,10 @@ export class PayOrderUseCase {
   ) {}
 
   async execute({ orderId, actor, idempotencyKey }: PayOrderInput) {
-    if (idempotencyKey !== undefined && (idempotencyKey === '' || idempotencyKey.length > MAX_KEY_LENGTH)) {
+    if (
+      idempotencyKey !== undefined &&
+      (idempotencyKey === '' || idempotencyKey.length > MAX_KEY_LENGTH)
+    ) {
       throw new InvalidIdempotencyKeyError();
     }
 

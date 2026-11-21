@@ -20,7 +20,10 @@ export async function seedProduct(
     ]);
   await app
     .get(DataSource)
-    .query(`INSERT INTO inventory.stock_items ("productId", available) VALUES ($1, $2)`, [id, stock]);
+    .query(`INSERT INTO inventory.stock_items ("productId", available) VALUES ($1, $2)`, [
+      id,
+      stock,
+    ]);
   return id;
 }
 

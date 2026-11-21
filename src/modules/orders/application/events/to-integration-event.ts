@@ -15,7 +15,11 @@ export function toIntegrationEvent(
   event: DomainEvent,
   meta: Meta,
 ): OrderCreatedV1 | OrderPlacedV1 | OrderPaidV1 | OrderCancelledV1 {
-  const base = { eventId: meta.eventId, version: 1 as const, occurredAt: meta.occurredAt.toISOString() };
+  const base = {
+    eventId: meta.eventId,
+    version: 1 as const,
+    occurredAt: meta.occurredAt.toISOString(),
+  };
   if (event instanceof OrderCreated) {
     return {
       ...base,

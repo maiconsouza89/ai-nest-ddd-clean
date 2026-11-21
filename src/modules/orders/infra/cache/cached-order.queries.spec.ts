@@ -10,7 +10,10 @@ class CountingQueries implements OrderQueries {
   calls = 0;
   status = 'DRAFT';
 
-  async listByCustomer(customerId: string, { page, limit }: PageRequest): Promise<Page<OrderListItem>> {
+  async listByCustomer(
+    customerId: string,
+    { page, limit }: PageRequest,
+  ): Promise<Page<OrderListItem>> {
     this.calls++;
     return {
       items: [

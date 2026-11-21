@@ -46,7 +46,10 @@ describe('Auth (e2e)', () => {
 
   it('rejeita e-mail repetido com 409', async () => {
     const email = uniqueEmail();
-    await request(server()).post('/v1/auth/register').send({ name: 'Ana', email, password: 'secret-123' }).expect(201);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ name: 'Ana', email, password: 'secret-123' })
+      .expect(201);
     const res = await request(server())
       .post('/v1/auth/register')
       .send({ name: 'Ana', email, password: 'secret-123' })
@@ -56,9 +59,15 @@ describe('Auth (e2e)', () => {
 
   it('rejeita senha errada e e-mail desconhecido com a mesma resposta (401)', async () => {
     const email = uniqueEmail();
-    await request(server()).post('/v1/auth/register').send({ name: 'Ana', email, password: 'secret-123' }).expect(201);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ name: 'Ana', email, password: 'secret-123' })
+      .expect(201);
 
-    const wrong = await request(server()).post('/v1/auth/login').send({ email, password: 'nope-nope' }).expect(401);
+    const wrong = await request(server())
+      .post('/v1/auth/login')
+      .send({ email, password: 'nope-nope' })
+      .expect(401);
     const ghost = await request(server())
       .post('/v1/auth/login')
       .send({ email: uniqueEmail(), password: 'secret-123' })
@@ -69,13 +78,25 @@ describe('Auth (e2e)', () => {
   it('exige o nome no cadastro (ausente, vazio ou longo demais)', async () => {
     const base = { email: uniqueEmail(), password: 'secret-123' };
     await request(server()).post('/v1/auth/register').send(base).expect(400);
-    await request(server()).post('/v1/auth/register').send({ ...base, name: '' }).expect(400);
-    await request(server()).post('/v1/auth/register').send({ ...base, name: 'x'.repeat(101) }).expect(400);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ ...base, name: '' })
+      .expect(400);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ ...base, name: 'x'.repeat(101) })
+      .expect(400);
   });
 
   it('valida o corpo (e-mail inválido, senha curta, campo extra)', async () => {
-    await request(server()).post('/v1/auth/register').send({ name: 'Ana', email: 'x', password: 'secret-123' }).expect(400);
-    await request(server()).post('/v1/auth/register').send({ name: 'Ana', email: uniqueEmail(), password: 'short' }).expect(400);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ name: 'Ana', email: 'x', password: 'secret-123' })
+      .expect(400);
+    await request(server())
+      .post('/v1/auth/register')
+      .send({ name: 'Ana', email: uniqueEmail(), password: 'short' })
+      .expect(400);
     await request(server())
       .post('/v1/auth/register')
       .send({ name: 'Ana', email: uniqueEmail(), password: 'secret-123', roles: ['admin'] })
@@ -115,13 +136,19 @@ describe('Auth (e2e)', () => {
     });
 
     it('rejeita token assinado com outro algoritmo, mesmo com o segredo certo', async () => {
-      const token = await forge(secret(), { sub: 'u1', roles: [] }, { algorithm: 'HS512', expiresIn: 60 });
+      const token = await forge(
+        secret(),
+        { sub: 'u1', roles: [] },
+        { algorithm: 'HS512', expiresIn: 60 },
+      );
       await call(token).expect(401);
     });
 
     it('rejeita token válido sem sub ou com roles malformado', async () => {
       await call(await forge(secret(), { roles: [] }, { expiresIn: 60 })).expect(401);
-      await call(await forge(secret(), { sub: 'u1', roles: 'admin' }, { expiresIn: 60 })).expect(401);
+      await call(await forge(secret(), { sub: 'u1', roles: 'admin' }, { expiresIn: 60 })).expect(
+        401,
+      );
     });
 
     it('as rotas de auth continuam públicas', async () => {

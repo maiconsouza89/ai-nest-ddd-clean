@@ -1,4 +1,7 @@
-import { IdempotencyClaim, IdempotencyStore } from '../../src/modules/orders/application/ports/idempotency-store';
+import {
+  IdempotencyClaim,
+  IdempotencyStore,
+} from '../../src/modules/orders/application/ports/idempotency-store';
 import { IdempotencyKeyReusedError } from '../../src/modules/orders/domain/errors/idempotency-key-reused.error';
 
 export class FakeIdempotencyStore implements IdempotencyStore {

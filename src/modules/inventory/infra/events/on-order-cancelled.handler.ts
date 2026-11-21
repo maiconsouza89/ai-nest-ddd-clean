@@ -12,7 +12,10 @@ export class OnOrderCancelledHandler {
     private readonly releaseStock: ReleaseStockUseCase,
   ) {}
 
-  @IntegrationEventHandler({ events: ['orders.order-cancelled'], consumer: 'inventory.release-on-order-cancelled' })
+  @IntegrationEventHandler({
+    events: ['orders.order-cancelled'],
+    consumer: 'inventory.release-on-order-cancelled',
+  })
   handle(event: OrderCancelledV1) {
     return this.consumer.handle('inventory.release-on-order-cancelled', event, (e) =>
       this.releaseStock.execute({ referenceId: e.payload.orderId }),

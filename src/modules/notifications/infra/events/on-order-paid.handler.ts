@@ -12,7 +12,10 @@ export class OnOrderPaidHandler {
     private readonly sendEmail: SendOrderPaidEmailUseCase,
   ) {}
 
-  @IntegrationEventHandler({ events: ['orders.order-paid'], consumer: 'notifications.email-on-order-paid' })
+  @IntegrationEventHandler({
+    events: ['orders.order-paid'],
+    consumer: 'notifications.email-on-order-paid',
+  })
   handle(event: OrderPaidV1) {
     return this.consumer.handle('notifications.email-on-order-paid', event, (e) =>
       this.sendEmail.execute(e.payload),

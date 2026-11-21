@@ -18,7 +18,10 @@ describe('TypeOrmCatalogFacade (integração)', () => {
 
   const insert = (name: string, priceCents: number) => {
     const id = crypto.randomUUID();
-    return ds.getRepository(ProductOrmEntity).insert({ id, name, priceCents }).then(() => id);
+    return ds
+      .getRepository(ProductOrmEntity)
+      .insert({ id, name, priceCents })
+      .then(() => id);
   };
 
   it('devolve preço e moeda dos produtos pedidos e ignora ids desconhecidos', async () => {

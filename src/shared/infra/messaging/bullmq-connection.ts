@@ -19,16 +19,18 @@ export class BullMqConnection implements OnModuleInit, OnApplicationShutdown {
   readonly producer: IORedis;
   readonly worker: IORedis;
 
-  constructor(
-    config: ConfigService<EnvironmentVariables, true>,
-    logger: Logger,
-  ) {
+  constructor(config: ConfigService<EnvironmentVariables, true>, logger: Logger) {
     const url = config.getOrThrow('REDIS_URL', { infer: true });
     this.producer = new IORedis(url, { enableOfflineQueue: false });
     this.worker = new IORedis(url, { maxRetriesPerRequest: null });
     // sem listener, um erro de conexão derruba o processo; o ioredis reconecta sozinho
-    for (const [name, client] of [['producer', this.producer], ['worker', this.worker]] as const) {
-      client.on('error', (err) => logger.warn({ err, connection: name }, 'bullmq redis connection error'));
+    for (const [name, client] of [
+      ['producer', this.producer],
+      ['worker', this.worker],
+    ] as const) {
+      client.on('error', (err) =>
+        logger.warn({ err, connection: name }, 'bullmq redis connection error'),
+      );
     }
   }
 

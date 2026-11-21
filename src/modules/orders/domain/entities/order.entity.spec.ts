@@ -79,7 +79,13 @@ describe('Order', () => {
   });
 
   it('restore() não anota evento: recarregar um pedido não é um fato novo', () => {
-    const o = Order.restore({ id: 'o1', customerId: 'u1', items: [], status: OrderStatus.DRAFT, version: 3 });
+    const o = Order.restore({
+      id: 'o1',
+      customerId: 'u1',
+      items: [],
+      status: OrderStatus.DRAFT,
+      version: 3,
+    });
 
     expect(o.pullDomainEvents()).toEqual([]);
   });

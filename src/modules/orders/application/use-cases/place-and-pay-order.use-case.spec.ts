@@ -49,7 +49,13 @@ async function setup(outOfStock = false) {
       new FixedClock(),
       tx,
     ),
-    cancel: new CancelOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
+    cancel: new CancelOrderUseCase(
+      repo,
+      outbox,
+      new SequentialIdGenerator('evt'),
+      new FixedClock(),
+      tx,
+    ),
     payments,
     pay: new PayOrderUseCase(
       repo,
@@ -77,7 +83,9 @@ describe('PlaceOrderUseCase', () => {
 
   it('sem estoque não fecha e não publica', async () => {
     const { place, placeOutbox } = await setup(true);
-    await expect(place.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(InsufficientStockError);
+    await expect(place.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(
+      InsufficientStockError,
+    );
     expect(placeOutbox.events).toEqual([]);
   });
 
@@ -89,7 +97,9 @@ describe('PlaceOrderUseCase', () => {
 
   it('outro usuário recebe NotOrderOwnerError', async () => {
     const { place } = await setup();
-    await expect(place.execute({ orderId: 'o1', actor: other })).rejects.toThrow(NotOrderOwnerError);
+    await expect(place.execute({ orderId: 'o1', actor: other })).rejects.toThrow(
+      NotOrderOwnerError,
+    );
   });
 
   it('admin consegue fechar', async () => {
@@ -188,7 +198,9 @@ describe('CancelOrderUseCase', () => {
 
   it('outro usuário recebe NotOrderOwnerError e nada é gravado', async () => {
     const { outbox, cancel } = await setup();
-    await expect(cancel.execute({ orderId: 'o1', actor: other })).rejects.toThrow(NotOrderOwnerError);
+    await expect(cancel.execute({ orderId: 'o1', actor: other })).rejects.toThrow(
+      NotOrderOwnerError,
+    );
     expect(outbox.events).toEqual([]);
   });
 
@@ -204,6 +216,8 @@ describe('CancelOrderUseCase', () => {
 
   it('pedido inexistente: OrderNotFoundError', async () => {
     const { cancel } = await setup();
-    await expect(cancel.execute({ orderId: 'x', actor: owner })).rejects.toThrow(OrderNotFoundError);
+    await expect(cancel.execute({ orderId: 'x', actor: owner })).rejects.toThrow(
+      OrderNotFoundError,
+    );
   });
 });

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, Post, Query, UseFilters } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseFilters,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Actor } from '../../../../../shared/application/actor';
 import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
@@ -45,7 +55,8 @@ export class OrdersController {
   @ApiHeader({
     name: 'Idempotency-Key',
     required: false,
-    description: 'Repetir a chamada com a mesma chave não cobra de novo e devolve a mesma resposta.',
+    description:
+      'Repetir a chamada com a mesma chave não cobra de novo e devolve a mesma resposta.',
   })
   async pay(
     @Param('id') id: string,

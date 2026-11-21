@@ -52,7 +52,9 @@ describe('PayOrderUseCase: cobrança', () => {
   it('fornecedor fora do ar: o erro sobe e nada vai para a outbox', async () => {
     const { payments, outbox, pay } = await setup();
     payments.unavailable = true;
-    await expect(pay.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(PaymentUnavailableError);
+    await expect(pay.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(
+      PaymentUnavailableError,
+    );
     expect(outbox.events).toEqual([]);
   });
 
@@ -60,7 +62,9 @@ describe('PayOrderUseCase: cobrança', () => {
     const { repo, payments, pay } = await setup();
     const draft = Order.create('o3', 'u1');
     await repo.save(draft);
-    await expect(pay.execute({ orderId: 'o3', actor: owner })).rejects.toThrow(OrderNotPayableError);
+    await expect(pay.execute({ orderId: 'o3', actor: owner })).rejects.toThrow(
+      OrderNotPayableError,
+    );
     expect(payments.charges).toEqual([]);
   });
 });
@@ -77,9 +81,9 @@ describe('PayOrderUseCase: Idempotency-Key', () => {
   it('a mesma chave em outro pedido é rejeitada', async () => {
     const { payments, pay } = await setup();
     await pay.execute({ orderId: 'o1', actor: owner, idempotencyKey: 'k1' });
-    await expect(pay.execute({ orderId: 'o2', actor: owner, idempotencyKey: 'k1' })).rejects.toThrow(
-      IdempotencyKeyReusedError,
-    );
+    await expect(
+      pay.execute({ orderId: 'o2', actor: owner, idempotencyKey: 'k1' }),
+    ).rejects.toThrow(IdempotencyKeyReusedError);
     expect(payments.charges).toHaveLength(1);
   });
 

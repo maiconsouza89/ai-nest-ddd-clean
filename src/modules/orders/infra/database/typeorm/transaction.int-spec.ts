@@ -55,7 +55,9 @@ describe('TypeOrmTransactionManager (integração)', () => {
 
     expect(await repo.findById(a.id)).toBeNull();
     expect(await repo.findById(b.id)).toBeNull();
-    expect(await ds.query('SELECT 1 FROM orders.order_items WHERE "orderId" = $1', [a.id])).toEqual([]);
+    expect(await ds.query('SELECT 1 FROM orders.order_items WHERE "orderId" = $1', [a.id])).toEqual(
+      [],
+    );
   });
 
   it('um tx.run aninhado reaproveita a transação: desfazer a externa desfaz a interna', async () => {

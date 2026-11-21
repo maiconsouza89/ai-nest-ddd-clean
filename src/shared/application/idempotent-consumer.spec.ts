@@ -54,7 +54,10 @@ describe('IdempotentConsumer', () => {
     await consumer.handle('inventory', event('e1'), work);
 
     expect(logger.entries).toEqual([
-      expect.objectContaining({ level: 'info', fields: expect.objectContaining({ eventId: 'e1' }) }),
+      expect.objectContaining({
+        level: 'info',
+        fields: expect.objectContaining({ eventId: 'e1' }),
+      }),
     ]);
   });
 });

@@ -21,7 +21,8 @@ describe('OnOrderPaidHandler', () => {
     const emails = new FakeEmailSender();
     const logger = new FakeLogger();
     const recipients: RecipientDirectory = {
-      emailOf: async (id) => (known && id === orderPaidV1Example.payload.customerId ? 'ana@example.com' : null),
+      emailOf: async (id) =>
+        known && id === orderPaidV1Example.payload.customerId ? 'ana@example.com' : null,
     };
     const handler = new OnOrderPaidHandler(
       new IdempotentConsumer(new FakeTransactionManager(), new FakeProcessedEvents(), logger),

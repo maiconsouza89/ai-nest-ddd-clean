@@ -49,7 +49,10 @@ describe('CreateOrderUseCase', () => {
 
   it('publica orders.order-created para o cliente, com o id do pedido', async () => {
     const { outbox, useCase } = setup();
-    const { id } = await useCase.execute({ customerId: 'u1', items: [{ productId: 'p1', qty: 1 }] });
+    const { id } = await useCase.execute({
+      customerId: 'u1',
+      items: [{ productId: 'p1', qty: 1 }],
+    });
 
     expect(outbox.events).toHaveLength(1);
     expect(outbox.events[0]).toMatchObject({

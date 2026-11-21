@@ -17,7 +17,12 @@ export class InvalidateOrderListCacheHandler {
   constructor(private readonly queries: CachedOrderQueries) {}
 
   @IntegrationEventHandler({
-    events: ['orders.order-created', 'orders.order-placed', 'orders.order-paid', 'orders.order-cancelled'],
+    events: [
+      'orders.order-created',
+      'orders.order-placed',
+      'orders.order-paid',
+      'orders.order-cancelled',
+    ],
     consumer: 'orders.invalidate-list-cache',
   })
   onOrderListChanged(event: OrderListChanged) {

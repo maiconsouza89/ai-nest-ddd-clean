@@ -19,7 +19,10 @@ import { RedisModule } from './redis.module';
       imports: [RedisModule],
       inject: [RedisConnection, Logger],
       useFactory: (redis: RedisConnection, logger: Logger) => {
-        const store = createKeyv(redis.client, { throwOnErrors: false, throwOnConnectError: false });
+        const store = createKeyv(redis.client, {
+          throwOnErrors: false,
+          throwOnConnectError: false,
+        });
         // sem listener, o erro do store vira exceção não tratada
         store.on('error', (err: unknown) => logger.warn({ err }, 'cache store error'));
         return { stores: [store] };

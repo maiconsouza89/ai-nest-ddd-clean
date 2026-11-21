@@ -32,7 +32,12 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
             { 'messaging.message.id': job.data.eventId, 'messaging.operation': 'process' },
             () => {
               this.logger.info(
-                { consumer: consumer.name, eventId: job.data.eventId, type: job.data.type, attempt: job.attemptsMade + 1 },
+                {
+                  consumer: consumer.name,
+                  eventId: job.data.eventId,
+                  type: job.data.type,
+                  attempt: job.attemptsMade + 1,
+                },
                 'processing event',
               );
               return consumer.handle(job.data);
@@ -42,11 +47,18 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
       );
       worker.on('failed', (job, err) => {
         const exhausted = job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-        const fields = { consumer: consumer.name, eventId: job?.data.eventId, type: job?.data.type, err };
+        const fields = {
+          consumer: consumer.name,
+          eventId: job?.data.eventId,
+          type: job?.data.type,
+          err,
+        };
         if (exhausted) this.logger.error(fields, 'event dead-lettered after max attempts');
         else this.logger.warn(fields, 'event processing failed, will retry');
       });
-      worker.on('error', (err) => this.logger.warn({ consumer: consumer.name, err }, 'queue worker error'));
+      worker.on('error', (err) =>
+        this.logger.warn({ consumer: consumer.name, err }, 'queue worker error'),
+      );
       return worker;
     });
   }

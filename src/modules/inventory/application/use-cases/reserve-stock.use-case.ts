@@ -21,7 +21,8 @@ export class ReserveStockUseCase {
       // Qualquer falta lança e a transação desfaz a reserva e as baixas anteriores.
       const ordered = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
       for (const { productId, qty } of ordered) {
-        if (!(await this.stock.decrease(productId, qty))) throw new InsufficientStockError(productId);
+        if (!(await this.stock.decrease(productId, qty)))
+          throw new InsufficientStockError(productId);
       }
     });
   }

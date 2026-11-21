@@ -5,7 +5,13 @@ const REDIS = 'redis://localhost:6379';
 
 describe('validateEnv', () => {
   it('aceita configuração válida e converte PORT para número', () => {
-    const env = validateEnv({ DATABASE_URL: 'postgres://x', REDIS_URL: REDIS, JWT_SECRET: SECRET, PORT: '4000', NODE_ENV: 'test' });
+    const env = validateEnv({
+      DATABASE_URL: 'postgres://x',
+      REDIS_URL: REDIS,
+      JWT_SECRET: SECRET,
+      PORT: '4000',
+      NODE_ENV: 'test',
+    });
     expect(env.PORT).toBe(4000);
   });
 
@@ -25,10 +31,14 @@ describe('validateEnv', () => {
 
   it('falha sem JWT_SECRET ou com segredo curto', () => {
     expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS })).toThrow(/JWT_SECRET/);
-    expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: 'short' })).toThrow(/JWT_SECRET/);
+    expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: 'short' })).toThrow(
+      /JWT_SECRET/,
+    );
   });
 
   it('falha com PORT inválida', () => {
-    expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: SECRET, PORT: 'abc' })).toThrow(/PORT/);
+    expect(() =>
+      validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: SECRET, PORT: 'abc' }),
+    ).toThrow(/PORT/);
   });
 });

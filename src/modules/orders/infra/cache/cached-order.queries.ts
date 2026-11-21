@@ -50,7 +50,11 @@ export class CachedOrderQueries implements OrderQueries {
   /** Descarta as páginas em cache do cliente. Idempotente; falha do Redis só é registrada (o TTL cobre). */
   async invalidate(customerId: string) {
     try {
-      await this.cache.set(this.generationKey(customerId), randomUUID(), this.ttlMs * GENERATION_TTL_FACTOR);
+      await this.cache.set(
+        this.generationKey(customerId),
+        randomUUID(),
+        this.ttlMs * GENERATION_TTL_FACTOR,
+      );
     } catch (err) {
       this.logger.warn({ err, customerId }, 'order list cache invalidation failed');
     }

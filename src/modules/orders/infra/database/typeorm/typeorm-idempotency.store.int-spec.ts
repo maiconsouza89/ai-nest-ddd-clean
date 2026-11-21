@@ -37,7 +37,9 @@ describe('TypeOrmIdempotencyStore (integração)', () => {
   it('chave expirada pode ser reservada de novo, até com outro fingerprint', async () => {
     await claim('c');
     const afterExpiry = new Date('2026-01-03T00:00:00Z');
-    expect(await claim('c', 'pay:outro', afterExpiry, new Date('2026-01-04T00:00:00Z'))).toBe('first');
+    expect(await claim('c', 'pay:outro', afterExpiry, new Date('2026-01-04T00:00:00Z'))).toBe(
+      'first',
+    );
   });
 
   it('transação desfeita não queima a chave', async () => {

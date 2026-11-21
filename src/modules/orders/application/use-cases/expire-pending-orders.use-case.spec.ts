@@ -53,7 +53,10 @@ describe('ExpirePendingOrdersUseCase', () => {
 
     expect((await repo.findById('draft'))!.status).toBe(OrderStatus.CANCELLED);
     expect((await repo.findById('placed'))!.status).toBe(OrderStatus.CANCELLED);
-    expect(outbox.events.map((e) => e.type)).toEqual(['orders.order-cancelled', 'orders.order-cancelled']);
+    expect(outbox.events.map((e) => e.type)).toEqual([
+      'orders.order-cancelled',
+      'orders.order-cancelled',
+    ]);
   });
 
   it('mantém pedidos recentes, pagos e já cancelados', async () => {

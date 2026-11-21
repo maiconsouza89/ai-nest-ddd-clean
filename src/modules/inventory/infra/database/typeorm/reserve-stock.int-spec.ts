@@ -34,8 +34,11 @@ describe('ReserveStockUseCase com Postgres (integração)', () => {
       available,
     ]);
   const available = async (productId: string) =>
-    (await ds.query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [productId]))[0]
-      .available as number;
+    (
+      await ds.query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [
+        productId,
+      ])
+    )[0].available as number;
   const reservations = async (referenceId: string) =>
     ds.query(`SELECT id FROM inventory.reservations WHERE "referenceId" = $1`, [referenceId]);
 

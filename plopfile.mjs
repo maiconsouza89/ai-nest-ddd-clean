@@ -16,13 +16,22 @@ const FILES = [
   ['controller.hbs', 'infra/http/controllers/{{kebabCase name}}.controller.ts'],
   ['request.hbs', 'infra/http/dtos/create-{{kebabCase name}}.request.ts'],
   ['filter.hbs', 'infra/http/filters/domain-error.filter.ts'],
-  ['in-memory.repository.hbs', 'infra/database/in-memory/in-memory-{{kebabCase name}}.repository.ts'],
+  [
+    'in-memory.repository.hbs',
+    'infra/database/in-memory/in-memory-{{kebabCase name}}.repository.ts',
+  ],
   ['orm-entity.hbs', 'infra/database/typeorm/entities/{{kebabCase name}}.orm-entity.ts'],
   ['mapper.hbs', 'infra/database/typeorm/typeorm-{{kebabCase name}}.mapper.ts'],
   ['typeorm.repository.hbs', 'infra/database/typeorm/typeorm-{{kebabCase name}}.repository.ts'],
   ['data-source.hbs', 'infra/database/typeorm/{{kebabCase name}}.data-source.ts'],
-  ['migration-schema.hbs', 'infra/database/typeorm/migrations/{{timestamp}}-create-{{kebabCase name}}-schema.ts'],
-  ['migration-table.hbs', 'infra/database/typeorm/migrations/{{timestamp2}}-create-{{kebabCase name}}-table.ts'],
+  [
+    'migration-schema.hbs',
+    'infra/database/typeorm/migrations/{{timestamp}}-create-{{kebabCase name}}-schema.ts',
+  ],
+  [
+    'migration-table.hbs',
+    'infra/database/typeorm/migrations/{{timestamp2}}-create-{{kebabCase name}}-table.ts',
+  ],
 ];
 
 export default function (plop) {
@@ -34,7 +43,8 @@ export default function (plop) {
         name: 'name',
         message: 'Nome do módulo, no singular (ex.: billing, shipment)',
         validate: (v) =>
-          /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(v) || 'Use kebab-case minúsculo, começando por letra (ex.: shipment, price-list)',
+          /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(v) ||
+          'Use kebab-case minúsculo, começando por letra (ex.: shipment, price-list)',
       },
     ],
     actions: (data) => {
@@ -70,8 +80,13 @@ export default function (plop) {
         // o modify do plop não avisa quando o padrão não casa: confirma que o módulo ficou registrado
         () => {
           const src = readFileSync('src/app.module.ts', 'utf8');
-          if (!src.includes(`    ${pascal}Module,`) || !src.includes(`import { ${pascal}Module }`)) {
-            throw new Error(`${pascal}Module não foi registrado em src/app.module.ts: adicione à mão`);
+          if (
+            !src.includes(`    ${pascal}Module,`) ||
+            !src.includes(`import { ${pascal}Module }`)
+          ) {
+            throw new Error(
+              `${pascal}Module não foi registrado em src/app.module.ts: adicione à mão`,
+            );
           }
           return 'módulo registrado em app.module.ts';
         },
@@ -80,7 +95,8 @@ export default function (plop) {
           const pkg = JSON.parse(readFileSync(file, 'utf8'));
           const ds = `${dir}/infra/database/typeorm/${kebab}.data-source.ts`;
           const migDir = `${dir}/infra/database/typeorm/migrations`;
-          pkg.scripts[`mig:${kebab}:gen`] = `typeorm-ts-node-commonjs migration:generate ${migDir}/change -d ${ds}`;
+          pkg.scripts[`mig:${kebab}:gen`] =
+            `typeorm-ts-node-commonjs migration:generate ${migDir}/change -d ${ds}`;
           pkg.scripts[`mig:${kebab}:run`] = `typeorm-ts-node-commonjs migration:run -d ${ds}`;
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
           return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;

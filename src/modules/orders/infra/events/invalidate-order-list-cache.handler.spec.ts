@@ -14,7 +14,9 @@ describe('InvalidateOrderListCacheHandler', () => {
     ['orders.order-cancelled', orderCancelledV1Example],
   ])('%s invalida a listagem do cliente do evento', async (_type, example) => {
     const invalidate = jest.fn().mockResolvedValue(undefined);
-    const handler = new InvalidateOrderListCacheHandler({ invalidate } as unknown as CachedOrderQueries);
+    const handler = new InvalidateOrderListCacheHandler({
+      invalidate,
+    } as unknown as CachedOrderQueries);
 
     await handler.onOrderListChanged(example);
 

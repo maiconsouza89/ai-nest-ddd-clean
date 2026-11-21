@@ -48,10 +48,11 @@ describe('Orders (e2e)', () => {
 
   describe('estoque ao fechar o pedido', () => {
     const stockOf = async (id: string) =>
-      (await app.get(DataSource).query(
-        `SELECT available FROM inventory.stock_items WHERE "productId" = $1`,
-        [id],
-      ))[0].available as number;
+      (
+        await app
+          .get(DataSource)
+          .query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [id])
+      )[0].available as number;
 
     const createOrderOf = async (user: Session, pid: string, qty: number) => {
       const res = await request(server())
@@ -112,7 +113,9 @@ describe('Orders (e2e)', () => {
     // um evento por fato (criar, fechar, pagar), sem duplicar o de pagamento na segunda tentativa recusada
     const events = await app
       .get(DataSource)
-      .query(`SELECT type, version FROM shared.outbox WHERE payload->>'orderId' = $1 ORDER BY id`, [id]);
+      .query(`SELECT type, version FROM shared.outbox WHERE payload->>'orderId' = $1 ORDER BY id`, [
+        id,
+      ]);
     expect(events).toEqual([
       { type: 'orders.order-created', version: 1 },
       { type: 'orders.order-placed', version: 1 },
@@ -139,8 +142,16 @@ describe('Orders (e2e)', () => {
       const id = await placed(user);
       const key = crypto.randomUUID();
 
-      await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).set('Idempotency-Key', key).expect(204);
-      await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).set('Idempotency-Key', key).expect(204);
+      await request(server())
+        .post(`/v1/orders/${id}/pay`)
+        .set(user.auth)
+        .set('Idempotency-Key', key)
+        .expect(204);
+      await request(server())
+        .post(`/v1/orders/${id}/pay`)
+        .set(user.auth)
+        .set('Idempotency-Key', key)
+        .expect(204);
 
       expect(await paidEvents(id)).toHaveLength(1);
     });

@@ -50,7 +50,10 @@ const IDEMPOTENCY_KEY_TTL_MS = 24 * 60 * 60 * 1000;
 const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
 
 @Module({
-  imports: [MessagingModule, TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity])],
+  imports: [
+    MessagingModule,
+    TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity]),
+  ],
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },

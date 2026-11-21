@@ -9,6 +9,10 @@ import { startDatabase } from './database';
 export const startInventoryDatabase = () =>
   startDatabase({
     entities: [StockItemOrmEntity, ReservationOrmEntity, ReservationItemOrmEntity],
-    migrations: [CreateInventorySchema1795239950000, CreateInventoryTables1795240302737, AddReservationReleasedAt1795270216004],
+    migrations: [
+      CreateInventorySchema1795239950000,
+      CreateInventoryTables1795240302737,
+      AddReservationReleasedAt1795270216004,
+    ],
     migrationsTableName: 'inventory_migrations',
   });

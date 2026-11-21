@@ -6,8 +6,7 @@ export type ReserveStockCommand = {
 };
 
 export type ReserveStockResult =
-  | { ok: true }
-  | { ok: false; reason: 'INSUFFICIENT_STOCK'; productId: string };
+  { ok: true } | { ok: false; reason: 'INSUFFICIENT_STOCK'; productId: string };
 
 export abstract class InventoryFacade {
   /**

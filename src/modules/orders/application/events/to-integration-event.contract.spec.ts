@@ -21,7 +21,8 @@ describe('contrato dos eventos publicados pelo orders', () => {
     return order;
   };
   // eventos de um agregado já convertidos para o contrato público, na ordem em que foram anotados
-  const published = (order: Order) => order.pullDomainEvents().map((e) => toIntegrationEvent(e, meta));
+  const published = (order: Order) =>
+    order.pullDomainEvents().map((e) => toIntegrationEvent(e, meta));
 
   it('OrderCreated gera orders.order-created v1 compatível com o exemplo', () => {
     const [event] = published(newOrder());
@@ -51,7 +52,10 @@ describe('contrato dos eventos publicados pelo orders', () => {
     const [event] = published(order);
 
     expect(incompatibilities(orderPaidV1Example, event)).toEqual([]);
-    expect(event).toMatchObject({ type: orderPaidV1Example.type, version: orderPaidV1Example.version });
+    expect(event).toMatchObject({
+      type: orderPaidV1Example.type,
+      version: orderPaidV1Example.version,
+    });
   });
 
   it('OrderCancelled gera orders.order-cancelled v1 compatível com o exemplo', () => {
@@ -78,7 +82,9 @@ describe('contrato dos eventos publicados pelo orders', () => {
         '$.a: campo ausente',
         '$.p.b: campo ausente',
       ]);
-      expect(incompatibilities({ a: 1 }, { a: '1' })).toEqual(['$.a: esperado number, veio string']);
+      expect(incompatibilities({ a: 1 }, { a: '1' })).toEqual([
+        '$.a: esperado number, veio string',
+      ]);
     });
   });
 });

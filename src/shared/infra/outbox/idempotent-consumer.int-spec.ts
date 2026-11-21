@@ -15,7 +15,11 @@ describe('IdempotentConsumer (integração)', () => {
 
   beforeAll(async () => {
     ({ ds, stop } = await startOutboxDatabase());
-    consumer = new IdempotentConsumer(new TypeOrmTransactionManager(ds), new TypeOrmProcessedEvents(ds), new FakeLogger());
+    consumer = new IdempotentConsumer(
+      new TypeOrmTransactionManager(ds),
+      new TypeOrmProcessedEvents(ds),
+      new FakeLogger(),
+    );
     await ds.query(`CREATE TABLE IF NOT EXISTS shared.effects (event_id text, note text)`);
   }, 120_000);
 
@@ -40,7 +44,10 @@ describe('IdempotentConsumer (integração)', () => {
       .query(`INSERT INTO shared.effects VALUES ($1, 'ok')`, [e.eventId])
       .then(() => undefined);
   const effectCount = async (e: IntegrationEvent) =>
-    Number((await ds.query(`SELECT count(*) FROM shared.effects WHERE event_id = $1`, [e.eventId]))[0].count);
+    Number(
+      (await ds.query(`SELECT count(*) FROM shared.effects WHERE event_id = $1`, [e.eventId]))[0]
+        .count,
+    );
 
   it('entregar o mesmo evento duas vezes produz o efeito uma vez só', async () => {
     const e = event();

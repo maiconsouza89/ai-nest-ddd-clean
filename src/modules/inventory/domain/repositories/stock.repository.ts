@@ -2,7 +2,11 @@ export type StockLine = { productId: string; qty: number };
 
 export abstract class StockRepository {
   /** Registra a reserva. Devolve false se já existia uma para essa referência. */
-  abstract registerReservation(id: string, referenceId: string, items: StockLine[]): Promise<boolean>;
+  abstract registerReservation(
+    id: string,
+    referenceId: string,
+    items: StockLine[],
+  ): Promise<boolean>;
 
   /**
    * Marca a reserva como liberada e devolve os itens a repor.

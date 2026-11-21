@@ -56,8 +56,14 @@ describe('RedisThrottlerStorage (integração: Redis)', () => {
     const a = await instance();
     await a.increment('k1', TTL, 1, TTL, 'default');
 
-    expect(await a.increment('k2', TTL, 1, TTL, 'default')).toMatchObject({ totalHits: 1, isBlocked: false });
-    expect(await a.increment('k1', TTL, 1, TTL, 'other')).toMatchObject({ totalHits: 1, isBlocked: false });
+    expect(await a.increment('k2', TTL, 1, TTL, 'default')).toMatchObject({
+      totalHits: 1,
+      isBlocked: false,
+    });
+    expect(await a.increment('k1', TTL, 1, TTL, 'other')).toMatchObject({
+      totalHits: 1,
+      isBlocked: false,
+    });
   });
 
   it('durante o bloqueio os acessos não são contados, e a janela expira', async () => {
@@ -65,19 +71,28 @@ describe('RedisThrottlerStorage (integração: Redis)', () => {
     await a.increment('k', 300, 1, 300, 'default');
     await a.increment('k', 300, 1, 300, 'default');
 
-    expect(await a.increment('k', 300, 1, 300, 'default')).toMatchObject({ totalHits: 2, isBlocked: true });
+    expect(await a.increment('k', 300, 1, 300, 'default')).toMatchObject({
+      totalHits: 2,
+      isBlocked: true,
+    });
 
     await new Promise((r) => setTimeout(r, 400));
-    expect(await a.increment('k', 300, 1, 300, 'default')).toMatchObject({ totalHits: 1, isBlocked: false });
+    expect(await a.increment('k', 300, 1, 300, 'default')).toMatchObject({
+      totalHits: 1,
+      isBlocked: false,
+    });
   });
 
   it('Redis fora do ar: falha fechada com 503', async () => {
-    const down = new IORedis('redis://127.0.0.1:1', { enableOfflineQueue: false, lazyConnect: true });
+    const down = new IORedis('redis://127.0.0.1:1', {
+      enableOfflineQueue: false,
+      lazyConnect: true,
+    });
     down.on('error', () => undefined);
     clients.push(down);
 
-    await expect(new RedisThrottlerStorage(down, logger).increment('k', TTL, 5, TTL, 'default')).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
+    await expect(
+      new RedisThrottlerStorage(down, logger).increment('k', TTL, 5, TTL, 'default'),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });

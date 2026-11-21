@@ -162,7 +162,13 @@ describe('PayOrderUseCase com Postgres (integração)', () => {
 
     const paying = useCase(repo, outbox, slow).execute({ orderId: id, actor });
     await chargeStarted;
-    const cancelling = new CancelOrderUseCase(repo, outbox, new UuidV7Generator(), new FixedClock(), tx()).execute({
+    const cancelling = new CancelOrderUseCase(
+      repo,
+      outbox,
+      new UuidV7Generator(),
+      new FixedClock(),
+      tx(),
+    ).execute({
       orderId: id,
       actor,
     });

@@ -30,7 +30,10 @@ describe('TypeOrmOrderQueries (integração)', () => {
   }
 
   it('lista só os pedidos do cliente, com total e contagem de itens', async () => {
-    const mine = await seed('owner', [['p1', 2, 1000], ['p2', 1, 2500]]);
+    const mine = await seed('owner', [
+      ['p1', 2, 1000],
+      ['p2', 1, 2500],
+    ]);
     await seed('someone-else', [['p1', 1, 1000]]);
 
     const page = await queries.listByCustomer('owner', { page: 1, limit: 20 });

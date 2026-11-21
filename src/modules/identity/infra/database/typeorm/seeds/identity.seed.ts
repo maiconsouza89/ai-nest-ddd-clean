@@ -6,8 +6,18 @@ import { UserOrmEntity } from '../entities/user.orm-entity';
 export const SEED_PASSWORD = 'Senha@12345';
 
 export const SEED_USERS = [
-  { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@example.com', name: 'Admin', roles: ['admin'] },
-  { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'user@example.com', name: 'Usuário', roles: [] as string[] },
+  {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    email: 'admin@example.com',
+    name: 'Admin',
+    roles: ['admin'],
+  },
+  {
+    id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    email: 'user@example.com',
+    name: 'Usuário',
+    roles: [] as string[],
+  },
 ];
 
 export async function seedIdentity(ds: DataSource): Promise<void> {

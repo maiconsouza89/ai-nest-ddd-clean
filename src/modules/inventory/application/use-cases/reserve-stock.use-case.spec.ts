@@ -7,7 +7,11 @@ import { ReserveStockUseCase } from './reserve-stock.use-case';
 function setup() {
   const stock = new InMemoryStockRepository({ a: 5, b: 1 });
   const tx = new FakeTransactionManager();
-  return { stock, tx, useCase: new ReserveStockUseCase(stock, new SequentialIdGenerator('res'), tx) };
+  return {
+    stock,
+    tx,
+    useCase: new ReserveStockUseCase(stock, new SequentialIdGenerator('res'), tx),
+  };
 }
 
 describe('ReserveStockUseCase', () => {

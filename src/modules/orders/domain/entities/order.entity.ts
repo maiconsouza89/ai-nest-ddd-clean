@@ -74,7 +74,9 @@ export class Order extends AggregateRoot {
     if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
     this._status = OrderStatus.PAID;
     // avisa os outros módulos; só sai se o caso de uso salvar e gravar na outbox
-    this.addDomainEvent(new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency));
+    this.addDomainEvent(
+      new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency),
+    );
   }
 
   cancel() {

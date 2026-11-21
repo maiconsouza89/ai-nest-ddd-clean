@@ -1,4 +1,7 @@
-import { ChargeInput, PaymentGateway } from '../../src/modules/orders/application/ports/payment-gateway';
+import {
+  ChargeInput,
+  PaymentGateway,
+} from '../../src/modules/orders/application/ports/payment-gateway';
 import { PaymentUnavailableError } from '../../src/modules/orders/domain/errors/payment-unavailable.error';
 
 export class FakePaymentGateway implements PaymentGateway {

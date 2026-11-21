@@ -57,7 +57,9 @@ describe('Outbox worker (e2e)', () => {
     expect(event).toMatchObject({ type: 'orders.order-paid', version: 1 });
     // o relay marca a linha quando o evento entra nas filas; o efeito vem depois, pelo worker
     const isPublished = async () => {
-      const [row] = await ds.query(`SELECT "publishedAt" FROM shared.outbox WHERE id = $1`, [event.id]);
+      const [row] = await ds.query(`SELECT "publishedAt" FROM shared.outbox WHERE id = $1`, [
+        event.id,
+      ]);
       return row.publishedAt !== null;
     };
     await waitFor(isPublished);
@@ -93,8 +95,9 @@ describe('Outbox worker (e2e)', () => {
     const server = () => app.getHttpServer();
     const ds = () => app.get(DataSource);
     const stockOf = async (id: string) =>
-      (await ds().query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [id]))[0]
-        .available as number;
+      (
+        await ds().query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [id])
+      )[0].available as number;
 
     async function placedOrder(qty: number) {
       const user = await registerAndLogin(app);
@@ -131,10 +134,9 @@ describe('Outbox worker (e2e)', () => {
       await app.get(OnOrderCancelledHandler).handle(redelivered as never);
 
       expect(await stockOf(productId)).toBe(10);
-      const marks = await ds().query(
-        `SELECT 1 FROM shared.processed_events WHERE "eventId" = $1`,
-        [event.id],
-      );
+      const marks = await ds().query(`SELECT 1 FROM shared.processed_events WHERE "eventId" = $1`, [
+        event.id,
+      ]);
       expect(marks).toHaveLength(1);
     });
 
@@ -142,7 +144,10 @@ describe('Outbox worker (e2e)', () => {
       const { user, productId, id } = await placedOrder(2);
       await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).expect(204);
 
-      const res = await request(server()).post(`/v1/orders/${id}/cancel`).set(user.auth).expect(409);
+      const res = await request(server())
+        .post(`/v1/orders/${id}/cancel`)
+        .set(user.auth)
+        .expect(409);
 
       expect(res.body.code).toBe('ORDER_NOT_CANCELLABLE');
       expect(await stockOf(productId)).toBe(8);
@@ -169,11 +174,14 @@ describe('Outbox worker (e2e)', () => {
         return row?.publishedAt != null;
       });
 
-      await waitFor(async () =>
-        (await ds().query(
-          `SELECT 1 FROM shared.processed_events WHERE consumer = 'inventory.release-on-order-cancelled' AND "eventId" IN (SELECT id FROM shared.outbox WHERE "aggregateId" = $1)`,
-          [created.body.id],
-        )).length === 1,
+      await waitFor(
+        async () =>
+          (
+            await ds().query(
+              `SELECT 1 FROM shared.processed_events WHERE consumer = 'inventory.release-on-order-cancelled' AND "eventId" IN (SELECT id FROM shared.outbox WHERE "aggregateId" = $1)`,
+              [created.body.id],
+            )
+          ).length === 1,
       );
 
       expect(await stockOf(productId)).toBe(10);

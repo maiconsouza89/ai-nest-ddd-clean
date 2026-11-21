@@ -3,7 +3,12 @@ import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gat
 import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error';
 import { ResilientPaymentGateway } from './resilient-payment.gateway';
 
-const input: ChargeInput = { orderId: 'o1', amountCents: 100, currency: 'BRL', idempotencyKey: 'pay:o1' };
+const input: ChargeInput = {
+  orderId: 'o1',
+  amountCents: 100,
+  currency: 'BRL',
+  idempotencyKey: 'pay:o1',
+};
 const opts = { timeoutMs: 20, attempts: 3, baseDelayMs: 1 };
 
 class Scripted implements PaymentGateway {
@@ -43,11 +48,15 @@ describe('ResilientPaymentGateway', () => {
 
   it('registra a causa no log antes de devolver o erro genérico', async () => {
     const logger = new FakeLogger();
-    await expect(gateway(new Scripted(['fail', 'fail', 'fail']), logger).charge(input)).rejects.toThrow(
-      PaymentUnavailableError,
-    );
+    await expect(
+      gateway(new Scripted(['fail', 'fail', 'fail']), logger).charge(input),
+    ).rejects.toThrow(PaymentUnavailableError);
     expect(logger.entries).toEqual([
-      { level: 'error', fields: { orderId: 'o1', cause: 'fornecedor' }, message: 'payment provider call failed' },
+      {
+        level: 'error',
+        fields: { orderId: 'o1', cause: 'fornecedor' },
+        message: 'payment provider call failed',
+      },
     ]);
   });
 });

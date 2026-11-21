@@ -24,7 +24,10 @@ export class TypeOrmUserRepository implements UserRepository {
       await this.repo.save(UserMapper.toPersistence(user));
     } catch (e) {
       // duas requisições simultâneas passam pela checagem do caso de uso; o UNIQUE decide
-      if (e instanceof QueryFailedError && (e.driverError as { code?: string })?.code === UNIQUE_VIOLATION) {
+      if (
+        e instanceof QueryFailedError &&
+        (e.driverError as { code?: string })?.code === UNIQUE_VIOLATION
+      ) {
         throw new EmailAlreadyInUseError();
       }
       throw e;

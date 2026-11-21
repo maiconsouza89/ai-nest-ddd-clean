@@ -21,7 +21,8 @@ const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
           // reaproveita o id do proxy/gateway só se for curto e simples; senão gera um
           genReqId: (req, res) => {
             const header = req.headers['x-request-id'];
-            const id = typeof header === 'string' && REQUEST_ID_PATTERN.test(header) ? header : randomUUID();
+            const id =
+              typeof header === 'string' && REQUEST_ID_PATTERN.test(header) ? header : randomUUID();
             res.setHeader('x-request-id', id);
             return id;
           },
@@ -38,7 +39,8 @@ const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
                 }
               : undefined,
           // o log de requisição já traz método, url, status e duração na mensagem
-          customSuccessMessage: (req, res, ms) => `${req.method} ${req.url} ${res.statusCode} ${Math.round(ms)}ms`,
+          customSuccessMessage: (req, res, ms) =>
+            `${req.method} ${req.url} ${res.statusCode} ${Math.round(ms)}ms`,
           customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode} failed`,
           serializers: {
             req: (req) => ({ id: req.id, method: req.method, url: req.url }),

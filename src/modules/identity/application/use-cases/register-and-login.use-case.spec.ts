@@ -26,7 +26,9 @@ function setup() {
 describe('RegisterUserUseCase', () => {
   it('cadastra o usuário e devolve o id', async () => {
     const { register } = setup();
-    expect(await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' })).toEqual({
+    expect(
+      await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' }),
+    ).toEqual({
       id: 'user-1',
     });
   });
@@ -40,9 +42,9 @@ describe('RegisterUserUseCase', () => {
   it('rejeita e-mail repetido, ignorando caixa e espaços', async () => {
     const { register } = setup();
     await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
-    await expect(register.execute({ name: 'Ana', email: ' A@X.com ', password: 'other-123' })).rejects.toThrow(
-      EmailAlreadyInUseError,
-    );
+    await expect(
+      register.execute({ name: 'Ana', email: ' A@X.com ', password: 'other-123' }),
+    ).rejects.toThrow(EmailAlreadyInUseError);
   });
 
   it.each(['', '   ', 'x'.repeat(101)])('rejeita nome inválido "%s"', async (name) => {
@@ -54,16 +56,20 @@ describe('RegisterUserUseCase', () => {
 
   it('rejeita e-mail inválido', async () => {
     const { register } = setup();
-    await expect(register.execute({ name: 'Ana', email: 'nope', password: 'secret-123' })).rejects.toThrow(
-      InvalidEmailError,
-    );
+    await expect(
+      register.execute({ name: 'Ana', email: 'nope', password: 'secret-123' }),
+    ).rejects.toThrow(InvalidEmailError);
   });
 });
 
 describe('LoginUseCase', () => {
   it('devolve um token com sub e sem papéis para um usuário comum', async () => {
     const { register, login, tokens } = setup();
-    const { id } = await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
+    const { id } = await register.execute({
+      name: 'Ana',
+      email: 'a@x.com',
+      password: 'secret-123',
+    });
 
     const { accessToken } = await login.execute({ email: 'A@x.com', password: 'secret-123' });
 

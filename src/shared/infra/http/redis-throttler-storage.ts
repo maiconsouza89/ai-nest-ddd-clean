@@ -5,7 +5,13 @@ import { Logger } from '../../application/ports/logger';
 
 type ThrottleHit = [totalHits: number, ttlMs: number, blocked: number, blockTtlMs: number];
 type ThrottleRedis = IORedis & {
-  throttleHit(hitsKey: string, blockKey: string, ttlMs: number, limit: number, blockMs: number): Promise<ThrottleHit>;
+  throttleHit(
+    hitsKey: string,
+    blockKey: string,
+    ttlMs: number,
+    limit: number,
+    blockMs: number,
+  ): Promise<ThrottleHit>;
 };
 
 // Janela fixa a partir do primeiro acesso. Contar, expirar e bloquear num script só mantém tudo
@@ -50,7 +56,13 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     this.redis = redis as ThrottleRedis;
   }
 
-  async increment(key: string, ttl: number, limit: number, blockDuration: number, throttlerName: string) {
+  async increment(
+    key: string,
+    ttl: number,
+    limit: number,
+    blockDuration: number,
+    throttlerName: string,
+  ) {
     // hash tag: as duas chaves caem no mesmo slot, exigência do script no Redis Cluster
     const base = `throttle:{${throttlerName}:${key}}`;
     try {
