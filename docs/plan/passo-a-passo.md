@@ -19,7 +19,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | Fase | O que entra | Dependências novas | Status |
 | --- | --- | --- | --- |
 | 1. Domínio puro | Entidades, value objects, erros e testes | `typescript`, `jest` | ✅ |
-| 2. Casos de uso | Ports, repositório em memória e ownership | nenhuma | 🟡 |
+| 2. Casos de uso | Ports, repositório em memória e ownership | nenhuma | ✅ |
 | 3. Fronteiras automáticas | Regras de camada no CI | `dependency-cruiser` | ⬜ |
 | 4. NestJS | HTTP, módulo, validação e erros convertidos para HTTP | `@nestjs/*`, `class-validator` | ⬜ |
 | 5. Configuração e banco | Variáveis de ambiente validadas, Postgres, TypeORM e migrations | `@nestjs/config`, `typeorm`, `pg` | ⬜ |
@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 1 de 12 fases concluídas · 5 de 39 passos concluídos · **Fase atual:** 2
+**Progresso geral:** 2 de 12 fases concluídas · 6 de 39 passos concluídos · **Fase atual:** 3
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -196,11 +196,11 @@ Testes: adicionar o mesmo produto soma a quantidade, não edita depois de fechad
 
 ## Fase 2: casos de uso, ainda sem framework
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 4: contrato do repositório e repositório em memória
 > - [x] Passo 5: ports e `CreateOrderUseCase`
-> - [ ] Passo 6: ator e ownership (`PlaceOrderUseCase` e `PayOrderUseCase`)
+> - [x] Passo 6: ator e ownership (`PlaceOrderUseCase` e `PayOrderUseCase`)
 
 ### Passo 4: contrato do repositório e repositório em memória
 
