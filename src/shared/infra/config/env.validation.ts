@@ -35,6 +35,18 @@ export class EnvironmentVariables {
   // texto, e não boolean: o `enableImplicitConversion` transformaria 'false' em true
   @IsIn(['true', 'false'])
   OUTBOX_WORKER_ENABLED: string = 'true';
+
+  // origens permitidas no CORS, separadas por vírgula; vazio = CORS desligado
+  @IsString()
+  CORS_ORIGINS: string = '';
+
+  // quantos proxies confiáveis existem na frente da API (0 = nenhum)
+  @IsInt()
+  @Min(0)
+  TRUST_PROXY: number = 0;
+
+  @IsIn(['true', 'false'])
+  THROTTLE_ENABLED: string = 'true';
 }
 
 export function validateEnv(config: Record<string, unknown>) {
