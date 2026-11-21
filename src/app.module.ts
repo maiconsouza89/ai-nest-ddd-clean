@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { IdentityModule } from './modules/identity/infra/identity.module';
+import { InventoryModule } from './modules/inventory/infra/inventory.module';
 import { OrdersModule } from './modules/orders/infra/orders.module';
 import { AuthModule } from './shared/infra/auth/auth.module';
 import { validateEnv } from './shared/infra/config/env.validation';
@@ -20,6 +21,7 @@ import { DatabaseModule } from './shared/infra/database/database.module';
     DatabaseModule,
     CatalogModule,
     IdentityModule,
+    InventoryModule,
     OrdersModule,
   ],
 })

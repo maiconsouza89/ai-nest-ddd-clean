@@ -16,7 +16,9 @@
     "mig:identity:gen": "typeorm-ts-node-commonjs migration:generate src/modules/identity/infra/database/typeorm/migrations/change -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
     "mig:identity:run": "typeorm-ts-node-commonjs migration:run -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
     "mig:catalog:gen": "typeorm-ts-node-commonjs migration:generate src/modules/catalog/database/migrations/change -d src/modules/catalog/database/catalog.data-source.ts",
-    "mig:catalog:run": "typeorm-ts-node-commonjs migration:run -d src/modules/catalog/database/catalog.data-source.ts"
+    "mig:catalog:run": "typeorm-ts-node-commonjs migration:run -d src/modules/catalog/database/catalog.data-source.ts",
+    "mig:inventory:gen": "typeorm-ts-node-commonjs migration:generate src/modules/inventory/infra/database/typeorm/migrations/change -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
+    "mig:inventory:run": "typeorm-ts-node-commonjs migration:run -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts"
   },
   "keywords": [],
   "author": "",

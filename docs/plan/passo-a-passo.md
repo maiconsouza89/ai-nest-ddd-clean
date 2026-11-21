@@ -26,12 +26,12 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 6. Leitura | Queries e paginação | nenhuma | ✅ |
 | 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | ✅ |
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ✅ |
-| 9. Vários módulos | Facades e ports entre módulos | nenhuma | 🟡 |
+| 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ⬜ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 8 de 12 fases concluídas · 22 de 39 passos concluídos · **Fase atual:** 9
+**Progresso geral:** 9 de 12 fases concluídas · 23 de 39 passos concluídos · **Fase atual:** 10
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -663,10 +663,10 @@ await manager.getRepository(OrderOrmEntity).save({ ...OrderMapper.toPersistence(
 
 ## Fase 9: vários módulos conversando
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 22: módulo `catalog` como CRUD simples, com facade
-> - [ ] Passo 23: módulo `inventory` e reserva síncrona
+> - [x] Passo 23: módulo `inventory` e reserva síncrona
 
 ### Passo 22: módulo `catalog` como CRUD simples, com facade
 
@@ -702,6 +702,7 @@ O contrato expõe só primitivos. A regra `contracts-sem-domain-e-infra` impede 
   1. Insere a reserva com `UNIQUE(reference_id)` e `ON CONFLICT DO NOTHING`. Se a linha já existia, a reserva foi feita antes e o caso de uso retorna sem fazer nada.
   2. Para cada item, faz o update atômico condicional (`available >= :qty`). Se algum afetar 0 linhas, lança `InsufficientStockError` e a transação desfaz tudo.
 - `InventoryFacade` em `contracts/`, e o `InventoryModule` exporta só ela.
+- A facade devolve um resultado (`{ ok: true }` ou `{ ok: false, reason: 'INSUFFICIENT_STOCK', productId }`), porque o contrato não pode importar o `InsufficientStockError` do domain. O `InventoryModule` é `@Global`, como o `CatalogModule`.
 - Em orders, o port `StockGateway` e o adapter `InventoryStockGateway` (ver [Agregados e comunicação entre módulos](research/modules-ddd-clean-nest.md#agregados-e-comunicação-entre-módulos)).
 - O `PlaceOrderUseCase` chama `stock.reserve(order.id, items)` antes de `order.place()` e do `save`.
 

@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { registerAndLogin } from './helpers/auth';
 import { seedProduct } from './helpers/catalog';
+import { DataSource } from 'typeorm';
 
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;
 
@@ -43,6 +44,48 @@ describe('Orders (e2e)', () => {
       .send({ items: [{ productId: crypto.randomUUID(), qty: 1 }] })
       .expect(404);
     expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+  });
+
+  describe('estoque ao fechar o pedido', () => {
+    const stockOf = async (id: string) =>
+      (await app.get(DataSource).query(
+        `SELECT available FROM inventory.stock_items WHERE "productId" = $1`,
+        [id],
+      ))[0].available as number;
+
+    const createOrderOf = async (user: Session, pid: string, qty: number) => {
+      const res = await request(server())
+        .post('/v1/orders')
+        .set(user.auth)
+        .send({ items: [{ productId: pid, qty }] })
+        .expect(201);
+      return res.body.id as string;
+    };
+
+    it('fechar debita o estoque e repetir não debita de novo', async () => {
+      const pid = await seedProduct(app, 500, 10);
+      const user = await registerAndLogin(app);
+      const id = await createOrderOf(user, pid, 3);
+
+      await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
+      expect(await stockOf(pid)).toBe(7);
+
+      await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(409);
+      expect(await stockOf(pid)).toBe(7);
+    });
+
+    it('estoque insuficiente devolve 409 e o pedido continua rascunho', async () => {
+      const pid = await seedProduct(app, 500, 1);
+      const user = await registerAndLogin(app);
+      const id = await createOrderOf(user, pid, 2);
+
+      const res = await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(409);
+      expect(res.body.code).toBe('INSUFFICIENT_STOCK');
+      expect(await stockOf(pid)).toBe(1);
+
+      const list = await request(server()).get('/v1/orders').set(user.auth).expect(200);
+      expect(list.body.items[0].status).toBe('DRAFT');
+    });
   });
 
   it('rejeita requisição sem token', () =>

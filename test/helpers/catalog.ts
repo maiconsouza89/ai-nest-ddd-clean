@@ -3,8 +3,13 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { registerAndLogin } from './auth';
 
-/** Insere um produto direto no banco do catalog e devolve o id. */
-export async function seedProduct(app: INestApplication, priceCents = 1000, name = 'Produto') {
+/** Insere um produto no catalog, com estoque no inventory, direto no banco. Devolve o id. */
+export async function seedProduct(
+  app: INestApplication,
+  priceCents = 1000,
+  stock = 100,
+  name = 'Produto',
+) {
   const id = crypto.randomUUID();
   await app
     .get(DataSource)
@@ -13,6 +18,9 @@ export async function seedProduct(app: INestApplication, priceCents = 1000, name
       name,
       priceCents,
     ]);
+  await app
+    .get(DataSource)
+    .query(`INSERT INTO inventory.stock_items ("productId", available) VALUES ($1, $2)`, [id, stock]);
   return id;
 }
 

@@ -1,6 +1,8 @@
+import { FakeStockGateway } from '../../../../../test/fakes/fake-stock-gateway';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { Money } from '../../../../shared/domain/money.vo';
 import { Order } from '../../domain/entities/order.entity';
+import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
 import { NotOrderOwnerError } from '../../domain/errors/not-order-owner.error';
 import { OrderNotFoundError } from '../../domain/errors/order-not-found.error';
 import { OrderStatus } from '../../domain/value-objects/order-status.vo';
@@ -12,13 +14,20 @@ const owner = { id: 'u1', roles: [] };
 const other = { id: 'u2', roles: [] };
 const admin = { id: 'a1', roles: ['admin'] };
 
-async function setup() {
+async function setup(outOfStock = false) {
   const repo = new InMemoryOrderRepository();
   const order = Order.create('o1', 'u1');
   order.addItem('p1', 1, Money.fromCents(100));
   await repo.save(order);
   const tx = new FakeTransactionManager();
-  return { repo, tx, place: new PlaceOrderUseCase(repo, tx), pay: new PayOrderUseCase(repo, tx) };
+  const stock = new FakeStockGateway(outOfStock);
+  return {
+    repo,
+    tx,
+    stock,
+    place: new PlaceOrderUseCase(repo, stock, tx),
+    pay: new PayOrderUseCase(repo, tx),
+  };
 }
 
 describe('PlaceOrderUseCase', () => {
@@ -37,6 +46,20 @@ describe('PlaceOrderUseCase', () => {
     const { repo, place } = await setup();
     await place.execute({ orderId: 'o1', actor: admin });
     expect((await repo.findById('o1'))!.status).toBe(OrderStatus.PLACED);
+  });
+
+  it('reserva o estoque dos itens usando o id do pedido', async () => {
+    const { stock, place } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+    expect(stock.reservations).toEqual([{ orderId: 'o1', items: [{ productId: 'p1', qty: 1 }] }]);
+  });
+
+  it('sem estoque, lança InsufficientStockError e o pedido continua rascunho', async () => {
+    const { repo, place } = await setup(true);
+    await expect(place.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(
+      InsufficientStockError,
+    );
+    expect((await repo.findById('o1'))!.status).toBe(OrderStatus.DRAFT);
   });
 
   it('carrega, altera e salva dentro de uma transação', async () => {
