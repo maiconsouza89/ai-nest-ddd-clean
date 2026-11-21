@@ -1,5 +1,7 @@
+import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
+import { OrderPaid } from '../events/order-paid.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
 import { OrderNotPayableError } from '../errors/order-not-payable.error';
@@ -14,7 +16,7 @@ export type OrderProps = {
   version: number;
 };
 
-export class Order {
+export class Order extends AggregateRoot {
   private constructor(
     readonly id: string,
     readonly customerId: string,
@@ -22,7 +24,9 @@ export class Order {
     private _status: OrderStatus,
     // versão lida do banco, usada na checagem de concorrência otimista
     readonly version: number,
-  ) {}
+  ) {
+    super();
+  }
 
   static create(id: string, customerId: string) {
     return new Order(id, customerId, [], OrderStatus.DRAFT, 0);
@@ -61,6 +65,7 @@ export class Order {
     if (this._status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
     if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
     this._status = OrderStatus.PAID;
+    this.record(new OrderPaid(this.id));
   }
 
   isOwnedBy(userId: string) {

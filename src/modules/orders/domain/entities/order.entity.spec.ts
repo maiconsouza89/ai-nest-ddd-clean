@@ -1,5 +1,6 @@
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
+import { OrderPaid } from '../events/order-paid.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
 import { OrderNotPayableError } from '../errors/order-not-payable.error';
@@ -55,6 +56,24 @@ describe('Order', () => {
     o.pay();
     expect(o.status).toBe(OrderStatus.PAID);
     expect(() => o.pay()).toThrow(OrderAlreadyPaidError);
+  });
+
+  it('pay() registra OrderPaid, que sai uma vez só em pullEvents()', () => {
+    const o = placed();
+    o.pay();
+
+    expect(o.pullEvents()).toEqual([new OrderPaid('o1')]);
+    expect(o.pullEvents()).toEqual([]);
+  });
+
+  it('criar, adicionar item e fechar não registram eventos', () => {
+    expect(placed().pullEvents()).toEqual([]);
+  });
+
+  it('pagar com falha não registra evento', () => {
+    const o = draft();
+    expect(() => o.pay()).toThrow(OrderNotPayableError);
+    expect(o.pullEvents()).toEqual([]);
   });
 
   it('não expõe a lista interna de itens', () => {
