@@ -20,6 +20,7 @@ Sempre a **latest estável**. Quando a latest de um pacote quebra a latest de ou
 | --- | --- | --- | --- | --- |
 | `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `dependency-cruiser` 18.8 recusa o TS 7, e o `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2`. | Os dois aceitarem o TS 7 |
 | `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
+| `ioredis` | `^5.11` | 6.0.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830) |
 | `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
 
 Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09 (ver passo 16).
@@ -28,7 +29,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 
 | Fase | O que muda | Dependências | Status |
 | --- | --- | --- | --- |
-| 1. Base | Node mínimo e dependências na latest | `ioredis` 6, `uuid` 14 | ⬜ |
+| 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
 | 2. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
 | 3. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
 | 4. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
@@ -36,16 +37,16 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 6. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 7. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 0 de 7 fases concluídas · 0 de 16 passos concluídos · **Fase atual:** 1
+**Progresso geral:** 1 de 7 fases concluídas · 2 de 16 passos concluídos · **Fase atual:** 2
 
 ---
 
 ## Fase 1: base
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
-> - [ ] Passo 1: Node mínimo declarado
-> - [ ] Passo 2: dependências na latest
+> - [x] Passo 1: Node mínimo declarado
+> - [x] Passo 2: dependências na latest
 
 ### Passo 1: Node mínimo declarado
 
@@ -60,17 +61,17 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 
 ### Passo 2: dependências na latest
 
-**Por quê:** em 2026-11-21, só três pacotes estavam fora da latest sem motivo registrado na tabela de exceções: `ioredis` 5.11 (latest 6.0.0), `uuid` 11.1 (latest 14.0.3) e `typescript` (este é exceção). O roteiro original dizia que "o ioredis 6 conflita com o peer do BullMQ", e isso está errado: o `bullmq` 6.7.8 aceita `ioredis >=5` como peer opcional e é testado com o 6.0.0.
+**Por quê:** em 2026-11-21, só três pacotes estavam fora da latest sem motivo registrado na tabela de exceções: `ioredis` 5.11 (latest 6.0.0), `uuid` 11.1 (latest 14.0.3) e `typescript` (este é exceção). O roteiro original dizia que "o ioredis 6 conflita com o peer do BullMQ", e isso está errado: o `bullmq` 6.7.8 aceita `ioredis >=5` como peer opcional e é testado com o 6.0.0. **Mas o ioredis 6 conflita com outro peer:** o `typeorm` 1.1.3 pede `ioredis ^5.0.4`, e a instalação falha com ERESOLVE. Ao executar o passo, o ioredis ficou no 5.11 e entrou na tabela de exceções.
 
 **Faça:**
 
 ```bash
-npm i ioredis@latest uuid@latest
+npm i uuid@latest
 npm i -D typescript@~6.0
 ```
 
 - O `uuid` 12 em diante é só ESM. Até a fase 3, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os scripts de teste atuais já rodam o Jest com `--experimental-vm-modules`, então ele também carrega.
-- Revise as opções do `ioredis` 6 usadas em `BullMqConnection` (`maxRetriesPerRequest: null`, `enableOfflineQueue: false`) e em `RedisThrottlerStorage`, conferindo o changelog do 6 no Context7.
+- O `ioredis` fica no 5.11 (ver a tabela de exceções). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
 
 **Pronto quando:** `npm outdated` lista só os pacotes da tabela de exceções, e `ci`, `test:int` e `test:e2e` passam.
 
