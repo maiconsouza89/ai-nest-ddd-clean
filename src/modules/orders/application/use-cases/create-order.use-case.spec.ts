@@ -1,0 +1,45 @@
+import { FakePriceCatalog } from '../../../../../test/fakes/fake-price-catalog';
+import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
+import { Money } from '../../../../shared/domain/money.vo';
+import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
+import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository';
+import { CreateOrderUseCase } from './create-order.use-case';
+
+function setup() {
+  const repo = new InMemoryOrderRepository();
+  const catalog = new FakePriceCatalog(
+    new Map([
+      ['p1', Money.fromCents(100)],
+      ['p2', Money.fromCents(250)],
+    ]),
+  );
+  const useCase = new CreateOrderUseCase(repo, catalog, new SequentialIdGenerator());
+  return { repo, useCase };
+}
+
+describe('CreateOrderUseCase', () => {
+  it('cria o pedido com preços do catálogo e salva', async () => {
+    const { repo, useCase } = setup();
+    const { id } = await useCase.execute({
+      customerId: 'u1',
+      items: [
+        { productId: 'p1', qty: 2 },
+        { productId: 'p2', qty: 1 },
+      ],
+    });
+
+    expect(id).toBe('order-1');
+    const saved = await repo.findById(id);
+    expect(saved).not.toBeNull();
+    expect(saved!.customerId).toBe('u1');
+    expect(saved!.total.cents).toBe(450);
+  });
+
+  it('lança ProductNotFoundError para produto desconhecido e não salva', async () => {
+    const { repo, useCase } = setup();
+    await expect(
+      useCase.execute({ customerId: 'u1', items: [{ productId: 'nope', qty: 1 }] }),
+    ).rejects.toThrow(ProductNotFoundError);
+    expect(await repo.findById('order-1')).toBeNull();
+  });
+});
