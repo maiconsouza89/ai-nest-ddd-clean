@@ -8,7 +8,8 @@
     "arch": "depcruise src",
     "ci": "npm run typecheck && npm test && npm run arch",
     "build": "nest build",
-    "start:dev": "nest start --watch"
+    "start:dev": "nest start --watch",
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex '.*\\.e2e-spec\\.ts$'"
   },
   "keywords": [],
   "author": "",
@@ -16,11 +17,14 @@
   "type": "commonjs",
   "devDependencies": {
     "@nestjs/cli": "^12.0.15",
+    "@nestjs/testing": "^12.6.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.6",
+    "@types/supertest": "^7.2.1",
     "dependency-cruiser": "^18.8.0",
     "jest": "^30.5.2",
+    "supertest": "^7.3.2",
     "ts-jest": "^29.4.15",
     "typescript": "^6.0.3"
   },
