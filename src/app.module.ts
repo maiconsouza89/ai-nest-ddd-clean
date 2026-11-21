@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { IdentityModule } from './modules/identity/infra/identity.module';
 import { OrdersModule } from './modules/orders/infra/orders.module';
 import { DevAuthGuard } from './shared/infra/auth/dev-auth.guard';
 import { validateEnv } from './shared/infra/config/env.validation';
@@ -16,6 +17,7 @@ import { DatabaseModule } from './shared/infra/database/database.module';
       validate: validateEnv,
     }),
     DatabaseModule,
+    IdentityModule,
     OrdersModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: DevAuthGuard }],

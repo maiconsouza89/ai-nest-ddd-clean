@@ -1,0 +1,79 @@
+import { FakePasswordHasher } from '../../../../../test/fakes/fake-password-hasher';
+import { FakeTokenIssuer } from '../../../../../test/fakes/fake-token-issuer';
+import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
+import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
+import { InvalidNameError } from '../../domain/errors/invalid-name.error';
+import { InvalidEmailError } from '../../domain/errors/invalid-email.error';
+import { InMemoryUserRepository } from '../../infra/database/in-memory/in-memory-user.repository';
+import { LoginUseCase } from './login.use-case';
+import { RegisterUserUseCase } from './register-user.use-case';
+
+function setup() {
+  const users = new InMemoryUserRepository();
+  const hasher = new FakePasswordHasher();
+  const tokens = new FakeTokenIssuer();
+  return {
+    tokens,
+    register: new RegisterUserUseCase(users, hasher, new SequentialIdGenerator('user')),
+    login: new LoginUseCase(users, hasher, tokens),
+  };
+}
+
+describe('RegisterUserUseCase', () => {
+  it('cadastra o usuário e devolve o id', async () => {
+    const { register } = setup();
+    expect(await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' })).toEqual({
+      id: 'user-1',
+    });
+  });
+
+  it('rejeita e-mail repetido, ignorando caixa e espaços', async () => {
+    const { register } = setup();
+    await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
+    await expect(register.execute({ name: 'Ana', email: ' A@X.com ', password: 'other-123' })).rejects.toThrow(
+      EmailAlreadyInUseError,
+    );
+  });
+
+  it.each(['', '   ', 'x'.repeat(101)])('rejeita nome inválido "%s"', async (name) => {
+    const { register } = setup();
+    await expect(
+      register.execute({ name, email: 'a@x.com', password: 'secret-123' }),
+    ).rejects.toThrow(InvalidNameError);
+  });
+
+  it('rejeita e-mail inválido', async () => {
+    const { register } = setup();
+    await expect(register.execute({ name: 'Ana', email: 'nope', password: 'secret-123' })).rejects.toThrow(
+      InvalidEmailError,
+    );
+  });
+});
+
+describe('LoginUseCase', () => {
+  it('devolve um token com sub e sem papéis para um usuário comum', async () => {
+    const { register, login, tokens } = setup();
+    const { id } = await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
+
+    const { accessToken } = await login.execute({ email: 'A@x.com', password: 'secret-123' });
+
+    expect(accessToken).toBe(`token-for-${id}`);
+    expect(tokens.issued).toEqual([{ sub: id, roles: [] }]);
+  });
+
+  it('rejeita senha errada', async () => {
+    const { register, login } = setup();
+    await register.execute({ name: 'Ana', email: 'a@x.com', password: 'secret-123' });
+    await expect(login.execute({ email: 'a@x.com', password: 'wrong' })).rejects.toThrow(
+      InvalidCredentialsError,
+    );
+  });
+
+  it.each(['ghost@x.com', 'not-an-email'])('rejeita "%s" com a mesma resposta', async (email) => {
+    const { login } = setup();
+    await expect(login.execute({ email, password: 'secret-123' })).rejects.toThrow(
+      InvalidCredentialsError,
+    );
+  });
+});

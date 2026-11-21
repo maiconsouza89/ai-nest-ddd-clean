@@ -1,5 +1,14 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsInt, IsNotEmpty, IsString, Max, Min, validateSync } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Max,
+  MinLength,
+  Min,
+  validateSync,
+} from 'class-validator';
 
 export class EnvironmentVariables {
   @IsEnum(['development', 'test', 'production'])
@@ -13,6 +22,14 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   DATABASE_URL!: string;
+
+  @IsString()
+  @MinLength(32)
+  JWT_SECRET!: string;
+
+  @IsInt()
+  @Min(1)
+  JWT_EXPIRES_IN_SECONDS: number = 3600;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

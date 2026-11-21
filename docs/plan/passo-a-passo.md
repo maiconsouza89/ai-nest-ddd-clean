@@ -24,14 +24,14 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 4. NestJS | HTTP, módulo, validação e erros convertidos para HTTP | `@nestjs/*`, `class-validator` | ✅ |
 | 5. Configuração e banco | Variáveis de ambiente validadas, Postgres, TypeORM e migrations | `@nestjs/config`, `typeorm`, `pg` | ✅ |
 | 6. Leitura | Queries e paginação | nenhuma | ✅ |
-| 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | ⬜ |
+| 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | 🟡 |
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ⬜ |
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ⬜ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ⬜ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 6 de 12 fases concluídas · 17 de 39 passos concluídos · **Fase atual:** 7
+**Progresso geral:** 6 de 12 fases concluídas · 18 de 39 passos concluídos · **Fase atual:** 7
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -562,9 +562,9 @@ Comece com offset. Troque para cursor quando a lista crescer ou virar scroll inf
 
 ## Fase 7: autenticação
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 18: módulo `identity`
+> - [x] Passo 18: módulo `identity`
 > - [ ] Passo 19: guard global e fim do guard provisório
 
 ### Passo 18: módulo `identity`
