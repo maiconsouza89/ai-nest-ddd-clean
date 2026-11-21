@@ -26,7 +26,7 @@ export class PayOrderUseCase {
       const events = order
         .pullEvents()
         .map((e) => toIntegrationEvent(e, { eventId: this.ids.next(), occurredAt }));
-      await this.outbox.add(events);
+      await this.outbox.add(order.id, events);
     });
   }
 }

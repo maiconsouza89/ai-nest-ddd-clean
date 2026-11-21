@@ -8,6 +8,7 @@ import { ClockModule } from './shared/infra/clock/clock.module';
 import { AuthModule } from './shared/infra/auth/auth.module';
 import { validateEnv } from './shared/infra/config/env.validation';
 import { DatabaseModule } from './shared/infra/database/database.module';
+import { OutboxModule } from './shared/infra/outbox/outbox.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DatabaseModule } from './shared/infra/database/database.module';
     AuthModule,
     ClockModule,
     DatabaseModule,
+    OutboxModule,
     CatalogModule,
     IdentityModule,
     InventoryModule,

@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsString,
@@ -30,6 +31,10 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   JWT_EXPIRES_IN_SECONDS: number = 3600;
+
+  // texto, e não boolean: o `enableImplicitConversion` transformaria 'false' em true
+  @IsIn(['true', 'false'])
+  OUTBOX_WORKER_ENABLED: string = 'true';
 }
 
 export function validateEnv(config: Record<string, unknown>) {
