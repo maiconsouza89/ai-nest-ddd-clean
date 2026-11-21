@@ -18,26 +18,27 @@ Sempre a **latest estável**. Quando a latest de um pacote quebra a latest de ou
 
 | Pacote | Fica em | Latest | Motivo | Atualize quando |
 | --- | --- | --- | --- | --- |
-| `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `dependency-cruiser` 18.8 recusa o TS 7, e o `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2`. | Os dois aceitarem o TS 7 |
+| `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `dependency-cruiser` 18.8 recusa o TS 7, o `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2` e o `typescript-eslint` 8.73 (passo 4) aceita só `>=4.8.4 <6.1.0`. | Os três aceitarem o TS 7. Para o TS 6.1, basta o `typescript-eslint` aceitar |
 | `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
 | `ioredis` | `^5.11` | 6.0.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830) |
 | `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
 
-Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09 (ver passo 16).
+Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09 (ver passo 18).
 
 ## Mapa
 
 | Fase | O que muda | Dependências | Status |
 | --- | --- | --- | --- |
 | 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
-| 2. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
-| 3. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
-| 4. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
-| 5. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
-| 6. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
-| 7. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
+| 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ⬜ |
+| 3. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
+| 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
+| 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
+| 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
+| 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
+| 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 1 de 7 fases concluídas · 2 de 16 passos concluídos · **Fase atual:** 2
+**Progresso geral:** 1 de 8 fases concluídas · 2 de 18 passos concluídos · **Fase atual:** 2
 
 ---
 
@@ -59,6 +60,8 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 
 **Pronto quando:** `npm install` em Node 20 avisa sobre `engines`, e em Node 24 instala sem aviso.
 
+> O passo 4 sobe o mínimo para `>=22.13`, porque o ESLint 10 exige `^20.19 || ^22.13 || >=24`.
+
 ### Passo 2: dependências na latest
 
 **Por quê:** em 2026-11-21, só três pacotes estavam fora da latest sem motivo registrado na tabela de exceções: `ioredis` 5.11 (latest 6.0.0), `uuid` 11.1 (latest 14.0.3) e `typescript` (este é exceção). O roteiro original dizia que "o ioredis 6 conflita com o peer do BullMQ", e isso está errado: o `bullmq` 6.7.8 aceita `ioredis >=5` como peer opcional e é testado com o 6.0.0. **Mas o ioredis 6 conflita com outro peer:** o `typeorm` 1.1.3 pede `ioredis ^5.0.4`, e a instalação falha com ERESOLVE. Ao executar o passo, o ioredis ficou no 5.11 e entrou na tabela de exceções.
@@ -70,23 +73,121 @@ npm i uuid@latest
 npm i -D typescript@~6.0
 ```
 
-- O `uuid` 12 em diante é só ESM. Até a fase 3, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os scripts de teste atuais já rodam o Jest com `--experimental-vm-modules`, então ele também carrega.
+- O `uuid` 12 em diante é só ESM. Até a fase 4, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os scripts de teste atuais já rodam o Jest com `--experimental-vm-modules`, então ele também carrega.
 - O `ioredis` fica no 5.11 (ver a tabela de exceções). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
 
 **Pronto quando:** `npm outdated` lista só os pacotes da tabela de exceções, e `ci`, `test:int` e `test:e2e` passam.
 
 ---
 
-## Fase 2: Jest → Vitest
+## Fase 2: lint e formatação
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 3: Vitest com SWC e três projetos
-> - [ ] Passo 4: migrar os testes e remover o Jest
+> - [ ] Passo 3: Prettier
+> - [ ] Passo 4: ESLint com informação de tipo
+
+O projeto não tem formatador nem linter. O estilo é mantido à mão, e nada além do `tsc` olha o código antes dos testes.
+
+**Por que antes do Vitest e do ESM:** as fases 3 e 4 mexem em muitos arquivos (53 arquivos de teste e todos os imports relativos). Com o Prettier já aplicado, os diffs dessas fases saem formatados e mostram só a mudança real. O ESLint com tipos também pega promises sem `await` antes das refatorações de ESM e de autenticação, que mexem em código assíncrono.
+
+Cada ferramenta tem uma responsabilidade, sem sobreposição:
+
+| Ferramenta | Responsável por |
+| --- | --- |
+| `tsc --noEmit` | tipos |
+| dependency-cruiser | fronteiras entre módulos e camadas (ADR 0003) |
+| ESLint + `typescript-eslint` | bugs que compilam: promises, `any` inseguro, código morto |
+| Prettier | formatação |
+
+### Passo 3: Prettier
+
+**Por quê:** sem formatador, os diffs misturam formatação com mudança de verdade, e cada pessoa (ou agente) formata de um jeito. A medição de 2026-11-21, com `singleQuote`, mostra quantos dos 288 arquivos `.ts` mudam conforme o `printWidth`: 164 com 80, 75 com 100 e 68 com 120. O 100 corta o diff pela metade em relação ao padrão, e a partir dele o ganho é pequeno.
+
+**Faça:**
+
+```bash
+npm i -D --save-exact prettier
+```
+
+Versão consultada em 2026-11-21: `prettier` 3.10.1. A doc do Prettier recomenda fixar a versão exata, porque até um patch pode mudar a formatação. A regra de versões continua valendo: a versão fixada é a latest, e cada atualização vem num commit próprio, com a reformatação que ela causar.
+
+- `.prettierrc.json`: `{ "singleQuote": true, "printWidth": 100 }`. O `trailingComma: "all"` já é o padrão do Prettier 3.
+- `.prettierignore`: `plop-templates/` (o Prettier formataria os `.hbs` como Handlebars HTML e quebraria os templates), `**/migrations/` (geradas pelo TypeORM), `package-lock.json` e `*.md` (o Prettier reformataria as tabelas dos docs, e a formatação deles é uma decisão à parte). O `.gitignore` já é respeitado por padrão desde o Prettier 3, então `dist`, `node_modules` e `.env` não precisam entrar.
+- Scripts: `"format": "prettier --write ."` e `"format:check": "prettier --check ."`.
+- Rode `npm run format` num **commit só com a formatação**. Ponha o hash dele num `.git-blame-ignore-revs` na raiz e rode `git config blame.ignoreRevsFile .git-blame-ignore-revs` (o GitHub lê o arquivo sozinho).
+
+**Pronto quando:** `npm run format:check` passa, e `npm run ci` passa logo depois do commit de formatação, sem nenhum outro ajuste.
+
+### Passo 4: ESLint com informação de tipo
+
+**Por quê:** o `tsc` aceita uma promise que ninguém espera. Exemplo atual: `bootstrap();` em `src/main.ts`, sem `await` nem `void`. Num projeto com outbox, BullMQ e handlers de eventos, um `publish()` sem `await` perde o erro sem avisar. As regras com tipo do `typescript-eslint` pegam isso: `no-floating-promises`, `no-misused-promises`, `await-thenable` e `require-await`, entre outras.
+
+O ESLint **não** cuida das fronteiras entre módulos. Nada de `eslint-plugin-boundaries` nem de `no-restricted-imports` para isso: as regras da ADR 0003 ficam só no dependency-cruiser, para não terem duas fontes de verdade.
+
+**Faça:**
+
+```bash
+npm i -D eslint @eslint/js typescript-eslint eslint-config-prettier
+```
+
+Versões consultadas em 2026-11-21: `eslint` 10.15.0, `@eslint/js` 10.0.1, `typescript-eslint` 8.73.0 e `eslint-config-prettier` 10.1.8. Usamos o `eslint-config-prettier`, que só desliga as regras de estilo. O `eslint-plugin-prettier`, que o template do `nest new` usa, roda o Prettier como regra de lint. A doc do `typescript-eslint` desaconselha isso, porque é mais lento e mostra formatação como erro.
+
+- `"engines": { "node": ">=22.13" }`: o ESLint 10 exige `^20.19 || ^22.13 || >=24`.
+- `eslint.config.mjs` (o ESLint 10 só aceita *flat config*):
+
+```js
+// @ts-check
+import js from '@eslint/js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import prettier from 'eslint-config-prettier/flat';
+import tseslint from 'typescript-eslint';
+
+export default defineConfig(
+  globalIgnores(['dist', 'coverage', '**/migrations/**', 'plop-templates']),
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+  },
+  {
+    // expect(repo.save).toHaveBeenCalled() passa o método solto, e isso é intencional nos testes
+    files: ['**/*.spec.ts', '**/*.int-spec.ts', 'test/**/*.ts'],
+    rules: { '@typescript-eslint/unbound-method': 'off' },
+  },
+  prettier,
+);
+```
+
+- O `files` cobre só o que está no `tsconfig.json`. O `plopfile.mjs` e o `.dependency-cruiser.js` ficam fora do `projectService`, que daria erro neles.
+- Comece pelo `recommendedTypeChecked`, não pelo `strictTypeChecked`. O `strict` gera muito ruído na primeira passada. Endureça regra por regra depois, se valer a pena.
+- **Não** ative o `consistent-type-imports`. Com `emitDecoratorMetadata`, transformar em `import type` uma classe injetada pelo construtor quebra a injeção de dependência do Nest em tempo de execução, e o `tsc` não avisa.
+- **Não** instale o `eslint-plugin-jest`: o Jest sai na fase 3. O override do `unbound-method` acima serve para o Jest e para o Vitest.
+- Scripts: `"lint": "eslint . --max-warnings 0"`, e `"ci": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run arch"`.
+- Adoção: `npx eslint . --fix` num commit separado, e o resto corrigido à mão. Se uma regra tiver casos demais para a fase, desligue-a no config com um comentário que diga o motivo e registre a reavaliação no passo 18. Não use `warn`: com `--max-warnings 0`, ele é só um erro adiado.
+- Registre a divisão de responsabilidades da tabela acima na ADR 0004 e inclua o link no topo deste plano.
+
+**Pronto quando:**
+
+- `npm run ci` roda `lint` e `format:check`, e passa.
+- Uma promise sem `await` de propósito num handler faz o `npm run lint` falhar. Isso prova que as regras com tipo estão ativas.
+- `npx plop module rascunho` gera um módulo que passa no `lint` e no `format:check` sem ajustes. Apague o módulo de teste depois.
+- No guia, a seção "Qualidade" cita o ESLint e o Prettier ao lado do dependency-cruiser, com a divisão de responsabilidades.
+
+---
+
+## Fase 3: Jest → Vitest
+
+> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+>
+> - [ ] Passo 5: Vitest com SWC e três projetos
+> - [ ] Passo 6: migrar os testes e remover o Jest
 
 Contexto e alternativas no [ADR 0001](../adr/0001-vitest-e-esm.md).
 
-### Passo 3: Vitest com SWC e três projetos
+### Passo 5: Vitest com SWC e três projetos
 
 **Por quê:** os pacotes do Nest 12 são só ESM. O Jest só os carrega com `node --experimental-vm-modules`, que é o ponto fraco dele. O Vitest é o padrão do Nest 12 em projetos ESM. O esbuild, que o Vitest usa por padrão, **não emite decorator metadata**, e é com ela que o Nest injeta dependências por classe. Por isso o SWC entra junto (receita oficial: docs.nestjs.com/recipes/swc).
 
@@ -146,10 +247,11 @@ Scripts:
 
 - Um padrão de caminho como argumento filtra os arquivos: `npm test -- money.vo` e `npm run test:int -- pay-order`. O aviso atual do `CLAUDE.md` sobre o `--testRegex` engolir o caminho deixa de valer.
 - Confira no Context7 se `include` e os timeouts por projeto continuam com esses nomes na versão instalada.
+- O `vitest.config.ts` fica na raiz, fora do `include` do `tsconfig.json`, então o `files` do ESLint (passo 4) não o alcança. Se quiser lint nele, inclua-o no `tsconfig.json` ou use `allowDefaultProject` do `projectService`.
 
 **Pronto quando:** `npx vitest run --project unit` roda pelo menos um spec já migrado, e um teste que injeta dependência por classe num `Test.createTestingModule` passa. Esse teste prova que a metadata está sendo emitida.
 
-### Passo 4: migrar os testes e remover o Jest
+### Passo 6: migrar os testes e remover o Jest
 
 **Por quê:** os dois runners não devem conviver: cada um tem a própria config e a própria API de mock.
 
@@ -159,7 +261,7 @@ Scripts:
 - Troque `jest.fn`, `jest.spyOn`, `jest.useFakeTimers` e afins por `vi.*`. São 8 arquivos com `jest.` hoje.
 - No `tsconfig.json`, `"types": ["node"]` (sem `jest`). O TS 6 tem `types: []` como padrão, então a lista continua explícita.
 - Remova `jest`, `ts-jest`, `@types/jest` e o `jest.config.js`.
-- O `options.exclude` do dependency-cruiser não muda, porque os sufixos `.spec`, `.int-spec` e `.e2e-spec` continuam os mesmos.
+- O `options.exclude` do dependency-cruiser não muda, porque os sufixos `.spec`, `.int-spec` e `.e2e-spec` continuam os mesmos. O override de testes do `eslint.config.mjs` também não muda.
 
 **Pronto quando:**
 
@@ -168,17 +270,17 @@ Scripts:
 
 ---
 
-## Fase 3: CommonJS → ESM
+## Fase 4: CommonJS → ESM
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 5: `"type": "module"` e extensões nos imports
-> - [ ] Passo 6: migrations e seeds em ESM
-> - [ ] Passo 7: plop e dependency-cruiser em ESM
+> - [ ] Passo 7: `"type": "module"` e extensões nos imports
+> - [ ] Passo 8: migrations e seeds em ESM
+> - [ ] Passo 9: plop e dependency-cruiser em ESM
 
 Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migrar para ESM é opcional, porque CommonJS continua suportado via `require(esm)`. A migração foi uma escolha para alinhar o projeto ao layout ESM do `nest new` e ao Vitest.
 
-### Passo 5: `"type": "module"` e extensões nos imports
+### Passo 7: `"type": "module"` e extensões nos imports
 
 **Por quê:** com `"module": "nodenext"`, o formato de saída de cada arquivo vem do `package.json`. Basta adicionar `"type": "module"`, e todo `.ts` passa a ser emitido como ESM (guia oficial de migração do Nest 12, seção "Switching your project to ESM").
 
@@ -191,7 +293,7 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 
 **Pronto quando:** `npm run typecheck` e `npm run build` passam, e `node dist/main.js` sobe e responde em `/health/live`.
 
-### Passo 6: migrations e seeds em ESM
+### Passo 8: migrations e seeds em ESM
 
 **Por quê:** o `typeorm-ts-node-commonjs` não carrega arquivos ESM. A doc do TypeORM 1.1 manda usar o `typeorm-ts-node-esm` em projetos ESM.
 
@@ -202,7 +304,7 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 
 **Pronto quando:** num banco vazio, todos os `mig:*:run` e `seed:*` rodam. Cada `mig:*:gen` também roda e responde que não há mudanças.
 
-### Passo 7: plop e dependency-cruiser em ESM
+### Passo 9: plop e dependency-cruiser em ESM
 
 **Por quê:** o gerador precisa gerar código ESM, e as regras de arquitetura precisam continuar resolvendo os imports com extensão `.js`.
 
@@ -214,22 +316,22 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 
 **Pronto quando:**
 
-- `npx plop module rascunho` gera um módulo que passa em `typecheck`, nos testes e no `arch` sem ajustes, e as migrations dele rodam. Apague o módulo de teste depois.
+- `npx plop module rascunho` gera um módulo que passa em `typecheck`, `lint`, `format:check`, nos testes e no `arch` sem ajustes, e as migrations dele rodam. Apague o módulo de teste depois.
 - Importar algo de `infra` dentro de `domain` ainda faz o `npm run arch` falhar.
 - No guia, os trechos de data source, scripts de migration e plop usam ESM (`.js` nos imports, `import.meta.dirname`, `typeorm-ts-node-esm`).
 
 ---
 
-## Fase 4: módulos com `imports` explícito
+## Fase 5: módulos com `imports` explícito
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 8: exceção para o arquivo do módulo Nest na regra de fronteira
-> - [ ] Passo 9: tirar o `@Global` dos módulos de negócio
+> - [ ] Passo 10: exceção para o arquivo do módulo Nest na regra de fronteira
+> - [ ] Passo 11: tirar o `@Global` dos módulos de negócio
 
 Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md).
 
-### Passo 8: exceção para o arquivo do módulo Nest na regra de fronteira
+### Passo 10: exceção para o arquivo do módulo Nest na regra de fronteira
 
 **Por quê:** `CatalogModule`, `InventoryModule` e `IdentityModule` são `@Global` porque a regra `modulos-so-via-contracts` proíbe importar o `*.module.ts` de outro módulo. A doc do Nest diz o contrário: os `exports` de um `@Module` **são** a API pública dele, e o `@Global` é para infraestrutura transversal. Importar um módulo que exporta só a facade não expõe nada além da facade.
 
@@ -263,7 +365,7 @@ Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modul
 
 **Pronto quando:** o `npm run arch` passa. Ele falha quando um caso de uso, adapter ou controller importa o `*.module.ts` de outro módulo, e também quando um `*.module.ts` importa um arquivo interno de outro módulo.
 
-### Passo 9: tirar o `@Global` dos módulos de negócio
+### Passo 11: tirar o `@Global` dos módulos de negócio
 
 **Por quê:** a dependência passa a aparecer em quem a usa. Quem lê o `OrdersModule` vê que ele depende do catálogo e do estoque.
 
@@ -271,27 +373,27 @@ Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modul
 
 - Tire o `@Global` (e o comentário que o justifica) de `catalog.module.ts`, `inventory/infra/inventory.module.ts` e `identity/infra/identity.module.ts`.
 - `OrdersModule`: `imports: [CatalogModule, InventoryModule, ...]`. `NotificationsModule`: `imports: [IdentityModule]`.
-- O `@Global` continua só na infraestrutura do `shared` (`DatabaseModule`, `ClockModule`, `ObservabilityModule`, `RedisModule` e o módulo do `JwtModule`, passo 10). É o uso que a doc do Nest prevê.
+- O `@Global` continua só na infraestrutura do `shared` (`DatabaseModule`, `ClockModule`, `ObservabilityModule`, `RedisModule` e o módulo do `JwtModule`, passo 12). É o uso que a doc do Nest prevê.
 - O inventory continua reagindo ao orders por evento, sem importar o módulo dele. A regra `no-circular` continua valendo.
 
 **Pronto quando:**
 
 - `grep -rn "@Global" src/modules` não encontra nada, `npm run arch` passa sem `forwardRef`, e `test:e2e` passa.
-- No guia, a regra `modulos-so-via-contracts` da seção "Qualidade" ganha a exceção do passo 8. O trecho `imports: [InventoryModule]` em "Dependências e contratos entre módulos", que já descrevia o estado-alvo, passa a bater com o código.
+- No guia, a regra `modulos-so-via-contracts` da seção "Qualidade" ganha a exceção do passo 10. O trecho `imports: [InventoryModule]` em "Dependências e contratos entre módulos", que já descrevia o estado-alvo, passa a bater com o código.
 
 ---
 
-## Fase 5: autenticação
+## Fase 6: autenticação
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 10: `ActorResolver` e ator carregado por requisição
-> - [ ] Passo 11: access token de 15 minutos
-> - [ ] Passo 12: refresh token rotativo e logout
+> - [ ] Passo 12: `ActorResolver` e ator carregado por requisição
+> - [ ] Passo 13: access token de 15 minutos
+> - [ ] Passo 14: refresh token rotativo e logout
 
 Contexto e alternativas no [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md). A base continua sendo o `@nestjs/jwt` (oficial e estável) com o guard próprio.
 
-### Passo 10: `ActorResolver` e ator carregado por requisição
+### Passo 12: `ActorResolver` e ator carregado por requisição
 
 **Por quê:** hoje as roles vão dentro do token (`login.use-case.ts`), e o token vale 1h. Uma role removida ou uma conta apagada continuam valendo até o token expirar. A doc oficial do Nest recomenda não pôr roles nas claims e carregar o usuário a cada requisição.
 
@@ -313,7 +415,7 @@ export abstract class ActorResolver {
   - O shared nunca importa o identity: quem liga os dois é o `AppModule`, a raiz de composição.
 - `JwtAuthGuard`: verifica o token, lê o `sub`, chama `resolver.resolve(sub)`, responde 401 se vier `null` e grava o `Actor` em `req.user`. Ele não lê mais `roles` das claims. Atualize o comentário do guard, que hoje diz que ele não consulta a tabela de usuários.
 - `LoginUseCase`: o token leva só o `sub`. O `RolesGuard`, o `order-access.ts` e os casos de uso não mudam, porque continuam consumindo o `Actor`.
-- Sem cache por enquanto: a busca é uma leitura por PK. Cache só entra se uma medição pedir (passo 16).
+- Sem cache por enquanto: a busca é uma leitura por PK. Cache só entra se uma medição pedir (passo 18).
 
 **Pronto quando:**
 
@@ -321,15 +423,15 @@ export abstract class ActorResolver {
 - No e2e, um admin perde a role direto no banco, e a requisição seguinte com o **mesmo** token recebe 403.
 - O `npm run arch` passa, e `shared/` não importa nada de `modules/`.
 
-### Passo 11: access token de 15 minutos
+### Passo 13: access token de 15 minutos
 
-**Por quê:** com o refresh token (passo 12), o access token pode durar pouco. Isso limita o estrago de um token vazado.
+**Por quê:** com o refresh token (passo 14), o access token pode durar pouco. Isso limita o estrago de um token vazado.
 
 **Faça:** troque `JWT_EXPIRES_IN_SECONDS` (padrão 3600) por `JWT_ACCESS_TTL_SECONDS` (padrão 900) no `validateEnv` e no `.env.example`. A resposta do login passa a trazer `expiresIn` em segundos.
 
 **Pronto quando:** o token emitido tem `exp - iat = 900`, e o `validateEnv` recusa a variável antiga com uma mensagem clara.
 
-### Passo 12: refresh token rotativo e logout
+### Passo 14: refresh token rotativo e logout
 
 **Por quê:** com um access token curto, o cliente precisa renovar a sessão sem pedir a senha de novo, e o logout precisa encerrar a sessão de verdade. O modelo segue o que a doc oficial do Nest descreve para o `TokenService`: token opaco, guardado como hash e de uso único. Se um token já usado aparecer de novo, duas partes têm o mesmo token (o cliente e quem o roubou), e toda a família é revogada.
 
@@ -357,13 +459,13 @@ export abstract class ActorResolver {
 
 ---
 
-## Fase 6: Postgres 19
+## Fase 7: Postgres 19
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 13: Postgres 19 no compose e nos testes
+> - [ ] Passo 15: Postgres 19 no compose e nos testes
 
-### Passo 13: Postgres 19 no compose e nos testes
+### Passo 15: Postgres 19 no compose e nos testes
 
 **Por quê:** o projeto usa a imagem `postgres:17`, e a latest estável é a 19.0 (`postgres:latest`, conferido em 2026-11-21). A partir do 18, a imagem oficial usa `PGDATA=/var/lib/postgresql/<major>/docker` e declara o volume em `/var/lib/postgresql`. Montar o volume no caminho antigo (`/var/lib/postgresql/data`) não funciona.
 
@@ -377,21 +479,22 @@ export abstract class ActorResolver {
 
 ---
 
-## Fase 7: documentação
+## Fase 8: documentação
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 14: `CLAUDE.md`
-> - [ ] Passo 15: alinhar o guia de referência
-> - [ ] Passo 16: evoluções sob demanda
+> - [ ] Passo 16: `CLAUDE.md`
+> - [ ] Passo 17: alinhar o guia de referência
+> - [ ] Passo 18: evoluções sob demanda
 
-### Passo 14: `CLAUDE.md`
+### Passo 16: `CLAUDE.md`
 
-**Por quê:** os comandos e as restrições mudaram nas fases 1 a 6.
+**Por quê:** os comandos e as restrições mudaram nas fases 1 a 7.
 
 **Faça:**
 
-- Node 22.12 ou superior (recomendado 24).
+- Node 22.13 ou superior (recomendado 24).
+- `npm run lint` e `npm run format`, e o `ci` atualizado: typecheck, lint, `format:check`, unitários e arch.
 - Vitest: `npm test -- <padrão>` e `npm run test:int -- <padrão>`. Remova o aviso sobre o `--testRegex`.
 - Projeto ESM: imports relativos com `.js`, migrations com `typeorm-ts-node-esm`.
 - Postgres 19 no compose.
@@ -400,7 +503,7 @@ export abstract class ActorResolver {
 
 **Pronto quando:** seguir o `CLAUDE.md` do zero (compose, `.env`, migrations, seeds, `start:dev` e os três tipos de teste) funciona sem nenhum passo além dos que estão escritos nele.
 
-### Passo 15: conferência final do guia de referência
+### Passo 17: conferência final do guia de referência
 
 **Por quê:** cada fase atualiza a sua seção do guia. Este passo confere o conjunto. As correções que já valiam para o código de 2026-11-21 foram aplicadas na revisão:
 
@@ -420,15 +523,16 @@ export abstract class ActorResolver {
 
 **Pronto quando:** cada trecho de código do guia compila sob o `tsconfig.json` atual e bate com o código, e nenhum trecho menciona `ts-jest`, `typeorm-ts-node-commonjs` ou `@Global` em módulo de negócio.
 
-### Passo 16: evoluções sob demanda
+### Passo 18: evoluções sob demanda
 
 Adote estes itens só quando a condição for atendida:
 
 | Condição | O que fazer |
 | --- | --- |
 | `@nestjs/authentication` e `@nestjs/authorization` chegarem à 1.0 | Reavaliar a troca do guard próprio, do refresh token e do `RolesGuard` pelos pacotes oficiais (o `@nestjs/authorization` nega por padrão com `@Can()`) |
-| `dependency-cruiser` e `@nestjs/cli` aceitarem o TS 7 | Atualizar o `typescript` e tirar a exceção da tabela |
+| `dependency-cruiser`, `@nestjs/cli` e `typescript-eslint` aceitarem o TS 7 | Atualizar o `typescript` e tirar a exceção da tabela |
 | O `cache-manager` depender da `keyv` 6 | Atualizar `keyv` e `@keyv/redis` juntos |
 | Uma medição mostrar custo no `ActorResolver` | Cache curto no Redis com invalidação por evento quando as roles mudarem |
 | O `instrumentation-nestjs-core` suportar o Nest 12 | Reativar os spans de controller |
 | Permissões crescerem além de roles | CASL (`@casl/ability`, com receita na doc do Nest) |
+| O lint estiver limpo há algumas fases | Avaliar regras do `strictTypeChecked` uma a uma, e reavaliar as regras desligadas no passo 4 |
