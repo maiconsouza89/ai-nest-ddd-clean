@@ -29,10 +29,10 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | ✅ |
-| 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `@nestjs/bullmq`, `bullmq`, `ioredis` | ⬜ |
+| 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | 🔄 |
 | 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 11 de 13 fases concluídas · 36 de 42 passos concluídos · **Fase atual:** 12
+**Progresso geral:** 11 de 13 fases concluídas · 38 de 42 passos concluídos · **Fase atual:** 12
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -935,9 +935,9 @@ Limite conhecido: a invalidação chega quando a outbox entrega o evento (cerca 
 
 ## Fase 12: filas com Redis
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🔄 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 38: BullMQ como transporte dos eventos
+> - [x] Passo 38: BullMQ como transporte dos eventos
 > - [ ] Passo 39: jobs agendados com Job Schedulers
 > - [ ] Passo 40: rate limit com storage no Redis
 
@@ -950,10 +950,12 @@ Depende do passo 35, que coloca o Redis no ar. A outbox continua sendo a fonte d
 **Faça:**
 
 ```bash
-npm i @nestjs/bullmq bullmq ioredis
+npm i bullmq ioredis
 ```
 
-Versões consultadas em 2026-11-21: `@nestjs/bullmq` 12.0.2 e `bullmq` 6.7. O BullMQ usa `ioredis`, e a Keyv do cache usa o cliente `redis`: são duas conexões, apontando para o mesmo `REDIS_URL`.
+Versões consultadas em 2026-11-21: `bullmq` 6.7.8 e `ioredis` 5 (a que o `bullmq` usa; o `ioredis` 6 conflita com o peer dele). O `@nestjs/bullmq` 12.0.2 ficou de fora: as filas aqui são dinâmicas (uma por consumidor descoberto na subida), e o `BullModule` só ajuda com filas declaradas de forma estática. Usamos `Queue` e `Worker` do `bullmq` direto, com duas conexões `ioredis` (`BullMqConnection`).
+
+> Implementado em `shared/infra/messaging/`. O `@nestjs/event-emitter` foi removido. O BullMQ usa `ioredis`, e a Keyv do cache usa o cliente `redis`: são duas conexões, apontando para o mesmo `REDIS_URL`.
 
 ```
 caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Redis) ─▶ handler

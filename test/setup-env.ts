@@ -11,5 +11,7 @@ process.env.JWT_SECRET ??= 'test-secret-test-secret-test-secret-0123';
 process.env.THROTTLE_ENABLED ??= 'false';
 process.env.LOG_LEVEL ??= 'silent';
 process.env.OTEL_SDK_DISABLED ??= 'true';
+// os workers das filas de eventos também não; o e2e da outbox liga os dois
+process.env.QUEUE_WORKERS_ENABLED ??= 'false';
 // os jobs agendados não disparam nos testes que sobem o app; os testes os chamam direto
 process.env.JOBS_ENABLED ??= 'false';

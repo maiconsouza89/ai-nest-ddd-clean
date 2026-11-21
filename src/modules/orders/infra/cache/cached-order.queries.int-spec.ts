@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { HealthIndicatorService, TerminusModule } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartedRedisContainer } from '@testcontainers/redis';
@@ -37,7 +36,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
   let repo: TypeOrmOrderRepository;
   let inner: TypeOrmOrderQueries;
   let queries: OrderQueries;
-  let emitter: EventEmitter2;
+  let handler: InvalidateOrderListCacheHandler;
   let cache: Cache;
   let health: RedisHealthIndicator;
 
@@ -54,7 +53,6 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
           ignoreEnvFile: true,
           load: [() => ({ REDIS_URL: redis.getConnectionUrl() })],
         }),
-        EventEmitterModule.forRoot(),
         TerminusModule,
         TestLoggerModule,
         AppCacheModule,
@@ -77,7 +75,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
     }).compile();
     await app.init();
     queries = app.get(CachedOrderQueries);
-    emitter = app.get(EventEmitter2);
+    handler = app.get(InvalidateOrderListCacheHandler);
     cache = app.get(CACHE_MANAGER);
     health = app.get(RedisHealthIndicator);
   }, 180_000);
@@ -120,7 +118,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
     await repo.save(placed);
     expect((await queries.listByCustomer('fresh', first)).items[0].status).toBe('DRAFT'); // ainda em cache
 
-    await emitter.emitAsync('orders.order-placed', {
+    await handler.onOrderListChanged({
       eventId: crypto.randomUUID(),
       type: 'orders.order-placed',
       version: 1,

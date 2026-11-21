@@ -1,11 +1,9 @@
 import 'reflect-metadata';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
 import { FakeEventPublisher } from '../../../../test/fakes/fake-event-publisher';
 import { FakeLogger } from '../../../../test/fakes/fake-logger';
 import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
 import { IntegrationEvent } from '../../application/integration-event';
-import { EventEmitterPublisher } from './event-emitter-publisher';
 import { DEFAULT_OUTBOX_OPTIONS, OutboxOptions, OutboxRelay } from './outbox-relay';
 import { TypeOrmOutbox } from './typeorm-outbox';
 
@@ -54,17 +52,15 @@ describe('OutboxRelay (integração)', () => {
     (await ds.query(`SELECT * FROM shared.outbox WHERE id = $1`, [id]))[0];
 
   it('entrega o evento ao handler do tipo e marca como publicado, uma vez só', async () => {
-    const emitter = new EventEmitter2();
-    const received: IntegrationEvent[] = [];
-    emitter.on('orders.order-paid', (e: IntegrationEvent) => received.push(e));
-    const relay = new OutboxRelay(ds, new EventEmitterPublisher(emitter), clock, new FakeLogger());
+    const publisher = new FakeEventPublisher();
+    const relay = relayWith(publisher);
     const event = await add('a1');
 
     expect(await relay.runOnce()).toBe(1);
     expect(await relay.runOnce()).toBe(0);
 
     // sem trace ativo na gravação, o metadata chega vazio
-    expect(received).toEqual([{ ...event, metadata: {} }]);
+    expect(publisher.delivered).toEqual([{ ...event, metadata: {} }]);
     expect((await row(event.eventId)).publishedAt).toEqual(now);
   });
 

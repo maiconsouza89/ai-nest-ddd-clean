@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '../../../../test/fakes/fake-logger';
 import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
@@ -7,7 +6,6 @@ import { IdempotentConsumer } from '../../application/idempotent-consumer';
 import { IntegrationEvent } from '../../application/integration-event';
 import { TypeOrmTransactionManager } from '../database/typeorm-transaction-manager';
 import { currentManager } from '../database/transaction-context';
-import { EventEmitterPublisher } from './event-emitter-publisher';
 import { TypeOrmProcessedEvents } from './typeorm-processed-events';
 
 describe('IdempotentConsumer (integração)', () => {
@@ -87,22 +85,19 @@ describe('IdempotentConsumer (integração)', () => {
     expect(await effectCount(e)).toBe(1);
   });
 
-  it('pelo barramento: um handler com suppressErrors:false propaga a falha e a reentrega funciona', async () => {
-    const emitter = new EventEmitter2();
-    const publisher = new EventEmitterPublisher(emitter);
+  it('a falha do handler se propaga e a reentrega funciona', async () => {
     let fail = true;
-    emitter.on('test.something-happened', (e: IntegrationEvent) =>
+    const deliver = (e: IntegrationEvent) =>
       consumer.handle('inventory', e, async (ev) => {
         await effect(ev);
         if (fail) throw new Error('boom');
-      }),
-    );
+      });
     const e = event();
 
-    await expect(publisher.publish(e)).rejects.toThrow('boom');
+    await expect(deliver(e)).rejects.toThrow('boom');
     fail = false;
-    await publisher.publish(e);
-    await publisher.publish(e);
+    await deliver(e);
+    await deliver(e);
 
     expect(await effectCount(e)).toBe(1);
   });

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '../config/env.validation';
 import { OutboxRelay } from './outbox-relay';
@@ -8,7 +8,7 @@ const CLEANUP_INTERVAL_MS = 60 * 60_000;
 
 /** Laço em segundo plano: entrega lotes da outbox e, de tempos em tempos, limpa os antigos. */
 @Injectable()
-export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdown {
+export class OutboxWorker implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(OutboxWorker.name);
   private running = false;
   private loop?: Promise<void>;
@@ -28,7 +28,7 @@ export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdo
     this.cleanupTimer.unref();
   }
 
-  async onApplicationShutdown() {
+  async onModuleDestroy() {
     this.running = false;
     clearInterval(this.cleanupTimer);
     this.wake?.();

@@ -1,15 +1,18 @@
 import './helpers/enable-outbox-worker';
 import { INestApplication } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { OnOrderCancelledHandler } from '../src/modules/inventory/infra/events/on-order-cancelled.handler';
 import { Email, EmailSender } from '../src/modules/notifications/application/ports/email-sender';
 import { configureApp } from '../src/app.setup';
 import { IntegrationEvent } from '../src/shared/application/integration-event';
 import { registerAndLogin } from './helpers/auth';
 import { seedProduct } from './helpers/catalog';
+import { waitFor } from './helpers/wait-for';
+
+jest.setTimeout(20_000); // o evento passa pelo relay (poll de 1s) e pela fila antes do efeito
 
 describe('Outbox worker (e2e)', () => {
   let app: INestApplication;
@@ -28,10 +31,7 @@ describe('Outbox worker (e2e)', () => {
     await app.close();
   });
 
-  it('pagar um pedido entrega orders.order-paid ao handler e marca a linha como publicada', async () => {
-    const received: IntegrationEvent[] = [];
-    app.get(EventEmitter2).on('orders.order-paid', (e: IntegrationEvent) => received.push(e));
-
+  it('pagar um pedido enfileira orders.order-paid, o worker do notifications processa e a linha fica publicada', async () => {
     const user = await registerAndLogin(app);
     const productId = await seedProduct(app, 700, 5);
     const server = app.getHttpServer();
@@ -44,18 +44,31 @@ describe('Outbox worker (e2e)', () => {
     await request(server).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
     await request(server).post(`/v1/orders/${id}/pay`).set(user.auth).expect(204);
 
-    await waitFor(() => received.some((e) => e.payload.orderId === id));
-
-    const event = received.find((e) => e.payload.orderId === id)!;
+    const ds = app.get(DataSource);
+    const outboxRow = async () =>
+      (
+        await ds.query(
+          `SELECT id, type, version, "publishedAt" FROM shared.outbox WHERE "aggregateId" = $1 AND type = 'orders.order-paid'`,
+          [id],
+        )
+      )[0];
+    await waitFor(async () => (await outboxRow()) !== undefined);
+    const event = await outboxRow();
     expect(event).toMatchObject({ type: 'orders.order-paid', version: 1 });
-    // o relay só marca a linha depois que todos os listeners terminam (inclusive o do notifications)
+    // o relay marca a linha quando o evento entra nas filas; o efeito vem depois, pelo worker
     const isPublished = async () => {
-      const [row] = await app
-        .get(DataSource)
-        .query(`SELECT "publishedAt" FROM shared.outbox WHERE id = $1`, [event.eventId]);
+      const [row] = await ds.query(`SELECT "publishedAt" FROM shared.outbox WHERE id = $1`, [event.id]);
       return row.publishedAt !== null;
     };
     await waitFor(isPublished);
+    const isProcessed = async () =>
+      (
+        await ds.query(
+          `SELECT 1 FROM shared.processed_events WHERE "eventId" = $1 AND consumer = 'notifications.email-on-order-paid'`,
+          [event.id],
+        )
+      ).length === 1;
+    await waitFor(isProcessed);
   });
 
   it('pagar um pedido envia o e-mail de confirmação ao cliente', async () => {
@@ -115,7 +128,7 @@ describe('Outbox worker (e2e)', () => {
         occurredAt: event.occurredAt.toISOString(),
         payload: event.payload,
       };
-      await app.get(EventEmitter2).emitAsync(redelivered.type, redelivered);
+      await app.get(OnOrderCancelledHandler).handle(redelivered as never);
 
       expect(await stockOf(productId)).toBe(10);
       const marks = await ds().query(
@@ -156,15 +169,14 @@ describe('Outbox worker (e2e)', () => {
         return row?.publishedAt != null;
       });
 
+      await waitFor(async () =>
+        (await ds().query(
+          `SELECT 1 FROM shared.processed_events WHERE consumer = 'inventory.release-on-order-cancelled' AND "eventId" IN (SELECT id FROM shared.outbox WHERE "aggregateId" = $1)`,
+          [created.body.id],
+        )).length === 1,
+      );
+
       expect(await stockOf(productId)).toBe(10);
     });
   });
 });
-
-async function waitFor(condition: () => boolean | Promise<boolean>, timeoutMs = 10_000) {
-  const start = Date.now();
-  while (!(await condition())) {
-    if (Date.now() - start > timeoutMs) throw new Error('timeout esperando o evento');
-    await new Promise((r) => setTimeout(r, 100));
-  }
-}

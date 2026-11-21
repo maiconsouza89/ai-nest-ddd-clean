@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { IntegrationEventHandler } from '../../../../shared/infra/messaging/integration-event-handler.decorator';
 import type { OrderCancelledV1 } from '../../contracts/events/order-cancelled.event';
 import type { OrderCreatedV1 } from '../../contracts/events/order-created.event';
 import type { OrderPaidV1 } from '../../contracts/events/order-paid.event';
@@ -16,11 +16,10 @@ type OrderListChanged = OrderCreatedV1 | OrderPlacedV1 | OrderPaidV1 | OrderCanc
 export class InvalidateOrderListCacheHandler {
   constructor(private readonly queries: CachedOrderQueries) {}
 
-  // suppressErrors:false: sem isso o erro some e o worker marca o evento como entregue
-  @OnEvent('orders.order-created', { suppressErrors: false })
-  @OnEvent('orders.order-placed', { suppressErrors: false })
-  @OnEvent('orders.order-paid', { suppressErrors: false })
-  @OnEvent('orders.order-cancelled', { suppressErrors: false })
+  @IntegrationEventHandler({
+    events: ['orders.order-created', 'orders.order-placed', 'orders.order-paid', 'orders.order-cancelled'],
+    consumer: 'orders.invalidate-list-cache',
+  })
   onOrderListChanged(event: OrderListChanged) {
     return this.queries.invalidate(event.payload.customerId);
   }

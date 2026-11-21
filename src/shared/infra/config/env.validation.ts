@@ -40,6 +40,10 @@ export class EnvironmentVariables {
   @IsIn(['true', 'false'])
   OUTBOX_WORKER_ENABLED: string = 'true';
 
+  // liga os workers das filas de eventos (ex.: desligue nas instâncias que só atendem HTTP)
+  @IsIn(['true', 'false'])
+  QUEUE_WORKERS_ENABLED: string = 'true';
+
   // origens permitidas no CORS, separadas por vírgula; vazio = CORS desligado
   @IsString()
   CORS_ORIGINS: string = '';
