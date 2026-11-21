@@ -9,6 +9,7 @@ import { OrdersModule } from './modules/orders/infra/orders.module';
 import { ClockModule } from './shared/infra/clock/clock.module';
 import { AuthModule } from './shared/infra/auth/auth.module';
 import { EnvironmentVariables, validateEnv } from './shared/infra/config/env.validation';
+import { HealthModule } from './shared/infra/health/health.module';
 import { DatabaseModule } from './shared/infra/database/database.module';
 import { OutboxModule } from './shared/infra/outbox/outbox.module';
 
@@ -31,6 +32,7 @@ import { OutboxModule } from './shared/infra/outbox/outbox.module';
     AuthModule,
     ClockModule,
     DatabaseModule,
+    HealthModule,
     OutboxModule,
     CatalogModule,
     IdentityModule,

@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | 🟡 |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 10 de 12 fases concluídas · 30 de 39 passos concluídos · **Fase atual:** 11
+**Progresso geral:** 10 de 12 fases concluídas · 31 de 39 passos concluídos · **Fase atual:** 11
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -818,7 +818,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
 > - [x] Passo 30: segurança HTTP
-> - [ ] Passo 31: health check
+> - [x] Passo 31: health check
 > - [ ] Passo 32: logs e tracing
 > - [ ] Passo 33: documentação da API
 > - [ ] Passo 34: jobs agendados
