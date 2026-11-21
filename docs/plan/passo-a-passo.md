@@ -22,7 +22,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 2. Casos de uso | Ports, repositório em memória e ownership | nenhuma | ✅ |
 | 3. Fronteiras automáticas | Regras de camada no CI | `dependency-cruiser` | ✅ |
 | 4. NestJS | HTTP, módulo, validação e erros convertidos para HTTP | `@nestjs/*`, `class-validator` | ✅ |
-| 5. Configuração e banco | Variáveis de ambiente validadas, Postgres, TypeORM e migrations | `@nestjs/config`, `typeorm`, `pg` | ⬜ |
+| 5. Configuração e banco | Variáveis de ambiente validadas, Postgres, TypeORM e migrations | `@nestjs/config`, `typeorm`, `pg` | 🟡 |
 | 6. Leitura | Queries e paginação | nenhuma | ⬜ |
 | 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | ⬜ |
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ⬜ |
@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 4 de 12 fases concluídas · 11 de 39 passos concluídos · **Fase atual:** 5
+**Progresso geral:** 4 de 12 fases concluídas · 12 de 39 passos concluídos · **Fase atual:** 5
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -424,9 +424,9 @@ Poucos testes e2e bastam, só para os fluxos críticos.
 
 ## Fase 5: configuração e banco de dados
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 12: configuração validada
+> - [x] Passo 12: configuração validada
 > - [ ] Passo 13: Postgres e TypeORM
 > - [ ] Passo 14: repositório TypeORM do `Order`
 > - [ ] Passo 15: migrations por módulo
