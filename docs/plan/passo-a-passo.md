@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | 🟡 |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 10 de 12 fases concluídas · 33 de 39 passos concluídos · **Fase atual:** 11
+**Progresso geral:** 10 de 12 fases concluídas · 34 de 39 passos concluídos · **Fase atual:** 11
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -824,7 +824,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 > - [x] Passo 34: jobs agendados
 > - [ ] Passo 35: cache na leitura
 > - [ ] Passo 36: serviços externos e `Idempotency-Key`
-> - [ ] Passo 37: seeds
+> - [x] Passo 37: seeds
 
 Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
@@ -892,7 +892,7 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
 **Por quê:** desenvolvimento e testes manuais precisam de dados.
 
-**Faça:** dados obrigatórios vão em migration. Dados de desenvolvimento vão em seeds por módulo (`infra/database/typeorm/seeds`), com script `seed:<módulo>` e upsert.
+**Faça:** dados obrigatórios vão em migration. Dados de desenvolvimento vão em seeds por módulo (`infra/database/typeorm/seeds`), com script `seed:<módulo>` e insert que ignora o que já existe. Exceção: o `catalog` é plano e guarda os seus em `database/seeds`.
 
 **Pronto quando:** rodar o seed duas vezes não duplica nada.
 

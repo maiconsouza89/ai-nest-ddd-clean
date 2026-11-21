@@ -20,7 +20,10 @@
     "mig:inventory:gen": "typeorm-ts-node-commonjs migration:generate src/modules/inventory/infra/database/typeorm/migrations/change -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
     "mig:inventory:run": "typeorm-ts-node-commonjs migration:run -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
     "mig:outbox:gen": "typeorm-ts-node-commonjs migration:generate src/shared/infra/outbox/migrations/change -d src/shared/infra/outbox/outbox.data-source.ts",
-    "mig:outbox:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infra/outbox/outbox.data-source.ts"
+    "mig:outbox:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infra/outbox/outbox.data-source.ts",
+    "seed:identity": "ts-node src/modules/identity/infra/database/typeorm/seeds/run.ts",
+    "seed:catalog": "ts-node src/modules/catalog/database/seeds/run.ts",
+    "seed:inventory": "ts-node src/modules/inventory/infra/database/typeorm/seeds/run.ts"
   },
   "keywords": [],
   "author": "",

@@ -27,6 +27,11 @@ Setup: `docker compose up -d postgres` (Postgres 17 em `127.0.0.1:5432`). O `.en
 - Rodar: `npm run mig:<módulo>:run`, para `orders`, `identity`, `catalog`, `inventory` e `outbox`. Não rodam sozinhas ao subir a app.
 - Gerar: `npm run mig:<módulo>:gen` (precisa do banco no ar, pois compara com as entidades).
 
+### Seeds (só desenvolvimento)
+
+- `npm run seed:<módulo>`, para `identity`, `catalog` e `inventory`. Só inserem o que falta (não sobrescrevem dados existentes), então podem rodar mais de uma vez, e só rodam com `NODE_ENV=development` ou `test`.
+- Rode as migrations antes. Login de teste: `admin@example.com` / `user@example.com`, senha `Senha@12345`.
+
 ### Testes
 
 - `npm test`: unitários (`*.spec.ts`), sem banco.
