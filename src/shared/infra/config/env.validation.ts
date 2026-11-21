@@ -45,6 +45,9 @@ export class EnvironmentVariables {
   @Min(0)
   TRUST_PROXY: number = 0;
 
+  @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+  LOG_LEVEL: string = 'info';
+
   @IsIn(['true', 'false'])
   THROTTLE_ENABLED: string = 'true';
 }

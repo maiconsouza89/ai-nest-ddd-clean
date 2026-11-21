@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Logger } from '../../application/ports/logger';
 import { Outbox } from '../../application/ports/outbox';
 import { ProcessedEvents } from '../../application/ports/processed-events';
 import { TransactionManager } from '../../application/ports/transaction-manager';
@@ -33,9 +34,9 @@ import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
     { provide: ProcessedEvents, useClass: TypeOrmProcessedEvents },
     {
       provide: IdempotentConsumer,
-      useFactory: (tx: TransactionManager, processed: ProcessedEvents) =>
-        new IdempotentConsumer(tx, processed),
-      inject: [TransactionManager, ProcessedEvents],
+      useFactory: (tx: TransactionManager, processed: ProcessedEvents, logger: Logger) =>
+        new IdempotentConsumer(tx, processed, logger),
+      inject: [TransactionManager, ProcessedEvents, Logger],
     },
   ],
   exports: [TransactionManager, Outbox, IdempotentConsumer],

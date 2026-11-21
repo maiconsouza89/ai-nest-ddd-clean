@@ -1,7 +1,9 @@
 import { DataSource, EntityManager } from 'typeorm';
-import { IntegrationEvent } from '../../application/integration-event';
+import { EventMetadata, IntegrationEvent } from '../../application/integration-event';
 import { Clock } from '../../application/ports/clock';
 import { EventPublisher } from '../../application/ports/event-publisher';
+import { Logger } from '../../application/ports/logger';
+import { runInEventTrace } from '../observability/trace-context';
 
 export type OutboxOptions = {
   batchSize: number;
@@ -31,6 +33,7 @@ type PendingRow = {
   type: string;
   version: number;
   payload: Record<string, unknown>;
+  metadata: EventMetadata;
   occurredAt: Date;
   attempts: number;
 };
@@ -39,7 +42,7 @@ type PendingRow = {
 // (nem preso em backoff): garante a ordem por agregado. `SKIP LOCKED` faz dois workers
 // nunca pegarem a mesma linha.
 const CLAIM_SQL = `
-  SELECT o.id, o.type, o.version, o.payload, o."occurredAt", o.attempts
+  SELECT o.id, o.type, o.version, o.payload, o.metadata, o."occurredAt", o.attempts
   FROM shared.outbox o
   WHERE o."publishedAt" IS NULL AND o."deadAt" IS NULL AND o."nextAttemptAt" <= $1
     AND NOT EXISTS (
@@ -57,6 +60,7 @@ export class OutboxRelay {
     private readonly dataSource: DataSource,
     private readonly publisher: EventPublisher,
     private readonly clock: Clock,
+    private readonly logger: Logger,
     readonly options: OutboxOptions = DEFAULT_OUTBOX_OPTIONS,
   ) {}
 
@@ -68,7 +72,16 @@ export class OutboxRelay {
       const rows: PendingRow[] = await em.query(CLAIM_SQL, [now, this.options.batchSize]);
       for (const row of rows) {
         try {
-          await this.publisher.publish(toEvent(row));
+          await runInEventTrace(
+            `outbox.publish ${row.type}`,
+            row.metadata.traceparent,
+            { 'messaging.message.id': row.id, 'messaging.operation': 'process' },
+            () => {
+              // dentro do span do evento: o log leva o trace da requisição que o originou
+              this.logger.info({ eventId: row.id, type: row.type, attempt: row.attempts + 1 }, 'delivering event');
+              return this.publisher.publish(toEvent(row));
+            },
+          );
           await em.query(`UPDATE shared.outbox SET "publishedAt" = $2 WHERE id = $1`, [row.id, now]);
         } catch (error) {
           await this.recordFailure(em, row, error, now);
@@ -93,6 +106,9 @@ export class OutboxRelay {
     const dead = failures >= this.options.maxAttempts;
     const nextAttemptAt = new Date(now.getTime() + backoffDelayMs(failures, this.options));
     const message = error instanceof Error ? error.message : String(error);
+    const fields = { eventId: row.id, type: row.type, attempt: failures, error: message };
+    if (dead) this.logger.error(fields, 'event dead-lettered after max attempts');
+    else this.logger.warn({ ...fields, nextAttemptAt }, 'event delivery failed, will retry');
     await em.query(
       `UPDATE shared.outbox
        SET attempts = $2, "lastError" = $3, "nextAttemptAt" = $4, "deadAt" = $5
@@ -109,5 +125,6 @@ function toEvent(row: PendingRow): IntegrationEvent {
     version: row.version,
     occurredAt: row.occurredAt.toISOString(),
     payload: row.payload,
+    metadata: row.metadata,
   };
 }

@@ -11,6 +11,7 @@ import { AuthModule } from './shared/infra/auth/auth.module';
 import { EnvironmentVariables, validateEnv } from './shared/infra/config/env.validation';
 import { HealthModule } from './shared/infra/health/health.module';
 import { DatabaseModule } from './shared/infra/database/database.module';
+import { ObservabilityModule } from './shared/infra/observability/observability.module';
 import { OutboxModule } from './shared/infra/outbox/outbox.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { OutboxModule } from './shared/infra/outbox/outbox.module';
         skipIf: () => config.get('THROTTLE_ENABLED', { infer: true }) === 'false',
       }),
     }),
+    ObservabilityModule,
     AuthModule,
     ClockModule,
     DatabaseModule,

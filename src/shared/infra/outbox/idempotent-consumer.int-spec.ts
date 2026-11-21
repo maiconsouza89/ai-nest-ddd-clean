@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
+import { FakeLogger } from '../../../../test/fakes/fake-logger';
 import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
 import { IdempotentConsumer } from '../../application/idempotent-consumer';
 import { IntegrationEvent } from '../../application/integration-event';
@@ -16,7 +17,7 @@ describe('IdempotentConsumer (integração)', () => {
 
   beforeAll(async () => {
     ({ ds, stop } = await startOutboxDatabase());
-    consumer = new IdempotentConsumer(new TypeOrmTransactionManager(ds), new TypeOrmProcessedEvents(ds));
+    consumer = new IdempotentConsumer(new TypeOrmTransactionManager(ds), new TypeOrmProcessedEvents(ds), new FakeLogger());
     await ds.query(`CREATE TABLE IF NOT EXISTS shared.effects (event_id text, note text)`);
   }, 120_000);
 

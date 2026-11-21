@@ -1,3 +1,4 @@
+import { FakeLogger } from '../../../test/fakes/fake-logger';
 import { FakeProcessedEvents } from '../../../test/fakes/fake-processed-events';
 import { FakeTransactionManager } from '../../../test/fakes/fake-transaction-manager';
 import { IdempotentConsumer } from './idempotent-consumer';
@@ -15,13 +16,15 @@ describe('IdempotentConsumer', () => {
   let tx: FakeTransactionManager;
   let consumer: IdempotentConsumer;
   let effects: string[];
+  let logger: FakeLogger;
   const work = async (e: IntegrationEvent) => {
     effects.push(e.eventId);
   };
 
   beforeEach(() => {
     tx = new FakeTransactionManager();
-    consumer = new IdempotentConsumer(tx, new FakeProcessedEvents());
+    logger = new FakeLogger();
+    consumer = new IdempotentConsumer(tx, new FakeProcessedEvents(), logger);
     effects = [];
   });
 
@@ -44,5 +47,14 @@ describe('IdempotentConsumer', () => {
     await consumer.handle('inventory', event('e1'), work);
 
     expect(tx.runs).toBe(1);
+  });
+
+  it('registra em log o evento duplicado que ignorou', async () => {
+    await consumer.handle('inventory', event('e1'), work);
+    await consumer.handle('inventory', event('e1'), work);
+
+    expect(logger.entries).toEqual([
+      expect.objectContaining({ level: 'info', fields: expect.objectContaining({ eventId: 'e1' }) }),
+    ]);
   });
 });

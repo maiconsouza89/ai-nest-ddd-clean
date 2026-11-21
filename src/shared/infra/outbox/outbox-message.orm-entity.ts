@@ -27,6 +27,10 @@ export class OutboxMessageOrmEntity {
   @Column('jsonb')
   payload!: object;
 
+  // contexto técnico (traceparent), fora do payload de negócio
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  metadata!: object;
+
   @Column({ type: 'timestamptz' })
   occurredAt!: Date;
 

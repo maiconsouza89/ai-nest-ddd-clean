@@ -1,3 +1,4 @@
+import { FakeLogger } from '../../../../../test/fakes/fake-logger';
 import { FakeProcessedEvents } from '../../../../../test/fakes/fake-processed-events';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
@@ -18,7 +19,7 @@ describe('OnOrderCancelledHandler', () => {
       items: [{ productId: 'p1', qty: 4 }],
     });
     const handler = new OnOrderCancelledHandler(
-      new IdempotentConsumer(tx, new FakeProcessedEvents()),
+      new IdempotentConsumer(tx, new FakeProcessedEvents(), new FakeLogger()),
       new ReleaseStockUseCase(stock, tx),
     );
     return { stock, handler };

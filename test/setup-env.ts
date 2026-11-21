@@ -8,3 +8,5 @@ process.env.OUTBOX_WORKER_ENABLED ??= 'false';
 process.env.JWT_SECRET ??= 'test-secret-test-secret-test-secret-0123';
 // os e2e fazem muitos logins do mesmo IP; o teste de rate limit liga o throttler por conta própria
 process.env.THROTTLE_ENABLED ??= 'false';
+process.env.LOG_LEVEL ??= 'silent';
+process.env.OTEL_SDK_DISABLED ??= 'true';

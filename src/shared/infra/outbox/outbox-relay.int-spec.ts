@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
 import { FakeEventPublisher } from '../../../../test/fakes/fake-event-publisher';
+import { FakeLogger } from '../../../../test/fakes/fake-logger';
 import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
 import { IntegrationEvent } from '../../application/integration-event';
 import { EventEmitterPublisher } from './event-emitter-publisher';
@@ -29,8 +30,13 @@ describe('OutboxRelay (integração)', () => {
     await ds.query(`DELETE FROM shared.outbox`);
   });
 
+  let logger: FakeLogger;
+  beforeEach(() => {
+    logger = new FakeLogger();
+  });
+
   const relayWith = (publisher: FakeEventPublisher, options: Partial<OutboxOptions> = {}) =>
-    new OutboxRelay(ds, publisher, clock, { ...DEFAULT_OUTBOX_OPTIONS, ...options });
+    new OutboxRelay(ds, publisher, clock, logger, { ...DEFAULT_OUTBOX_OPTIONS, ...options });
 
   async function add(aggregateId: string, type = 'orders.order-paid') {
     const event: IntegrationEvent = {
@@ -51,13 +57,14 @@ describe('OutboxRelay (integração)', () => {
     const emitter = new EventEmitter2();
     const received: IntegrationEvent[] = [];
     emitter.on('orders.order-paid', (e: IntegrationEvent) => received.push(e));
-    const relay = new OutboxRelay(ds, new EventEmitterPublisher(emitter), clock);
+    const relay = new OutboxRelay(ds, new EventEmitterPublisher(emitter), clock, new FakeLogger());
     const event = await add('a1');
 
     expect(await relay.runOnce()).toBe(1);
     expect(await relay.runOnce()).toBe(0);
 
-    expect(received).toEqual([event]);
+    // sem trace ativo na gravação, o metadata chega vazio
+    expect(received).toEqual([{ ...event, metadata: {} }]);
     expect((await row(event.eventId)).publishedAt).toEqual(now);
   });
 
@@ -73,6 +80,11 @@ describe('OutboxRelay (integração)', () => {
     expect(failed.publishedAt).toBeNull();
     expect(failed.lastError).toContain('falha ao entregar');
     expect(failed.nextAttemptAt).toEqual(new Date(now.getTime() + 1_000));
+    expect(logger.entries.filter((e) => e.level === 'warn')).toEqual([
+      expect.objectContaining({
+        fields: expect.objectContaining({ eventId: event.eventId, attempt: 1 }),
+      }),
+    ]);
 
     // ainda dentro da espera: nada é tentado
     expect(await relay.runOnce()).toBe(0);
@@ -96,6 +108,11 @@ describe('OutboxRelay (integração)', () => {
     const dead = await row(event.eventId);
     expect(dead.attempts).toBe(2);
     expect(dead.deadAt).toEqual(now);
+    expect(logger.entries.filter((e) => e.level === 'error')).toEqual([
+      expect.objectContaining({
+        fields: expect.objectContaining({ eventId: event.eventId, attempt: 2 }),
+      }),
+    ]);
 
     now = new Date(now.getTime() + 60_000);
     expect(await relay.runOnce()).toBe(0);

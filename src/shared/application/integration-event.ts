@@ -7,4 +7,11 @@ export type IntegrationEvent = {
   /** ISO 8601 */
   occurredAt: string;
   payload: Record<string, unknown>;
+  /** Dados técnicos que não fazem parte do contrato de negócio (ex.: contexto de tracing). */
+  metadata?: EventMetadata;
+};
+
+export type EventMetadata = {
+  /** W3C Trace Context: liga o handler à requisição que originou o evento. */
+  traceparent?: string;
 };

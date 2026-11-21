@@ -819,7 +819,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 >
 > - [x] Passo 30: segurança HTTP
 > - [x] Passo 31: health check
-> - [ ] Passo 32: logs e tracing
+> - [x] Passo 32: logs e tracing
 > - [ ] Passo 33: documentação da API
 > - [ ] Passo 34: jobs agendados
 > - [ ] Passo 35: cache na leitura
