@@ -1,18 +1,14 @@
-import {
-  Injectable,
-  OnApplicationBootstrap,
-  OnModuleDestroy,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Queue, Worker } from "bullmq";
-import { Logger } from "../../../../shared/application/ports/logger";
-import { EnvironmentVariables } from "../../../../shared/infra/config/env.validation";
-import { BullMqConnection } from "../../../../shared/infra/messaging/bullmq-connection";
-import { ExpirePendingOrdersUseCase } from "../../application/use-cases/expire-pending-orders.use-case";
+import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Queue, Worker } from 'bullmq';
+import { Logger } from '../../../../shared/application/ports/logger';
+import { EnvironmentVariables } from '../../../../shared/infra/config/env.validation';
+import { BullMqConnection } from '../../../../shared/infra/messaging/bullmq-connection';
+import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case';
 
-export const ORDERS_JOBS_QUEUE = "jobs.orders";
-export const EXPIRE_PENDING_ORDERS_SCHEDULER = "orders.expire-pending-orders";
-const EVERY_5_MINUTES = "*/5 * * * *";
+export const ORDERS_JOBS_QUEUE = 'jobs.orders';
+export const EXPIRE_PENDING_ORDERS_SCHEDULER = 'orders.expire-pending-orders';
+const EVERY_5_MINUTES = '*/5 * * * *';
 // com o Redis fora do ar a chamada não rejeita, só fica pendente; sem limite a subida travaria calada
 const REGISTER_TIMEOUT_MS = 10_000;
 
@@ -22,9 +18,7 @@ const REGISTER_TIMEOUT_MS = 10_000;
  * O processor só chama o caso de uso.
  */
 @Injectable()
-export class ExpirePendingOrdersProcessor
-  implements OnApplicationBootstrap, OnModuleDestroy
-{
+export class ExpirePendingOrdersProcessor implements OnApplicationBootstrap, OnModuleDestroy {
   private queue?: Queue;
   private worker?: Worker;
 
@@ -36,20 +30,18 @@ export class ExpirePendingOrdersProcessor
   ) {}
 
   async onApplicationBootstrap() {
-    if (this.config.get("JOBS_ENABLED", { infer: true }) !== "true") return;
+    if (this.config.get('JOBS_ENABLED', { infer: true }) !== 'true') return;
 
     this.queue = new Queue(ORDERS_JOBS_QUEUE, {
       connection: this.connection.producer,
     });
-    this.queue.on("error", (err) =>
-      this.logger.warn({ err }, "orders jobs queue error"),
-    );
+    this.queue.on('error', (err) => this.logger.warn({ err }, 'orders jobs queue error'));
     try {
       // sem o agendador o job nunca roda: com o Redis fora do ar, a subida falha em vez de seguir calada
       await withTimeout(
         this.registerScheduler(this.queue),
         REGISTER_TIMEOUT_MS,
-        "orders job scheduler registration",
+        'orders job scheduler registration',
       );
     } catch (error) {
       await this.queue.close().catch(() => undefined);
@@ -60,13 +52,11 @@ export class ExpirePendingOrdersProcessor
     this.worker = new Worker(ORDERS_JOBS_QUEUE, () => this.process(), {
       connection: this.connection.worker,
     });
-    this.worker.on("failed", (job, err) =>
+    this.worker.on('failed', (job, err) =>
       // o próximo disparo tenta de novo; o BullMQ guarda o job falho no histórico
-      this.logger.error({ err, jobId: job?.id }, "order expiration failed"),
+      this.logger.error({ err, jobId: job?.id }, 'order expiration failed'),
     );
-    this.worker.on("error", (err) =>
-      this.logger.warn({ err }, "orders jobs worker error"),
-    );
+    this.worker.on('error', (err) => this.logger.warn({ err }, 'orders jobs worker error'));
   }
 
   private async registerScheduler(queue: Queue) {
@@ -84,7 +74,7 @@ export class ExpirePendingOrdersProcessor
 
   private async process() {
     const expired = await this.useCase.execute();
-    if (expired > 0) this.logger.info({ expired }, "expired pending orders");
+    if (expired > 0) this.logger.info({ expired }, 'expired pending orders');
   }
 
   // primeiro a parar: espera o job em andamento terminar, com as conexões ainda abertas
@@ -94,17 +84,10 @@ export class ExpirePendingOrdersProcessor
   }
 }
 
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  what: string,
-): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number, what: string): Promise<T> {
   let timer: NodeJS.Timeout;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`${what} timed out after ${ms}ms`)),
-      ms,
-    );
+    timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms}ms`)), ms);
   });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }

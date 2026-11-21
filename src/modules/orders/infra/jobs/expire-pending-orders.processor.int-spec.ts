@@ -1,20 +1,20 @@
-import "reflect-metadata";
-import { ConfigService } from "@nestjs/config";
-import { StartedRedisContainer } from "@testcontainers/redis";
-import { Queue } from "bullmq";
-import { FakeLogger } from "../../../../../test/fakes/fake-logger";
-import { startRedis } from "../../../../../test/helpers/redis";
-import { waitFor } from "../../../../../test/helpers/wait-for";
-import { EnvironmentVariables } from "../../../../shared/infra/config/env.validation";
-import { BullMqConnection } from "../../../../shared/infra/messaging/bullmq-connection";
-import { ExpirePendingOrdersUseCase } from "../../application/use-cases/expire-pending-orders.use-case";
+import 'reflect-metadata';
+import { ConfigService } from '@nestjs/config';
+import { StartedRedisContainer } from '@testcontainers/redis';
+import { Queue } from 'bullmq';
+import { FakeLogger } from '../../../../../test/fakes/fake-logger';
+import { startRedis } from '../../../../../test/helpers/redis';
+import { waitFor } from '../../../../../test/helpers/wait-for';
+import { EnvironmentVariables } from '../../../../shared/infra/config/env.validation';
+import { BullMqConnection } from '../../../../shared/infra/messaging/bullmq-connection';
+import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case';
 import {
   EXPIRE_PENDING_ORDERS_SCHEDULER,
   ExpirePendingOrdersProcessor,
   ORDERS_JOBS_QUEUE,
-} from "./expire-pending-orders.processor";
+} from './expire-pending-orders.processor';
 
-describe("Job de expiração de pedidos com BullMQ (integração: Redis)", () => {
+describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () => {
   let redis: StartedRedisContainer;
   let probe: Queue;
   let instances: {
@@ -23,7 +23,7 @@ describe("Job de expiração de pedidos com BullMQ (integração: Redis)", () =>
   }[] = [];
   const execute = jest.fn<Promise<number>, []>();
 
-  const boot = async (jobsEnabled = "true") => {
+  const boot = async (jobsEnabled = 'true') => {
     const logger = new FakeLogger();
     const config = new ConfigService({
       REDIS_URL: redis.getConnectionUrl(),
@@ -62,24 +62,20 @@ describe("Job de expiração de pedidos com BullMQ (integração: Redis)", () =>
     await redis?.stop();
   }, 60_000);
 
-  it("duas instâncias registram um único agendador", async () => {
+  it('duas instâncias registram um único agendador', async () => {
     await boot();
     await boot();
 
     const schedulers = await probe.getJobSchedulers();
 
-    expect(schedulers.map((s) => s.key)).toEqual([
-      EXPIRE_PENDING_ORDERS_SCHEDULER,
-    ]);
-    expect(schedulers[0].pattern).toBe("*/5 * * * *");
+    expect(schedulers.map((s) => s.key)).toEqual([EXPIRE_PENDING_ORDERS_SCHEDULER]);
+    expect(schedulers[0].pattern).toBe('*/5 * * * *');
     // o próprio agendador já deixou o próximo disparo na fila, com o nome que o worker processa
     const delayed = await probe.getDelayed();
-    expect(delayed.map((j) => j.name)).toEqual([
-      EXPIRE_PENDING_ORDERS_SCHEDULER,
-    ]);
+    expect(delayed.map((j) => j.name)).toEqual([EXPIRE_PENDING_ORDERS_SCHEDULER]);
   });
 
-  it("cada disparo roda o caso de uso uma vez só, mesmo com duas instâncias", async () => {
+  it('cada disparo roda o caso de uso uma vez só, mesmo com duas instâncias', async () => {
     execute.mockResolvedValue(0);
     await boot();
     await boot();
@@ -92,8 +88,8 @@ describe("Job de expiração de pedidos com BullMQ (integração: Redis)", () =>
     expect(execute).toHaveBeenCalledTimes(1);
   });
 
-  it("uma falha do caso de uso não derruba o worker: o próximo disparo roda", async () => {
-    execute.mockRejectedValueOnce(new Error("boom")).mockResolvedValue(0);
+  it('uma falha do caso de uso não derruba o worker: o próximo disparo roda', async () => {
+    execute.mockRejectedValueOnce(new Error('boom')).mockResolvedValue(0);
     await boot();
 
     await probe.add(EXPIRE_PENDING_ORDERS_SCHEDULER, {});
@@ -102,8 +98,8 @@ describe("Job de expiração de pedidos com BullMQ (integração: Redis)", () =>
     await waitFor(() => execute.mock.calls.length === 2);
   });
 
-  it("com JOBS_ENABLED=false não registra agendador nem processa", async () => {
-    await boot("false");
+  it('com JOBS_ENABLED=false não registra agendador nem processa', async () => {
+    await boot('false');
 
     await probe.add(EXPIRE_PENDING_ORDERS_SCHEDULER, {});
     await new Promise((r) => setTimeout(r, 500));
