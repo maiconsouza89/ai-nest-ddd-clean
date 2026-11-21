@@ -649,7 +649,7 @@ export abstract class AggregateRoot {
 **Por que a entidade não publica direto:** se publicasse e o `save` falhasse em seguida, os outros módulos reagiriam a algo que não foi salvo. Registrando primeiro, o evento só sai se a transação confirmar.
 
 1. O caso de uso salva o agregado e grava os eventos na tabela `outbox`, na mesma transação.
-2. Um worker lê a outbox, publica (EventEmitter, RabbitMQ, Kafka) e marca como enviado.
+2. Um worker lê a outbox, publica (EventEmitter, BullMQ, RabbitMQ, Kafka) e marca como enviado.
 3. Resultado: nunca salva sem publicar, nem publica sem salvar.
 
 **Worker resiliente**
@@ -658,6 +658,36 @@ export abstract class AggregateRoot {
 - **Falhas:** retry com backoff exponencial e contador de tentativas. Depois de N falhas, mova o evento para uma fila de mensagens mortas.
 - **Ordem:** publique em ordem de criação por agregado quando o consumidor depender da sequência.
 - **Limpeza:** apague ou arquive os eventos já publicados periodicamente.
+
+**Transporte com filas (BullMQ)**
+
+Com um barramento em memória, o relay chama os handlers dentro da própria transação. Um handler lento segura o lote, e a falha de um consumidor devolve o evento para todos. Com o BullMQ, o relay só enfileira, e cada consumidor processa na sua fila.
+
+```
+caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Redis) ─▶ handler
+```
+
+- **A outbox continua.** O Redis não participa da transação do Postgres. Enfileirar direto no caso de uso traz de volta o problema que a outbox resolve: evento publicado sem `save`, ou `save` sem evento.
+- **Uma fila por consumidor.** O BullMQ não faz fan-out: cada job vai para um worker só. O publicador consulta um registro `tipo do evento → filas` e enfileira uma cópia em cada fila. O registro sai de um decorator nos handlers, lido na subida com o `DiscoveryService` do Nest, então cada módulo declara só os próprios handlers.
+- **Duplicatas:** use um `jobId` determinístico (`<eventId>__<consumidor>`; o BullMQ não aceita `:` no id). Adicionar um job com id existente é ignorado, mas só enquanto o job existir: com `removeOnComplete`, use uma idade (`{ age: 24h }`) e não `true`. O `processed_events` continua obrigatório, porque a entrega segue sendo "pelo menos uma vez".
+- **Falhas:** `attempts` com `backoff: { type: 'exponential' }`. Esgotadas as tentativas, o job fica no conjunto `failed` da fila, que faz o papel de fila de mortos do consumidor. O `deadAt` da outbox passa a valer só para o que não conseguiu ser enfileirado.
+- **Ordem:** a outbox garante a ordem por agregado até a fila. Dentro dela, um retry com backoff pode inverter eventos, então o consumidor não deve depender da sequência. Se precisar, use concorrência 1 e trate o estado fora de ordem no handler.
+- **Trace:** o job carrega o evento com o `traceparent` nos metadados, e o worker abre o span a partir dele.
+
+```ts
+@Injectable()
+export class BullMqPublisher implements EventPublisher {
+  constructor(private readonly registry: SubscriptionRegistry) {}
+
+  async publish(event: IntegrationEvent) {
+    for (const { consumer, queue } of this.registry.subscribersOf(event.type)) {
+      await queue.add(event.type, event, { jobId: `${event.eventId}__${consumer}` });
+    }
+  }
+}
+```
+
+Se o `add` falhar no meio, o relay registra a falha e tenta de novo mais tarde. As filas que já receberam o job ignoram a repetição pelo `jobId`.
 
 ### Idempotência
 
@@ -909,26 +939,76 @@ export class ExpirePendingOrdersJob {
 
 O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
 
+Com o BullMQ, o agendador vira um job scheduler registrado na subida, e o processor tem o mesmo papel do job com `@Cron`: só chamar o caso de uso.
+
+```ts
+// na subida (idempotente: várias instâncias podem chamar)
+await jobsQueue.upsertJobScheduler('orders.expire-pending-orders', { pattern: '*/5 * * * *' });
+
+@Processor('jobs.orders')
+export class ExpirePendingOrdersProcessor extends WorkerHost {
+  constructor(private readonly expire: ExpirePendingOrdersUseCase) { super(); }
+
+  process() {
+    return this.expire.execute();
+  }
+}
+```
+
+### Redis
+
+Um Redis serve ao cache, às filas (BullMQ) e ao rate limit compartilhado. Só faz sentido quando a aplicação roda em mais de uma instância, ou vai rodar. Em uma instância, cache e throttler em memória bastam, e os jobs podem usar lock no Postgres.
+
+- **Política de memória:** o BullMQ exige `maxmemory-policy noeviction`. Com qualquer outra política, o Redis pode apagar chaves das filas. Um Redis usado como cache normalmente usa `allkeys-lru`. A política vale para a instância inteira, não por database. Em desenvolvimento, uma instância com `noeviction` atende os dois, desde que toda chave de cache tenha TTL. Em produção, prefira instâncias separadas para cache e filas.
+- **Persistência:** ligue o AOF (`appendonly yes`) na instância das filas, para não perder jobs num reinício.
+- **Clientes:** o BullMQ usa `ioredis` (nos workers, com `maxRetriesPerRequest: null`, que o BullMQ já define por padrão) e o `@keyv/redis` usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, e tudo bem.
+- **Configuração:** `REDIS_URL` validada na subida, como o `DATABASE_URL`.
+- **Health:** o `readiness` checa o Redis com `PING`. O `liveness` não depende dele.
+- **Testes:** `@testcontainers/redis` sobe um Redis descartável na integração.
+
+O BullMQ 6 também oferece um backend em PostgreSQL. É uma alternativa para ter filas sem operar um Redis, mas o cache continua pedindo um store compartilhado.
+
 ### Cache
 
 Um adapter que envolve a implementação de leitura. A application não sabe que existe cache.
+
+O `@nestjs/cache-manager` usa a Keyv como store. Para Redis, registre `createKeyv(url)` do `@keyv/redis` e sempre escute o evento `error` do store: sem listener, uma queda de conexão derruba o processo.
+
+```ts
+CacheModule.registerAsync({
+  isGlobal: true,
+  inject: [ConfigService],
+  useFactory: (cfg: ConfigService) => {
+    const redis = createKeyv(cfg.getOrThrow('REDIS_URL'));
+    redis.on('error', (err) => logger.warn({ err }, 'cache store error'));
+    return { stores: [redis] };
+  },
+}),
+```
 
 ```ts
 export class CachedOrderQueries implements OrderQueries {
   constructor(private readonly inner: OrderQueries, private readonly cache: Cache) {}
 
-  async getSummary(id: string) {
-    const key = `orders:summary:${id}`;
-    const hit = await this.cache.get<OrderSummary>(key);
+  async listByCustomer(customerId: string, page: PageRequest) {
+    const gen = await this.generation(customerId);
+    const key = `orders:list:${customerId}:${gen}:${page.limit}:${page.offset}`;
+    const hit = await this.cache.get<Page<OrderListItem>>(key);
     if (hit) return hit;
-    const fresh = await this.inner.getSummary(id);
+    const fresh = await this.inner.listByCustomer(customerId, page);
     await this.cache.set(key, fresh, 60_000);
     return fresh;
   }
 }
 ```
 
-Invalide pelo evento (`OrderPaid` remove a chave). Use cache só no lado de leitura, nunca para carregar agregados que serão alterados.
+- **Invalidação por evento.** O handler troca a geração do cliente (`orders:list-gen:<customerId>`) e as páginas antigas deixam de ser lidas. A Keyv não apaga por padrão de chave, por isso a geração em vez de `del` em cada página. Toda mudança que aparece na leitura precisa de um evento. Se criar ou fechar um pedido não publica nada, a listagem fica velha até o TTL.
+- **TTL em toda chave.** É a rede de segurança se um evento atrasar ou se perder.
+- **Consistência eventual.** A invalidação chega quando a outbox entrega o evento. Logo depois de uma escrita, a leitura pode vir desatualizada por esse intervalo.
+- **Redis fora não derruba a leitura.** Em erro do cache, registre e leia direto do banco.
+- **Cache em memória com várias instâncias não funciona com invalidação por evento.** O evento chega a uma instância só, e as outras continuam servindo dado velho.
+
+Use cache só no lado de leitura, nunca para carregar agregados que serão alterados.
 
 ### Serviços externos
 
@@ -965,7 +1045,7 @@ it('não paga duas vezes', () => {
 });
 ```
 
-Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas.
+Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas. Cache e filas usam o `@testcontainers/redis` do mesmo jeito.
 
 ### Regras de arquitetura no CI
 
@@ -1029,9 +1109,9 @@ Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por mó
 
 | Item | Ferramenta | Observação |
 | --- | --- | --- |
-| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco e fila com `pingCheck`) |
+| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco com `pingCheck` e Redis com `PING`) |
 | Desligamento gracioso | `app.enableShutdownHooks()` | Termina requisições e jobs em andamento e fecha conexões antes de o processo sair |
-| Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis). Atrás de proxy, configure `trust proxy` |
+| Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis), com incremento e expiração atômicos. O `@nest-lab/throttler-storage-redis` 1.2.0 declara suporte só até o Nest 11 (novembro de 2026); no Nest 12, um `ThrottlerStorage` próprio é pequeno. Atrás de proxy, configure `trust proxy` |
 | Headers de segurança | `helmet` | `app.use(helmet())` no `main.ts` |
 | CORS | `app.enableCors()` | Só origens conhecidas |
 | Entrada HTTP | `ValidationPipe` global | `whitelist`, `forbidNonWhitelisted` e `transform` ativos |
@@ -1103,6 +1183,8 @@ plop.setGenerator('module', {
 - [ ] Eventos com `eventId`, `type` e `version`, payload só com primitivos
 - [ ] Outbox com `SKIP LOCKED`, retry e fila de mensagens mortas
 - [ ] Handlers idempotentes por constraint `UNIQUE`
+- [ ] Com filas: outbox antes da fila, uma fila por consumidor e `jobId` determinístico
+- [ ] Cache só na leitura, com TTL, invalidação por evento e leitura direta do banco se o cache falhar
 - [ ] Chamadas externas com timeout; retry só em operações idempotentes
 
 **Operação**
@@ -1114,6 +1196,7 @@ plop.setGenerator('module', {
 - [ ] Guard de autenticação global, `helmet` e rate limit com storage compartilhado
 - [ ] Jobs e workers só chamam casos de uso; cron sem duplicar entre instâncias
 - [ ] Health check com liveness e readiness, e desligamento gracioso
+- [ ] Redis das filas com `maxmemory-policy noeviction` e AOF
 - [ ] Testes de domínio, casos de uso, integração e contratos
 
 ## Referências
@@ -1143,6 +1226,13 @@ Fontes consultadas na revisão de novembro de 2026.
 - [dependency-cruiser](https://github.com/sverweij/dependency-cruiser)
 - [dependency-cruiser: rules tutorial](https://raw.githubusercontent.com/sverweij/dependency-cruiser/HEAD/doc/rules-tutorial.md)
 - [Testcontainers for Node.js: PostgreSQL](https://node.testcontainers.org/modules/postgresql/)
+- [Testcontainers for Node.js: Redis](https://node.testcontainers.org/modules/redis/)
+- [NestJS: Caching](https://docs.nestjs.com/data/caching)
+- [NestJS: Queues](https://docs.nestjs.com/application/queues)
+- [NestJS: Migration guide v11 (cache-manager e Keyv)](https://docs.nestjs.com/v11/migration-guide)
+- [BullMQ: Job Ids](https://docs.bullmq.io/guide/jobs/job-ids)
+- [BullMQ: Retrying failing jobs](https://docs.bullmq.io/guide/retrying-failing-jobs)
+- [BullMQ: Going to production](https://docs.bullmq.io/guide/going-to-production)
 - [BullMQ: Job Schedulers](https://docs.bullmq.io/guide/job-schedulers/)
 - [BullMQ: Repeatable (legado)](https://docs.bullmq.io/guide/jobs/repeatable)
 - [OpenTelemetry JS: Propagation](https://opentelemetry.io/docs/languages/js/propagation/)

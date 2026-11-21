@@ -11,7 +11,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 - Legenda: ⬜ não iniciada, 🟡 em andamento, ✅ concluída.
 - Ao começar uma fase, marque 🟡 e preencha **Início** com a data. Marque cada passo (`- [x]`) quando o **Pronto quando** dele for atendido.
 - A fase fica ✅ só com todos os passos marcados. Nesse momento, preencha **Conclusão** e atualize o mapa e o progresso geral.
-- O passo 39 é uma lista de consulta. Marque-o depois de revisar a lista; não é preciso adotar todos os itens.
+- O passo 42 é uma lista de consulta. Marque-o depois de revisar a lista; não é preciso adotar todos os itens.
 - Domínio de exemplo: pedidos (`orders`), catálogo (`catalog`), estoque (`inventory`) e usuários (`identity`).
 
 ## Mapa da evolução
@@ -28,10 +28,11 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ✅ |
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
-| 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | 🟡 |
-| 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
+| 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | 🟡 |
+| 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `@nestjs/bullmq`, `bullmq`, `ioredis` | ⬜ |
+| 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 10 de 12 fases concluídas · 35 de 39 passos concluídos · **Fase atual:** 11
+**Progresso geral:** 10 de 13 fases concluídas · 35 de 42 passos concluídos · **Fase atual:** 11
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -822,7 +823,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 > - [x] Passo 32: logs e tracing
 > - [x] Passo 33: documentação da API
 > - [x] Passo 34: jobs agendados
-> - [ ] Passo 35: cache na leitura
+> - [ ] Passo 35: Redis e cache na leitura
 > - [x] Passo 36: serviços externos e `Idempotency-Key`
 > - [x] Passo 37: seeds
 
@@ -832,7 +833,7 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
 **Por quê:** a API vai ficar exposta.
 
-**Faça:** `helmet` no `main.ts`, `enableCors` só com origens conhecidas e `@nestjs/throttler` como `APP_GUARD`, com limite mais rígido em `login`. Com várias instâncias, use storage em Redis. Atrás de proxy, configure `trust proxy`.
+**Faça:** `helmet` no `main.ts`, `enableCors` só com origens conhecidas e `@nestjs/throttler` como `APP_GUARD`, com limite mais rígido em `login`. Com várias instâncias, use storage em Redis (passo 40). Atrás de proxy, configure `trust proxy`.
 
 **Pronto quando:** vários logins seguidos devolvem 429.
 
@@ -868,13 +869,45 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
 **Pronto quando:** o caso de uso tem teste com `FixedClock` e o job não roda em duplicidade.
 
-### Passo 35: cache na leitura
+**Como ficou:** `@nestjs/schedule` com `PgAdvisoryLock`, ligado por `JOBS_ENABLED`. O passo 39 troca o gatilho pelos Job Schedulers do BullMQ.
 
-**Por quê:** algumas leituras são frequentes e mudam pouco.
+### Passo 35: Redis e cache na leitura
 
-**Faça:** `CachedOrderQueries` envolvendo `OrderQueries`, registrado no módulo no lugar da implementação direta. A invalidação acontece por evento (`OrderPaid` remove a chave). Nunca use cache para carregar agregados que vão ser alterados.
+**Por quê:** algumas leituras são frequentes e mudam pouco. O cache precisa ser compartilhado entre instâncias: com cache em memória, o evento que invalida chega a uma instância só (a que entregou o evento) e as outras continuam servindo dado velho. O Redis entra aqui e é reaproveitado pelas filas na fase 12.
 
-**Pronto quando:** a application não sabe que o cache existe.
+**Faça:**
+
+```bash
+npm i @nestjs/cache-manager cache-manager keyv@^5.6 @keyv/redis@^5.1
+npm i -D @testcontainers/redis
+```
+
+Versões consultadas em 2026-11-21: `@nestjs/cache-manager` 12.0.5, `cache-manager` 7.2, `keyv` 5.6, `@keyv/redis` 5.1 e `@testcontainers/redis` 12.2 (mesma linha do `@testcontainers/postgresql`). O cache usa a Keyv, que é o caminho da documentação atual do Nest. A Keyv 6 e o `@keyv/redis` 6 já saíram, mas o `cache-manager` 7.2 ainda depende da `keyv` 5. Fique na linha 5 até o `cache-manager` subir, para não misturar duas versões da Keyv. Confira de novo ao instalar.
+
+**Base do Redis**
+
+- Serviço `redis` no `docker-compose.yml` (imagem oficial `redis:8`, `127.0.0.1:6379`, volume e healthcheck com `redis-cli ping`), iniciado com `--appendonly yes --maxmemory-policy noeviction`. O BullMQ só funciona com `noeviction` (ver [Redis](research/modules-ddd-clean-nest.md#redis)), então o mesmo Redis já nasce pronto para a fase 12.
+- `REDIS_URL` no `validateEnv` e no `.env.example`.
+- `/health/ready` passa a checar o Redis com um `PING` (indicador próprio com o `HealthIndicatorService` do terminus). O `live` continua sem dependências.
+- Os testes de integração que precisarem sobem um Redis descartável com `@testcontainers/redis`, como já fazem com o Postgres. O e2e passa a exigir o Redis do compose. `npm run ci` continua sem Redis.
+
+**Cache**
+
+- `shared/infra/cache/cache.module.ts`: `CacheModule.registerAsync({ isGlobal: true, ... })` com `stores: [createKeyv(REDIS_URL)]` e um listener de `error` no store (sem ele, uma queda do Redis derruba o processo).
+- `orders/infra/cache/cached-order.queries.ts`: `CachedOrderQueries implements OrderQueries`, envolvendo a `TypeOrmOrderQueries`. No `OrdersModule`, o provider de `OrderQueries` passa a ser um `useFactory` que monta o decorator em volta da implementação TypeORM.
+- Chave por cliente com **geração**: `orders:list-gen:<customerId>` guarda um token aleatório, e a página fica em `orders:list:<customerId>:<geração>:<limit>:<offset>`. Invalidar é trocar o token: as páginas antigas deixam de ser lidas e expiram pelo TTL. A Keyv não apaga por padrão de chave, por isso a geração.
+- TTL curto (60s) em toda chave, como rede de segurança.
+- Falha do Redis não pode derrubar a leitura: em erro, registre um `warn` e leia direto do Postgres.
+- Invalidação por evento, num handler em `orders/infra/events/`. Toda mudança que aparece na listagem precisa de evento: pagar, cancelar e expirar já emitem `OrderPaid` e `OrderCancelled`, mas criar e fechar ainda não. Registre `OrderCreated` e `OrderPlaced` no domínio e publique `OrderCreatedV1` e `OrderPlacedV1` pela outbox, com exemplos e testes de contrato (passo 29). Os eventos levam `customerId`. Trocar a geração já é idempotente, então esse handler não precisa do `processed_events`.
+- Nunca use cache para carregar agregados que vão ser alterados.
+
+Limite conhecido: a invalidação chega quando a outbox entrega o evento (cerca de 1s com o polling atual). Logo depois de uma escrita, a listagem pode vir desatualizada por esse tempo. O TTL limita o pior caso a 60s, se um evento ficar preso.
+
+**Pronto quando:**
+
+- a segunda listagem igual não vai ao Postgres e uma escrita no pedido faz a próxima listagem vir atualizada (teste de integração com Postgres e Redis em containers);
+- com o Redis parado, a listagem continua respondendo e o `/health/ready` falha;
+- nenhum arquivo de `application` importa algo de cache.
 
 ### Passo 36: serviços externos e `Idempotency-Key`
 
@@ -900,14 +933,87 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
 ---
 
-## Fase 12: escala do time
+## Fase 12: filas com Redis
 
 > **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
 >
-> - [ ] Passo 38: gerador de módulos
-> - [ ] Passo 39: evoluções sob demanda
+> - [ ] Passo 38: BullMQ como transporte dos eventos
+> - [ ] Passo 39: jobs agendados com Job Schedulers
+> - [ ] Passo 40: rate limit com storage no Redis
 
-### Passo 38: gerador de módulos
+Depende do passo 35, que coloca o Redis no ar. A outbox continua sendo a fonte da verdade: o Redis não participa da transação do Postgres, então nenhum caso de uso coloca job direto na fila.
+
+### Passo 38: BullMQ como transporte dos eventos
+
+**Por quê:** hoje o relay da outbox chama os handlers no mesmo processo e dentro da transação que trava as linhas da outbox. Um handler lento (o envio de e-mail) segura o lote inteiro, e se um consumidor falha o evento volta para todos. Com uma fila por consumidor, cada um tem retry, backoff e falha próprios, e os consumidores podem rodar em outro processo.
+
+**Faça:**
+
+```bash
+npm i @nestjs/bullmq bullmq ioredis
+```
+
+Versões consultadas em 2026-11-21: `@nestjs/bullmq` 12.0.2 e `bullmq` 6.7. O BullMQ usa `ioredis`, e a Keyv do cache usa o cliente `redis`: são duas conexões, apontando para o mesmo `REDIS_URL`.
+
+```
+caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Redis) ─▶ handler
+```
+
+- `BullModule.forRootAsync` em `shared/infra/messaging/` com a conexão do `REDIS_URL`.
+- **Fila por consumidor.** O BullMQ não faz fan-out: cada job vai para um worker só. Cada consumidor tem a própria fila, `events.<consumidor>` (por exemplo `events.notifications.email-on-order-paid`). O nome do consumidor é o mesmo usado no `processed_events`.
+- **Registro de assinaturas.** Um decorator em `shared/infra/messaging/`, por exemplo `@IntegrationEventHandler({ event: 'orders.order-paid', consumer: 'notifications.email-on-order-paid' })`, substitui o `@OnEvent`. Na subida, o `DiscoveryService` do Nest monta o mapa `tipo do evento → filas` e cria um worker por consumidor. Cada módulo continua declarando só os próprios handlers.
+- **`BullMqPublisher implements EventPublisher`** substitui o `EventEmitterPublisher`. Para cada fila assinante do tipo, faz ``queue.add(type, event, { jobId: `${eventId}__${consumidor}` })`` (o BullMQ não aceita `:` no `jobId`). O `OutboxRelay` e os casos de uso não mudam.
+- **Deduplicação:** o `jobId` faz o BullMQ ignorar o mesmo evento enfileirado duas vezes (o relay pode repetir se cair entre o `add` e o `UPDATE`). Isso só vale enquanto o job existir na fila, então use `removeOnComplete: { age: 24h }` e `removeOnFail: { age: 7d }`. Depois disso, o `processed_events` continua garantindo o efeito uma vez só.
+- **Retry:** `attempts` e `backoff: { type: 'exponential' }` por fila. Esgotadas as tentativas, o job fica no conjunto `failed`, que é a fila de mortos do consumidor. O `deadAt` da outbox passa a significar "não consegui enfileirar".
+- **Trace:** o job carrega o evento inteiro, com o `traceparent` nos metadados. O worker envolve o handler em `runInEventTrace`, como o relay faz hoje.
+- **Ordem:** a outbox continua entregando em ordem por agregado, mas só até a fila. Retry com backoff pode inverter a ordem dentro de uma fila, então nenhum consumidor pode depender dela. Hoje nenhum depende: pago e cancelado são estados excludentes.
+- `QUEUE_WORKERS_ENABLED` no `validateEnv`, como o `OUTBOX_WORKER_ENABLED`, para poder separar processos de API e de workers.
+- Migre os handlers existentes (`OnOrderPaidHandler`, `OnOrderCancelledHandler` e o de cache do passo 35) e remova o `@nestjs/event-emitter` quando não sobrar `@OnEvent`.
+- `/health/ready` já checa o Redis desde o passo 35.
+
+**Pronto quando:**
+
+- pagar um pedido envia o e-mail pelo worker do `notifications`, e o log do worker tem o mesmo `traceId` da requisição;
+- um consumidor que falha não impede os outros de receberem o evento;
+- enfileirar o mesmo evento duas vezes produz o efeito uma vez só (teste de integração com Postgres e Redis em containers);
+- `npm run arch` passa e nenhum arquivo de `domain` ou `application` mudou.
+
+### Passo 39: jobs agendados com Job Schedulers
+
+**Por quê:** o job de expiração depende de um advisory lock no Postgres para não rodar em duplicidade. Com o BullMQ no ar, o próprio agendador garante uma execução por intervalo, com retry e histórico.
+
+**Faça:**
+
+- Na subida, `queue.upsertJobScheduler('orders.expire-pending-orders', { pattern: '*/5 * * * *' })` numa fila `jobs.orders`. O `upsertJobScheduler` é idempotente, então várias instâncias podem chamá-lo. A API antiga de repeatable jobs foi removida na v6.
+- `ExpirePendingOrdersProcessor` em `orders/infra/jobs/` só chama o `ExpirePendingOrdersUseCase`, como o job de hoje.
+- `JOBS_ENABLED` controla se a instância registra o agendador e processa a fila.
+- Remova o `@Cron`, o `@nestjs/schedule` se não sobrar uso e o `PgAdvisoryLock` se nada mais o usar.
+- Opcional: a limpeza da outbox (hoje um `setInterval` no `OutboxWorker`) pode virar outro scheduler.
+
+**Pronto quando:** com duas instâncias no ar, cada disparo expira os pedidos uma vez só, e o caso de uso e o teste com `FixedClock` continuam iguais.
+
+### Passo 40: rate limit com storage no Redis
+
+**Por quê:** com o storage em memória, cada instância conta os acessos separadamente. Com N instâncias, o limite de login vira N vezes maior.
+
+**Faça:**
+
+- Storage do `@nestjs/throttler` no Redis, passado em `ThrottlerModule.forRootAsync({ storage })`.
+- O pacote mais usado, `@nest-lab/throttler-storage-redis` 1.2.0, declara compatibilidade só até o Nest 11 (consultado em 2026-11-21). Se ainda for assim, escreva um `RedisThrottlerStorage` em `shared/infra/http/` que implementa a interface `ThrottlerStorage` (confira a assinatura atual no Context7). Faça o incremento e a expiração atomicamente, com um script Lua ou `MULTI`, reaproveitando a conexão `ioredis` do passo 38.
+- Se o Redis cair, decida e documente: deixar passar (disponibilidade) ou bloquear (segurança). Para o login, prefira bloquear.
+
+**Pronto quando:** com duas instâncias atrás do mesmo Redis, o limite de login vale para a soma das duas.
+
+---
+
+## Fase 13: escala do time
+
+> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+>
+> - [ ] Passo 41: gerador de módulos
+> - [ ] Passo 42: evoluções sob demanda
+
+### Passo 41: gerador de módulos
 
 **Por quê:** a partir do terceiro módulo, criar a estrutura à mão gera divergência.
 
@@ -915,7 +1021,7 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 
 **Pronto quando:** `npx plop module` gera um módulo que passa no `npm run arch` sem ajustes.
 
-### Passo 39: evoluções sob demanda
+### Passo 42: evoluções sob demanda
 
 Só adote estes itens quando a necessidade aparecer:
 
