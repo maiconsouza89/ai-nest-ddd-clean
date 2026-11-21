@@ -30,7 +30,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | Fase | O que muda | Dependências | Status |
 | --- | --- | --- | --- |
 | 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
-| 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ⬜ |
+| 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | 🟡 |
 | 3. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
@@ -38,7 +38,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 1 de 8 fases concluídas · 2 de 18 passos concluídos · **Fase atual:** 2
+**Progresso geral:** 1 de 8 fases concluídas · 3 de 18 passos concluídos · **Fase atual:** 2
 
 ---
 
@@ -82,9 +82,9 @@ npm i -D typescript@~6.0
 
 ## Fase 2: lint e formatação
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 3: Prettier
+> - [x] Passo 3: Prettier
 > - [ ] Passo 4: ESLint com informação de tipo
 
 O projeto não tem formatador nem linter. O estilo é mantido à mão, e nada além do `tsc` olha o código antes dos testes.
