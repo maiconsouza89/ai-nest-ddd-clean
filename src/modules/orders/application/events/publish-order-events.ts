@@ -15,4 +15,3 @@ export async function publishOrderEvents(
     .map((e) => toIntegrationEvent(e, { eventId: ids.next(), occurredAt }));
   await outbox.add(order.id, events);
 }
-con

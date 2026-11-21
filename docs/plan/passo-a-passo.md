@@ -27,11 +27,11 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 7. Autenticação | Módulo `identity`, JWT e guard global | `@nestjs/jwt`, biblioteca de hash | ✅ |
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ✅ |
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
-| 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | 🟡 |
+| 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 9 de 12 fases concluídas · 28 de 39 passos concluídos · **Fase atual:** 10
+**Progresso geral:** 10 de 12 fases concluídas · 29 de 39 passos concluídos · **Fase atual:** 11
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -714,14 +714,14 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 
 ## Fase 10: eventos
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 24: `AggregateRoot` e eventos de domínio
 > - [x] Passo 25: outbox
 > - [x] Passo 26: worker de publicação
 > - [x] Passo 27: consumidores idempotentes
 > - [x] Passo 28: fluxos por evento e grafo sem ciclos
-> - [ ] Passo 29: versionamento de contratos e testes de contrato
+> - [x] Passo 29: versionamento de contratos e testes de contrato
 
 ### Passo 24: `AggregateRoot` e eventos de domínio
 
@@ -807,7 +807,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 **Faça:**
 
 - Siga as regras de versão do guia de referência ([Dependências e contratos entre módulos](research/modules-ddd-clean-nest.md#dependências-e-contratos-entre-módulos)): mudança aditiva mantém a versão, e mudança que quebra publica v1 e v2 juntas.
-- Guarde exemplos versionados de cada evento em `contracts/` e teste os dois lados: quem publica gera um payload compatível, e quem consome entende o exemplo.
+- Guarde exemplos versionados de cada evento em `contracts/events/` (`*.v1.example.ts`, tipados com o contrato) e teste os dois lados: quem publica gera um payload compatível, e quem consome entende o exemplo. As facades têm teste do formato do resultado.
 
 **Pronto quando:** remover um campo do `OrderPaidV1` quebra um teste.
 
