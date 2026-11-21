@@ -14,6 +14,10 @@ import { EnvironmentVariables, validateEnv } from './shared/infra/config/env.val
 import { HealthModule } from './shared/infra/health/health.module';
 import { DatabaseModule } from './shared/infra/database/database.module';
 import { ObservabilityModule } from './shared/infra/observability/observability.module';
+import { Logger } from './shared/application/ports/logger';
+import { RedisThrottlerStorage } from './shared/infra/http/redis-throttler-storage';
+import { BullMqConnection } from './shared/infra/messaging/bullmq-connection';
+import { MessagingModule } from './shared/infra/messaging/messaging.module';
 import { OutboxModule } from './shared/infra/outbox/outbox.module';
 
 @Module({
@@ -26,9 +30,16 @@ import { OutboxModule } from './shared/infra/outbox/outbox.module';
       validate: validateEnv,
     }),
     ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<EnvironmentVariables, true>) => ({
+      imports: [MessagingModule],
+      inject: [ConfigService, BullMqConnection, Logger],
+      useFactory: (
+        config: ConfigService<EnvironmentVariables, true>,
+        connection: BullMqConnection,
+        logger: Logger,
+      ) => ({
         throttlers: [{ ttl: seconds(60), limit: 100 }],
+        // contadores no Redis: com N instâncias, o limite vale para a soma, e não para cada uma
+        storage: new RedisThrottlerStorage(connection.producer, logger),
         skipIf: () => config.get('THROTTLE_ENABLED', { infer: true }) === 'false',
       }),
     }),

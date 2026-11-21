@@ -29,10 +29,10 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | ✅ |
-| 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | 🔄 |
+| 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | ✅ |
 | 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 11 de 13 fases concluídas · 39 de 42 passos concluídos · **Fase atual:** 12
+**Progresso geral:** 12 de 13 fases concluídas · 40 de 42 passos concluídos · **Fase atual:** 13
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -935,11 +935,11 @@ Limite conhecido: a invalidação chega quando a outbox entrega o evento (cerca 
 
 ## Fase 12: filas com Redis
 
-> **Status:** 🔄 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 38: BullMQ como transporte dos eventos
 > - [x] Passo 39: jobs agendados com Job Schedulers
-> - [ ] Passo 40: rate limit com storage no Redis
+> - [x] Passo 40: rate limit com storage no Redis
 
 Depende do passo 35, que coloca o Redis no ar. A outbox continua sendo a fonte da verdade: o Redis não participa da transação do Postgres, então nenhum caso de uso coloca job direto na fila.
 
@@ -1007,6 +1007,8 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 - Se o Redis cair, decida e documente: deixar passar (disponibilidade) ou bloquear (segurança). Para o login, prefira bloquear.
 
 **Pronto quando:** com duas instâncias atrás do mesmo Redis, o limite de login vale para a soma das duas.
+
+**Como ficou:** o `@nest-lab/throttler-storage-redis` não foi usado (compatibilidade declarada só até o Nest 11), então `RedisThrottlerStorage` (`shared/infra/http/`) implementa `ThrottlerStorage` com um script Lua: janela fixa, contagem, expiração e bloqueio atômicos, reaproveitando a conexão `producer` do BullMQ. Redis fora do ar: falha fechada com 503, porque deixar passar abriria o limite de login quando não dá para contar tentativas. Verificado com duas instâncias reais: o 6º login errado, na outra instância, recebeu 429.
 
 ---
 
