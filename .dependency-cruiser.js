@@ -1,7 +1,13 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
-    { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
+    {
+      name: 'no-circular',
+      severity: 'error',
+      from: {},
+      // imports só de tipo (import type) somem na compilação e não formam ciclo real
+      to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
+    },
     {
       name: 'domain-e-application-sem-framework',
       severity: 'error',
@@ -40,7 +46,7 @@ module.exports = {
     // Testes podem montar peças de várias camadas.
     exclude: { path: '\\.(spec|int-spec|e2e-spec)\\.ts$' },
     tsConfig: { fileName: 'tsconfig.json' },
-    tsPreCompilationDeps: true,
+    tsPreCompilationDeps: 'specify',
     doNotFollow: { path: 'node_modules' },
   },
 };

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
 import { PriceCatalog } from '../application/ports/price-catalog';
@@ -6,14 +7,17 @@ import { CreateOrderUseCase } from '../application/use-cases/create-order.use-ca
 import { PayOrderUseCase } from '../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../application/use-cases/place-order.use-case';
 import { OrderRepository } from '../domain/repositories/order.repository';
-import { InMemoryOrderRepository } from './database/in-memory/in-memory-order.repository';
+import { OrderItemOrmEntity } from './database/typeorm/entities/order-item.orm-entity';
+import { OrderOrmEntity } from './database/typeorm/entities/order.orm-entity';
+import { TypeOrmOrderRepository } from './database/typeorm/typeorm-order.repository';
 import { StaticPriceCatalog } from './gateways/static-price-catalog';
 import { OrdersController } from './http/controllers/orders.controller';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity])],
   controllers: [OrdersController],
   providers: [
-    { provide: OrderRepository, useClass: InMemoryOrderRepository },
+    { provide: OrderRepository, useClass: TypeOrmOrderRepository },
     { provide: PriceCatalog, useClass: StaticPriceCatalog },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
