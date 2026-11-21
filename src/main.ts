@@ -12,8 +12,9 @@ async function bootstrap() {
   const nest = await NestFactory.create(AppModule, { bufferLogs: true });
   nest.useLogger(nest.get(Logger));
   const app = configureApp(nest);
-  setupSwagger(app);
   const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);
+  // a UI expõe o mapa de rotas e os schemas, então fica fora de produção
+  if (config.get('NODE_ENV', { infer: true }) !== 'production') setupSwagger(app);
   await app.listen(config.get('PORT', { infer: true }));
 }
 bootstrap();
