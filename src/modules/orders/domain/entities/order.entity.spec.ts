@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
 import { OrderCancelled } from '../events/order-cancelled.event';

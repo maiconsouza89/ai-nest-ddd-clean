@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { Global, Injectable, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';

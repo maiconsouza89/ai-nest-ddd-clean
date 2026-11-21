@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import IORedis from 'ioredis';
@@ -24,8 +25,7 @@ describe('Rate limiting (e2e)', () => {
     previous = process.env.THROTTLE_ENABLED;
     process.env.THROTTLE_ENABLED = 'true';
     // o ConfigModule valida o env quando o AppModule é importado, então o import vem depois do env
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { AppModule } = require('../src/app.module') as typeof import('../src/app.module');
+    const { AppModule } = await import('../src/app.module.js');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';

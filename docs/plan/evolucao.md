@@ -31,14 +31,14 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | --- | --- | --- | --- |
 | 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
 | 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ✅ |
-| 3. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
+| 3. Vitest | Jest sai, Vitest entra | `vitest` | ✅ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 2 de 8 fases concluídas · 4 de 18 passos concluídos · **Fase atual:** 3
+**Progresso geral:** 3 de 8 fases concluídas · 6 de 18 passos concluídos · **Fase atual:** 4
 
 ---
 
@@ -73,7 +73,7 @@ npm i uuid@latest
 npm i -D typescript@~6.0
 ```
 
-- O `uuid` 12 em diante é só ESM. Até a fase 4, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os scripts de teste atuais já rodam o Jest com `--experimental-vm-modules`, então ele também carrega.
+- O `uuid` 12 em diante é só ESM. Até a fase 4, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os testes (Vitest, desde a fase 3) também carregam o `uuid` sem flag.
 - O `ioredis` fica no 5.11 (ver a tabela de exceções). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
 
 **Pronto quando:** `npm outdated` lista só os pacotes da tabela de exceções, e `ci`, `test:int` e `test:e2e` passam.
@@ -180,40 +180,37 @@ export default defineConfig(
 
 ## Fase 3: Jest → Vitest
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
-> - [ ] Passo 5: Vitest com SWC e três projetos
-> - [ ] Passo 6: migrar os testes e remover o Jest
+> - [x] Passo 5: Vitest e três projetos
+> - [x] Passo 6: migrar os testes e remover o Jest
 
 Contexto e alternativas no [ADR 0001](../adr/0001-vitest-e-esm.md).
 
-### Passo 5: Vitest com SWC e três projetos
+### Passo 5: Vitest e três projetos
 
-**Por quê:** os pacotes do Nest 12 são só ESM. O Jest só os carrega com `node --experimental-vm-modules`, que é o ponto fraco dele. O Vitest é o padrão do Nest 12 em projetos ESM. O esbuild, que o Vitest usa por padrão, **não emite decorator metadata**, e é com ela que o Nest injeta dependências por classe. Por isso o SWC entra junto (receita oficial: docs.nestjs.com/recipes/swc).
+**Por quê:** os pacotes do Nest 12 são só ESM. O Jest só os carrega com `node --experimental-vm-modules`, que é o ponto fraco dele. O Vitest é o padrão do Nest 12 em projetos ESM. O Nest injeta dependências por classe com decorator metadata. O esbuild, que o Vite 7 e anteriores usavam, não a emite, e por isso a receita oficial manda usar o SWC (docs.nestjs.com/recipes/swc). O Vitest 5 roda sobre o Vite 8, cujo transformador padrão (oxc) a emite lendo o `tsconfig.json`. Validado em 2026-11-21 sem SWC: unitários, integração e e2e passam, então **não há SWC no projeto** (ver ADR 0001).
 
 **Faça:**
 
 ```bash
-npm i -D vitest unplugin-swc @swc/core
+npm i -D vitest
 ```
 
-Versões consultadas em 2026-11-21: `vitest` 5.1.1, `unplugin-swc` 2.0.0, `@swc/core` 1.16.22.
+Versão consultada em 2026-11-21: `vitest` 5.1.1 (Vite 8.3.8).
 
 ```ts
 // vitest.config.ts
-import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // SWC no lugar do esbuild: emite a decorator metadata que o Nest usa para injetar por classe.
-  // experimentalDecorators e emitDecoratorMetadata vêm do tsconfig.json.
-  plugins: [swc.vite({ module: { type: 'es6' } })],
+  // O oxc, transformador padrão do Vite 8, emite a decorator metadata que o Nest usa para injetar
+  // por classe. experimentalDecorators e emitDecoratorMetadata vêm do tsconfig.json.
   test: {
     setupFiles: ['./test/setup-env.ts'],
     projects: [
-      { extends: true, test: { name: 'unit', include: ['src/**/*.spec.ts'] } },
+      { test: { name: 'unit', include: ['src/**/*.spec.ts'] } },
       {
-        extends: true,
         test: {
           name: 'int',
           include: ['src/**/*.int-spec.ts'],
@@ -223,7 +220,6 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           name: 'e2e',
           include: ['test/**/*.e2e-spec.ts'],
@@ -246,7 +242,8 @@ Scripts:
 ```
 
 - Um padrão de caminho como argumento filtra os arquivos: `npm test -- money.vo` e `npm run test:int -- pay-order`. O aviso atual do `CLAUDE.md` sobre o `--testRegex` engolir o caminho deixa de valer.
-- Confira no Context7 se `include` e os timeouts por projeto continuam com esses nomes na versão instalada.
+- No Vitest 5 os projetos inline herdam o `setupFiles` da raiz por padrão (`extends: true` virou o padrão), então não repita. `include`, `fileParallelism` e os timeouts por projeto continuam com esses nomes (conferido no Context7).
+- Enquanto o `package.json` for CommonJS, o Vitest avisa que o `vitest.config.ts` usa ESM (`configLoader: 'native'`). O aviso some na fase 4.
 - O `vitest.config.ts` fica na raiz, fora do `include` do `tsconfig.json`, então o `files` do ESLint (passo 4) não o alcança. Se quiser lint nele, inclua-o no `tsconfig.json` ou use `allowDefaultProject` do `projectService`.
 
 **Pronto quando:** `npx vitest run --project unit` roda pelo menos um spec já migrado, e um teste que injeta dependência por classe num `Test.createTestingModule` passa. Esse teste prova que a metadata está sendo emitida.
@@ -261,12 +258,15 @@ Scripts:
 - Troque `jest.fn`, `jest.spyOn`, `jest.useFakeTimers` e afins por `vi.*`. São 8 arquivos com `jest.` hoje.
 - No `tsconfig.json`, `"types": ["node"]` (sem `jest`). O TS 6 tem `types: []` como padrão, então a lista continua explícita.
 - Remova `jest`, `ts-jest`, `@types/jest` e o `jest.config.js`.
+- O `require()` não existe nos módulos do Vitest. O `test/throttle.e2e-spec.ts` o usava para importar o `AppModule` depois de ligar o `THROTTLE_ENABLED`, e virou `await import('../src/app.module.js')` (o `.js` é exigido pelo `moduleResolution: nodenext` e o Vite o resolve para o `.ts`).
+- `jest.setTimeout` vira `vi.setConfig({ testTimeout })`, ou o timeout do projeto no `vitest.config.ts`. O do `outbox.e2e-spec.ts` ficou redundante e saiu.
+- O `test/smoke.spec.ts` (só provava que o Jest rodava) foi trocado por `src/shared/testing/decorator-metadata.spec.ts`, que prova a decorator metadata. O template do plop (`create.use-case.spec.hbs`) também passou a importar de `'vitest'`.
 - O `options.exclude` do dependency-cruiser não muda, porque os sufixos `.spec`, `.int-spec` e `.e2e-spec` continuam os mesmos. O override de testes do `eslint.config.mjs` também não muda.
 
 **Pronto quando:**
 
 - `ci`, `test:int` e `test:e2e` passam com a mesma contagem de testes de antes, e `grep -rn "jest" src test package.json` não encontra nada.
-- No guia, a seção "Qualidade" cita o Vitest com SWC no lugar do Jest.
+- No guia, a seção "Qualidade" cita o Vitest no lugar do Jest.
 
 ---
 

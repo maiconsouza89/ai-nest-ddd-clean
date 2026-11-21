@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FakeLogger } from '../../../test/fakes/fake-logger';
 import { FakeProcessedEvents } from '../../../test/fakes/fake-processed-events';
 import { FakeTransactionManager } from '../../../test/fakes/fake-transaction-manager';

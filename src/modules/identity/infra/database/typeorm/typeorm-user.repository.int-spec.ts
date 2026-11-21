@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { startIdentityDatabase } from '../../../../../../test/helpers/identity-database';

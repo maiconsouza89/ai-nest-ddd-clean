@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
 import { TypeOrmHealthIndicator } from '@nestjs/terminus';

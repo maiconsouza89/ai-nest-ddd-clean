@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { incompatibilities } from '../../../../../test/helpers/contract';
 import { Order } from '../../domain/entities/order.entity';
 import { Money } from '../../../../shared/domain/money.vo';

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import 'reflect-metadata';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Global, Module } from '@nestjs/common';
@@ -98,7 +99,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
   it('a segunda listagem igual não vai ao Postgres', async () => {
     await seed('hit');
-    const spy = jest.spyOn(inner, 'listByCustomer');
+    const spy = vi.spyOn(inner, 'listByCustomer');
 
     const a = await queries.listByCustomer('hit', first);
     const b = await queries.listByCustomer('hit', first);
@@ -145,7 +146,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
     expect(await health.pingCheck('redis', { timeout: 1000 })).toEqual({ redis: { status: 'up' } });
 
     await redis.stop();
-    const spy = jest.spyOn(inner, 'listByCustomer');
+    const spy = vi.spyOn(inner, 'listByCustomer');
 
     const page = await queries.listByCustomer('down', first);
     await queries.listByCustomer('down', first);

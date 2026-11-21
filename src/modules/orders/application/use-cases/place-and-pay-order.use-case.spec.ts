@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { FakeIdempotencyStore } from '../../../../../test/fakes/fake-idempotency-store';
 import { FakePaymentGateway } from '../../../../../test/fakes/fake-payment-gateway';
 import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';

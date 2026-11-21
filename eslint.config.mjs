@@ -14,7 +14,7 @@ export default defineConfig(
     },
   },
   {
-    // Testes: `expect(repo.save)` passa o método solto de propósito, e supertest, matchers do Jest e
+    // Testes: `expect(repo.save)` passa o método solto de propósito, e supertest, matchers do Vitest e
     // `ds.query` cru devolvem `any`. Em produção, as regras no-unsafe-* ficam ligadas. Ver ADR 0004.
     files: ['**/*.spec.ts', '**/*.int-spec.ts', 'test/**/*.ts'],
     rules: {

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { InvalidNameError } from '../errors/invalid-name.error';
 import { Email } from '../value-objects/email.vo';
 import { User } from './user.entity';

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { orderCancelledV1Example } from '../../contracts/events/order-cancelled.v1.example';
 import { orderCreatedV1Example } from '../../contracts/events/order-created.v1.example';
 import { orderPaidV1Example } from '../../contracts/events/order-paid.v1.example';
@@ -13,7 +14,7 @@ describe('InvalidateOrderListCacheHandler', () => {
     ['orders.order-paid', orderPaidV1Example],
     ['orders.order-cancelled', orderCancelledV1Example],
   ])('%s invalida a listagem do cliente do evento', async (_type, example) => {
-    const invalidate = jest.fn().mockResolvedValue(undefined);
+    const invalidate = vi.fn().mockResolvedValue(undefined);
     const handler = new InvalidateOrderListCacheHandler({
       invalidate,
     } as unknown as CachedOrderQueries);

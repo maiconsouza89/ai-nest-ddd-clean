@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { AggregateRoot } from './aggregate-root';
 import { DomainEvent } from './domain-event';
 

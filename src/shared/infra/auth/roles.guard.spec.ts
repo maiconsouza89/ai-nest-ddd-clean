@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Actor } from '../../application/actor';
@@ -6,7 +7,7 @@ import { RolesGuard } from './roles.guard';
 function contextFor(user: Actor | undefined, roles: string[] | undefined) {
   const handler = () => undefined;
   const reflector = new Reflector();
-  jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(roles);
+  vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(roles);
   return {
     guard: new RolesGuard(reflector),
     ctx: {

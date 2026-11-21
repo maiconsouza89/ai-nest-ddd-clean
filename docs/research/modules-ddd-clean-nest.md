@@ -1072,6 +1072,8 @@ it('não paga duas vezes', () => {
 });
 ```
 
+O runner é o Vitest, com três projetos no `vitest.config.ts`: `unit` (`*.spec.ts`), `int` (`*.int-spec.ts`) e `e2e` (`test/*.e2e-spec.ts`). A decorator metadata, sem a qual o Nest não injeta por classe, vem do oxc, o transformador padrão do Vite 8, que lê `emitDecoratorMetadata` do `tsconfig.json`. O suporte é parcial: tipos que exigem inferência (type alias, utility types) viram `Object`, então injete sempre por classe ou `@Inject`. Os testes importam `describe`, `it`, `expect` e `vi` de `'vitest'`, sem `globals`. O `src/shared/testing/decorator-metadata.spec.ts` falha se a metadata deixar de ser emitida.
+
 Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas. Cache e filas usam o `@testcontainers/redis` do mesmo jeito.
 
 ### Lint e formatação

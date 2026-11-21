@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { CatalogFacade } from '../../../catalog/contracts/catalog.facade';
 import { CatalogPriceAdapter } from './catalog-price.adapter';
 

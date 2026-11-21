@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Order } from '../../../domain/entities/order.entity';
 import { InMemoryOrderRepository } from './in-memory-order.repository';
 

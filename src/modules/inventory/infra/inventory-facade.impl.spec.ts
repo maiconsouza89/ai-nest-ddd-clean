@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { FakeTransactionManager } from '../../../../test/fakes/fake-transaction-manager';
 import { SequentialIdGenerator } from '../../../../test/fakes/sequential-id-generator';
 import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case';

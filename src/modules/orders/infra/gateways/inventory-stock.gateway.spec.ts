@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { InventoryFacade } from '../../../inventory/contracts/inventory.facade';
 import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
 import { InventoryStockGateway } from './inventory-stock.gateway';
@@ -6,7 +7,7 @@ describe('InventoryStockGateway', () => {
   const items = [{ productId: 'a', qty: 2 }];
 
   it('usa o id do pedido como referência da reserva', async () => {
-    const reserve = jest.fn().mockResolvedValue({ ok: true });
+    const reserve = vi.fn().mockResolvedValue({ ok: true });
     const gateway = new InventoryStockGateway({ reserve });
 
     await gateway.reserve('o1', items);

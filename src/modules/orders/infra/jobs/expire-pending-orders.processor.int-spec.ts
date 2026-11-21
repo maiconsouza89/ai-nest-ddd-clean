@@ -1,3 +1,4 @@
+import { describe, it, expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import 'reflect-metadata';
 import { ConfigService } from '@nestjs/config';
 import { StartedRedisContainer } from '@testcontainers/redis';
@@ -21,7 +22,7 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
     processor: ExpirePendingOrdersProcessor;
     connection: BullMqConnection;
   }[] = [];
-  const execute = jest.fn<Promise<number>, []>();
+  const execute = vi.fn<() => Promise<number>>();
 
   const boot = async (jobsEnabled = 'true') => {
     const logger = new FakeLogger();

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import './helpers/enable-outbox-worker';
 import type { TestApp } from './helpers/test-app';
 import { Test } from '@nestjs/testing';
@@ -11,8 +12,6 @@ import { IntegrationEvent } from '../src/shared/application/integration-event';
 import { registerAndLogin } from './helpers/auth';
 import { seedProduct } from './helpers/catalog';
 import { waitFor } from './helpers/wait-for';
-
-jest.setTimeout(20_000); // o evento passa pelo relay (poll de 1s) e pela fila antes do efeito
 
 describe('Outbox worker (e2e)', () => {
   let app: TestApp;

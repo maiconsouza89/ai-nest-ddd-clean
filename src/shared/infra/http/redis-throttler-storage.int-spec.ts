@@ -1,3 +1,4 @@
+import { describe, it, expect, afterEach, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { StartedRedisContainer } from '@testcontainers/redis';

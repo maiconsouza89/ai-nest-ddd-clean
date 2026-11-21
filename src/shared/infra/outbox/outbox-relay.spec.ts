@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { backoffDelayMs, DEFAULT_OUTBOX_OPTIONS } from './outbox-relay';
 
 describe('backoffDelayMs', () => {

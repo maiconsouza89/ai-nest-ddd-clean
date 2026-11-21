@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
 import { InMemoryStockRepository } from '../../infra/database/in-memory/in-memory-stock.repository';

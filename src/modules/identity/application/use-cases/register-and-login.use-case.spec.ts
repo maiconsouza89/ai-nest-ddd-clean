@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { FakePasswordHasher } from '../../../../../test/fakes/fake-password-hasher';
 import { FakeTokenIssuer } from '../../../../../test/fakes/fake-token-issuer';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
@@ -88,7 +89,7 @@ describe('LoginUseCase', () => {
   it('verifica a senha mesmo quando o e-mail não existe (tempo igual)', async () => {
     const users = new InMemoryUserRepository();
     const hasher = new FakePasswordHasher();
-    const verify = jest.spyOn(hasher, 'verify');
+    const verify = vi.spyOn(hasher, 'verify');
     const login = new LoginUseCase(users, hasher, new FakeTokenIssuer());
 
     await expect(login.execute({ email: 'ghost@x.com', password: 'secret-123' })).rejects.toThrow(

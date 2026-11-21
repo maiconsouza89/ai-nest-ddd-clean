@@ -2,11 +2,13 @@
 status: accepted
 ---
 
-# Vitest com SWC e projeto em ESM
+# Vitest e projeto em ESM
 
 O Nest 12 é distribuído só como ESM. O Jest só carrega esses pacotes com `node --experimental-vm-modules`, que era o contorno usado até aqui. Decidimos trocar o Jest pelo Vitest e migrar o próprio projeto para ESM (`"type": "module"`). Esse é o layout que o `nest new` oferece para ESM, e o Vitest é o runner padrão dele.
 
-O Vitest usa o esbuild por padrão, e o esbuild não emite decorator metadata, que é o que o Nest usa para injetar dependências por classe. Por isso os testes passam pelo `unplugin-swc`, que lê `experimentalDecorators` e `emitDecoratorMetadata` do `tsconfig.json`, conforme a receita oficial (docs.nestjs.com/recipes/swc). Quem trocar o SWC pelo transformador padrão do Vitest quebra toda injeção por classe nos testes.
+O Nest injeta dependências por classe usando decorator metadata. Com o Vite 7 e anteriores o transformador era o esbuild, que não a emite, e por isso a receita oficial (docs.nestjs.com/recipes/swc) manda usar o `unplugin-swc`. O Vitest 5 roda sobre o Vite 8, cujo transformador padrão é o oxc, e ele emite a metadata lendo `experimentalDecorators` e `emitDecoratorMetadata` do `tsconfig.json`. Validamos sem o SWC: unitários, integração e e2e passam, e os e2e sobem o `AppModule` inteiro. Por isso o projeto **não usa SWC**. O `src/shared/testing/decorator-metadata.spec.ts` falha se a metadata deixar de ser emitida.
+
+Limite: o suporte do oxc é parcial. Tipos que exigem inferência (type alias, utility types) viram `Object`, então todo provider deve ser injetado por classe concreta ou `@Inject`. O SWC também não resolve esses casos.
 
 ## Considered Options
 

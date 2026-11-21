@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Antes de adicionar, atualizar ou usar qualquer biblioteca, framework ou SDK, **use o Context7** (MCP `context7`: `resolve-library-id` e depois `query-docs`) para consultar a documentação atual. Não confie apenas no conhecimento de treino.
 
-- Verifique a **versão estável mais recente** e a sintaxe/API atual antes de instalar ou escrever código que dependa dela (ex.: NestJS, TypeORM/Prisma, class-validator, Jest).
+- Verifique a **versão estável mais recente** e a sintaxe/API atual antes de instalar ou escrever código que dependa dela (ex.: NestJS, TypeORM/Prisma, class-validator, Vitest).
 - Prefira **bibliotecas oficiais** e as recomendadas pela documentação do framework (ex.: pacotes `@nestjs/*`) em vez de alternativas de terceiros, salvo justificativa explícita.
 - Ao migrar versões ou corrigir erros específicos de biblioteca, consulte o guia de migração/documentação via Context7 antes de alterar o código.
 - Ao propor uma nova dependência, informe a versão consultada e por que ela é a recomendada.
@@ -20,7 +20,7 @@ Setup: `docker compose up -d postgres redis` (Postgres 17 em `127.0.0.1:5432` e 
 - Build: `npm run build`, depois `node dist/main.js` (não há script `start`)
 - Typecheck: `npm run typecheck`
 - Regras de arquitetura: `npm run arch`
-- `npm run ci` = typecheck + unitários + arch. **Não** roda integração nem e2e.
+- `npm run ci` = typecheck + lint + format:check + unitários + arch. **Não** roda integração nem e2e.
 
 ### Migrations
 
@@ -34,14 +34,16 @@ Setup: `docker compose up -d postgres redis` (Postgres 17 em `127.0.0.1:5432` e 
 
 ### Testes
 
-- `npm test`: unitários (`*.spec.ts`), sem banco.
-- `npm run test:int`: integração (`*.int-spec.ts`), sobe Postgres e Redis descartáveis via Testcontainers, então exige Docker. Leva cerca de 40s.
+- `npm test`: unitários (`*.spec.ts`), sem banco. `npm run test:watch` roda o mesmo em modo watch.
+- `npm run test:int`: integração (`*.int-spec.ts`), sobe Postgres e Redis descartáveis via Testcontainers, então exige Docker. Leva cerca de 75s.
 - `npm run test:e2e`: e2e (`test/*.e2e-spec.ts`), sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` (padrão: os mesmos do docker-compose, então os dois precisam estar no ar). **Grava dados nesse banco.**
 
 Um arquivo:
 
 - Unitário: `npm test -- money.vo` (o argumento é um padrão de caminho).
-- Integração: `npm run test:int -- --testPathPatterns pay-order`. **Não** passe o caminho direto depois de `test:int`: a flag `--testRegex` do script o engole e a suíte inteira roda.
+- Integração: `npm run test:int -- pay-order`. Funciona igual para `test:e2e`.
+
+O runner é o Vitest (ADR 0001). Os testes importam `describe`, `it`, `expect` e `vi` de `'vitest'`, sem globals. A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transformador padrão do Vite 8. Se um construtor falhar com "can't resolve dependencies" nos testes, lembre que o oxc usa `Object` para tipos que exigem inferência (type alias, utility types).
 
 ### Novo módulo
 

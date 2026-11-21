@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Argon2PasswordHasher } from './argon2-password-hasher';
 
 describe('Argon2PasswordHasher', () => {

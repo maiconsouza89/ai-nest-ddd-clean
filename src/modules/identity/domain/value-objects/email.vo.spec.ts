@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { InvalidEmailError } from '../errors/invalid-email.error';
 import { Email } from './email.vo';
 

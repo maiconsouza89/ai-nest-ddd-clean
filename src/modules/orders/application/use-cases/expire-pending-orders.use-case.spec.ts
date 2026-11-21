@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { FakeLogger } from '../../../../../test/fakes/fake-logger';
 import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
 import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
@@ -88,7 +89,7 @@ describe('ExpirePendingOrdersUseCase', () => {
     await seed('o1', OrderStatus.PLACED, 30);
     // simula o pagamento acontecendo entre a listagem e o cancelamento
     const find = repo.findById.bind(repo);
-    jest.spyOn(repo, 'findById').mockImplementation(async (id) => {
+    vi.spyOn(repo, 'findById').mockImplementation(async (id) => {
       const order = await find(id);
       order?.pay();
       return order;
@@ -105,7 +106,7 @@ describe('ExpirePendingOrdersUseCase', () => {
     await seed('bad', OrderStatus.PLACED, 50);
     await seed('good', OrderStatus.PLACED, 30);
     const save = repo.save.bind(repo);
-    jest.spyOn(repo, 'save').mockImplementation(async (order) => {
+    vi.spyOn(repo, 'save').mockImplementation(async (order) => {
       if (order.id === 'bad') throw new Error('banco fora');
       return save(order);
     });

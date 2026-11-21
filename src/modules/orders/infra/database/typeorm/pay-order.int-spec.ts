@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { FakePaymentGateway } from '../../../../../../test/fakes/fake-payment-gateway';

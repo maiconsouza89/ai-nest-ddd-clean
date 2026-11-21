@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { retry } from './retry';
 import { TimeoutError, withTimeout } from './with-timeout';
 
