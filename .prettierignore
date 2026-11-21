@@ -1,0 +1,4 @@
+plop-templates/
+**/migrations/
+package-lock.json
+*.md

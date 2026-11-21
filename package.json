@@ -24,7 +24,9 @@
     "seed:identity": "ts-node src/modules/identity/infra/database/typeorm/seeds/run.ts",
     "seed:catalog": "ts-node src/modules/catalog/database/seeds/run.ts",
     "seed:inventory": "ts-node src/modules/inventory/infra/database/typeorm/seeds/run.ts",
-    "plop": "plop"
+    "plop": "plop",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -46,6 +48,7 @@
     "jest": "^30.5.2",
     "pino-pretty": "^13.2.0",
     "plop": "^4.0.5",
+    "prettier": "3.10.1",
     "supertest": "^7.3.2",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
