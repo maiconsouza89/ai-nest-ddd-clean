@@ -2,7 +2,7 @@
 
 O [roteiro original](passo-a-passo.md) está concluído e não muda. Este plano parte do código atual e aplica as decisões da revisão de 2026-11-21. Nessa revisão, cada fase do roteiro original foi conferida no Context7, no `npm view` e na documentação oficial. Algumas instruções de lá quebram hoje se seguidas do zero, mas o código já contornou quase todas. O que sobrou, e as decisões novas, estão aqui.
 
-Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest e ESM), [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md) (ator carregado por requisição) e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md) (imports explícitos entre módulos).
+Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest e ESM), [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md) (ator carregado por requisição) e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md) (imports explícitos entre módulos) e [ADR 0004](../adr/0004-lint-e-formatacao.md) (lint e formatação).
 
 ## Como usar
 
@@ -30,7 +30,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | Fase | O que muda | Dependências | Status |
 | --- | --- | --- | --- |
 | 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
-| 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | 🟡 |
+| 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ✅ |
 | 3. Vitest | Jest sai, Vitest com SWC entra | `vitest`, `unplugin-swc`, `@swc/core` | ⬜ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
@@ -38,7 +38,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 1 de 8 fases concluídas · 3 de 18 passos concluídos · **Fase atual:** 2
+**Progresso geral:** 2 de 8 fases concluídas · 4 de 18 passos concluídos · **Fase atual:** 3
 
 ---
 
@@ -82,10 +82,10 @@ npm i -D typescript@~6.0
 
 ## Fase 2: lint e formatação
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 3: Prettier
-> - [ ] Passo 4: ESLint com informação de tipo
+> - [x] Passo 4: ESLint com informação de tipo
 
 O projeto não tem formatador nem linter. O estilo é mantido à mão, e nada além do `tsc` olha o código antes dos testes.
 
@@ -290,6 +290,7 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 - Corrija os imports relativos que o `tsc` passa a apontar como sem extensão: `./money.vo` vira `./money.vo.js`. Corrija tudo de uma vez, porque a mudança não funciona pela metade.
 - Troque `__dirname` por `import.meta.dirname` nos cinco data sources (`orders`, `identity`, `catalog`, `inventory` e `outbox`) e revise os `require(` de `test/throttle.e2e-spec.ts`.
 - Relações do TypeORM entre entidades que se importam continuam com `Relation<>` e `import type`. Em ESM, uma referência circular em decorator gera `ReferenceError` na carga.
+- Remova o cast `as unknown as CacheManagerOptions['stores']` de `src/shared/infra/cache/cache.module.ts`. Ele existe porque, sem ESM, o `Keyv` do build CJS e o do build ESM (visto pelo `cache-manager` via `cacheable`, que o ESLint instalou) são tipos diferentes para o `tsc`. Com `"type": "module"`, o `tsc` resolve tudo pelo build ESM, e o cast deixa de ser necessário.
 
 **Pronto quando:** `npm run typecheck` e `npm run build` passam, e `node dist/main.js` sobe e responde em `/health/live`.
 
@@ -535,4 +536,4 @@ Adote estes itens só quando a condição for atendida:
 | Uma medição mostrar custo no `ActorResolver` | Cache curto no Redis com invalidação por evento quando as roles mudarem |
 | O `instrumentation-nestjs-core` suportar o Nest 12 | Reativar os spans de controller |
 | Permissões crescerem além de roles | CASL (`@casl/ability`, com receita na doc do Nest) |
-| O lint estiver limpo há algumas fases | Avaliar regras do `strictTypeChecked` uma a uma, e reavaliar as regras desligadas no passo 4 |
+| O lint estiver limpo há algumas fases | Avaliar regras do `strictTypeChecked` uma a uma, e reavaliar as regras desligadas no passo 4 (`no-unsafe-*` nos testes e `require-await`, ver ADR 0004) |

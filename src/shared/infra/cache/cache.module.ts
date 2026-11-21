@@ -1,4 +1,4 @@
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheModule, type CacheManagerOptions } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { createKeyv } from '@keyv/redis';
 import { Logger } from '../../application/ports/logger';
@@ -25,7 +25,9 @@ import { RedisModule } from './redis.module';
         });
         // sem listener, o erro do store vira exceção não tratada
         store.on('error', (err: unknown) => logger.warn({ err }, 'cache store error'));
-        return { stores: [store] };
+        // `Keyv` do build CJS != `Keyv` do build ESM que o cache-manager enxerga (dual package, mesmo
+        // objeto em runtime). Remova o cast ao migrar para ESM (fase 4 do plano de evolução).
+        return { stores: [store] as unknown as CacheManagerOptions['stores'] };
       },
     }),
   ],

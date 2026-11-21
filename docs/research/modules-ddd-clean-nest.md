@@ -1074,6 +1074,21 @@ it('não paga duas vezes', () => {
 
 Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas. Cache e filas usam o `@testcontainers/redis` do mesmo jeito.
 
+### Lint e formatação
+
+Quatro ferramentas, cada uma com uma responsabilidade e nenhuma sobreposta:
+
+| Ferramenta | Responsável por |
+| --- | --- |
+| `tsc --noEmit` | tipos |
+| dependency-cruiser | fronteiras entre módulos e camadas |
+| ESLint + `typescript-eslint` | bugs que compilam: promises, `any` inseguro, código morto |
+| Prettier | formatação |
+
+O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem `^`, porque até um patch pode mudar a formatação. O ESLint usa `recommendedTypeChecked` com `projectService` (flat config) e o `eslint-config-prettier`, que só desliga as regras de estilo. Não use `consistent-type-imports`: com `emitDecoratorMetadata`, um `import type` numa classe injetada pelo construtor quebra a injeção do Nest em tempo de execução. As fronteiras entre módulos ficam só no dependency-cruiser. Detalhes e regras desligadas: ADR 0004.
+
+`npm run ci` roda typecheck, lint, `format:check`, testes unitários e arch.
+
 ### Regras de arquitetura no CI
 
 Com `dependency-cruiser`, rodando `depcruise src` no pipeline. Se alguém quebrar a regra, o build falha.
