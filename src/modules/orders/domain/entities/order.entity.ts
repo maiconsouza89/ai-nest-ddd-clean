@@ -1,0 +1,66 @@
+import { Money } from '../../../../shared/domain/money.vo';
+import { EmptyOrderError } from '../errors/empty-order.error';
+import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
+import { OrderNotEditableError } from '../errors/order-not-editable.error';
+import { OrderNotPayableError } from '../errors/order-not-payable.error';
+import { OrderStatus } from '../value-objects/order-status.vo';
+import { OrderItem } from './order-item.entity';
+
+export type OrderProps = {
+  id: string;
+  customerId: string;
+  items: OrderItem[];
+  status: OrderStatus;
+};
+
+export class Order {
+  private constructor(
+    readonly id: string,
+    readonly customerId: string,
+    private _items: OrderItem[],
+    private _status: OrderStatus,
+  ) {}
+
+  static create(id: string, customerId: string) {
+    return new Order(id, customerId, [], OrderStatus.DRAFT);
+  }
+
+  static restore(p: OrderProps) {
+    return new Order(p.id, p.customerId, p.items, p.status);
+  }
+
+  get status() {
+    return this._status;
+  }
+
+  get items(): readonly OrderItem[] {
+    return [...this._items];
+  }
+
+  get total() {
+    return this._items.reduce((sum, i) => sum.add(i.subtotal), Money.zero());
+  }
+
+  addItem(productId: string, qty: number, unitPrice: Money) {
+    if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
+    const existing = this._items.find((i) => i.productId === productId);
+    if (existing) existing.increase(qty);
+    else this._items.push(new OrderItem(productId, qty, unitPrice));
+  }
+
+  place() {
+    if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
+    if (this._items.length === 0) throw new EmptyOrderError();
+    this._status = OrderStatus.PLACED;
+  }
+
+  pay() {
+    if (this._status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
+    if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
+    this._status = OrderStatus.PAID;
+  }
+
+  isOwnedBy(userId: string) {
+    return this.customerId === userId;
+  }
+}
