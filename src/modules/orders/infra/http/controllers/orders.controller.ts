@@ -3,6 +3,7 @@ import type { Actor } from '../../../../../shared/application/actor';
 import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
 import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
 import { OrderQueries } from '../../../application/queries/order.queries';
+import { CancelOrderUseCase } from '../../../application/use-cases/cancel-order.use-case';
 import { CreateOrderUseCase } from '../../../application/use-cases/create-order.use-case';
 import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case';
@@ -16,6 +17,7 @@ export class OrdersController {
     private readonly createOrder: CreateOrderUseCase,
     private readonly placeOrder: PlaceOrderUseCase,
     private readonly payOrder: PayOrderUseCase,
+    private readonly cancelOrder: CancelOrderUseCase,
     private readonly orderQueries: OrderQueries,
   ) {}
 
@@ -39,5 +41,11 @@ export class OrdersController {
   @HttpCode(204)
   async pay(@Param('id') id: string, @CurrentUser() actor: Actor) {
     await this.payOrder.execute({ orderId: id, actor });
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(204)
+  async cancel(@Param('id') id: string, @CurrentUser() actor: Actor) {
+    await this.cancelOrder.execute({ orderId: id, actor });
   }
 }

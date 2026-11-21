@@ -130,7 +130,7 @@ export class Order extends AggregateRoot {
     if (this.status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
     if (this.status !== OrderStatus.PLACED) throw new OrderNotPayableError();
     this.status = OrderStatus.PAID;
-    this.record(new OrderPaid(this.id));
+    this.addDomainEvent(new OrderPaid(this.id));
   }
 }
 ```
@@ -571,7 +571,7 @@ export abstract class TransactionManager {
 // caso de uso
 await this.tx.run(async () => {
   await this.orders.save(order);
-  await this.outbox.add(order.pullEvents());
+  await this.outbox.add(order.pullDomainEvents());
 });
 
 // infra
@@ -641,8 +641,8 @@ A entidade registra o evento, mas não publica.
 ```ts
 export abstract class AggregateRoot {
   private events: DomainEvent[] = [];
-  protected record(e: DomainEvent) { this.events.push(e); }
-  pullEvents() { const e = this.events; this.events = []; return e; }
+  protected addDomainEvent(e: DomainEvent) { this.events.push(e); }
+  pullDomainEvents() { const e = this.events; this.events = []; return e; }
 }
 ```
 

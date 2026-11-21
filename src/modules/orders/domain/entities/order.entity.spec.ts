@@ -1,7 +1,9 @@
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
+import { OrderCancelled } from '../events/order-cancelled.event';
 import { OrderPaid } from '../events/order-paid.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
+import { OrderNotCancellableError } from '../errors/order-not-cancellable.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
 import { OrderNotPayableError } from '../errors/order-not-payable.error';
 import { OrderStatus } from '../value-objects/order-status.vo';
@@ -58,22 +60,53 @@ describe('Order', () => {
     expect(() => o.pay()).toThrow(OrderAlreadyPaidError);
   });
 
-  it('pay() registra OrderPaid, que sai uma vez só em pullEvents()', () => {
+  it('pay() anota OrderPaid, que sai uma vez só em pullDomainEvents()', () => {
     const o = placed();
     o.pay();
 
-    expect(o.pullEvents()).toEqual([new OrderPaid('o1', 'u1', 100, 'BRL')]);
-    expect(o.pullEvents()).toEqual([]);
+    expect(o.pullDomainEvents()).toEqual([new OrderPaid('o1', 'u1', 100, 'BRL')]);
+    expect(o.pullDomainEvents()).toEqual([]);
   });
 
   it('criar, adicionar item e fechar não registram eventos', () => {
-    expect(placed().pullEvents()).toEqual([]);
+    expect(placed().pullDomainEvents()).toEqual([]);
   });
 
   it('pagar com falha não registra evento', () => {
     const o = draft();
     expect(() => o.pay()).toThrow(OrderNotPayableError);
-    expect(o.pullEvents()).toEqual([]);
+    expect(o.pullDomainEvents()).toEqual([]);
+  });
+
+  it.each([
+    ['rascunho', draft],
+    ['fechado', placed],
+  ])('cancela pedido %s e registra OrderCancelled', (_name, make) => {
+    const o = make();
+    o.cancel();
+
+    expect(o.status).toBe(OrderStatus.CANCELLED);
+    expect(o.pullDomainEvents()).toEqual([new OrderCancelled('o1', 'u1')]);
+  });
+
+  it('não cancela pedido pago nem cancelado, e a falha não registra evento', () => {
+    const paid = placed();
+    paid.pay();
+    paid.pullDomainEvents();
+    expect(() => paid.cancel()).toThrow(OrderNotCancellableError);
+    expect(paid.pullDomainEvents()).toEqual([]);
+
+    const cancelled = draft();
+    cancelled.cancel();
+    expect(() => cancelled.cancel()).toThrow(OrderNotCancellableError);
+  });
+
+  it('pedido cancelado não pode ser fechado nem pago', () => {
+    const o = draft();
+    o.addItem('p1', 1, price(100));
+    o.cancel();
+    expect(() => o.place()).toThrow(OrderNotEditableError);
+    expect(() => o.pay()).toThrow(OrderNotPayableError);
   });
 
   it('não expõe a lista interna de itens', () => {

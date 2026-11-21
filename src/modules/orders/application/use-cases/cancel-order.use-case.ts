@@ -1,0 +1,28 @@
+import { Clock } from '../../../../shared/application/ports/clock';
+import { IdGenerator } from '../../../../shared/application/ports/id-generator';
+import { Outbox } from '../../../../shared/application/ports/outbox';
+import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
+import { OrderRepository } from '../../domain/repositories/order.repository';
+import { OrderActionInput } from '../dtos/order-action.input';
+import { publishOrderEvents } from '../events/publish-order-events';
+import { loadOwnedOrder } from '../order-access';
+
+export class CancelOrderUseCase {
+  constructor(
+    private readonly repo: OrderRepository,
+    private readonly outbox: Outbox,
+    private readonly ids: IdGenerator,
+    private readonly clock: Clock,
+    private readonly tx: TransactionManager,
+  ) {}
+
+  async execute({ orderId, actor }: OrderActionInput) {
+    // pedido e eventos na mesma transação: ou grava os dois, ou nenhum
+    await this.tx.run(async () => {
+      const order = await loadOwnedOrder(this.repo, orderId, actor);
+      order.cancel();
+      await this.repo.save(order);
+      await publishOrderEvents(order, { outbox: this.outbox, ids: this.ids, clock: this.clock });
+    });
+  }
+}

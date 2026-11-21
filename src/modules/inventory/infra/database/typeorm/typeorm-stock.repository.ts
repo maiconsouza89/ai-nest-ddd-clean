@@ -37,6 +37,33 @@ export class TypeOrmStockRepository implements StockRepository {
     return true;
   }
 
+  async releaseReservation(referenceId: string) {
+    const manager = this.manager;
+    // só a primeira liberação atualiza a linha
+    const res = await manager
+      .createQueryBuilder()
+      .update(ReservationOrmEntity)
+      .set({ releasedAt: () => 'now()' })
+      .where('"referenceId" = :referenceId AND "releasedAt" IS NULL', { referenceId })
+      .returning('id')
+      .execute();
+    if (res.raw.length === 0) return null;
+
+    const items = await manager.find(ReservationItemOrmEntity, {
+      where: { reservationId: res.raw[0].id },
+    });
+    return items.map((i) => ({ productId: i.productId, qty: i.qty }));
+  }
+
+  async increase(productId: string, qty: number) {
+    await this.manager
+      .createQueryBuilder()
+      .update(StockItemOrmEntity)
+      .set({ available: () => '"available" + :qty' })
+      .where('"productId" = :productId', { productId, qty })
+      .execute();
+  }
+
   async decrease(productId: string, qty: number) {
     const res = await this.manager
       .createQueryBuilder()

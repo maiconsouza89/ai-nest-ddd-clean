@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 9 de 12 fases concluídas · 27 de 39 passos concluídos · **Fase atual:** 10
+**Progresso geral:** 9 de 12 fases concluídas · 28 de 39 passos concluídos · **Fase atual:** 10
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -178,7 +178,7 @@ export class Order {
 
   addItem(productId: string, qty: number, unitPrice: Money) { /* guia de referência */ }
   place() { /* guia de referência */ }
-  pay() { /* guia de referência, sem o record() por enquanto */ }
+  pay() { /* guia de referência, sem o addDomainEvent() por enquanto */ }
   isOwnedBy(userId: string) { return this.customerId === userId; }
 }
 ```
@@ -720,7 +720,7 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 > - [x] Passo 25: outbox
 > - [x] Passo 26: worker de publicação
 > - [x] Passo 27: consumidores idempotentes
-> - [ ] Passo 28: fluxos por evento e grafo sem ciclos
+> - [x] Passo 28: fluxos por evento e grafo sem ciclos
 > - [ ] Passo 29: versionamento de contratos e testes de contrato
 
 ### Passo 24: `AggregateRoot` e eventos de domínio
@@ -729,11 +729,11 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 
 **Faça:**
 
-- `shared/domain/aggregate-root.ts` com `record` e `pullEvents` (ver guia de referência).
-- `Order extends AggregateRoot`, e `pay()` passa a chamar `this.record(new OrderPaid(this.id))`.
+- `shared/domain/aggregate-root.ts` com `addDomainEvent` e `pullDomainEvents` (ver guia de referência).
+- `Order extends AggregateRoot`, e `pay()` passa a chamar `this.addDomainEvent(new OrderPaid(this.id))`.
 - O teste de `pay()` também verifica o evento registrado.
 
-**Pronto quando:** `order.pullEvents()` devolve `OrderPaid` depois de `pay()` e esvazia a lista.
+**Pronto quando:** `order.pullDomainEvents()` devolve `OrderPaid` depois de `pay()` e esvazia a lista.
 
 ### Passo 25: outbox
 
@@ -749,7 +749,7 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 ```ts
 await this.tx.run(async () => {
   await this.orders.save(order);
-  await this.outbox.add(order.pullEvents().map(e => this.toContract(e)));
+  await this.outbox.add(order.pullDomainEvents().map(e => this.toContract(e)));
 });
 ```
 
@@ -793,10 +793,10 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 
 **Faça:**
 
-- `Order.cancel()` registra `OrderCancelled`.
-- No inventory, `OnOrderCancelledHandler` (idempotente) chama o `ReleaseStockUseCase`. O inventory **não** importa o `OrdersModule`, só o tipo do evento em `orders/contracts`.
+- `Order.cancel()` registra `OrderCancelled`. Só rascunho e fechado cancelam; pago exigiria estorno, então devolve `ORDER_NOT_CANCELLABLE` (409). Endpoint `POST /orders/:id/cancel` e `OrderCancelledV1` em `orders/contracts`.
+- No inventory, `OnOrderCancelledHandler` (idempotente) chama o `ReleaseStockUseCase`, que marca a reserva com `releasedAt` e repõe o saldo uma vez só. O inventory **não** importa o `OrdersModule`, só o tipo do evento em `orders/contracts`.
 - Regra fixa: uma direção pode ser síncrona (via facade), e a volta é sempre por evento.
-- Opcional: se a compensação do passo 23 incomodar, migre o fechamento para eventos (`PENDING`, depois `OrderPlaced`, e por fim `StockReserved` ou `StockReservationFailed`). Como orders só conhece o port `StockGateway`, domain e casos de uso mudam pouco.
+- Opcional (não feito neste passo; o limite do passo 23 continua valendo): se a compensação do passo 23 incomodar, migre o fechamento para eventos (`PENDING`, depois `OrderPlaced`, e por fim `StockReserved` ou `StockReservationFailed`). Como orders só conhece o port `StockGateway`, domain e casos de uso mudam pouco.
 
 **Pronto quando:** cancelar um pedido libera o estoque e a regra `no-circular` passa sem `forwardRef`.
 

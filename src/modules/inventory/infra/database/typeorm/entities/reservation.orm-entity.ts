@@ -9,6 +9,10 @@ export class ReservationOrmEntity {
   @Column('uuid')
   referenceId!: string;
 
+  // preenchido quando o estoque volta (pedido cancelado); só libera uma vez
+  @Column({ type: 'timestamptz', nullable: true })
+  releasedAt!: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

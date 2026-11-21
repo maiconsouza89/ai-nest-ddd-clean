@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '../../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../../shared/application/ports/transaction-manager';
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
+import { ReleaseStockUseCase } from '../application/use-cases/release-stock.use-case';
 import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case';
 import { InventoryFacade } from '../contracts/inventory.facade';
 import { StockRepository } from '../domain/repositories/stock.repository';
@@ -10,6 +11,7 @@ import { ReservationItemOrmEntity } from './database/typeorm/entities/reservatio
 import { ReservationOrmEntity } from './database/typeorm/entities/reservation.orm-entity';
 import { StockItemOrmEntity } from './database/typeorm/entities/stock-item.orm-entity';
 import { TypeOrmStockRepository } from './database/typeorm/typeorm-stock.repository';
+import { OnOrderCancelledHandler } from './events/on-order-cancelled.handler';
 import { InventoryFacadeImpl } from './inventory-facade.impl';
 
 // Global pelo mesmo motivo do CatalogModule: o orders só pode enxergar a facade de contracts/.
@@ -27,6 +29,13 @@ import { InventoryFacadeImpl } from './inventory-facade.impl';
         new ReserveStockUseCase(stock, ids, tx),
       inject: [StockRepository, IdGenerator, TransactionManager],
     },
+    {
+      provide: ReleaseStockUseCase,
+      useFactory: (stock: StockRepository, tx: TransactionManager) =>
+        new ReleaseStockUseCase(stock, tx),
+      inject: [StockRepository, TransactionManager],
+    },
+    OnOrderCancelledHandler,
     {
       provide: InventoryFacade,
       useFactory: (reserve: ReserveStockUseCase) => new InventoryFacadeImpl(reserve),

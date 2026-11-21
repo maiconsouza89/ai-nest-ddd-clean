@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { startInventoryDatabase } from '../../../../../../test/helpers/inventory-database';
 import { UuidV7Generator } from '../../../../../shared/infra/ids/uuid-v7.generator';
 import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
+import { ReleaseStockUseCase } from '../../../application/use-cases/release-stock.use-case';
 import { ReserveStockUseCase } from '../../../application/use-cases/reserve-stock.use-case';
 import { InsufficientStockError } from '../../../domain/errors/insufficient-stock.error';
 import { TypeOrmStockRepository } from './typeorm-stock.repository';
@@ -11,9 +12,12 @@ describe('ReserveStockUseCase com Postgres (integração)', () => {
   let ds: DataSource;
   let stop: () => Promise<void>;
   let useCase: ReserveStockUseCase;
+  let release: ReleaseStockUseCase;
 
   beforeAll(async () => {
     ({ ds, stop } = await startInventoryDatabase());
+    const tx = new TypeOrmTransactionManager(ds);
+    release = new ReleaseStockUseCase(new TypeOrmStockRepository(ds), tx);
     useCase = new ReserveStockUseCase(
       new TypeOrmStockRepository(ds),
       new UuidV7Generator(),
@@ -113,5 +117,43 @@ describe('ReserveStockUseCase com Postgres (integração)', () => {
 
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(await available(a)).toBe(0);
+  });
+
+  describe('liberação', () => {
+    it('devolve o estoque reservado e liberar de novo não repõe outra vez', async () => {
+      const a = newId();
+      const b = newId();
+      const ref = newId();
+      await seed(a, 10);
+      await seed(b, 5);
+      await useCase.execute({
+        referenceId: ref,
+        items: [
+          { productId: a, qty: 3 },
+          { productId: b, qty: 5 },
+        ],
+      });
+
+      await release.execute({ referenceId: ref });
+      await release.execute({ referenceId: ref });
+
+      expect(await available(a)).toBe(10);
+      expect(await available(b)).toBe(5);
+    });
+
+    it('liberações simultâneas repõem uma vez só', async () => {
+      const a = newId();
+      const ref = newId();
+      await seed(a, 10);
+      await useCase.execute({ referenceId: ref, items: [{ productId: a, qty: 4 }] });
+
+      await Promise.all(Array.from({ length: 5 }, () => release.execute({ referenceId: ref })));
+
+      expect(await available(a)).toBe(10);
+    });
+
+    it('referência sem reserva não faz nada', async () => {
+      await release.execute({ referenceId: newId() });
+    });
   });
 });

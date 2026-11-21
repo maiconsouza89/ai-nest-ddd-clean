@@ -7,7 +7,7 @@ class Happened implements DomainEvent {
 
 class Sample extends AggregateRoot {
   doIt() {
-    this.record(new Happened());
+    this.addDomainEvent(new Happened());
   }
 }
 
@@ -17,7 +17,7 @@ describe('AggregateRoot', () => {
     sample.doIt();
     sample.doIt();
 
-    expect(sample.pullEvents()).toHaveLength(2);
-    expect(sample.pullEvents()).toEqual([]);
+    expect(sample.pullDomainEvents()).toHaveLength(2);
+    expect(sample.pullDomainEvents()).toEqual([]);
   });
 });

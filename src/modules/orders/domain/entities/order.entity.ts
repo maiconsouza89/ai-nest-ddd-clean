@@ -1,8 +1,10 @@
 import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
+import { OrderCancelled } from '../events/order-cancelled.event';
 import { OrderPaid } from '../events/order-paid.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
+import { OrderNotCancellableError } from '../errors/order-not-cancellable.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
 import { OrderNotPayableError } from '../errors/order-not-payable.error';
 import { OrderStatus } from '../value-objects/order-status.vo';
@@ -65,7 +67,18 @@ export class Order extends AggregateRoot {
     if (this._status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
     if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
     this._status = OrderStatus.PAID;
-    this.record(new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency));
+    // avisa os outros módulos; só sai se o caso de uso salvar e gravar na outbox
+    this.addDomainEvent(new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency));
+  }
+
+  cancel() {
+    // pago exigiria estorno, e cancelado já foi cancelado
+    if (this._status !== OrderStatus.DRAFT && this._status !== OrderStatus.PLACED) {
+      throw new OrderNotCancellableError();
+    }
+    this._status = OrderStatus.CANCELLED;
+    // o inventory reage a este evento para repor o estoque
+    this.addDomainEvent(new OrderCancelled(this.id, this.customerId));
   }
 
   isOwnedBy(userId: string) {

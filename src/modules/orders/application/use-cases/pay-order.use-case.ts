@@ -4,7 +4,7 @@ import { Outbox } from '../../../../shared/application/ports/outbox';
 import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
 import { OrderRepository } from '../../domain/repositories/order.repository';
 import { OrderActionInput } from '../dtos/order-action.input';
-import { toIntegrationEvent } from '../events/to-integration-event';
+import { publishOrderEvents } from '../events/publish-order-events';
 import { loadOwnedOrder } from '../order-access';
 
 export class PayOrderUseCase {
@@ -22,11 +22,7 @@ export class PayOrderUseCase {
       const order = await loadOwnedOrder(this.repo, orderId, actor);
       order.pay();
       await this.repo.save(order);
-      const occurredAt = this.clock.now();
-      const events = order
-        .pullEvents()
-        .map((e) => toIntegrationEvent(e, { eventId: this.ids.next(), occurredAt }));
-      await this.outbox.add(order.id, events);
+      await publishOrderEvents(order, { outbox: this.outbox, ids: this.ids, clock: this.clock });
     });
   }
 }

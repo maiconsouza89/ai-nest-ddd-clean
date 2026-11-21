@@ -10,6 +10,8 @@ import { NotOrderOwnerError } from '../../domain/errors/not-order-owner.error';
 import { OrderNotFoundError } from '../../domain/errors/order-not-found.error';
 import { OrderStatus } from '../../domain/value-objects/order-status.vo';
 import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository';
+import { CancelOrderUseCase } from './cancel-order.use-case';
+import { OrderNotCancellableError } from '../../domain/errors/order-not-cancellable.error';
 import { PayOrderUseCase } from './pay-order.use-case';
 import { PlaceOrderUseCase } from './place-order.use-case';
 
@@ -31,6 +33,7 @@ async function setup(outOfStock = false) {
     stock,
     outbox,
     place: new PlaceOrderUseCase(repo, stock, tx),
+    cancel: new CancelOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
     pay: new PayOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
   };
 }
@@ -126,5 +129,39 @@ describe('PayOrderUseCase', () => {
   it('pedido inexistente lança OrderNotFoundError', async () => {
     const { pay } = await setup();
     await expect(pay.execute({ orderId: 'x', actor: owner })).rejects.toThrow(OrderNotFoundError);
+  });
+});
+
+describe('CancelOrderUseCase', () => {
+  it('o dono cancela e o evento vai para a outbox', async () => {
+    const { repo, outbox, cancel } = await setup();
+    await cancel.execute({ orderId: 'o1', actor: owner });
+
+    expect((await repo.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
+    expect(outbox.aggregateIds).toEqual(['o1']);
+    expect(outbox.events).toMatchObject([
+      { type: 'orders.order-cancelled', version: 1, payload: { orderId: 'o1', customerId: 'u1' } },
+    ]);
+  });
+
+  it('outro usuário recebe NotOrderOwnerError e nada é gravado', async () => {
+    const { outbox, cancel } = await setup();
+    await expect(cancel.execute({ orderId: 'o1', actor: other })).rejects.toThrow(NotOrderOwnerError);
+    expect(outbox.events).toEqual([]);
+  });
+
+  it('pedido pago não cancela', async () => {
+    const { place, pay, cancel } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+    await pay.execute({ orderId: 'o1', actor: owner });
+
+    await expect(cancel.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(
+      OrderNotCancellableError,
+    );
+  });
+
+  it('pedido inexistente: OrderNotFoundError', async () => {
+    const { cancel } = await setup();
+    await expect(cancel.execute({ orderId: 'x', actor: owner })).rejects.toThrow(OrderNotFoundError);
   });
 });

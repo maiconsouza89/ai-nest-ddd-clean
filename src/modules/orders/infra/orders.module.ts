@@ -10,6 +10,7 @@ import { InventoryFacade } from '../../inventory/contracts/inventory.facade';
 import { OrderQueries } from '../application/queries/order.queries';
 import { PriceCatalog } from '../application/ports/price-catalog';
 import { StockGateway } from '../application/ports/stock-gateway';
+import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case';
 import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case';
 import { PayOrderUseCase } from '../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../application/use-cases/place-order.use-case';
@@ -64,6 +65,17 @@ import { OrdersController } from './http/controllers/orders.controller';
         clock: Clock,
         tx: TransactionManager,
       ) => new PayOrderUseCase(repo, outbox, ids, clock, tx),
+      inject: [OrderRepository, Outbox, IdGenerator, Clock, TransactionManager],
+    },
+    {
+      provide: CancelOrderUseCase,
+      useFactory: (
+        repo: OrderRepository,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        tx: TransactionManager,
+      ) => new CancelOrderUseCase(repo, outbox, ids, clock, tx),
       inject: [OrderRepository, Outbox, IdGenerator, Clock, TransactionManager],
     },
   ],
