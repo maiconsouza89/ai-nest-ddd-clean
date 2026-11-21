@@ -1,39 +1,22 @@
 import 'reflect-metadata';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
+import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
 import { Money } from '../../../../../shared/domain/money.vo';
 import { Order } from '../../../domain/entities/order.entity';
 import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
-import { OrderItemOrmEntity } from './entities/order-item.orm-entity';
-import { OrderOrmEntity } from './entities/order.orm-entity';
-import { CreateOrdersSchema1795235672712 } from './migrations/1795235672712-create-orders-schema';
-import { CreateOrdersTables1795235688952 } from './migrations/1795235688952-create-orders-tables';
 import { TypeOrmOrderRepository } from './typeorm-order.repository';
 
 describe('TypeOrmOrderRepository (integração)', () => {
-  let container: StartedPostgreSqlContainer;
   let ds: DataSource;
+  let stop: () => Promise<void>;
   let repo: TypeOrmOrderRepository;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:17').start();
-    ds = new DataSource({
-      type: 'postgres',
-      url: container.getConnectionUri(),
-      entities: [OrderOrmEntity, OrderItemOrmEntity],
-      // as migrations reais do módulo, não synchronize
-      migrations: [CreateOrdersSchema1795235672712, CreateOrdersTables1795235688952],
-      migrationsTableName: 'orders_migrations',
-    });
-    await ds.initialize();
-    await ds.runMigrations();
+    ({ ds, stop } = await startOrdersDatabase());
     repo = new TypeOrmOrderRepository(ds);
   }, 120_000);
 
-  afterAll(async () => {
-    await ds?.destroy();
-    await container?.stop();
-  });
+  afterAll(() => stop?.());
 
   const newId = () => crypto.randomUUID();
 

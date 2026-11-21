@@ -1,6 +1,8 @@
-import { Body, Controller, HttpCode, Param, Post, UseFilters } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query, UseFilters } from '@nestjs/common';
 import type { Actor } from '../../../../../shared/application/actor';
+import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
 import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
+import { OrderQueries } from '../../../application/queries/order.queries';
 import { CreateOrderUseCase } from '../../../application/use-cases/create-order.use-case';
 import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case';
@@ -14,7 +16,13 @@ export class OrdersController {
     private readonly createOrder: CreateOrderUseCase,
     private readonly placeOrder: PlaceOrderUseCase,
     private readonly payOrder: PayOrderUseCase,
+    private readonly orderQueries: OrderQueries,
   ) {}
+
+  @Get()
+  list(@Query() query: PaginationQuery, @CurrentUser() actor: Actor) {
+    return this.orderQueries.listByCustomer(actor.id, query);
+  }
 
   @Post()
   create(@Body() body: CreateOrderRequest, @CurrentUser() actor: Actor) {

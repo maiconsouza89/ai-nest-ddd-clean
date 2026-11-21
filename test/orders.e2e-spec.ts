@@ -52,4 +52,23 @@ describe('Orders (e2e)', () => {
     const res = await request(server()).post(`/v1/orders/${id}/pay`).set(as('u2')).expect(403);
     expect(res.body.code).toBe('NOT_ORDER_OWNER');
   });
+
+  describe('GET /v1/orders', () => {
+    it('lista só os pedidos do usuário autenticado', async () => {
+      const user = `lister-${Date.now()}`;
+      const mine = await createOrder(user);
+      await createOrder(`other-${Date.now()}`);
+
+      const res = await request(server()).get('/v1/orders').set(as(user)).expect(200);
+
+      expect(res.body.total).toBe(1);
+      expect(res.body.items.map((i: { id: string }) => i.id)).toEqual([mine]);
+      expect(res.body).toMatchObject({ page: 1, limit: 20 });
+    });
+
+    it('rejeita limit acima de 100', () =>
+      request(server()).get('/v1/orders?limit=500').set(as('u1')).expect(400));
+
+    it('exige usuário', () => request(server()).get('/v1/orders').expect(401));
+  });
 });
