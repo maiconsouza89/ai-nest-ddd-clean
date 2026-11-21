@@ -20,7 +20,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | --- | --- | --- | --- |
 | 1. Domínio puro | Entidades, value objects, erros e testes | `typescript`, `jest` | ✅ |
 | 2. Casos de uso | Ports, repositório em memória e ownership | nenhuma | ✅ |
-| 3. Fronteiras automáticas | Regras de camada no CI | `dependency-cruiser` | ⬜ |
+| 3. Fronteiras automáticas | Regras de camada no CI | `dependency-cruiser` | ✅ |
 | 4. NestJS | HTTP, módulo, validação e erros convertidos para HTTP | `@nestjs/*`, `class-validator` | ⬜ |
 | 5. Configuração e banco | Variáveis de ambiente validadas, Postgres, TypeORM e migrations | `@nestjs/config`, `typeorm`, `pg` | ⬜ |
 | 6. Leitura | Queries e paginação | nenhuma | ⬜ |
@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 2 de 12 fases concluídas · 6 de 39 passos concluídos · **Fase atual:** 3
+**Progresso geral:** 3 de 12 fases concluídas · 7 de 39 passos concluídos · **Fase atual:** 4
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -266,9 +266,9 @@ Testes: o dono fecha e paga, outro usuário recebe `NotOrderOwnerError` e um adm
 
 ## Fase 3: fronteiras automáticas
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
-> - [ ] Passo 7: `dependency-cruiser` no CI
+> - [x] Passo 7: `dependency-cruiser` no CI
 
 ### Passo 7: `dependency-cruiser` no CI
 
