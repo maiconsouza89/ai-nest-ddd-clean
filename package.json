@@ -11,7 +11,8 @@
     "start:dev": "nest start --watch",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex '.*\\.e2e-spec\\.ts$'",
     "mig:orders:gen": "typeorm-ts-node-commonjs migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
-    "mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
+    "mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
+    "test:int": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex '.*\\.int-spec\\.ts$'"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@nestjs/cli": "^12.0.15",
     "@nestjs/testing": "^12.6.0",
+    "@testcontainers/postgresql": "^12.2.2",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.6",

@@ -1,0 +1,105 @@
+import 'reflect-metadata';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { DataSource } from 'typeorm';
+import { Money } from '../../../../../shared/domain/money.vo';
+import { Order } from '../../../domain/entities/order.entity';
+import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
+import { OrderItemOrmEntity } from './entities/order-item.orm-entity';
+import { OrderOrmEntity } from './entities/order.orm-entity';
+import { CreateOrdersSchema1795235672712 } from './migrations/1795235672712-create-orders-schema';
+import { CreateOrdersTables1795235688952 } from './migrations/1795235688952-create-orders-tables';
+import { TypeOrmOrderRepository } from './typeorm-order.repository';
+
+describe('TypeOrmOrderRepository (integração)', () => {
+  let container: StartedPostgreSqlContainer;
+  let ds: DataSource;
+  let repo: TypeOrmOrderRepository;
+
+  beforeAll(async () => {
+    container = await new PostgreSqlContainer('postgres:17').start();
+    ds = new DataSource({
+      type: 'postgres',
+      url: container.getConnectionUri(),
+      entities: [OrderOrmEntity, OrderItemOrmEntity],
+      // as migrations reais do módulo, não synchronize
+      migrations: [CreateOrdersSchema1795235672712, CreateOrdersTables1795235688952],
+      migrationsTableName: 'orders_migrations',
+    });
+    await ds.initialize();
+    await ds.runMigrations();
+    repo = new TypeOrmOrderRepository(ds);
+  }, 120_000);
+
+  afterAll(async () => {
+    await ds?.destroy();
+    await container?.stop();
+  });
+
+  const newId = () => crypto.randomUUID();
+
+  const itemRows = (orderId: string) =>
+    ds.query('SELECT "productId" FROM orders.order_items WHERE "orderId" = $1 ORDER BY "productId"', [
+      orderId,
+    ]);
+
+  it('salva e busca um pedido com itens', async () => {
+    const order = Order.create(newId(), 'u1');
+    order.addItem('p1', 2, Money.fromCents(1000));
+    order.addItem('p2', 1, Money.fromCents(2500));
+    await repo.save(order);
+
+    const found = await repo.findById(order.id);
+    expect(found).not.toBeNull();
+    expect(found!.customerId).toBe('u1');
+    expect(found!.status).toBe(OrderStatus.DRAFT);
+    expect(found!.items).toHaveLength(2);
+    expect(found!.total.cents).toBe(4500);
+  });
+
+  it('converte o bigint para number ao ler', async () => {
+    const order = Order.create(newId(), 'u1');
+    order.addItem('p1', 1, Money.fromCents(123456789012));
+    await repo.save(order);
+
+    const [item] = (await repo.findById(order.id))!.items;
+    expect(typeof item.unitPrice.cents).toBe('number');
+    expect(item.unitPrice.cents).toBe(123456789012);
+    expect(item.unitPrice.currency).toBe('BRL');
+  });
+
+  it('atualiza o pedido existente sem duplicar itens', async () => {
+    const order = Order.create(newId(), 'u1');
+    order.addItem('p1', 1, Money.fromCents(100));
+    await repo.save(order);
+
+    const loaded = (await repo.findById(order.id))!;
+    loaded.addItem('p1', 2, Money.fromCents(100));
+    loaded.place();
+    await repo.save(loaded);
+
+    const again = (await repo.findById(order.id))!;
+    expect(again.status).toBe(OrderStatus.PLACED);
+    expect(again.items).toHaveLength(1);
+    expect(again.items[0].qty).toBe(3);
+    expect(await itemRows(order.id)).toHaveLength(1);
+  });
+
+  it('remove a linha do item que saiu do array', async () => {
+    const order = Order.create(newId(), 'u1');
+    order.addItem('p1', 1, Money.fromCents(100));
+    order.addItem('p2', 1, Money.fromCents(200));
+    await repo.save(order);
+    expect(await itemRows(order.id)).toHaveLength(2);
+
+    // reconstrói o pedido sem o p2 e salva: a linha tem que sumir
+    const loaded = (await repo.findById(order.id))!;
+    const p1 = loaded.items.find((i) => i.productId === 'p1')!;
+    await repo.save(Order.restore({ id: loaded.id, customerId: loaded.customerId, status: loaded.status, items: [p1] }));
+
+    expect(await itemRows(order.id)).toEqual([{ productId: 'p1' }]);
+  });
+
+  it('devolve null para pedido inexistente', async () => {
+    expect(await repo.findById(newId())).toBeNull();
+  });
+});
