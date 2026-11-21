@@ -258,16 +258,22 @@ O repositório pega o `EntityManager` da transação ativa. Se injetar o `Reposi
 
 ```ts
 // order.orm-entity.ts
-@OneToMany(() => OrderItemOrmEntity, i => i.order, { cascade: true })
-items: OrderItemOrmEntity[];
+@OneToMany(() => OrderItemOrmEntity, (i) => i.order, { cascade: true })
+items!: Relation<OrderItemOrmEntity[]>;
 
 // order-item.orm-entity.ts
-@ManyToOne(() => OrderOrmEntity, o => o.items, {
+import type { Relation } from 'typeorm';
+import type { OrderOrmEntity } from './order.orm-entity'; // só tipo: sem ciclo de import em runtime
+
+@ManyToOne('OrderOrmEntity', (o: OrderOrmEntity) => o.items, {
   onDelete: 'CASCADE',
   orphanedRowAction: 'delete',
 })
-order: OrderOrmEntity;
+order!: Relation<OrderOrmEntity>;
 ```
+
+- Com `strict`, propriedades preenchidas pelo TypeORM levam `!`.
+- As duas entidades se referenciam. Para evitar o ciclo de imports em tempo de execução, o lado `@ManyToOne` usa o alvo por nome (string) e `import type`. O `Relation<>` impede que o `emitDecoratorMetadata` grave uma referência à classe.
 
 **Trocar de ORM** (por exemplo, para Prisma) muda só a infra: o repositório concreto, o mapper, o modelo de banco e o `useClass` no módulo. Domain, casos de uso e controller continuam iguais.
 
@@ -372,7 +378,7 @@ export const CurrentUser = createParamDecorator(
 
 **Protegido por padrão:** registre o guard com `APP_GUARD`, que permite injeção de dependência, e marque as rotas abertas com `@Public()`. Toda rota nova já nasce protegida.
 
-**Pacote oficial:** a documentação atual do Nest apresenta o `@nestjs/authentication`. Ele registra um guard global, oferece `@Public()` e `@CurrentUser()`, e suporta sessão por cookie ou JWT com refresh token de uso único. Se adotar, o `validate()` do provider fica no módulo `identity`, e o controller continua convertendo o usuário em `Actor` antes de chamar o caso de uso.
+**Pacote oficial:** a documentação atual do Nest apresenta o `@nestjs/authentication`. Ele registra um guard global, oferece `@Public()` e `@CurrentUser()`, e suporta sessão por cookie ou JWT com refresh token de uso único. O `@nestjs/authorization` completa o par, com um guard que nega por padrão (`@Can()`). Os dois ainda estão na 0.1.x (lançados em 2026-09), então o projeto não os adota: fica o guard próprio com `@nestjs/jwt` até eles chegarem à 1.0 (ver [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)). Se adotar, o `validate()` do provider fica no módulo `identity`, e o controller continua convertendo o usuário em `Actor` antes de chamar o caso de uso.
 
 ### 2. O controller repassa o ator como dado puro
 
@@ -451,11 +457,13 @@ export abstract class StockGateway {
 }
 
 // orders/infra/gateways/inventory-stock.gateway.ts
+// traduz o resultado do contrato do inventory para o erro de domínio do orders
 export class InventoryStockGateway implements StockGateway {
   constructor(private readonly inventory: InventoryFacade) {}
 
-  reserve(orderId: string, items: { productId: string; qty: number }[]) {
-    return this.inventory.reserve({ referenceId: orderId, items });
+  async reserve(orderId: string, items: { productId: string; qty: number }[]) {
+    const result = await this.inventory.reserve({ referenceId: orderId, items });
+    if (!result.ok) throw new InsufficientStockError(result.productId);
   }
 }
 ```
@@ -496,9 +504,14 @@ Outras saídas: mover o conceito compartilhado para o módulo certo, ou criar um
 **Como um módulo expõe a facade:** o contrato fica em `contracts/` como classe abstrata, e o módulo Nest exporta só ele.
 
 ```ts
-// inventory/contracts/inventory.facade.ts (TypeScript puro)
+// inventory/contracts/inventory.facade.ts (TypeScript puro, só primitivos)
+export type ReserveStockResult =
+  | { ok: true }
+  | { ok: false; reason: 'INSUFFICIENT_STOCK'; productId: string };
+
 export abstract class InventoryFacade {
-  abstract reserve(cmd: ReserveStockCommand): Promise<void>;
+  // devolve um resultado: o contrato não pode importar o InsufficientStockError do domain
+  abstract reserve(cmd: ReserveStockCommand): Promise<ReserveStockResult>;
 }
 
 // inventory/infra/inventory.module.ts
@@ -553,7 +566,7 @@ export class OrdersV2Controller { /* ... */ }
 
 - **A versão é assunto da infra.** V1 e v2 têm controllers e DTOs próprios, mas chamam os mesmos casos de uso.
 - **Mudança aditiva** (campo novo opcional na resposta): mesma versão.
-- **Mudança que quebra:** nova versão, mantendo a anterior até os clientes migrarem. Avise o fim da antiga com antecedência, por exemplo com o header `Sunset`.
+- **Mudança que quebra:** nova versão, mantendo a anterior até os clientes migrarem. Avise o fim da antiga com antecedência, com os headers `Deprecation` (RFC 9745) e `Sunset` (RFC 8594) nas respostas dela.
 - **Rotas técnicas** como `/health` usam `VERSION_NEUTRAL` e ficam sem versão.
 
 ## Transações, concorrência e eventos
@@ -608,6 +621,8 @@ if (res.affected === 0) throw new ConcurrencyError(); // recarrega e tenta de no
 
 Use o mesmo `WHERE version` no repositório de qualquer agregado que possa ser editado em paralelo, como o `Order`. Por isso a entidade carrega `version`.
 
+**Limite conhecido:** o repositório do `Order` trata `version === 0` como "pedido novo" e pula a checagem nesse caso. Uma linha que já exista com `version = 0`, por exemplo vinda de uma migração de dados com default 0, fica sem proteção no primeiro save. Pedidos criados pelo `Order.create` não são afetados.
+
 **Para estoque, um update atômico condicional é mais simples:** o banco só debita se houver saldo, sem precisar ler antes.
 
 ```ts
@@ -654,7 +669,7 @@ export abstract class AggregateRoot {
 
 **Worker resiliente**
 
-- **Várias instâncias:** busque lotes com `FOR UPDATE SKIP LOCKED` (`.setLock('pessimistic_write').setOnLocked('skip_locked')`), assim dois workers nunca pegam o mesmo evento.
+- **Várias instâncias:** busque lotes com `FOR UPDATE SKIP LOCKED`, assim dois workers nunca pegam o mesmo evento. Num select simples, o query builder resolve com `.setLock('pessimistic_write').setOnLocked('skip_locked')`. Aqui, a ordem por agregado exige uma subquery `NOT EXISTS` e um outer join, e o Postgres recusa `FOR UPDATE` do lado anulável de um outer join. Por isso o relay usa SQL com `FOR UPDATE OF o SKIP LOCKED`, que trava só as linhas da outbox.
 - **Falhas:** retry com backoff exponencial e contador de tentativas. Depois de N falhas, mova o evento para uma fila de mensagens mortas.
 - **Ordem:** publique em ordem de criação por agregado quando o consumidor depender da sequência.
 - **Limpeza:** apague ou arquive os eventos já publicados periodicamente.
@@ -669,7 +684,7 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 
 - **A outbox continua.** O Redis não participa da transação do Postgres. Enfileirar direto no caso de uso traz de volta o problema que a outbox resolve: evento publicado sem `save`, ou `save` sem evento.
 - **Uma fila por consumidor.** O BullMQ não faz fan-out: cada job vai para um worker só. O publicador consulta um registro `tipo do evento → filas` e enfileira uma cópia em cada fila. O registro sai de um decorator nos handlers, lido na subida com o `DiscoveryService` do Nest, então cada módulo declara só os próprios handlers.
-- **Duplicatas:** use um `jobId` determinístico (`<eventId>__<consumidor>`; o BullMQ não aceita `:` no id). Adicionar um job com id existente é ignorado, mas só enquanto o job existir: com `removeOnComplete`, use uma idade (`{ age: 24h }`) e não `true`. O `processed_events` continua obrigatório, porque a entrega segue sendo "pelo menos uma vez".
+- **Duplicatas:** use um `jobId` determinístico (`<eventId>__<consumidor>`; o BullMQ não aceita `:` no id). Adicionar um job com id existente é ignorado, mas só enquanto o job existir: com `removeOnComplete`, use uma idade, e não `true`. A idade está em **segundos** (`{ age: 24 * 3600 }`), e a remoção não é imediata: um job vencido só sai quando outro job da mesma fila termina. O `processed_events` continua obrigatório, porque a entrega segue sendo "pelo menos uma vez".
 - **Falhas:** `attempts` com `backoff: { type: 'exponential' }`. Esgotadas as tentativas, o job fica no conjunto `failed` da fila, que faz o papel de fila de mortos do consumidor. O `deadAt` da outbox passa a valer só para o que não conseguiu ser enfileirado.
 - **Ordem:** a outbox garante a ordem por agregado até a fila. Dentro dela, um retry com backoff pode inverter eventos, então o consumidor não deve depender da sequência. Se precisar, use concorrência 1 e trate o estado fora de ordem no handler.
 - **Trace:** o job carrega o evento com o `traceparent` nos metadados, e o worker abre o span a partir dele.
@@ -736,6 +751,7 @@ async listByCustomer(customerId: string, { page, limit }: PageRequest): Promise<
   const [rows, total] = await this.repo.createQueryBuilder('o')
     .where('o.customerId = :customerId', { customerId })
     .orderBy('o.createdAt', 'DESC')
+    .addOrderBy('o.id', 'DESC') // desempate: sem ele, itens com o mesmo createdAt trocam de página
     .skip((page - 1) * limit)
     .take(limit)
     .getManyAndCount();
@@ -883,11 +899,12 @@ ConfigModule.forRoot({
 **2. Validação (`shared/infra/config/env.validation.ts`)**
 
 ```ts
+// com strict: `!` nas obrigatórias, valor padrão nas opcionais
 class EnvironmentVariables {
-  @IsEnum(['development', 'test', 'production']) NODE_ENV: string;
-  @IsInt() @Min(1) PORT: number;
-  @IsString() @IsNotEmpty() DATABASE_URL: string;
-  @IsString() @IsNotEmpty() JWT_SECRET: string;
+  @IsEnum(['development', 'test', 'production']) NODE_ENV!: string;
+  @IsInt() @Min(1) PORT: number = 3000;
+  @IsString() @IsNotEmpty() DATABASE_URL!: string;
+  @IsString() @IsNotEmpty() JWT_SECRET!: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -937,23 +954,21 @@ export class ExpirePendingOrdersJob {
 }
 ```
 
-Este projeto usa os Job Schedulers do BullMQ (o `@Cron` abaixo é só a comparação). O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
+Este projeto usa os Job Schedulers do BullMQ (o `@Cron` acima é só a comparação). O `@nestjs/schedule` roda dentro do processo. Com várias instâncias da aplicação, o `@Cron` dispara em todas. Para rodar uma vez só, use um lock no banco ou os Job Schedulers do BullMQ (`upsertJobScheduler`). A API antiga de repeatable jobs foi descontinuada na v5.16 e removida na v6 do BullMQ.
 
 Com o BullMQ, o agendador vira um job scheduler registrado na subida, e o processor tem o mesmo papel do job com `@Cron`: só chamar o caso de uso.
 
 ```ts
 // na subida (idempotente: várias instâncias podem chamar)
-await jobsQueue.upsertJobScheduler('orders.expire-pending-orders', { pattern: '*/5 * * * *' });
+await queue.upsertJobScheduler('orders.expire-pending-orders', { pattern: '*/5 * * * *' });
+await queue.setGlobalConcurrency(1); // uma execução por vez, mesmo com várias instâncias
 
-@Processor('jobs.orders')
-export class ExpirePendingOrdersProcessor extends WorkerHost {
-  constructor(private readonly expire: ExpirePendingOrdersUseCase) { super(); }
-
-  process() {
-    return this.expire.execute();
-  }
-}
+// o worker só chama o caso de uso
+new Worker('jobs.orders', () => expire.execute(), { connection });
 ```
+
+- O projeto usa `Queue` e `Worker` do `bullmq` direto, sem o `@nestjs/bullmq`. O `@Processor`/`WorkerHost` do `@nestjs/bullmq` é uma alternativa para filas declaradas de forma estática.
+- Um job do scheduler só é repetido em caso de falha se o template tiver `attempts`. Sem isso, a próxima execução fica para o próximo disparo.
 
 ### Redis
 
@@ -961,7 +976,7 @@ Um Redis serve ao cache, às filas (BullMQ) e ao rate limit compartilhado. Só f
 
 - **Política de memória:** o BullMQ exige `maxmemory-policy noeviction`. Com qualquer outra política, o Redis pode apagar chaves das filas. Um Redis usado como cache normalmente usa `allkeys-lru`. A política vale para a instância inteira, não por database. Em desenvolvimento, uma instância com `noeviction` atende os dois, desde que toda chave de cache tenha TTL. Em produção, prefira instâncias separadas para cache e filas.
 - **Persistência:** ligue o AOF (`appendonly yes`) na instância das filas, para não perder jobs num reinício.
-- **Clientes:** o BullMQ usa `ioredis` (nos workers, com `maxRetriesPerRequest: null`, que o BullMQ já define por padrão) e o `@keyv/redis` usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, e tudo bem.
+- **Clientes:** o BullMQ usa `ioredis` e o `@keyv/redis` usa o cliente `redis`. Os workers exigem `maxRetriesPerRequest: null`. O BullMQ só define esse valor sozinho quando ele mesmo cria a conexão: ao passar uma instância de `ioredis`, defina você. Na conexão de quem só enfileira, `enableOfflineQueue: false` faz o `add` falhar na hora com o Redis fora, em vez de esperar. São conexões diferentes para o mesmo `REDIS_URL`, e tudo bem.
 - **Configuração:** `REDIS_URL` validada na subida, como o `DATABASE_URL`.
 - **Health:** o `readiness` checa o Redis com `PING`. O `liveness` não depende dele.
 - **Testes:** `@testcontainers/redis` sobe um Redis descartável na integração.
@@ -972,16 +987,28 @@ O BullMQ 6 também oferece um backend em PostgreSQL. É uma alternativa para ter
 
 Um adapter que envolve a implementação de leitura. A application não sabe que existe cache.
 
-O `@nestjs/cache-manager` usa a Keyv como store. Para Redis, registre `createKeyv(url)` do `@keyv/redis` e sempre escute o evento `error` do store: sem listener, uma queda de conexão derruba o processo.
+O `@nestjs/cache-manager` usa a Keyv como store. Para Redis, use o `@keyv/redis` e sempre escute o evento `error` do store: sem listener, uma queda de conexão derruba o processo.
+
+Com as opções padrão, o listener não basta para a leitura continuar de pé com o Redis fora. O cliente guarda os comandos numa fila até reconectar, e o store lança erro na conexão. Desligue os dois:
 
 ```ts
+// redis.connection.ts: cliente compartilhado
+const client = createClient({
+  url: cfg.getOrThrow('REDIS_URL'),
+  disableOfflineQueue: true, // Redis fora: falha na hora, sem fila esperando reconexão
+  socket: { reconnectStrategy: (retries) => Math.min(retries * 100, 3_000) },
+});
+
+// cache.module.ts
 CacheModule.registerAsync({
   isGlobal: true,
-  inject: [ConfigService],
-  useFactory: (cfg: ConfigService) => {
-    const redis = createKeyv(cfg.getOrThrow('REDIS_URL'));
-    redis.on('error', (err) => logger.warn({ err }, 'cache store error'));
-    return { stores: [redis] };
+  imports: [RedisModule],
+  inject: [RedisConnection, Logger],
+  useFactory: (redis: RedisConnection, logger: Logger) => {
+    // erro do Redis vira miss (get) ou no-op (set/del), mais um evento 'error'
+    const store = createKeyv(redis.client, { throwOnErrors: false, throwOnConnectError: false });
+    store.on('error', (err: unknown) => logger.warn({ err }, 'cache store error'));
+    return { stores: [store] };
   },
 }),
 ```
@@ -992,7 +1019,7 @@ export class CachedOrderQueries implements OrderQueries {
 
   async listByCustomer(customerId: string, page: PageRequest) {
     const gen = await this.generation(customerId);
-    const key = `orders:list:${customerId}:${gen}:${page.limit}:${page.offset}`;
+    const key = `orders:list:${customerId}:${gen}:${page.limit}:${page.page}`;
     const hit = await this.cache.get<Page<OrderListItem>>(key);
     if (hit) return hit;
     const fresh = await this.inner.listByCustomer(customerId, page);
@@ -1023,7 +1050,7 @@ Ports na application (`StorageGateway`, `EmailSender`, `PaymentGateway`) e adapt
 ### Seeds
 
 - **Dados obrigatórios** para o sistema funcionar (categorias padrão, tipos fixos): vão em migration.
-- **Dados de desenvolvimento e teste:** seeds por módulo em `infra/database/typeorm/seeds`, com script próprio (`seed:orders`) e usando upsert para poder rodar mais de uma vez.
+- **Dados de desenvolvimento e teste:** seeds por módulo em `infra/database/typeorm/seeds`, com script próprio (`seed:<módulo>`) e com insert que ignora o que já existe (`ON CONFLICT DO NOTHING`). Assim o seed pode rodar mais de uma vez sem sobrescrever dados editados.
 
 ## Qualidade
 
@@ -1051,9 +1078,17 @@ Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descart
 
 Com `dependency-cruiser`, rodando `depcruise src` no pipeline. Se alguém quebrar a regra, o build falha.
 
+Substitua as regras padrão que o `depcruise --init` gera (`no-orphans`, `not-to-dev-dep` e outras) por estas. Mantenha `tsPreCompilationDeps` ligado: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido.
+
 ```js
 forbidden: [
-  { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
+  {
+    name: 'no-circular',
+    severity: 'error',
+    from: {},
+    // import type some na compilação e não forma ciclo real
+    to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
+  },
   {
     name: 'domain-e-application-sem-framework',
     severity: 'error',
@@ -1095,7 +1130,9 @@ As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem 
 ### Observabilidade
 
 - **Tracing distribuído:** OpenTelemetry com auto-instrumentação para Node. Ele propaga o contexto no padrão W3C (`traceparent`) entre serviços e dispensa um correlation id feito à mão.
-- **Logs ligados ao trace:** inclua o `traceId` em todo log e copie para os metadados de cada evento da outbox. Assim dá para seguir uma requisição por todos os módulos.
+  - O arquivo de tracing precisa ser o **primeiro import** do `main.ts` (ou carregado com `--import`): a auto-instrumentação só enxerga módulos carregados depois dela.
+  - No Nest 12, não há spans da camada Nest (controllers e handlers): o `@opentelemetry/instrumentation-nestjs-core` só suporta o Nest até a versão 11. Os spans de http, express, pg, ioredis e pino continuam, e isso basta para seguir uma requisição.
+- **Logs ligados ao trace:** o id do trace vai em todo log e é copiado para os metadados de cada evento da outbox. Assim dá para seguir uma requisição por todos os módulos. A instrumentação do pino grava os campos `trace_id` e `span_id`, e não `traceId`. Para mudar o nome, use a opção `logKeys`.
 - **Logs estruturados:** JSON com `nestjs-pino`.
 - **Na application:** se precisar logar, use um port `Logger`, sem importar o Nest.
 
@@ -1105,11 +1142,17 @@ As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem 
 
 Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por módulo (`@ApiTags('orders')`). O plugin da CLI do Nest infere boa parte dos tipos e reduz decorators.
 
+Por padrão, o plugin só lê arquivos `.dto.ts` e `.entity.ts`. Como aqui os DTOs HTTP se chamam `*.request.ts` e `*.query.ts`, configure o `dtoFileNameSuffix` no `nest-cli.json`. Sem isso, essas classes ficam sem schema. O plugin roda só no `nest build`/`nest start`, e não nos testes.
+
+```json
+"plugins": [{ "name": "@nestjs/swagger", "options": { "dtoFileNameSuffix": [".request.ts", ".requests.ts", ".query.ts"] } }]
+```
+
 ### Health, rate limit e segurança básica
 
 | Item | Ferramenta | Observação |
 | --- | --- | --- |
-| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco com `pingCheck` e Redis com `PING`) |
+| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco com `pingCheck` e Redis com `PING`). Indicadores próprios usam o `HealthIndicatorService`, porque o Nest 12 removeu a API antiga (`HealthIndicator` e `HealthCheckError`). Marque as rotas de health com `@SkipThrottle()`, senão as sondas do orquestrador contam no rate limit |
 | Desligamento gracioso | `app.enableShutdownHooks()` | Termina requisições e jobs em andamento e fecha conexões antes de o processo sair |
 | Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis), com incremento e expiração atômicos. O `@nest-lab/throttler-storage-redis` 1.2.0 declara suporte só até o Nest 11 (novembro de 2026); no Nest 12, um `ThrottlerStorage` próprio é pequeno. Atrás de proxy, configure `trust proxy` |
 | Headers de segurança | `helmet` | `app.use(helmet())` no `main.ts` |
@@ -1135,18 +1178,24 @@ Se o módulo só valida campos (categorias, configurações, cadastros simples),
 
 ### Gerador de módulos
 
-Com Plop, `npx plop module` cria toda a estrutura padrão com os nomes certos.
+Com Plop, `npx plop module <nome>` cria toda a estrutura padrão com os nomes certos. O `plopfile.mjs` é ESM, e os templates ficam em `plop-templates/module/`.
 
 ```js
-plop.setGenerator('module', {
-  prompts: [{ type: 'input', name: 'name', message: 'Nome do módulo' }],
-  actions: [{
-    type: 'addMany',
-    destination: 'src/modules/{{kebabCase name}}',
-    base: 'templates/module',
-    templateFiles: 'templates/module/**',
-  }],
-});
+// plopfile.mjs
+export default function (plop) {
+  plop.setGenerator('module', {
+    prompts: [{ type: 'input', name: 'name', message: 'Nome do módulo, no singular' }],
+    actions: [
+      {
+        type: 'addMany',
+        destination: 'src/modules/{{kebabCase name}}',
+        base: 'plop-templates/module',
+        templateFiles: 'plop-templates/module/**',
+      },
+      // + `modify` para registrar o módulo no app.module.ts e criar os scripts de migration
+    ],
+  });
+}
 ```
 
 ### Checklist de um módulo novo
