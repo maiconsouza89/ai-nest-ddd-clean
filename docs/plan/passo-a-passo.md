@@ -30,9 +30,9 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | ✅ |
 | 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `bullmq`, `ioredis` | ✅ |
-| 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
+| 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | 🟡 |
 
-**Progresso geral:** 12 de 13 fases concluídas · 40 de 42 passos concluídos · **Fase atual:** 13
+**Progresso geral:** 12 de 13 fases concluídas · 41 de 42 passos concluídos · **Fase atual:** 13
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -1014,9 +1014,9 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 
 ## Fase 13: escala do time
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
-> - [ ] Passo 41: gerador de módulos
+> - [x] Passo 41: gerador de módulos
 > - [ ] Passo 42: evoluções sob demanda
 
 ### Passo 41: gerador de módulos
@@ -1026,6 +1026,8 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 **Faça:** `plop` com um template baseado no módulo `orders` (ver guia de referência). O template já inclui o módulo Nest com `useFactory`, o DataSource, a primeira migration com `CREATE SCHEMA` e os scripts de migration.
 
 **Pronto quando:** `npx plop module` gera um módulo que passa no `npm run arch` sem ajustes.
+
+**Como ficou:** `npx plop module <nome>` (ou `npm run plop`) lê `plopfile.mjs` e os templates em `plop-templates/module/`. Cria o módulo em `src/modules/<nome>/` com agregado, repositório (TypeORM e em memória), casos de uso com `useFactory`, controller, filtro de erros, DataSource, duas migrations (`CREATE SCHEMA` e a tabela) e um spec. Também registra o módulo no `app.module.ts` e adiciona os scripts `mig:<nome>:gen` e `mig:<nome>:run`. Verificado com um módulo de teste: `typecheck`, testes e `arch` passaram, as migrations rodaram e o `gen` não achou diferença para a entidade. Recusa nome de módulo que já existe.
 
 ### Passo 42: evoluções sob demanda
 

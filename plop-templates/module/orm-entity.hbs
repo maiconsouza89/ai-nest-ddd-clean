@@ -1,0 +1,21 @@
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity({ name: '{{snakeCase name}}', schema: '{{snakeCase name}}' })
+export class {{pascalCase name}}OrmEntity {
+  // gerado pelo domínio, não pelo banco
+  @PrimaryColumn('uuid', { primaryKeyConstraintName: 'PK_{{snakeCase name}}_{{snakeCase name}}' })
+  id!: string;
+
+  @Column('varchar')
+  name!: string;
+
+  // controle de concorrência otimista, mantido pelo repositório
+  @Column('int', { default: 0 })
+  version!: number;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt!: Date;
+}

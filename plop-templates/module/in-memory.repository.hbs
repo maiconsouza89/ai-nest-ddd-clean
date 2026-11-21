@@ -1,0 +1,14 @@
+import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity';
+import { {{pascalCase name}}Repository } from '../../../domain/repositories/{{kebabCase name}}.repository';
+
+export class InMemory{{pascalCase name}}Repository implements {{pascalCase name}}Repository {
+  private readonly items = new Map<string, {{pascalCase name}}>();
+
+  async save({{camelCase name}}: {{pascalCase name}}) {
+    this.items.set({{camelCase name}}.id, {{camelCase name}});
+  }
+
+  async findById(id: string) {
+    return this.items.get(id) ?? null;
+  }
+}

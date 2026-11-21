@@ -1,0 +1,12 @@
+import { {{pascalCase name}}NotFoundError } from '../../domain/errors/{{kebabCase name}}-not-found.error';
+import { {{pascalCase name}}Repository } from '../../domain/repositories/{{kebabCase name}}.repository';
+
+export class Get{{pascalCase name}}UseCase {
+  constructor(private readonly repo: {{pascalCase name}}Repository) {}
+
+  async execute(id: string) {
+    const {{camelCase name}} = await this.repo.findById(id);
+    if (!{{camelCase name}}) throw new {{pascalCase name}}NotFoundError();
+    return { id: {{camelCase name}}.id, name: {{camelCase name}}.name };
+  }
+}

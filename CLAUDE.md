@@ -43,6 +43,10 @@ Um arquivo:
 - Unitário: `npm test -- money.vo` (o argumento é um padrão de caminho).
 - Integração: `npm run test:int -- --testPathPatterns pay-order`. **Não** passe o caminho direto depois de `test:int`: a flag `--testRegex` do script o engole e a suíte inteira roda.
 
+### Novo módulo
+
+`npm run plop module <nome>` (nome no singular) gera a estrutura padrão, registra o módulo no `app.module.ts` e cria os scripts de migration. Templates em `plop-templates/module/`. Depois de gerar, rode `npm run mig:<nome>:run` antes de subir a app (as migrations não rodam sozinhas). Rode o gerador na raiz do repositório.
+
 ## Arquitetura (visão geral)
 
 Monólito modular com NestJS, seguindo DDD e Clean Architecture.

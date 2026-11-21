@@ -1,0 +1,31 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { IdGenerator } from '../../../shared/application/ports/id-generator';
+import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
+import { Create{{pascalCase name}}UseCase } from '../application/use-cases/create-{{kebabCase name}}.use-case';
+import { Get{{pascalCase name}}UseCase } from '../application/use-cases/get-{{kebabCase name}}.use-case';
+import { {{pascalCase name}}Repository } from '../domain/repositories/{{kebabCase name}}.repository';
+import { {{pascalCase name}}OrmEntity } from './database/typeorm/entities/{{kebabCase name}}.orm-entity';
+import { TypeOrm{{pascalCase name}}Repository } from './database/typeorm/typeorm-{{kebabCase name}}.repository';
+import { {{pascalCase name}}Controller } from './http/controllers/{{kebabCase name}}.controller';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([{{pascalCase name}}OrmEntity])],
+  controllers: [{{pascalCase name}}Controller],
+  providers: [
+    { provide: {{pascalCase name}}Repository, useClass: TypeOrm{{pascalCase name}}Repository },
+    { provide: IdGenerator, useClass: UuidV7Generator },
+    {
+      provide: Create{{pascalCase name}}UseCase,
+      useFactory: (repo: {{pascalCase name}}Repository, ids: IdGenerator) =>
+        new Create{{pascalCase name}}UseCase(repo, ids),
+      inject: [{{pascalCase name}}Repository, IdGenerator],
+    },
+    {
+      provide: Get{{pascalCase name}}UseCase,
+      useFactory: (repo: {{pascalCase name}}Repository) => new Get{{pascalCase name}}UseCase(repo),
+      inject: [{{pascalCase name}}Repository],
+    },
+  ],
+})
+export class {{pascalCase name}}Module {}

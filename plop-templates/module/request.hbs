@@ -1,0 +1,8 @@
+import { IsString, Matches, MaxLength } from 'class-validator';
+
+export class Create{{pascalCase name}}Request {
+  @IsString()
+  @Matches(/\S/, { message: 'name should not be blank' })
+  @MaxLength(200)
+  name!: string;
+}

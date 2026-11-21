@@ -1,0 +1,8 @@
+import { DomainError } from '../../../../shared/domain/domain-error';
+
+export class {{pascalCase name}}NotFoundError extends DomainError {
+  readonly code = '{{constantCase name}}_NOT_FOUND';
+  constructor() {
+    super('{{pascalCase name}} not found');
+  }
+}

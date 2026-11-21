@@ -1,0 +1,6 @@
+import { {{pascalCase name}} } from '../entities/{{kebabCase name}}.entity';
+
+export abstract class {{pascalCase name}}Repository {
+  abstract save({{camelCase name}}: {{pascalCase name}}): Promise<void>;
+  abstract findById(id: string): Promise<{{pascalCase name}} | null>;
+}

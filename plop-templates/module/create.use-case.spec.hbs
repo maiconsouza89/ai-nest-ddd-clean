@@ -1,0 +1,27 @@
+import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
+import { InMemory{{pascalCase name}}Repository } from '../../infra/database/in-memory/in-memory-{{kebabCase name}}.repository';
+import { Create{{pascalCase name}}UseCase } from './create-{{kebabCase name}}.use-case';
+import { Get{{pascalCase name}}UseCase } from './get-{{kebabCase name}}.use-case';
+import { {{pascalCase name}}NotFoundError } from '../../domain/errors/{{kebabCase name}}-not-found.error';
+
+function setup() {
+  const repo = new InMemory{{pascalCase name}}Repository();
+  const create = new Create{{pascalCase name}}UseCase(repo, new SequentialIdGenerator('{{kebabCase name}}'));
+  const get = new Get{{pascalCase name}}UseCase(repo);
+  return { create, get };
+}
+
+describe('Create{{pascalCase name}}UseCase', () => {
+  it('cria e salva', async () => {
+    const { create, get } = setup();
+    const { id } = await create.execute({ name: '  exemplo ' });
+
+    expect(id).toBe('{{kebabCase name}}-1');
+    expect(await get.execute(id)).toEqual({ id, name: 'exemplo' });
+  });
+
+  it('falha quando não existe', async () => {
+    const { get } = setup();
+    await expect(get.execute('x')).rejects.toBeInstanceOf({{pascalCase name}}NotFoundError);
+  });
+});

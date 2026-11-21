@@ -1,0 +1,26 @@
+import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
+
+export type {{pascalCase name}}Props = {
+  id: string;
+  name: string;
+  version: number;
+};
+
+export class {{pascalCase name}} extends AggregateRoot {
+  private constructor(
+    readonly id: string,
+    readonly name: string,
+    // versão lida do banco, usada na checagem de concorrência otimista
+    readonly version: number,
+  ) {
+    super();
+  }
+
+  static create(id: string, name: string) {
+    return new {{pascalCase name}}(id, name.trim(), 0);
+  }
+
+  static restore(p: {{pascalCase name}}Props) {
+    return new {{pascalCase name}}(p.id, p.name, p.version);
+  }
+}

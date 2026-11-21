@@ -1,0 +1,17 @@
+import { IdGenerator } from '../../../../shared/application/ports/id-generator';
+import { {{pascalCase name}} } from '../../domain/entities/{{kebabCase name}}.entity';
+import { {{pascalCase name}}Repository } from '../../domain/repositories/{{kebabCase name}}.repository';
+import { Create{{pascalCase name}}Input } from '../dtos/create-{{kebabCase name}}.input';
+
+export class Create{{pascalCase name}}UseCase {
+  constructor(
+    private readonly repo: {{pascalCase name}}Repository,
+    private readonly ids: IdGenerator,
+  ) {}
+
+  async execute(input: Create{{pascalCase name}}Input) {
+    const {{camelCase name}} = {{pascalCase name}}.create(this.ids.next(), input.name);
+    await this.repo.save({{camelCase name}});
+    return { id: {{camelCase name}}.id };
+  }
+}

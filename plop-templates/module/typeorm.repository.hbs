@@ -1,0 +1,36 @@
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
+import { currentManager } from '../../../../../shared/infra/database/transaction-context';
+import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity';
+import { {{pascalCase name}}Repository } from '../../../domain/repositories/{{kebabCase name}}.repository';
+import { {{pascalCase name}}OrmEntity } from './entities/{{kebabCase name}}.orm-entity';
+import { {{pascalCase name}}Mapper } from './typeorm-{{kebabCase name}}.mapper';
+
+@Injectable()
+export class TypeOrm{{pascalCase name}}Repository implements {{pascalCase name}}Repository {
+  constructor(private readonly dataSource: DataSource) {}
+
+  // usa a transação ativa, se houver
+  private get repo() {
+    return currentManager(this.dataSource).getRepository({{pascalCase name}}OrmEntity);
+  }
+
+  async save({{camelCase name}}: {{pascalCase name}}) {
+    const next = {{camelCase name}}.version + 1;
+    if ({{camelCase name}}.version > 0) {
+      // só avança se ninguém gravou desde que foi carregado
+      const res = await this.repo.update(
+        { id: {{camelCase name}}.id, version: {{camelCase name}}.version },
+        { version: next },
+      );
+      if (res.affected === 0) throw new ConcurrencyError();
+    }
+    await this.repo.save({ ...{{pascalCase name}}Mapper.toPersistence({{camelCase name}}), version: next });
+  }
+
+  async findById(id: string) {
+    const raw = await this.repo.findOne({ where: { id } });
+    return raw ? {{pascalCase name}}Mapper.toDomain(raw) : null;
+  }
+}

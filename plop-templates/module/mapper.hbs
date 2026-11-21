@@ -1,0 +1,16 @@
+import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity';
+import { {{pascalCase name}}OrmEntity } from './entities/{{kebabCase name}}.orm-entity';
+
+export class {{pascalCase name}}Mapper {
+  static toDomain(raw: {{pascalCase name}}OrmEntity): {{pascalCase name}} {
+    return {{pascalCase name}}.restore({ id: raw.id, name: raw.name, version: raw.version });
+  }
+
+  static toPersistence({{camelCase name}}: {{pascalCase name}}): {{pascalCase name}}OrmEntity {
+    const raw = new {{pascalCase name}}OrmEntity();
+    raw.id = {{camelCase name}}.id;
+    raw.name = {{camelCase name}}.name;
+    raw.version = {{camelCase name}}.version;
+    return raw;
+  }
+}

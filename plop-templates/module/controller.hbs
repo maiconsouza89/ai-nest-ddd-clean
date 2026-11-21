@@ -1,0 +1,27 @@
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseFilters } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Create{{pascalCase name}}UseCase } from '../../../application/use-cases/create-{{kebabCase name}}.use-case';
+import { Get{{pascalCase name}}UseCase } from '../../../application/use-cases/get-{{kebabCase name}}.use-case';
+import { Create{{pascalCase name}}Request } from '../dtos/create-{{kebabCase name}}.request';
+import { {{pascalCase name}}DomainErrorFilter } from '../filters/domain-error.filter';
+
+@ApiTags('{{kebabCase name}}')
+@ApiBearerAuth()
+@Controller('{{kebabCase name}}')
+@UseFilters({{pascalCase name}}DomainErrorFilter)
+export class {{pascalCase name}}Controller {
+  constructor(
+    private readonly create{{pascalCase name}}: Create{{pascalCase name}}UseCase,
+    private readonly get{{pascalCase name}}: Get{{pascalCase name}}UseCase,
+  ) {}
+
+  @Post()
+  create(@Body() body: Create{{pascalCase name}}Request) {
+    return this.create{{pascalCase name}}.execute({ name: body.name });
+  }
+
+  @Get(':id')
+  get(@Param('id', ParseUUIDPipe) id: string) {
+    return this.get{{pascalCase name}}.execute(id);
+  }
+}
