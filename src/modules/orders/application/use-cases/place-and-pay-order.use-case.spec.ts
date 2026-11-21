@@ -1,3 +1,5 @@
+import { FakeIdempotencyStore } from '../../../../../test/fakes/fake-idempotency-store';
+import { FakePaymentGateway } from '../../../../../test/fakes/fake-payment-gateway';
 import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
 import { FixedClock } from '../../../../../test/fakes/fixed-clock';
 import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
@@ -27,6 +29,7 @@ async function setup(outOfStock = false) {
   const tx = new FakeTransactionManager();
   const stock = new FakeStockGateway(outOfStock);
   const outbox = new FakeOutbox();
+  const payments = new FakePaymentGateway();
   return {
     repo,
     tx,
@@ -34,7 +37,17 @@ async function setup(outOfStock = false) {
     outbox,
     place: new PlaceOrderUseCase(repo, stock, tx),
     cancel: new CancelOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
-    pay: new PayOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
+    payments,
+    pay: new PayOrderUseCase(
+      repo,
+      outbox,
+      new SequentialIdGenerator('evt'),
+      new FixedClock(),
+      tx,
+      payments,
+      new FakeIdempotencyStore(),
+      60_000,
+    ),
   };
 }
 

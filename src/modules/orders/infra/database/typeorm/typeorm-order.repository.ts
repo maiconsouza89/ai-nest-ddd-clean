@@ -35,6 +35,18 @@ export class TypeOrmOrderRepository implements OrderRepository {
     return raw ? OrderMapper.toDomain(raw) : null;
   }
 
+  async findByIdForUpdate(id: string) {
+    // FOR UPDATE não vale sobre o lado opcional de um join: trava só a linha do pedido, sem itens
+    const locked = await this.repo
+      .createQueryBuilder('o')
+      .select('o.id')
+      .where('o.id = :id', { id })
+      .setLock('pessimistic_write')
+      .getOne();
+    // carrega depois do lock: lê o estado confirmado mais recente
+    return locked ? this.findById(id) : null;
+  }
+
   async findStaleIds(cutoff: Date, limit: number) {
     const rows = await this.repo.find({
       select: { id: true },

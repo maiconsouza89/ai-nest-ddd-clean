@@ -116,6 +116,56 @@ describe('Orders (e2e)', () => {
     expect(events).toEqual([{ type: 'orders.order-paid', version: 1 }]);
   });
 
+  describe('Idempotency-Key no pagamento', () => {
+    const placed = async (user: Awaited<ReturnType<typeof registerAndLogin>>) => {
+      const id = await createOrder(user);
+      await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
+      return id;
+    };
+    const paidEvents = (id: string) =>
+      app
+        .get(DataSource)
+        .query(`SELECT id FROM shared.outbox WHERE payload->>'orderId' = $1`, [id]);
+
+    it('repetir com a mesma chave devolve a mesma resposta e paga uma vez só', async () => {
+      const user = await registerAndLogin(app);
+      const id = await placed(user);
+      const key = crypto.randomUUID();
+
+      await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).set('Idempotency-Key', key).expect(204);
+      await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).set('Idempotency-Key', key).expect(204);
+
+      expect(await paidEvents(id)).toHaveLength(1);
+    });
+
+    it('a mesma chave em outro pedido devolve 422', async () => {
+      const user = await registerAndLogin(app);
+      const key = crypto.randomUUID();
+      await request(server())
+        .post(`/v1/orders/${await placed(user)}/pay`)
+        .set(user.auth)
+        .set('Idempotency-Key', key)
+        .expect(204);
+
+      const res = await request(server())
+        .post(`/v1/orders/${await placed(user)}/pay`)
+        .set(user.auth)
+        .set('Idempotency-Key', key)
+        .expect(422);
+      expect(res.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
+    });
+
+    it('chave grande demais devolve 400', async () => {
+      const user = await registerAndLogin(app);
+      const res = await request(server())
+        .post(`/v1/orders/${await placed(user)}/pay`)
+        .set(user.auth)
+        .set('Idempotency-Key', 'x'.repeat(256))
+        .expect(400);
+      expect(res.body.code).toBe('INVALID_IDEMPOTENCY_KEY');
+    });
+  });
+
   it('o pedido pertence ao usuário do token, não a um id enviado pelo cliente', async () => {
     const user = await registerAndLogin(app);
     const id = await createOrder(user);

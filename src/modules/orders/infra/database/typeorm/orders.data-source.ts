@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { validateEnv } from '../../../../../shared/infra/config/env.validation';
+import { IdempotencyKeyOrmEntity } from './entities/idempotency-key.orm-entity';
 import { OrderItemOrmEntity } from './entities/order-item.orm-entity';
 import { OrderOrmEntity } from './entities/order.orm-entity';
 
@@ -12,7 +13,7 @@ const env = validateEnv(process.env);
 export default new DataSource({
   type: 'postgres',
   url: env.DATABASE_URL,
-  entities: [OrderOrmEntity, OrderItemOrmEntity],
+  entities: [OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'orders_migrations',
 });

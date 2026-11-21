@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | 🟡 |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 10 de 12 fases concluídas · 34 de 39 passos concluídos · **Fase atual:** 11
+**Progresso geral:** 10 de 12 fases concluídas · 35 de 39 passos concluídos · **Fase atual:** 11
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -823,7 +823,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 > - [x] Passo 33: documentação da API
 > - [x] Passo 34: jobs agendados
 > - [ ] Passo 35: cache na leitura
-> - [ ] Passo 36: serviços externos e `Idempotency-Key`
+> - [x] Passo 36: serviços externos e `Idempotency-Key`
 > - [x] Passo 37: seeds
 
 Cada passo desta fase é independente. Faça na ordem que a operação pedir.
@@ -887,6 +887,8 @@ Cada passo desta fase é independente. Faça na ordem que a operação pedir.
 - `POST /orders/:id/pay` aceita o header `Idempotency-Key`. Guarde a chave com a impressão digital do corpo, a resposta e um prazo de expiração.
 
 **Pronto quando:** repetir o pagamento com a mesma chave devolve a mesma resposta sem cobrar de novo.
+
+**Como ficou:** o `PaymentGateway` tem um adapter simulado (`SimulatedPaymentGateway`) envolvido por `ResilientPaymentGateway` (timeout de 3s e até 2 tentativas com backoff, curtos porque a chamada roda dentro da transação do pagamento, com a linha do pedido travada por `FOR UPDATE`). O `opossum` ficou de fora e só entra quando houver um fornecedor real e instável. A chave do fornecedor é `pay:<orderId>`, então o retry nunca cobra duas vezes. As chaves HTTP ficam em `orders.idempotency_keys`, por usuário, com prazo de 24h. O `EmailSender` vive no módulo `notifications`, que consome `OrderPaid` pela outbox e descobre o e-mail pela `UserDirectoryFacade` do `identity`.
 
 ### Passo 37: seeds
 

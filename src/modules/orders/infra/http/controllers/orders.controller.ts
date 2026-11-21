@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseFilters } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Headers, HttpCode, Param, Post, Query, UseFilters } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Actor } from '../../../../../shared/application/actor';
 import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
 import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
@@ -42,8 +42,17 @@ export class OrdersController {
 
   @Post(':id/pay')
   @HttpCode(204)
-  async pay(@Param('id') id: string, @CurrentUser() actor: Actor) {
-    await this.payOrder.execute({ orderId: id, actor });
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    description: 'Repetir a chamada com a mesma chave não cobra de novo e devolve a mesma resposta.',
+  })
+  async pay(
+    @Param('id') id: string,
+    @CurrentUser() actor: Actor,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ) {
+    await this.payOrder.execute({ orderId: id, actor, idempotencyKey });
   }
 
   @Post(':id/cancel')

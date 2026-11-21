@@ -8,8 +8,9 @@ export async function loadOwnedOrder(
   repo: OrderRepository,
   orderId: string,
   actor: Actor,
+  { lock = false }: { lock?: boolean } = {},
 ): Promise<Order> {
-  const order = await repo.findById(orderId);
+  const order = await (lock ? repo.findByIdForUpdate(orderId) : repo.findById(orderId));
   if (!order) throw new OrderNotFoundError();
 
   const isAdmin = actor.roles.includes('admin');

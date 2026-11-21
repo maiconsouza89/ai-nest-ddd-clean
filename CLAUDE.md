@@ -47,7 +47,7 @@ Um arquivo:
 
 Monólito modular com NestJS, seguindo DDD e Clean Architecture.
 
-- `src/modules/`: módulos de negócio `orders`, `catalog`, `inventory` e `identity`.
+- `src/modules/`: módulos de negócio `orders`, `catalog`, `inventory`, `identity` e `notifications`.
 - `src/shared/`: kernel compartilhado e infraestrutura transversal.
 - `src/app.module.ts`: composição dos módulos. `src/main.ts`: bootstrap.
 

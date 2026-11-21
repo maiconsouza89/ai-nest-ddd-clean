@@ -16,6 +16,10 @@ export class InMemoryOrderRepository implements OrderRepository {
     return this.orders.get(id)?.order ?? null;
   }
 
+  findByIdForUpdate(id: string) {
+    return this.findById(id);
+  }
+
   async findStaleIds(cutoff: Date, limit: number) {
     return [...this.orders.values()]
       .filter(

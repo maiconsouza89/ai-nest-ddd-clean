@@ -10,6 +10,8 @@ import { EnvironmentVariables } from '../../../shared/infra/config/env.validatio
 import { UuidV7Generator } from '../../../shared/infra/ids/uuid-v7.generator';
 import { CatalogFacade } from '../../catalog/contracts/catalog.facade';
 import { InventoryFacade } from '../../inventory/contracts/inventory.facade';
+import { IdempotencyStore } from '../application/ports/idempotency-store';
+import { PaymentGateway } from '../application/ports/payment-gateway';
 import { OrderQueries } from '../application/queries/order.queries';
 import { PriceCatalog } from '../application/ports/price-catalog';
 import { StockGateway } from '../application/ports/stock-gateway';
@@ -19,20 +21,30 @@ import { ExpirePendingOrdersUseCase } from '../application/use-cases/expire-pend
 import { PayOrderUseCase } from '../application/use-cases/pay-order.use-case';
 import { PlaceOrderUseCase } from '../application/use-cases/place-order.use-case';
 import { OrderRepository } from '../domain/repositories/order.repository';
+import { IdempotencyKeyOrmEntity } from './database/typeorm/entities/idempotency-key.orm-entity';
 import { OrderItemOrmEntity } from './database/typeorm/entities/order-item.orm-entity';
 import { OrderOrmEntity } from './database/typeorm/entities/order.orm-entity';
+import { TypeOrmIdempotencyStore } from './database/typeorm/typeorm-idempotency.store';
 import { TypeOrmOrderQueries } from './database/typeorm/typeorm-order.queries';
 import { TypeOrmOrderRepository } from './database/typeorm/typeorm-order.repository';
 import { CatalogPriceAdapter } from './gateways/catalog-price.adapter';
 import { InventoryStockGateway } from './gateways/inventory-stock.gateway';
+import { ResilientPaymentGateway } from './gateways/resilient-payment.gateway';
+import { SimulatedPaymentGateway } from './gateways/simulated-payment.gateway';
 import { ExpirePendingOrdersJob } from './jobs/expire-pending-orders.job';
 import { OrdersController } from './http/controllers/orders.controller';
 
 // pedidos tratados por execução do job; o excedente fica para a próxima
 const EXPIRATION_BATCH_SIZE = 100;
+// por quanto tempo uma Idempotency-Key concluída continua devolvendo a mesma resposta
+const IDEMPOTENCY_KEY_TTL_MS = 24 * 60 * 60 * 1000;
+// Chamada ao fornecedor de pagamento: tempo máximo por tentativa e retry com backoff. Ela roda dentro
+// da transação do pagamento (conexão e linha da chave presas), então o pior caso é curto de propósito:
+// 2 x 3s + 200ms, cerca de 6s.
+const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity])],
+  imports: [TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity])],
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
@@ -46,6 +58,13 @@ const EXPIRATION_BATCH_SIZE = 100;
       provide: StockGateway,
       useFactory: (inventory: InventoryFacade) => new InventoryStockGateway(inventory),
       inject: [InventoryFacade],
+    },
+    { provide: IdempotencyStore, useClass: TypeOrmIdempotencyStore },
+    {
+      provide: PaymentGateway,
+      useFactory: (logger: Logger) =>
+        new ResilientPaymentGateway(new SimulatedPaymentGateway(), PAYMENT_RESILIENCE, logger),
+      inject: [Logger],
     },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
@@ -72,8 +91,28 @@ const EXPIRATION_BATCH_SIZE = 100;
         ids: IdGenerator,
         clock: Clock,
         tx: TransactionManager,
-      ) => new PayOrderUseCase(repo, outbox, ids, clock, tx),
-      inject: [OrderRepository, Outbox, IdGenerator, Clock, TransactionManager],
+        payments: PaymentGateway,
+        idempotency: IdempotencyStore,
+      ) =>
+        new PayOrderUseCase(
+          repo,
+          outbox,
+          ids,
+          clock,
+          tx,
+          payments,
+          idempotency,
+          IDEMPOTENCY_KEY_TTL_MS,
+        ),
+      inject: [
+        OrderRepository,
+        Outbox,
+        IdGenerator,
+        Clock,
+        TransactionManager,
+        PaymentGateway,
+        IdempotencyStore,
+      ],
     },
     {
       provide: CancelOrderUseCase,
