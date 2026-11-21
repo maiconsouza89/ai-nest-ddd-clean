@@ -31,7 +31,7 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 11. Produção | Segurança, health check, logs, docs, jobs e cache | `helmet`, `terminus`, `throttler`, `pino`, OTel | ⬜ |
 | 12. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 0 de 12 fases concluídas · 1 de 39 passos concluídos · **Fase atual:** 1
+**Progresso geral:** 0 de 12 fases concluídas · 2 de 39 passos concluídos · **Fase atual:** 1
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -42,7 +42,7 @@ As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
 >
 > - [x] Passo 1: projeto TypeScript mínimo
-> - [ ] Passo 2: primeiros blocos do shared (`DomainError` e `Money`)
+> - [x] Passo 2: primeiros blocos do shared (`DomainError` e `Money`)
 > - [ ] Passo 3: o agregado `Order`
 
 ### Passo 1: projeto TypeScript mínimo
