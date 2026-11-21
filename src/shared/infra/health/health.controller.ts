@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HealthCheck, HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 import { Public } from '../auth/public.decorator';
+import { RedisHealthIndicator } from './redis-health.indicator';
 
 // sondas do orquestrador: sem JWT, sem versão na URL e fora do rate limit
 @ApiTags('health')
@@ -13,6 +14,7 @@ export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly db: TypeOrmHealthIndicator,
+    private readonly redis: RedisHealthIndicator,
   ) {}
 
   /** O processo está vivo. Não consulta dependências. */
@@ -22,10 +24,13 @@ export class HealthController {
     return this.health.check([]);
   }
 
-  /** O processo pode receber tráfego: o banco responde. */
+  /** O processo pode receber tráfego: o banco e o Redis respondem. */
   @Get('ready')
   @HealthCheck()
   ready() {
-    return this.health.check([() => this.db.pingCheck('database', { timeout: 1000 })]);
+    return this.health.check([
+      () => this.db.pingCheck('database', { timeout: 1000 }),
+      () => this.redis.pingCheck('redis', { timeout: 1000 }),
+    ]);
   }
 }

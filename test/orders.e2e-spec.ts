@@ -109,11 +109,15 @@ describe('Orders (e2e)', () => {
     const again = await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).expect(409);
     expect(again.body.code).toBe('ORDER_ALREADY_PAID');
 
-    // um evento só, mesmo com a segunda tentativa recusada
+    // um evento por fato (criar, fechar, pagar), sem duplicar o de pagamento na segunda tentativa recusada
     const events = await app
       .get(DataSource)
-      .query(`SELECT type, version FROM shared.outbox WHERE payload->>'orderId' = $1`, [id]);
-    expect(events).toEqual([{ type: 'orders.order-paid', version: 1 }]);
+      .query(`SELECT type, version FROM shared.outbox WHERE payload->>'orderId' = $1 ORDER BY id`, [id]);
+    expect(events).toEqual([
+      { type: 'orders.order-created', version: 1 },
+      { type: 'orders.order-placed', version: 1 },
+      { type: 'orders.order-paid', version: 1 },
+    ]);
   });
 
   describe('Idempotency-Key no pagamento', () => {
@@ -125,7 +129,10 @@ describe('Orders (e2e)', () => {
     const paidEvents = (id: string) =>
       app
         .get(DataSource)
-        .query(`SELECT id FROM shared.outbox WHERE payload->>'orderId' = $1`, [id]);
+        .query(
+          `SELECT id FROM shared.outbox WHERE type = 'orders.order-paid' AND payload->>'orderId' = $1`,
+          [id],
+        );
 
     it('repetir com a mesma chave devolve a mesma resposta e paga uma vez só', async () => {
       const user = await registerAndLogin(app);

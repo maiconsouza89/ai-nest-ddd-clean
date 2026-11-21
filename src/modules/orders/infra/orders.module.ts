@@ -1,3 +1,4 @@
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -27,6 +28,8 @@ import { OrderOrmEntity } from './database/typeorm/entities/order.orm-entity';
 import { TypeOrmIdempotencyStore } from './database/typeorm/typeorm-idempotency.store';
 import { TypeOrmOrderQueries } from './database/typeorm/typeorm-order.queries';
 import { TypeOrmOrderRepository } from './database/typeorm/typeorm-order.repository';
+import { CachedOrderQueries } from './cache/cached-order.queries';
+import { InvalidateOrderListCacheHandler } from './events/invalidate-order-list-cache.handler';
 import { CatalogPriceAdapter } from './gateways/catalog-price.adapter';
 import { InventoryStockGateway } from './gateways/inventory-stock.gateway';
 import { ResilientPaymentGateway } from './gateways/resilient-payment.gateway';
@@ -36,6 +39,8 @@ import { OrdersController } from './http/controllers/orders.controller';
 
 // pedidos tratados por execução do job; o excedente fica para a próxima
 const EXPIRATION_BATCH_SIZE = 100;
+// rede de segurança do cache da listagem: limita o pior caso se uma invalidação por evento se perder
+const ORDER_LIST_CACHE_TTL_MS = 60_000;
 // por quanto tempo uma Idempotency-Key concluída continua devolvendo a mesma resposta
 const IDEMPOTENCY_KEY_TTL_MS = 24 * 60 * 60 * 1000;
 // Chamada ao fornecedor de pagamento: tempo máximo por tentativa e retry com backoff. Ela roda dentro
@@ -48,7 +53,16 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
-    { provide: OrderQueries, useClass: TypeOrmOrderQueries },
+    TypeOrmOrderQueries,
+    {
+      provide: CachedOrderQueries,
+      useFactory: (inner: TypeOrmOrderQueries, cache: Cache, logger: Logger) =>
+        new CachedOrderQueries(inner, cache, logger, ORDER_LIST_CACHE_TTL_MS),
+      inject: [TypeOrmOrderQueries, CACHE_MANAGER, Logger],
+    },
+    // quem lê usa o decorator com cache; o handler de invalidação usa a própria classe
+    { provide: OrderQueries, useExisting: CachedOrderQueries },
+    InvalidateOrderListCacheHandler,
     {
       provide: PriceCatalog,
       useFactory: (catalog: CatalogFacade) => new CatalogPriceAdapter(catalog),
@@ -72,16 +86,24 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
       useFactory: (
         repo: OrderRepository,
         catalog: PriceCatalog,
+        outbox: Outbox,
         ids: IdGenerator,
+        clock: Clock,
         tx: TransactionManager,
-      ) => new CreateOrderUseCase(repo, catalog, ids, tx),
-      inject: [OrderRepository, PriceCatalog, IdGenerator, TransactionManager],
+      ) => new CreateOrderUseCase(repo, catalog, outbox, ids, clock, tx),
+      inject: [OrderRepository, PriceCatalog, Outbox, IdGenerator, Clock, TransactionManager],
     },
     {
       provide: PlaceOrderUseCase,
-      useFactory: (repo: OrderRepository, stock: StockGateway, tx: TransactionManager) =>
-        new PlaceOrderUseCase(repo, stock, tx),
-      inject: [OrderRepository, StockGateway, TransactionManager],
+      useFactory: (
+        repo: OrderRepository,
+        stock: StockGateway,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        tx: TransactionManager,
+      ) => new PlaceOrderUseCase(repo, stock, outbox, ids, clock, tx),
+      inject: [OrderRepository, StockGateway, Outbox, IdGenerator, Clock, TransactionManager],
     },
     {
       provide: PayOrderUseCase,

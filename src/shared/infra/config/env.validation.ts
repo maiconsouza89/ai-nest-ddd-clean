@@ -25,6 +25,10 @@ export class EnvironmentVariables {
   DATABASE_URL!: string;
 
   @IsString()
+  @IsNotEmpty()
+  REDIS_URL!: string;
+
+  @IsString()
   @MinLength(32)
   JWT_SECRET!: string;
 

@@ -22,6 +22,7 @@ async function setup() {
     const order = Order.create(id, 'u1');
     order.addItem('p1', 2, Money.fromCents(500));
     order.place();
+    order.pullDomainEvents(); // o repositório em memória devolve a mesma instância; ver place-and-pay
     await repo.save(order);
   }
   const payments = new FakePaymentGateway();

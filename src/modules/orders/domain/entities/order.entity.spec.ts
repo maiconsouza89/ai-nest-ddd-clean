@@ -1,7 +1,9 @@
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
 import { OrderCancelled } from '../events/order-cancelled.event';
+import { OrderCreated } from '../events/order-created.event';
 import { OrderPaid } from '../events/order-paid.event';
+import { OrderPlaced } from '../events/order-placed.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
 import { OrderNotCancellableError } from '../errors/order-not-cancellable.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
@@ -62,18 +64,43 @@ describe('Order', () => {
 
   it('pay() anota OrderPaid, que sai uma vez só em pullDomainEvents()', () => {
     const o = placed();
+    o.pullDomainEvents(); // descarta OrderCreated e OrderPlaced
     o.pay();
 
     expect(o.pullDomainEvents()).toEqual([new OrderPaid('o1', 'u1', 100, 'BRL')]);
     expect(o.pullDomainEvents()).toEqual([]);
   });
 
-  it('criar, adicionar item e fechar não registram eventos', () => {
-    expect(placed().pullDomainEvents()).toEqual([]);
+  it('create() anota OrderCreated e adicionar item não anota nada', () => {
+    const o = draft();
+    o.addItem('p1', 1, price(100));
+
+    expect(o.pullDomainEvents()).toEqual([new OrderCreated('o1', 'u1')]);
+  });
+
+  it('restore() não anota evento: recarregar um pedido não é um fato novo', () => {
+    const o = Order.restore({ id: 'o1', customerId: 'u1', items: [], status: OrderStatus.DRAFT, version: 3 });
+
+    expect(o.pullDomainEvents()).toEqual([]);
+  });
+
+  it('place() anota OrderPlaced, depois de OrderCreated', () => {
+    expect(placed().pullDomainEvents()).toEqual([
+      new OrderCreated('o1', 'u1'),
+      new OrderPlaced('o1', 'u1'),
+    ]);
+  });
+
+  it('place() com falha não anota OrderPlaced', () => {
+    const o = draft();
+    o.pullDomainEvents();
+    expect(() => o.place()).toThrow(EmptyOrderError);
+    expect(o.pullDomainEvents()).toEqual([]);
   });
 
   it('pagar com falha não registra evento', () => {
     const o = draft();
+    o.pullDomainEvents();
     expect(() => o.pay()).toThrow(OrderNotPayableError);
     expect(o.pullDomainEvents()).toEqual([]);
   });
@@ -83,6 +110,7 @@ describe('Order', () => {
     ['fechado', placed],
   ])('cancela pedido %s e registra OrderCancelled', (_name, make) => {
     const o = make();
+    o.pullDomainEvents();
     o.cancel();
 
     expect(o.status).toBe(OrderStatus.CANCELLED);

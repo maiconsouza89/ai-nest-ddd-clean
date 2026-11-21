@@ -14,7 +14,7 @@ Antes de adicionar, atualizar ou usar qualquer biblioteca, framework ou SDK, **u
 
 ## Comandos
 
-Setup: `docker compose up -d postgres` (Postgres 17 em `127.0.0.1:5432`). O `.env` precisa existir (copie de `.env.example`).
+Setup: `docker compose up -d postgres redis` (Postgres 17 em `127.0.0.1:5432` e Redis 8 em `127.0.0.1:6379`). O `.env` precisa existir (copie de `.env.example`, que inclui `REDIS_URL`).
 
 - Dev: `npm run start:dev`
 - Build: `npm run build`, depois `node dist/main.js` (não há script `start`)
@@ -35,8 +35,8 @@ Setup: `docker compose up -d postgres` (Postgres 17 em `127.0.0.1:5432`). O `.en
 ### Testes
 
 - `npm test`: unitários (`*.spec.ts`), sem banco.
-- `npm run test:int`: integração (`*.int-spec.ts`), sobe Postgres descartável via Testcontainers, então exige Docker. Leva cerca de 40s.
-- `npm run test:e2e`: e2e (`test/*.e2e-spec.ts`), sobe o app inteiro contra o banco de `DATABASE_URL` (padrão: o mesmo do docker-compose). **Grava dados nesse banco.**
+- `npm run test:int`: integração (`*.int-spec.ts`), sobe Postgres e Redis descartáveis via Testcontainers, então exige Docker. Leva cerca de 40s.
+- `npm run test:e2e`: e2e (`test/*.e2e-spec.ts`), sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` (padrão: os mesmos do docker-compose, então os dois precisam estar no ar). **Grava dados nesse banco.**
 
 Um arquivo:
 

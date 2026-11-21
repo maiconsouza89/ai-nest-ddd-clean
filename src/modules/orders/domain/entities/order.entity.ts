@@ -2,7 +2,9 @@ import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
 import { Money } from '../../../../shared/domain/money.vo';
 import { EmptyOrderError } from '../errors/empty-order.error';
 import { OrderCancelled } from '../events/order-cancelled.event';
+import { OrderCreated } from '../events/order-created.event';
 import { OrderPaid } from '../events/order-paid.event';
+import { OrderPlaced } from '../events/order-placed.event';
 import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
 import { OrderNotCancellableError } from '../errors/order-not-cancellable.error';
 import { OrderNotEditableError } from '../errors/order-not-editable.error';
@@ -31,7 +33,10 @@ export class Order extends AggregateRoot {
   }
 
   static create(id: string, customerId: string) {
-    return new Order(id, customerId, [], OrderStatus.DRAFT, 0);
+    const order = new Order(id, customerId, [], OrderStatus.DRAFT, 0);
+    // só `create` anota: `restore` recarrega um pedido que já existe e não é um fato novo
+    order.addDomainEvent(new OrderCreated(id, customerId));
+    return order;
   }
 
   static restore(p: OrderProps) {
@@ -61,6 +66,7 @@ export class Order extends AggregateRoot {
     if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
     if (this._items.length === 0) throw new EmptyOrderError();
     this._status = OrderStatus.PLACED;
+    this.addDomainEvent(new OrderPlaced(this.id, this.customerId));
   }
 
   pay() {

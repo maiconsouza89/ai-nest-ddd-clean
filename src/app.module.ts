@@ -8,6 +8,7 @@ import { IdentityModule } from './modules/identity/infra/identity.module';
 import { InventoryModule } from './modules/inventory/infra/inventory.module';
 import { NotificationsModule } from './modules/notifications/infra/notifications.module';
 import { OrdersModule } from './modules/orders/infra/orders.module';
+import { AppCacheModule } from './shared/infra/cache/cache.module';
 import { ClockModule } from './shared/infra/clock/clock.module';
 import { AuthModule } from './shared/infra/auth/auth.module';
 import { EnvironmentVariables, validateEnv } from './shared/infra/config/env.validation';
@@ -37,6 +38,7 @@ import { OutboxModule } from './shared/infra/outbox/outbox.module';
     AuthModule,
     ClockModule,
     DatabaseModule,
+    AppCacheModule,
     HealthModule,
     OutboxModule,
     CatalogModule,

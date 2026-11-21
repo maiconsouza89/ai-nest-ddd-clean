@@ -25,17 +25,30 @@ async function setup(outOfStock = false) {
   const repo = new InMemoryOrderRepository();
   const order = Order.create('o1', 'u1');
   order.addItem('p1', 1, Money.fromCents(100));
+  // o repositório em memória devolve a mesma instância: sem isso, o OrderCreated (que em produção
+  // o CreateOrderUseCase já publicou) sairia junto com o primeiro evento do caso de uso testado
+  order.pullDomainEvents();
   await repo.save(order);
   const tx = new FakeTransactionManager();
   const stock = new FakeStockGateway(outOfStock);
   const outbox = new FakeOutbox();
+  // separada da outbox do pagamento e do cancelamento: cada teste olha só o que o seu caso de uso publica
+  const placeOutbox = new FakeOutbox();
   const payments = new FakePaymentGateway();
   return {
     repo,
     tx,
     stock,
     outbox,
-    place: new PlaceOrderUseCase(repo, stock, tx),
+    placeOutbox,
+    place: new PlaceOrderUseCase(
+      repo,
+      stock,
+      placeOutbox,
+      new SequentialIdGenerator('evt'),
+      new FixedClock(),
+      tx,
+    ),
     cancel: new CancelOrderUseCase(repo, outbox, new SequentialIdGenerator('evt'), new FixedClock(), tx),
     payments,
     pay: new PayOrderUseCase(
@@ -52,6 +65,22 @@ async function setup(outOfStock = false) {
 }
 
 describe('PlaceOrderUseCase', () => {
+  it('fechar publica orders.order-placed na outbox', async () => {
+    const { place, placeOutbox } = await setup();
+    await place.execute({ orderId: 'o1', actor: owner });
+
+    expect(placeOutbox.aggregateIds).toEqual(['o1']);
+    expect(placeOutbox.events).toMatchObject([
+      { type: 'orders.order-placed', version: 1, payload: { orderId: 'o1', customerId: 'u1' } },
+    ]);
+  });
+
+  it('sem estoque não fecha e não publica', async () => {
+    const { place, placeOutbox } = await setup(true);
+    await expect(place.execute({ orderId: 'o1', actor: owner })).rejects.toThrow(InsufficientStockError);
+    expect(placeOutbox.events).toEqual([]);
+  });
+
   it('o dono fecha o pedido', async () => {
     const { repo, place } = await setup();
     await place.execute({ orderId: 'o1', actor: owner });

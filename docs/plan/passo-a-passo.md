@@ -28,11 +28,11 @@ Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos c
 | 8. Consistência no módulo | Transações e optimistic locking | nenhuma | ✅ |
 | 9. Vários módulos | Facades e ports entre módulos | nenhuma | ✅ |
 | 10. Eventos | Eventos de domínio, outbox e idempotência | `@nestjs/event-emitter` | ✅ |
-| 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | 🟡 |
+| 11. Produção | Segurança, health check, logs, docs, jobs e cache no Redis | `helmet`, `terminus`, `throttler`, `pino`, OTel, `@nestjs/cache-manager`, `@keyv/redis` | ✅ |
 | 12. Filas com Redis | Eventos e jobs no BullMQ, rate limit distribuído | `@nestjs/bullmq`, `bullmq`, `ioredis` | ⬜ |
 | 13. Escala | Gerador de módulos e evoluções sob demanda | `plop` | ⬜ |
 
-**Progresso geral:** 10 de 13 fases concluídas · 35 de 42 passos concluídos · **Fase atual:** 11
+**Progresso geral:** 11 de 13 fases concluídas · 36 de 42 passos concluídos · **Fase atual:** 12
 
 As fases 1 a 3 não usam framework nenhum. Com o domínio funcionando e testado sem o Nest, o Nest passa a ser só um detalhe de entrega.
 
@@ -816,14 +816,14 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 
 ## Fase 11: pronto para produção
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-21 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
 > - [x] Passo 30: segurança HTTP
 > - [x] Passo 31: health check
 > - [x] Passo 32: logs e tracing
 > - [x] Passo 33: documentação da API
 > - [x] Passo 34: jobs agendados
-> - [ ] Passo 35: Redis e cache na leitura
+> - [x] Passo 35: Redis e cache na leitura
 > - [x] Passo 36: serviços externos e `Idempotency-Key`
 > - [x] Passo 37: seeds
 

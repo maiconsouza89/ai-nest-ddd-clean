@@ -1,13 +1,20 @@
+import { Clock } from '../../../../shared/application/ports/clock';
+import { IdGenerator } from '../../../../shared/application/ports/id-generator';
+import { Outbox } from '../../../../shared/application/ports/outbox';
 import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
 import { StockGateway } from '../ports/stock-gateway';
 import { OrderRepository } from '../../domain/repositories/order.repository';
 import { OrderActionInput } from '../dtos/order-action.input';
+import { publishOrderEvents } from '../events/publish-order-events';
 import { loadOwnedOrder } from '../order-access';
 
 export class PlaceOrderUseCase {
   constructor(
     private readonly repo: OrderRepository,
     private readonly stock: StockGateway,
+    private readonly outbox: Outbox,
+    private readonly ids: IdGenerator,
+    private readonly clock: Clock,
     private readonly tx: TransactionManager,
   ) {}
 
@@ -22,6 +29,7 @@ export class PlaceOrderUseCase {
       );
       order.place();
       await this.repo.save(order);
+      await publishOrderEvents(order, { outbox: this.outbox, ids: this.ids, clock: this.clock });
     });
   }
 }
