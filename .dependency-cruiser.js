@@ -54,10 +54,25 @@ export default {
     {
       name: 'modulos-so-via-contracts',
       severity: 'error',
-      from: { path: '^src/modules/([^/]+)/' },
+      from: { path: '^src/modules/([^/]+)/', pathNot: '\\.module\\.ts$' },
       to: {
         path: '^src/modules/[^/]+/',
         pathNot: ['^src/modules/$1/', '^src/modules/[^/]+/contracts/'],
+      },
+    },
+    {
+      // O arquivo do módulo Nest é a única exceção (ADR 0003): só pode importar, de outro módulo,
+      // o contracts/ ou o módulo Nest dele.
+      name: 'modulo-nest-so-importa-modulo-nest',
+      severity: 'error',
+      from: { path: '^src/modules/([^/]+)/.+\\.module\\.ts$' },
+      to: {
+        path: '^src/modules/[^/]+/',
+        pathNot: [
+          '^src/modules/$1/',
+          '^src/modules/[^/]+/contracts/',
+          '^src/modules/[^/]+/(infra/)?[^/]+\\.module\\.ts$',
+        ],
       },
     },
   ],

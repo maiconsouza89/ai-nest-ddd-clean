@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
@@ -8,9 +8,6 @@ import { ProductsController } from './products.controller.js';
 import { ProductsService } from './products.service.js';
 import { TypeOrmCatalogFacade } from './typeorm-catalog.facade.js';
 
-// Global de propósito: a regra "módulos só via contracts" proíbe que o orders importe
-// este arquivo. O orders injeta a CatalogFacade (de contracts/) sem conhecer o módulo.
-@Global()
 @Module({
   imports: [TypeOrmModule.forFeature([ProductOrmEntity])],
   controllers: [ProductsController],

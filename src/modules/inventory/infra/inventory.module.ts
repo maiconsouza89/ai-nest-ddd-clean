@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
@@ -14,8 +14,6 @@ import { TypeOrmStockRepository } from './database/typeorm/typeorm-stock.reposit
 import { OnOrderCancelledHandler } from './events/on-order-cancelled.handler.js';
 import { InventoryFacadeImpl } from './inventory-facade.impl.js';
 
-// Global pelo mesmo motivo do CatalogModule: o orders só pode enxergar a facade de contracts/.
-@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([StockItemOrmEntity, ReservationOrmEntity, ReservationItemOrmEntity]),

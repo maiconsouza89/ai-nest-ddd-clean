@@ -33,12 +33,12 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ✅ |
 | 3. Vitest | Jest sai, Vitest entra | `vitest` | ✅ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ✅ |
-| 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
+| 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 4 de 8 fases concluídas · 9 de 18 passos concluídos · **Fase atual:** 5
+**Progresso geral:** 5 de 8 fases concluídas · 11 de 18 passos concluídos · **Fase atual:** 6
 
 ---
 
@@ -328,10 +328,10 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 
 ## Fase 5: módulos com `imports` explícito
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
-> - [ ] Passo 10: exceção para o arquivo do módulo Nest na regra de fronteira
-> - [ ] Passo 11: tirar o `@Global` dos módulos de negócio
+> - [x] Passo 10: exceção para o arquivo do módulo Nest na regra de fronteira
+> - [x] Passo 11: tirar o `@Global` dos módulos de negócio
 
 Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md).
 

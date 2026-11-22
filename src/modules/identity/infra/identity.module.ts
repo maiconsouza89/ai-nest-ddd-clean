@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
@@ -16,8 +16,6 @@ import { TypeOrmUserRepository } from './database/typeorm/typeorm-user.repositor
 import { AuthController } from './http/controllers/auth.controller.js';
 import { TypeOrmUserDirectoryFacade } from './typeorm-user-directory.facade.js';
 
-// Global pelo mesmo motivo do CatalogModule: outros módulos só enxergam a facade de contracts/.
-@Global()
 @Module({
   imports: [TypeOrmModule.forFeature([UserOrmEntity])],
   controllers: [AuthController],

@@ -1136,14 +1136,30 @@ forbidden: [
   {
     name: 'modulos-so-via-contracts',
     severity: 'error',
-    from: { path: '^src/modules/([^/]+)/' },
+    from: { path: '^src/modules/([^/]+)/', pathNot: '\\.module\\.ts$' },
     to: {
       path: '^src/modules/[^/]+/',
       pathNot: ['^src/modules/$1/', '^src/modules/[^/]+/contracts/'],
     },
   },
+  {
+    // exceção: o arquivo do módulo Nest só importa, de outro módulo, o contracts/ ou o módulo Nest dele
+    name: 'modulo-nest-so-importa-modulo-nest',
+    severity: 'error',
+    from: { path: '^src/modules/([^/]+)/.+\\.module\\.ts$' },
+    to: {
+      path: '^src/modules/[^/]+/',
+      pathNot: [
+        '^src/modules/$1/',
+        '^src/modules/[^/]+/contracts/',
+        '^src/modules/[^/]+/(infra/)?[^/]+\\.module\\.ts$',
+      ],
+    },
+  },
 ],
 ```
+
+A exceção da `modulos-so-via-contracts` existe porque os `exports` de um `@Module` são a API pública dele: importar o `CatalogModule` só expõe a `CatalogFacade`. Por isso os módulos de negócio não são `@Global` (só a infraestrutura do `shared` é, ver o [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
 
 As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem `severity: 'error'`, a violação vira só aviso e o build não falha.
 
