@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { Cache } from '@nestjs/cache-manager';
-import { Page, PageRequest } from '../../../../shared/application/page';
-import { Logger } from '../../../../shared/application/ports/logger';
-import { OrderListItem, OrderQueries } from '../../application/queries/order.queries';
+import { Page, PageRequest } from '#shared/application/page';
+import { Logger } from '#shared/application/ports/logger';
+import { OrderListItem, OrderQueries } from '../../application/queries/order.queries.js';
 
 // o JSON do Redis devolve a data como texto
 type CachedPage = Omit<Page<OrderListItem>, 'items'> & {

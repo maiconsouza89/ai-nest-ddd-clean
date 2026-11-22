@@ -1,11 +1,11 @@
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { User } from '../../domain/entities/user.entity';
-import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error';
-import { UserRepository } from '../../domain/repositories/user.repository';
-import { Email } from '../../domain/value-objects/email.vo';
-import { RegisterUserInput } from '../dtos/identity.inputs';
-import { PasswordHasher } from '../ports/password-hasher';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { User } from '../../domain/entities/user.entity.js';
+import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error.js';
+import { UserRepository } from '../../domain/repositories/user.repository.js';
+import { Email } from '../../domain/value-objects/email.vo.js';
+import { RegisterUserInput } from '../dtos/identity.inputs.js';
+import { PasswordHasher } from '../ports/password-hasher.js';
 
 export class RegisterUserUseCase {
   constructor(

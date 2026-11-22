@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startIdentityDatabase } from '../../../../../../test/helpers/identity-database';
-import { User } from '../../../domain/entities/user.entity';
-import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error';
-import { Email } from '../../../domain/value-objects/email.vo';
-import { TypeOrmUserRepository } from './typeorm-user.repository';
+import { startIdentityDatabase } from '#test/helpers/identity-database';
+import { User } from '../../../domain/entities/user.entity.js';
+import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error.js';
+import { Email } from '../../../domain/value-objects/email.vo.js';
+import { TypeOrmUserRepository } from './typeorm-user.repository.js';
 
 describe('TypeOrmUserRepository (integração)', () => {
   let ds: DataSource;

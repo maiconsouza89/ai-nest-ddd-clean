@@ -1,8 +1,8 @@
-import { Logger } from '../../../../shared/application/ports/logger';
-import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway';
-import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error';
-import { retry } from '../../../../shared/infra/resilience/retry';
-import { withTimeout } from '../../../../shared/infra/resilience/with-timeout';
+import { Logger } from '#shared/application/ports/logger';
+import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway.js';
+import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error.js';
+import { retry } from '#shared/infra/resilience/retry';
+import { withTimeout } from '#shared/infra/resilience/with-timeout';
 
 export type ResilienceOptions = { timeoutMs: number; attempts: number; baseDelayMs: number };
 

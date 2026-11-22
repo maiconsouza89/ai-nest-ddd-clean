@@ -1,4 +1,4 @@
-import { Page, PageRequest } from '../../../../shared/application/page';
+import { Page, PageRequest } from '#shared/application/page';
 
 export type OrderListItem = {
   id: string;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { InvalidNameError } from '../errors/invalid-name.error';
-import { Email } from '../value-objects/email.vo';
-import { User } from './user.entity';
+import { InvalidNameError } from '../errors/invalid-name.error.js';
+import { Email } from '../value-objects/email.vo.js';
+import { User } from './user.entity.js';
 
 describe('User', () => {
   const email = Email.create('a@x.com');

@@ -1,5 +1,5 @@
 import type { DataSource } from 'typeorm';
-import { ProductOrmEntity } from '../../product.orm-entity';
+import { ProductOrmEntity } from '../../product.orm-entity.js';
 
 // Ids fixos: o seed do inventory usa os mesmos (módulos só se conhecem por id).
 export const SEED_PRODUCTS = [

@@ -1,12 +1,12 @@
-import { Clock } from '../../../../shared/application/ports/clock';
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { Outbox } from '../../../../shared/application/ports/outbox';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { StockGateway } from '../ports/stock-gateway';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { OrderActionInput } from '../dtos/order-action.input';
-import { publishOrderEvents } from '../events/publish-order-events';
-import { loadOwnedOrder } from '../order-access';
+import { Clock } from '#shared/application/ports/clock';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { Outbox } from '#shared/application/ports/outbox';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { StockGateway } from '../ports/stock-gateway.js';
+import { OrderRepository } from '../../domain/repositories/order.repository.js';
+import { OrderActionInput } from '../dtos/order-action.input.js';
+import { publishOrderEvents } from '../events/publish-order-events.js';
+import { loadOwnedOrder } from '../order-access.js';
 
 export class PlaceOrderUseCase {
   constructor(

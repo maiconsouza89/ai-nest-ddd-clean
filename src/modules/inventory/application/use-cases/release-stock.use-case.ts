@@ -1,6 +1,6 @@
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { StockRepository } from '../../domain/repositories/stock.repository';
-import { ReleaseStockInput } from '../dtos/release-stock.input';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { StockRepository } from '../../domain/repositories/stock.repository.js';
+import { ReleaseStockInput } from '../dtos/release-stock.input.js';
 
 export class ReleaseStockUseCase {
   constructor(

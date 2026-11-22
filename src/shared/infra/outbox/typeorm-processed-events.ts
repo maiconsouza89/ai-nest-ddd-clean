@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { ProcessedEvents } from '../../application/ports/processed-events';
-import { currentManager } from '../database/transaction-context';
+import { ProcessedEvents } from '../../application/ports/processed-events.js';
+import { currentManager } from '../database/transaction-context.js';
 
 @Injectable()
 export class TypeOrmProcessedEvents implements ProcessedEvents {

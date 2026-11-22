@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { CatalogFacade, ProductPrice } from './contracts/catalog.facade';
-import { ProductOrmEntity } from './product.orm-entity';
+import { CatalogFacade, ProductPrice } from './contracts/catalog.facade.js';
+import { ProductOrmEntity } from './product.orm-entity.js';
 
 @Injectable()
 export class TypeOrmCatalogFacade implements CatalogFacade {

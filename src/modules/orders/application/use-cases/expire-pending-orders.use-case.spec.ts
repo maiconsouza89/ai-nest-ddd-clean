@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FakeLogger } from '../../../../../test/fakes/fake-logger';
-import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { FixedClock } from '../../../../../test/fakes/fixed-clock';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { Money } from '../../../../shared/domain/money.vo';
-import { Order } from '../../domain/entities/order.entity';
-import { OrderStatus } from '../../domain/value-objects/order-status.vo';
-import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository';
-import { ExpirePendingOrdersUseCase } from './expire-pending-orders.use-case';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { FakeOutbox } from '#test/fakes/fake-outbox';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { FixedClock } from '#test/fakes/fixed-clock';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { Money } from '#shared/domain/money.vo';
+import { Order } from '../../domain/entities/order.entity.js';
+import { OrderStatus } from '../../domain/value-objects/order-status.vo.js';
+import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository.js';
+import { ExpirePendingOrdersUseCase } from './expire-pending-orders.use-case.js';
 
 const HOUR = 3_600_000;
 const NOW = new Date('2026-01-10T12:00:00.000Z');

@@ -1,17 +1,17 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Logger } from '../../application/ports/logger';
-import { Outbox } from '../../application/ports/outbox';
-import { ProcessedEvents } from '../../application/ports/processed-events';
-import { TransactionManager } from '../../application/ports/transaction-manager';
-import { EnvironmentVariables } from '../config/env.validation';
-import { OutboxMessageOrmEntity } from '../outbox/outbox-message.orm-entity';
-import { ProcessedEventOrmEntity } from '../outbox/processed-event.orm-entity';
-import { TypeOrmProcessedEvents } from '../outbox/typeorm-processed-events';
-import { IdempotentConsumer } from '../../application/idempotent-consumer';
-import { TypeOrmOutbox } from '../outbox/typeorm-outbox';
-import { TypeOrmTransactionManager } from './typeorm-transaction-manager';
+import { Logger } from '../../application/ports/logger.js';
+import { Outbox } from '../../application/ports/outbox.js';
+import { ProcessedEvents } from '../../application/ports/processed-events.js';
+import { TransactionManager } from '../../application/ports/transaction-manager.js';
+import { EnvironmentVariables } from '../config/env.validation.js';
+import { OutboxMessageOrmEntity } from '../outbox/outbox-message.orm-entity.js';
+import { ProcessedEventOrmEntity } from '../outbox/processed-event.orm-entity.js';
+import { TypeOrmProcessedEvents } from '../outbox/typeorm-processed-events.js';
+import { IdempotentConsumer } from '../../application/idempotent-consumer.js';
+import { TypeOrmOutbox } from '../outbox/typeorm-outbox.js';
+import { TypeOrmTransactionManager } from './typeorm-transaction-manager.js';
 
 @Global()
 @Module({

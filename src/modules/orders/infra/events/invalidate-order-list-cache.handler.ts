@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { IntegrationEventHandler } from '../../../../shared/infra/messaging/integration-event-handler.decorator';
-import type { OrderCancelledV1 } from '../../contracts/events/order-cancelled.event';
-import type { OrderCreatedV1 } from '../../contracts/events/order-created.event';
-import type { OrderPaidV1 } from '../../contracts/events/order-paid.event';
-import type { OrderPlacedV1 } from '../../contracts/events/order-placed.event';
-import { CachedOrderQueries } from '../cache/cached-order.queries';
+import { IntegrationEventHandler } from '#shared/infra/messaging/integration-event-handler.decorator';
+import type { OrderCancelledV1 } from '../../contracts/events/order-cancelled.event.js';
+import type { OrderCreatedV1 } from '../../contracts/events/order-created.event.js';
+import type { OrderPaidV1 } from '../../contracts/events/order-paid.event.js';
+import type { OrderPlacedV1 } from '../../contracts/events/order-placed.event.js';
+import { CachedOrderQueries } from '../cache/cached-order.queries.js';
 
 type OrderListChanged = OrderCreatedV1 | OrderPlacedV1 | OrderPaidV1 | OrderCancelledV1;
 

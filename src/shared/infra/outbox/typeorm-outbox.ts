@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { IntegrationEvent } from '../../application/integration-event';
-import { Outbox } from '../../application/ports/outbox';
-import { currentManager } from '../database/transaction-context';
-import { currentTraceparent } from '../observability/trace-context';
-import { OutboxMessageOrmEntity } from './outbox-message.orm-entity';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { Outbox } from '../../application/ports/outbox.js';
+import { currentManager } from '../database/transaction-context.js';
+import { currentTraceparent } from '../observability/trace-context.js';
+import { OutboxMessageOrmEntity } from './outbox-message.orm-entity.js';
 
 @Injectable()
 export class TypeOrmOutbox implements Outbox {

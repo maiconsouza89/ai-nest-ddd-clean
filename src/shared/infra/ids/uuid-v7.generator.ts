@@ -1,5 +1,5 @@
 import { v7 } from 'uuid';
-import { IdGenerator } from '../../application/ports/id-generator';
+import { IdGenerator } from '../../application/ports/id-generator.js';
 
 export class UuidV7Generator implements IdGenerator {
   next() {

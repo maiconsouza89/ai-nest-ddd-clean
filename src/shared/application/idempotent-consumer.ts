@@ -1,7 +1,7 @@
-import { IntegrationEvent } from './integration-event';
-import { Logger } from './ports/logger';
-import { ProcessedEvents } from './ports/processed-events';
-import { TransactionManager } from './ports/transaction-manager';
+import { IntegrationEvent } from './integration-event.js';
+import { Logger } from './ports/logger.js';
+import { ProcessedEvents } from './ports/processed-events.js';
+import { TransactionManager } from './ports/transaction-manager.js';
 
 /**
  * Faz o handler produzir o efeito uma vez só, mesmo que a outbox entregue o evento duas vezes.

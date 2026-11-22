@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Page, PageRequest } from '../../../../../shared/application/page';
-import { OrderListItem, OrderQueries } from '../../../application/queries/order.queries';
-import { OrderOrmEntity } from './entities/order.orm-entity';
+import { Page, PageRequest } from '#shared/application/page';
+import { OrderListItem, OrderQueries } from '../../../application/queries/order.queries.js';
+import { OrderOrmEntity } from './entities/order.orm-entity.js';
 
 type Row = Omit<OrderListItem, 'itemCount' | 'totalCents'> & {
   itemCount: string;

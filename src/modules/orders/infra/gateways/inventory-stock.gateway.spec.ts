@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { InventoryFacade } from '../../../inventory/contracts/inventory.facade';
-import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
-import { InventoryStockGateway } from './inventory-stock.gateway';
+import { InventoryFacade } from '#modules/inventory/contracts/inventory.facade';
+import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error.js';
+import { InventoryStockGateway } from './inventory-stock.gateway.js';
 
 describe('InventoryStockGateway', () => {
   const items = [{ productId: 'a', qty: 2 }];

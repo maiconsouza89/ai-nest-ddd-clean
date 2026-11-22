@@ -1,8 +1,8 @@
-import { Actor } from '../../../shared/application/actor';
-import { Order } from '../domain/entities/order.entity';
-import { NotOrderOwnerError } from '../domain/errors/not-order-owner.error';
-import { OrderNotFoundError } from '../domain/errors/order-not-found.error';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { Actor } from '#shared/application/actor';
+import { Order } from '../domain/entities/order.entity.js';
+import { NotOrderOwnerError } from '../domain/errors/not-order-owner.error.js';
+import { OrderNotFoundError } from '../domain/errors/order-not-found.error.js';
+import { OrderRepository } from '../domain/repositories/order.repository.js';
 
 export async function loadOwnedOrder(
   repo: OrderRepository,

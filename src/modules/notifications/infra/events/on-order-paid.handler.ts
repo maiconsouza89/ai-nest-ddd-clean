@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IdempotentConsumer } from '../../../../shared/application/idempotent-consumer';
-import { IntegrationEventHandler } from '../../../../shared/infra/messaging/integration-event-handler.decorator';
+import { IdempotentConsumer } from '#shared/application/idempotent-consumer';
+import { IntegrationEventHandler } from '#shared/infra/messaging/integration-event-handler.decorator';
 // só o tipo do contrato: o notifications nunca importa o módulo de orders
-import type { OrderPaidV1 } from '../../../orders/contracts/events/order-paid.event';
-import { SendOrderPaidEmailUseCase } from '../../application/use-cases/send-order-paid-email.use-case';
+import type { OrderPaidV1 } from '#modules/orders/contracts/events/order-paid.event';
+import { SendOrderPaidEmailUseCase } from '../../application/use-cases/send-order-paid-email.use-case.js';
 
 @Injectable()
 export class OnOrderPaidHandler {

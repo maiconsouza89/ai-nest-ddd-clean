@@ -19,3 +19,4 @@ Limite: o suporte do oxc é parcial. Tipos que exigem inferência (type alias, u
 
 - Imports relativos levam a extensão `.js`, e `__dirname` vira `import.meta.dirname`.
 - O CLI do TypeORM passa a rodar com `typeorm-ts-node-esm`, e os seeds com `node --loader ts-node/esm`.
+- A auto-instrumentação do OpenTelemetry só intercepta `require()`. No ESM, o `tracing.ts` registra o hook ESM do OpenTelemetry (`module.register`), e o `main.ts` carrega o app por `import()` dinâmico depois disso. Sem essa ordem, os spans do `ioredis` e do `express` somem sem erro. Conferir com `OTEL_TRACES_EXPORTER=console`.

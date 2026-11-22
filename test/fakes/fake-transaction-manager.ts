@@ -1,4 +1,4 @@
-import { TransactionManager } from '../../src/shared/application/ports/transaction-manager';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
 
 // Só executa o trabalho e conta quantas vezes foi chamado.
 export class FakeTransactionManager implements TransactionManager {

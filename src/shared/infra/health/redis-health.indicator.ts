@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { RedisConnection } from '../cache/redis.connection';
-import { withTimeout } from '../resilience/with-timeout';
+import { RedisConnection } from '../cache/redis.connection.js';
+import { withTimeout } from '../resilience/with-timeout.js';
 
 @Injectable()
 export class RedisHealthIndicator {

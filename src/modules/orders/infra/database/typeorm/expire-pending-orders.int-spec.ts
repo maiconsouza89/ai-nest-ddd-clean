@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { FakeLogger } from '../../../../../../test/fakes/fake-logger';
-import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
-import { Money } from '../../../../../shared/domain/money.vo';
-import { SystemClock } from '../../../../../shared/infra/clock/system-clock';
-import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
-import { UuidV7Generator } from '../../../../../shared/infra/ids/uuid-v7.generator';
-import { TypeOrmOutbox } from '../../../../../shared/infra/outbox/typeorm-outbox';
-import { ExpirePendingOrdersUseCase } from '../../../application/use-cases/expire-pending-orders.use-case';
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
-import { TypeOrmOrderRepository } from './typeorm-order.repository';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { startOrdersDatabase } from '#test/helpers/orders-database';
+import { Money } from '#shared/domain/money.vo';
+import { SystemClock } from '#shared/infra/clock/system-clock';
+import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
+import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { TypeOrmOutbox } from '#shared/infra/outbox/typeorm-outbox';
+import { ExpirePendingOrdersUseCase } from '../../../application/use-cases/expire-pending-orders.use-case.js';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderStatus } from '../../../domain/value-objects/order-status.vo.js';
+import { TypeOrmOrderRepository } from './typeorm-order.repository.js';
 
 describe('Jobs de pedidos com Postgres (integração)', () => {
   let ds: DataSource;

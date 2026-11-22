@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
-import { Money } from '../../../../../shared/domain/money.vo';
-import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
-import { Order } from '../../../domain/entities/order.entity';
-import { TypeOrmOrderRepository } from './typeorm-order.repository';
+import { startOrdersDatabase } from '#test/helpers/orders-database';
+import { Money } from '#shared/domain/money.vo';
+import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { TypeOrmOrderRepository } from './typeorm-order.repository.js';
 
 describe('TypeOrmTransactionManager (integração)', () => {
   let ds: DataSource;

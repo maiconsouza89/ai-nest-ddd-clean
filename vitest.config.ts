@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Ativa a condição `@app/source` dos aliases `#...` (ADR 0005). Não acrescente `import` nem `default`
+  // à lista: o `require('pg')` do TypeORM passaria a resolver o build ESM e falharia.
+  ssr: { resolve: { conditions: ['@app/source', 'module', 'node', 'development|production'] } },
   // O oxc, transformador padrão do Vite 8, emite a decorator metadata que o Nest usa para injetar
   // por classe. experimentalDecorators e emitDecoratorMetadata vêm do tsconfig.json.
   test: {

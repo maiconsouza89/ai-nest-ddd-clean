@@ -1,8 +1,8 @@
 import { BeforeApplicationShutdown, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@keyv/redis';
-import { Logger } from '../../application/ports/logger';
-import { EnvironmentVariables } from '../config/env.validation';
+import { Logger } from '../../application/ports/logger.js';
+import { EnvironmentVariables } from '../config/env.validation.js';
 
 const RECONNECT_MAX_DELAY_MS = 3_000;
 

@@ -1,4 +1,4 @@
-import { IntegrationEvent } from '../integration-event';
+import { IntegrationEvent } from '../integration-event.js';
 
 export abstract class Outbox {
   /**

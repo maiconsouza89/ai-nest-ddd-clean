@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import type { Relation } from 'typeorm';
 // import só de tipo + alvo por nome: evita o ciclo de imports em tempo de execução
-import type { OrderOrmEntity } from './order.orm-entity';
+import type { OrderOrmEntity } from './order.orm-entity.js';
 
 @Entity({ name: 'order_items', schema: 'orders' })
 export class OrderItemOrmEntity {

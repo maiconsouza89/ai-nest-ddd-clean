@@ -1,19 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { FakeIdempotencyStore } from '../../../../../test/fakes/fake-idempotency-store';
-import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
-import { FakePaymentGateway } from '../../../../../test/fakes/fake-payment-gateway';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { FixedClock } from '../../../../../test/fakes/fixed-clock';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { Money } from '../../../../shared/domain/money.vo';
-import { Order } from '../../domain/entities/order.entity';
-import { IdempotencyKeyReusedError } from '../../domain/errors/idempotency-key-reused.error';
-import { InvalidIdempotencyKeyError } from '../../domain/errors/invalid-idempotency-key.error';
-import { OrderNotPayableError } from '../../domain/errors/order-not-payable.error';
-import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error';
-import { OrderStatus } from '../../domain/value-objects/order-status.vo';
-import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository';
-import { PayOrderUseCase } from './pay-order.use-case';
+import { FakeIdempotencyStore } from '#test/fakes/fake-idempotency-store';
+import { FakeOutbox } from '#test/fakes/fake-outbox';
+import { FakePaymentGateway } from '#test/fakes/fake-payment-gateway';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { FixedClock } from '#test/fakes/fixed-clock';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { Money } from '#shared/domain/money.vo';
+import { Order } from '../../domain/entities/order.entity.js';
+import { IdempotencyKeyReusedError } from '../../domain/errors/idempotency-key-reused.error.js';
+import { InvalidIdempotencyKeyError } from '../../domain/errors/invalid-idempotency-key.error.js';
+import { OrderNotPayableError } from '../../domain/errors/order-not-payable.error.js';
+import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error.js';
+import { OrderStatus } from '../../domain/value-objects/order-status.vo.js';
+import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository.js';
+import { PayOrderUseCase } from './pay-order.use-case.js';
 
 const owner = { id: 'u1', roles: [] };
 

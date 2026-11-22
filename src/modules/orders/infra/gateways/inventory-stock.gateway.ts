@@ -1,6 +1,6 @@
-import { InventoryFacade } from '../../../inventory/contracts/inventory.facade';
-import { StockGateway } from '../../application/ports/stock-gateway';
-import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
+import { InventoryFacade } from '#modules/inventory/contracts/inventory.facade';
+import { StockGateway } from '../../application/ports/stock-gateway.js';
+import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error.js';
 
 // Traduz o contrato do inventory (resultado) para o port do orders (erro de domínio).
 export class InventoryStockGateway implements StockGateway {

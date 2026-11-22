@@ -2,7 +2,7 @@
 
 O [roteiro original](passo-a-passo.md) está concluído e não muda. Este plano parte do código atual e aplica as decisões da revisão de 2026-11-21. Nessa revisão, cada fase do roteiro original foi conferida no Context7, no `npm view` e na documentação oficial. Algumas instruções de lá quebram hoje se seguidas do zero, mas o código já contornou quase todas. O que sobrou, e as decisões novas, estão aqui.
 
-Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest e ESM), [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md) (ator carregado por requisição) e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md) (imports explícitos entre módulos) e [ADR 0004](../adr/0004-lint-e-formatacao.md) (lint e formatação).
+Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest e ESM), [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md) (ator carregado por requisição) e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md) (imports explícitos entre módulos) e [ADR 0004](../adr/0004-lint-e-formatacao.md) (lint e formatação) e [ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md) (aliases de import).
 
 ## Como usar
 
@@ -32,13 +32,13 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 1. Base | Node mínimo e dependências na latest | `uuid` 14 | ✅ |
 | 2. Lint e formatação | Prettier formata, ESLint com tipos pega bugs | `prettier`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier` | ✅ |
 | 3. Vitest | Jest sai, Vitest entra | `vitest` | ✅ |
-| 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ⬜ |
+| 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ✅ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ⬜ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 3 de 8 fases concluídas · 6 de 18 passos concluídos · **Fase atual:** 4
+**Progresso geral:** 4 de 8 fases concluídas · 9 de 18 passos concluídos · **Fase atual:** 5
 
 ---
 
@@ -73,7 +73,7 @@ npm i uuid@latest
 npm i -D typescript@~6.0
 ```
 
-- O `uuid` 12 em diante é só ESM. Até a fase 4, o projeto ainda é CommonJS e carrega o `uuid` por `require(esm)`. Os testes (Vitest, desde a fase 3) também carregam o `uuid` sem flag.
+- O `uuid` 12 em diante é só ESM. Desde a fase 4 o projeto é ESM e carrega o `uuid` nativamente. Os testes (Vitest) também carregam o `uuid` sem flag.
 - O `ioredis` fica no 5.11 (ver a tabela de exceções). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
 
 **Pronto quando:** `npm outdated` lista só os pacotes da tabela de exceções, e `ci`, `test:int` e `test:e2e` passam.
@@ -121,7 +121,7 @@ Versão consultada em 2026-11-21: `prettier` 3.10.1. A doc do Prettier recomenda
 
 ### Passo 4: ESLint com informação de tipo
 
-**Por quê:** o `tsc` aceita uma promise que ninguém espera. Exemplo atual: `bootstrap();` em `src/main.ts`, sem `await` nem `void`. Num projeto com outbox, BullMQ e handlers de eventos, um `publish()` sem `await` perde o erro sem avisar. As regras com tipo do `typescript-eslint` pegam isso: `no-floating-promises`, `no-misused-promises`, `await-thenable` e `require-await`, entre outras.
+**Por quê:** o `tsc` aceita uma promise que ninguém espera. Exemplo na época: `bootstrap();` em `src/main.ts`, sem `await` nem `void` (hoje é `void bootstrap()` em `src/bootstrap.ts`). Num projeto com outbox, BullMQ e handlers de eventos, um `publish()` sem `await` perde o erro sem avisar. As regras com tipo do `typescript-eslint` pegam isso: `no-floating-promises`, `no-misused-promises`, `await-thenable` e `require-await`, entre outras.
 
 O ESLint **não** cuida das fronteiras entre módulos. Nada de `eslint-plugin-boundaries` nem de `no-restricted-imports` para isso: as regras da ADR 0003 ficam só no dependency-cruiser, para não terem duas fontes de verdade.
 
@@ -243,7 +243,6 @@ Scripts:
 
 - Um padrão de caminho como argumento filtra os arquivos: `npm test -- money.vo` e `npm run test:int -- pay-order`. O aviso atual do `CLAUDE.md` sobre o `--testRegex` engolir o caminho deixa de valer.
 - No Vitest 5 os projetos inline herdam o `setupFiles` da raiz por padrão (`extends: true` virou o padrão), então não repita. `include`, `fileParallelism` e os timeouts por projeto continuam com esses nomes (conferido no Context7).
-- Enquanto o `package.json` for CommonJS, o Vitest avisa que o `vitest.config.ts` usa ESM (`configLoader: 'native'`). O aviso some na fase 4.
 - O `vitest.config.ts` fica na raiz, fora do `include` do `tsconfig.json`, então o `files` do ESLint (passo 4) não o alcança. Se quiser lint nele, inclua-o no `tsconfig.json` ou use `allowDefaultProject` do `projectService`.
 
 **Pronto quando:** `npx vitest run --project unit` roda pelo menos um spec já migrado, e um teste que injeta dependência por classe num `Test.createTestingModule` passa. Esse teste prova que a metadata está sendo emitida.
@@ -272,11 +271,11 @@ Scripts:
 
 ## Fase 4: CommonJS → ESM
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-21 · **Conclusão:** 2026-11-21
 >
-> - [ ] Passo 7: `"type": "module"` e extensões nos imports
-> - [ ] Passo 8: migrations e seeds em ESM
-> - [ ] Passo 9: plop e dependency-cruiser em ESM
+> - [x] Passo 7: `"type": "module"` e extensões nos imports
+> - [x] Passo 8: migrations e seeds em ESM
+> - [x] Passo 9: plop e dependency-cruiser em ESM
 
 Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migrar para ESM é opcional, porque CommonJS continua suportado via `require(esm)`. A migração foi uma escolha para alinhar o projeto ao layout ESM do `nest new` e ao Vitest.
 
@@ -320,6 +319,10 @@ Contexto no [ADR 0001](../adr/0001-vitest-e-esm.md). A doc do Nest diz que migra
 - `npx plop module rascunho` gera um módulo que passa em `typecheck`, `lint`, `format:check`, nos testes e no `arch` sem ajustes, e as migrations dele rodam. Apague o módulo de teste depois.
 - Importar algo de `infra` dentro de `domain` ainda faz o `npm run arch` falhar.
 - No guia, os trechos de data source, scripts de migration e plop usam ESM (`.js` nos imports, `import.meta.dirname`, `typeorm-ts-node-esm`).
+
+**Extra, feito logo depois da fase** (fora do roteiro original): `esModuleInterop` removido do `tsconfig.json`, porque o `nodenext` já o implica, e aliases `#shared/*`, `#modules/*` e `#test/*` para os imports que cruzam fronteira (311 imports em 130 arquivos). Decisão, condição `@app/source` e armadilhas no [ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md).
+
+**Achado do `/code-review`, corrigido:** no ESM, a auto-instrumentação do OpenTelemetry só enxerga dependências carregadas por `require()`, e os spans do `ioredis` e do `express` sumiam sem erro nem aviso. O `tracing.ts` agora registra o hook ESM do OpenTelemetry (`module.register`), e o `main.ts` carrega o app por `import()` dinâmico (`bootstrap.ts`). Conferido com `OTEL_TRACES_EXPORTER=console`: antes, 0 spans do `ioredis` e do `express`; depois, ambos presentes. Limitação conhecida: o Node 26 imprime `DEP0205` (`module.register` está depreciado) na subida.
 
 ---
 

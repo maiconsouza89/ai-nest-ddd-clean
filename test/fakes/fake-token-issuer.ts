@@ -1,7 +1,4 @@
-import {
-  TokenClaims,
-  TokenIssuer,
-} from '../../src/modules/identity/application/ports/token-issuer';
+import { TokenClaims, TokenIssuer } from '#modules/identity/application/ports/token-issuer';
 
 export class FakeTokenIssuer implements TokenIssuer {
   readonly issued: TokenClaims[] = [];

@@ -1,13 +1,13 @@
-import { Clock } from '../../../../shared/application/ports/clock';
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { Outbox } from '../../../../shared/application/ports/outbox';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { Order } from '../../domain/entities/order.entity';
-import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { CreateOrderInput } from '../dtos/create-order.input';
-import { publishOrderEvents } from '../events/publish-order-events';
-import { PriceCatalog } from '../ports/price-catalog';
+import { Clock } from '#shared/application/ports/clock';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { Outbox } from '#shared/application/ports/outbox';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { Order } from '../../domain/entities/order.entity.js';
+import { ProductNotFoundError } from '../../domain/errors/product-not-found.error.js';
+import { OrderRepository } from '../../domain/repositories/order.repository.js';
+import { CreateOrderInput } from '../dtos/create-order.input.js';
+import { publishOrderEvents } from '../events/publish-order-events.js';
+import { PriceCatalog } from '../ports/price-catalog.js';
 
 export class CreateOrderUseCase {
   constructor(

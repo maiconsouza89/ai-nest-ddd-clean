@@ -1,5 +1,5 @@
-import { IntegrationEvent } from '../../src/shared/application/integration-event';
-import { Outbox } from '../../src/shared/application/ports/outbox';
+import { IntegrationEvent } from '#shared/application/integration-event';
+import { Outbox } from '#shared/application/ports/outbox';
 
 export class FakeOutbox implements Outbox {
   readonly events: IntegrationEvent[] = [];

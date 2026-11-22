@@ -1,7 +1,7 @@
-import { User } from '../../../domain/entities/user.entity';
-import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error';
-import { UserRepository } from '../../../domain/repositories/user.repository';
-import { Email } from '../../../domain/value-objects/email.vo';
+import { User } from '../../../domain/entities/user.entity.js';
+import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error.js';
+import { UserRepository } from '../../../domain/repositories/user.repository.js';
+import { Email } from '../../../domain/value-objects/email.vo.js';
 
 export class InMemoryUserRepository implements UserRepository {
   private readonly users = new Map<string, User>();

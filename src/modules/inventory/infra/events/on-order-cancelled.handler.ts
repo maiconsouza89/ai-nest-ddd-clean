@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IdempotentConsumer } from '../../../../shared/application/idempotent-consumer';
-import { IntegrationEventHandler } from '../../../../shared/infra/messaging/integration-event-handler.decorator';
+import { IdempotentConsumer } from '#shared/application/idempotent-consumer';
+import { IntegrationEventHandler } from '#shared/infra/messaging/integration-event-handler.decorator';
 // só o tipo do contrato: o inventory nunca importa o módulo de orders
-import type { OrderCancelledV1 } from '../../../orders/contracts/events/order-cancelled.event';
-import { ReleaseStockUseCase } from '../../application/use-cases/release-stock.use-case';
+import type { OrderCancelledV1 } from '#modules/orders/contracts/events/order-cancelled.event';
+import { ReleaseStockUseCase } from '../../application/use-cases/release-stock.use-case.js';
 
 @Injectable()
 export class OnOrderCancelledHandler {

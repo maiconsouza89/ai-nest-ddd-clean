@@ -1,9 +1,9 @@
 import { DataSource, EntityManager } from 'typeorm';
-import { EventMetadata, IntegrationEvent } from '../../application/integration-event';
-import { Clock } from '../../application/ports/clock';
-import { EventPublisher } from '../../application/ports/event-publisher';
-import { Logger } from '../../application/ports/logger';
-import { runInEventTrace } from '../observability/trace-context';
+import { EventMetadata, IntegrationEvent } from '../../application/integration-event.js';
+import { Clock } from '../../application/ports/clock.js';
+import { EventPublisher } from '../../application/ports/event-publisher.js';
+import { Logger } from '../../application/ports/logger.js';
+import { runInEventTrace } from '../observability/trace-context.js';
 
 export type OutboxOptions = {
   batchSize: number;

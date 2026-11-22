@@ -1,4 +1,4 @@
-import { ProcessedEvents } from '../../src/shared/application/ports/processed-events';
+import { ProcessedEvents } from '#shared/application/ports/processed-events';
 
 export class FakeProcessedEvents implements ProcessedEvents {
   private readonly marks = new Set<string>();

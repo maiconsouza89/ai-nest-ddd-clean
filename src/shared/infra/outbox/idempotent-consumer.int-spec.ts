@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { FakeLogger } from '../../../../test/fakes/fake-logger';
-import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
-import { IdempotentConsumer } from '../../application/idempotent-consumer';
-import { IntegrationEvent } from '../../application/integration-event';
-import { TypeOrmTransactionManager } from '../database/typeorm-transaction-manager';
-import { currentManager } from '../database/transaction-context';
-import { TypeOrmProcessedEvents } from './typeorm-processed-events';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { startOutboxDatabase } from '#test/helpers/outbox-database';
+import { IdempotentConsumer } from '../../application/idempotent-consumer.js';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { TypeOrmTransactionManager } from '../database/typeorm-transaction-manager.js';
+import { currentManager } from '../database/transaction-context.js';
+import { TypeOrmProcessedEvents } from './typeorm-processed-events.js';
 
 describe('IdempotentConsumer (integração)', () => {
   let ds: DataSource;

@@ -2,11 +2,11 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { LoggerModule } from 'nestjs-pino';
-import { Logger } from '../../application/ports/logger';
-import { EnvironmentVariables } from '../config/env.validation';
-import { PinoAppLogger } from './pino-app-logger';
-import { isHealthRequest } from './ignored-paths';
-import { TracingShutdown } from './tracing-lifecycle';
+import { Logger } from '../../application/ports/logger.js';
+import { EnvironmentVariables } from '../config/env.validation.js';
+import { PinoAppLogger } from './pino-app-logger.js';
+import { isHealthRequest } from './ignored-paths.js';
+import { TracingShutdown } from './tracing-lifecycle.js';
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
 

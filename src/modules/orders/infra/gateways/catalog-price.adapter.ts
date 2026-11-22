@@ -1,6 +1,6 @@
-import { Money } from '../../../../shared/domain/money.vo';
-import { CatalogFacade } from '../../../catalog/contracts/catalog.facade';
-import { PriceCatalog } from '../../application/ports/price-catalog';
+import { Money } from '#shared/domain/money.vo';
+import { CatalogFacade } from '#modules/catalog/contracts/catalog.facade';
+import { PriceCatalog } from '../../application/ports/price-catalog.js';
 
 // Traduz o contrato do catalog (primitivos) para o port do orders (Money).
 export class CatalogPriceAdapter implements PriceCatalog {

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { FakeTransactionManager } from '../../../../test/fakes/fake-transaction-manager';
-import { SequentialIdGenerator } from '../../../../test/fakes/sequential-id-generator';
-import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case';
-import { InMemoryStockRepository } from './database/in-memory/in-memory-stock.repository';
-import { InventoryFacadeImpl } from './inventory-facade.impl';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case.js';
+import { InMemoryStockRepository } from './database/in-memory/in-memory-stock.repository.js';
+import { InventoryFacadeImpl } from './inventory-facade.impl.js';
 
 // Contrato da facade: o formato exato do resultado é o que o orders consome.
 describe('InventoryFacade (contrato)', () => {

@@ -1,4 +1,4 @@
-import { OrderCreatedV1 } from './order-created.event';
+import { OrderCreatedV1 } from './order-created.event.js';
 
 // Exemplo versionado do contrato (regras de versão em order-paid.v1.example.ts).
 export const orderCreatedV1Example: OrderCreatedV1 = {

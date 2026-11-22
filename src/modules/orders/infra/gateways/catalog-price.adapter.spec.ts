@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CatalogFacade } from '../../../catalog/contracts/catalog.facade';
-import { CatalogPriceAdapter } from './catalog-price.adapter';
+import { CatalogFacade } from '#modules/catalog/contracts/catalog.facade';
+import { CatalogPriceAdapter } from './catalog-price.adapter.js';
 
 describe('CatalogPriceAdapter', () => {
   it('converte centavos e moeda do catalog em Money, indexando por produto', async () => {

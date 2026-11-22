@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { backoffDelayMs, DEFAULT_OUTBOX_OPTIONS } from './outbox-relay';
+import { backoffDelayMs, DEFAULT_OUTBOX_OPTIONS } from './outbox-relay.js';
 
 describe('backoffDelayMs', () => {
   const options = { ...DEFAULT_OUTBOX_OPTIONS, baseDelayMs: 1_000, maxDelayMs: 10_000 };

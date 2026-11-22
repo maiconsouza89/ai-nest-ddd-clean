@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FakeLogger } from '../../../../../test/fakes/fake-logger';
-import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway';
-import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error';
-import { ResilientPaymentGateway } from './resilient-payment.gateway';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway.js';
+import { PaymentUnavailableError } from '../../domain/errors/payment-unavailable.error.js';
+import { ResilientPaymentGateway } from './resilient-payment.gateway.js';
 
 const input: ChargeInput = {
   orderId: 'o1',

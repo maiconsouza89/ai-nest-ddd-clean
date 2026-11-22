@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateEnv } from './env.validation';
+import { validateEnv } from './env.validation.js';
 
 const SECRET = 'a'.repeat(32);
 const REDIS = 'redis://localhost:6379';

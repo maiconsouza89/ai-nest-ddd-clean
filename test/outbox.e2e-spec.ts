@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import './helpers/enable-outbox-worker';
-import type { TestApp } from './helpers/test-app';
+import './helpers/enable-outbox-worker.js';
+import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { AppModule } from '../src/app.module';
-import { OnOrderCancelledHandler } from '../src/modules/inventory/infra/events/on-order-cancelled.handler';
-import { Email, EmailSender } from '../src/modules/notifications/application/ports/email-sender';
-import { configureApp } from '../src/app.setup';
-import { IntegrationEvent } from '../src/shared/application/integration-event';
-import { registerAndLogin } from './helpers/auth';
-import { seedProduct } from './helpers/catalog';
-import { waitFor } from './helpers/wait-for';
+import { AppModule } from '../src/app.module.js';
+import { OnOrderCancelledHandler } from '#modules/inventory/infra/events/on-order-cancelled.handler';
+import { Email, EmailSender } from '#modules/notifications/application/ports/email-sender';
+import { configureApp } from '../src/app.setup.js';
+import { IntegrationEvent } from '#shared/application/integration-event';
+import { registerAndLogin } from './helpers/auth.js';
+import { seedProduct } from './helpers/catalog.js';
+import { waitFor } from './helpers/wait-for.js';
 
 describe('Outbox worker (e2e)', () => {
   let app: TestApp;

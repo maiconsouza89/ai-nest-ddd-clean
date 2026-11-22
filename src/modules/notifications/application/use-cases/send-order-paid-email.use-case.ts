@@ -1,6 +1,6 @@
-import { Logger } from '../../../../shared/application/ports/logger';
-import { EmailSender } from '../ports/email-sender';
-import { RecipientDirectory } from '../ports/recipient-directory';
+import { Logger } from '#shared/application/ports/logger';
+import { EmailSender } from '../ports/email-sender.js';
+import { RecipientDirectory } from '../ports/recipient-directory.js';
 
 export type SendOrderPaidEmailInput = {
   orderId: string;

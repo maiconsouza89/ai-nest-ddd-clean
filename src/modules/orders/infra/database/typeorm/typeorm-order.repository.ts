@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, In, LessThan } from 'typeorm';
-import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
-import { currentManager } from '../../../../../shared/infra/database/transaction-context';
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderRepository } from '../../../domain/repositories/order.repository';
-import { EXPIRABLE_STATUSES } from '../../../domain/value-objects/order-status.vo';
-import { OrderOrmEntity } from './entities/order.orm-entity';
-import { OrderMapper } from './typeorm-order.mapper';
+import { ConcurrencyError } from '#shared/domain/concurrency.error';
+import { currentManager } from '#shared/infra/database/transaction-context';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderRepository } from '../../../domain/repositories/order.repository.js';
+import { EXPIRABLE_STATUSES } from '../../../domain/value-objects/order-status.vo.js';
+import { OrderOrmEntity } from './entities/order.orm-entity.js';
+import { OrderMapper } from './typeorm-order.mapper.js';
 
 @Injectable()
 export class TypeOrmOrderRepository implements OrderRepository {

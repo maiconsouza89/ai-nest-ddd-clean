@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startCatalogDatabase } from '../../../test/helpers/catalog-database';
-import { ProductOrmEntity } from './product.orm-entity';
-import { TypeOrmCatalogFacade } from './typeorm-catalog.facade';
+import { startCatalogDatabase } from '#test/helpers/catalog-database';
+import { ProductOrmEntity } from './product.orm-entity.js';
+import { TypeOrmCatalogFacade } from './typeorm-catalog.facade.js';
 
 describe('TypeOrmCatalogFacade (integração)', () => {
   let ds: DataSource;

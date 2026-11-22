@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../../shared/infra/auth/roles.decorator';
-import { PaginationQuery } from '../../shared/infra/http/pagination.query';
-import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request';
-import { ProductsService } from './products.service';
+import { Roles } from '#shared/infra/auth/roles.decorator';
+import { PaginationQuery } from '#shared/infra/http/pagination.query';
+import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request.js';
+import { ProductsService } from './products.service.js';
 
 @ApiTags('products')
 @ApiBearerAuth()

@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
-import { DomainError } from '../../../../../shared/domain/domain-error';
+import { DomainError } from '#shared/domain/domain-error';
 
 const STATUS: Record<string, number> = {
   EMAIL_ALREADY_IN_USE: 409,

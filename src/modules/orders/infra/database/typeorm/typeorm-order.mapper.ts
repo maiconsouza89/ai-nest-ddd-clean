@@ -1,9 +1,9 @@
-import { Money } from '../../../../../shared/domain/money.vo';
-import { OrderItem } from '../../../domain/entities/order-item.entity';
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
-import { OrderItemOrmEntity } from './entities/order-item.orm-entity';
-import { OrderOrmEntity } from './entities/order.orm-entity';
+import { Money } from '#shared/domain/money.vo';
+import { OrderItem } from '../../../domain/entities/order-item.entity.js';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderStatus } from '../../../domain/value-objects/order-status.vo.js';
+import { OrderItemOrmEntity } from './entities/order-item.orm-entity.js';
+import { OrderOrmEntity } from './entities/order.orm-entity.js';
 
 export class OrderMapper {
   static toDomain(raw: OrderOrmEntity): Order {

@@ -1,4 +1,4 @@
-import { DomainError } from '../../../../shared/domain/domain-error';
+import { DomainError } from '#shared/domain/domain-error';
 
 export class IdempotencyKeyReusedError extends DomainError {
   readonly code = 'IDEMPOTENCY_KEY_REUSED';

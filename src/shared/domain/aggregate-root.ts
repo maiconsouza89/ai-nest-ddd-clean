@@ -1,4 +1,4 @@
-import { DomainEvent } from './domain-event';
+import { DomainEvent } from './domain-event.js';
 
 /**
  * Base dos agregados que avisam o resto do sistema do que aconteceu.

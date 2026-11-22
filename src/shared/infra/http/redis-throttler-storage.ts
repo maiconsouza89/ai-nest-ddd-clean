@@ -1,10 +1,10 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import type IORedis from 'ioredis';
-import { Logger } from '../../application/ports/logger';
+import type { Redis } from 'ioredis';
+import { Logger } from '../../application/ports/logger.js';
 
 type ThrottleHit = [totalHits: number, ttlMs: number, blocked: number, blockTtlMs: number];
-type ThrottleRedis = IORedis & {
+type ThrottleRedis = Redis & {
   throttleHit(
     hitsKey: string,
     blockKey: string,
@@ -48,7 +48,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly redis: ThrottleRedis;
 
   constructor(
-    redis: IORedis,
+    redis: Redis,
     private readonly logger: Logger,
   ) {
     // defineCommand usa EVALSHA e recarrega o script sozinho se o Redis o perder

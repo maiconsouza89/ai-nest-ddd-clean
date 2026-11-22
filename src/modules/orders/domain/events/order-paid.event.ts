@@ -1,4 +1,4 @@
-import { DomainEvent } from '../../../../shared/domain/domain-event';
+import { DomainEvent } from '#shared/domain/domain-event';
 
 export class OrderPaid implements DomainEvent {
   readonly type = 'OrderPaid';

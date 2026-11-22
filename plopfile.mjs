@@ -2,6 +2,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
+// `@app/source` resolve os aliases `#shared/*` para `src` quando o ts-node carrega o data source
+const TYPEORM_CLI = 'NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm';
 
 // [template, destino relativo à pasta do módulo]
 const FILES = [
@@ -69,7 +71,7 @@ export default function (plop) {
           type: 'modify',
           path: 'src/app.module.ts',
           pattern: /(\n@Module\()/,
-          template: `import { ${pascal}Module } from './modules/${kebab}/infra/${kebab}.module';\n$1`,
+          template: `import { ${pascal}Module } from '#modules/${kebab}/infra/${kebab}.module';\n$1`,
         },
         {
           type: 'modify',
@@ -96,8 +98,8 @@ export default function (plop) {
           const ds = `${dir}/infra/database/typeorm/${kebab}.data-source.ts`;
           const migDir = `${dir}/infra/database/typeorm/migrations`;
           pkg.scripts[`mig:${kebab}:gen`] =
-            `typeorm-ts-node-commonjs migration:generate ${migDir}/change -d ${ds}`;
-          pkg.scripts[`mig:${kebab}:run`] = `typeorm-ts-node-commonjs migration:run -d ${ds}`;
+            `${TYPEORM_CLI} migration:generate ${migDir}/change -d ${ds}`;
+          pkg.scripts[`mig:${kebab}:run`] = `${TYPEORM_CLI} migration:run -d ${ds}`;
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
           return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;
         },

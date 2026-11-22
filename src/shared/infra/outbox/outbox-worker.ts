@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EnvironmentVariables } from '../config/env.validation';
-import { OutboxRelay } from './outbox-relay';
+import { EnvironmentVariables } from '../config/env.validation.js';
+import { OutboxRelay } from './outbox-relay.js';
 
 const POLL_INTERVAL_MS = 1_000;
 const CLEANUP_INTERVAL_MS = 60 * 60_000;

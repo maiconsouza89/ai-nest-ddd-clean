@@ -1,12 +1,12 @@
 import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Worker } from 'bullmq';
-import { IntegrationEvent } from '../../application/integration-event';
-import { Logger } from '../../application/ports/logger';
-import { EnvironmentVariables } from '../config/env.validation';
-import { runInEventTrace } from '../observability/trace-context';
-import { BullMqConnection } from './bullmq-connection';
-import { EventSubscriptions, queueNameOf } from './event-subscriptions';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { Logger } from '../../application/ports/logger.js';
+import { EnvironmentVariables } from '../config/env.validation.js';
+import { runInEventTrace } from '../observability/trace-context.js';
+import { BullMqConnection } from './bullmq-connection.js';
+import { EventSubscriptions, queueNameOf } from './event-subscriptions.js';
 
 /** Um worker por consumidor. Cada um tem retry, backoff e fila de mortos próprios. */
 @Injectable()

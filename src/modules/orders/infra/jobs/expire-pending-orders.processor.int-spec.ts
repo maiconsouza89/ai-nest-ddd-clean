@@ -3,17 +3,17 @@ import 'reflect-metadata';
 import { ConfigService } from '@nestjs/config';
 import { StartedRedisContainer } from '@testcontainers/redis';
 import { Queue } from 'bullmq';
-import { FakeLogger } from '../../../../../test/fakes/fake-logger';
-import { startRedis } from '../../../../../test/helpers/redis';
-import { waitFor } from '../../../../../test/helpers/wait-for';
-import { EnvironmentVariables } from '../../../../shared/infra/config/env.validation';
-import { BullMqConnection } from '../../../../shared/infra/messaging/bullmq-connection';
-import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { startRedis } from '#test/helpers/redis';
+import { waitFor } from '#test/helpers/wait-for';
+import { EnvironmentVariables } from '#shared/infra/config/env.validation';
+import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
+import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case.js';
 import {
   EXPIRE_PENDING_ORDERS_SCHEDULER,
   ExpirePendingOrdersProcessor,
   ORDERS_JOBS_QUEUE,
-} from './expire-pending-orders.processor';
+} from './expire-pending-orders.processor.js';
 
 describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () => {
   let redis: StartedRedisContainer;

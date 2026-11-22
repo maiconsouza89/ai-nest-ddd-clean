@@ -1,4 +1,4 @@
-import { Logger } from '../../src/shared/application/ports/logger';
+import { Logger } from '#shared/application/ports/logger';
 
 export class FakeLogger implements Logger {
   readonly entries: { level: string; fields: Record<string, unknown>; message: string }[] = [];

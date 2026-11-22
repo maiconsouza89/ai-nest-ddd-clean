@@ -3,7 +3,7 @@ import { context, propagation, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { TracerProvider } from '@opentelemetry/sdk-trace';
-import { currentTraceparent, runInEventTrace } from './trace-context';
+import { currentTraceparent, runInEventTrace } from './trace-context.js';
 
 const activeTraceId = () => trace.getActiveSpan()?.spanContext().traceId;
 

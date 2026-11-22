@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { orderCancelledV1Example } from '../../contracts/events/order-cancelled.v1.example';
-import { orderCreatedV1Example } from '../../contracts/events/order-created.v1.example';
-import { orderPaidV1Example } from '../../contracts/events/order-paid.v1.example';
-import { orderPlacedV1Example } from '../../contracts/events/order-placed.v1.example';
-import { CachedOrderQueries } from '../cache/cached-order.queries';
-import { InvalidateOrderListCacheHandler } from './invalidate-order-list-cache.handler';
+import { orderCancelledV1Example } from '../../contracts/events/order-cancelled.v1.example.js';
+import { orderCreatedV1Example } from '../../contracts/events/order-created.v1.example.js';
+import { orderPaidV1Example } from '../../contracts/events/order-paid.v1.example.js';
+import { orderPlacedV1Example } from '../../contracts/events/order-placed.v1.example.js';
+import { CachedOrderQueries } from '../cache/cached-order.queries.js';
+import { InvalidateOrderListCacheHandler } from './invalidate-order-list-cache.handler.js';
 
 // Lado de quem consome: o handler precisa entender os exemplos versionados dos contratos do orders.
 describe('InvalidateOrderListCacheHandler', () => {

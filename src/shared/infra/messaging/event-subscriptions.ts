@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner } from '@nestjs/core';
-import { IntegrationEvent } from '../../application/integration-event';
-import { subscriptionOf } from './integration-event-handler.decorator';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { subscriptionOf } from './integration-event-handler.decorator.js';
 
 export type EventConsumer = {
   /** Nome do consumidor; a fila é `events.<name>`. */

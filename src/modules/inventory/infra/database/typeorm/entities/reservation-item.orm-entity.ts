@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import type { Relation } from 'typeorm';
-import type { ReservationOrmEntity } from './reservation.orm-entity';
+import type { ReservationOrmEntity } from './reservation.orm-entity.js';
 
 @Entity({ name: 'reservation_items', schema: 'inventory' })
 export class ReservationItemOrmEntity {

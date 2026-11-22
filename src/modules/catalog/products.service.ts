@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IdGenerator } from '../../shared/application/ports/id-generator';
-import { Page, PageRequest } from '../../shared/application/page';
-import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request';
-import { ProductOrmEntity } from './product.orm-entity';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { Page, PageRequest } from '#shared/application/page';
+import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request.js';
+import { ProductOrmEntity } from './product.orm-entity.js';
 
 // Cadastro simples: sem domain/application separados (ver "Pragmatismo" no guia).
 @Injectable()

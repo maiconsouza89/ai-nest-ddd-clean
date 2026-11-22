@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { TestApp } from './helpers/test-app';
+import type { TestApp } from './helpers/test-app.js';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/app.setup';
-import { registerAndLogin, uniqueEmail } from './helpers/auth';
+import { AppModule } from '../src/app.module.js';
+import { configureApp } from '../src/app.setup.js';
+import { registerAndLogin, uniqueEmail } from './helpers/auth.js';
 
 describe('Auth (e2e)', () => {
   let app: TestApp;

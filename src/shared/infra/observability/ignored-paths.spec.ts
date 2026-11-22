@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isHealthRequest } from './ignored-paths';
+import { isHealthRequest } from './ignored-paths.js';
 
 describe('isHealthRequest', () => {
   it.each(['/health', '/health/live', '/health/ready?verbose=1', '/health?x=1'])(

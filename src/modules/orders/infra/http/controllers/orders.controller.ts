@@ -10,16 +10,16 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
-import type { Actor } from '../../../../../shared/application/actor';
-import { PaginationQuery } from '../../../../../shared/infra/http/pagination.query';
-import { CurrentUser } from '../../../../../shared/infra/auth/current-user.decorator';
-import { OrderQueries } from '../../../application/queries/order.queries';
-import { CancelOrderUseCase } from '../../../application/use-cases/cancel-order.use-case';
-import { CreateOrderUseCase } from '../../../application/use-cases/create-order.use-case';
-import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case';
-import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case';
-import { CreateOrderRequest } from '../dtos/create-order.request';
-import { OrdersDomainErrorFilter } from '../filters/domain-error.filter';
+import type { Actor } from '#shared/application/actor';
+import { PaginationQuery } from '#shared/infra/http/pagination.query';
+import { CurrentUser } from '#shared/infra/auth/current-user.decorator';
+import { OrderQueries } from '../../../application/queries/order.queries.js';
+import { CancelOrderUseCase } from '../../../application/use-cases/cancel-order.use-case.js';
+import { CreateOrderUseCase } from '../../../application/use-cases/create-order.use-case.js';
+import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case.js';
+import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case.js';
+import { CreateOrderRequest } from '../dtos/create-order.request.js';
+import { OrdersDomainErrorFilter } from '../filters/domain-error.filter.js';
 
 @ApiTags('orders')
 @ApiBearerAuth()

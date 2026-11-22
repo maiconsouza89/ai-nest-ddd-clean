@@ -1,4 +1,4 @@
-import { PasswordHasher } from '../../src/modules/identity/application/ports/password-hasher';
+import { PasswordHasher } from '#modules/identity/application/ports/password-hasher';
 
 export class FakePasswordHasher implements PasswordHasher {
   async hash(plain: string) {

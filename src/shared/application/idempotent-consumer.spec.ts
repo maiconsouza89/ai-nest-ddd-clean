@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FakeLogger } from '../../../test/fakes/fake-logger';
-import { FakeProcessedEvents } from '../../../test/fakes/fake-processed-events';
-import { FakeTransactionManager } from '../../../test/fakes/fake-transaction-manager';
-import { IdempotentConsumer } from './idempotent-consumer';
-import { IntegrationEvent } from './integration-event';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { FakeProcessedEvents } from '#test/fakes/fake-processed-events';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { IdempotentConsumer } from './idempotent-consumer.js';
+import { IntegrationEvent } from './integration-event.js';
 
 const event = (eventId: string): IntegrationEvent => ({
   eventId,

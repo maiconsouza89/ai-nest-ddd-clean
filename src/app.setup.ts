@@ -2,7 +2,7 @@ import { INestApplication, Logger, ValidationPipe, VersioningType } from '@nestj
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { EnvironmentVariables } from './shared/infra/config/env.validation';
+import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 
 export function configureApp(app: INestApplication) {
   const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);

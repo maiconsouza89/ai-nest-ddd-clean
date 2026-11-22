@@ -1,4 +1,4 @@
-import { IdGenerator } from '../../src/shared/application/ports/id-generator';
+import { IdGenerator } from '#shared/application/ports/id-generator';
 
 export class SequentialIdGenerator implements IdGenerator {
   private n = 0;

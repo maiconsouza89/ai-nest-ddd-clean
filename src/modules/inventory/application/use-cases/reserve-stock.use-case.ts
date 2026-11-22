@@ -1,8 +1,8 @@
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
-import { StockRepository } from '../../domain/repositories/stock.repository';
-import { ReserveStockInput } from '../dtos/reserve-stock.input';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error.js';
+import { StockRepository } from '../../domain/repositories/stock.repository.js';
+import { ReserveStockInput } from '../dtos/reserve-stock.input.js';
 
 export class ReserveStockUseCase {
   constructor(

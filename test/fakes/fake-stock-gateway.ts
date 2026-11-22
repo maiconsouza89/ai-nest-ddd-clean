@@ -1,5 +1,5 @@
-import { StockGateway } from '../../src/modules/orders/application/ports/stock-gateway';
-import { InsufficientStockError } from '../../src/modules/orders/domain/errors/insufficient-stock.error';
+import { StockGateway } from '#modules/orders/application/ports/stock-gateway';
+import { InsufficientStockError } from '#modules/orders/domain/errors/insufficient-stock.error';
 
 export class FakeStockGateway implements StockGateway {
   readonly reservations: { orderId: string; items: { productId: string; qty: number }[] }[] = [];

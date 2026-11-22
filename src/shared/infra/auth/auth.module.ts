@@ -2,9 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import { EnvironmentVariables } from '../config/env.validation';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { RolesGuard } from './roles.guard';
+import { EnvironmentVariables } from '../config/env.validation.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { RolesGuard } from './roles.guard.js';
 
 // Um só JwtModule para assinar (identity) e verificar (guard), com o mesmo segredo.
 @Global()

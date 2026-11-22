@@ -1,7 +1,7 @@
-import type { TestApp } from './test-app';
+import type { TestApp } from './test-app.js';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { registerAndLogin } from './auth';
+import { registerAndLogin } from './auth.js';
 
 /** Insere um produto no catalog, com estoque no inventory, direto no banco. Devolve o id. */
 export async function seedProduct(app: TestApp, priceCents = 1000, stock = 100, name = 'Produto') {

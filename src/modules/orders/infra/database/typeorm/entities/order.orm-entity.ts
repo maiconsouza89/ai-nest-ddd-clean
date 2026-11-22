@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import type { Relation } from 'typeorm';
-import { OrderItemOrmEntity } from './order-item.orm-entity';
+import { OrderItemOrmEntity } from './order-item.orm-entity.js';
 
 @Entity({ name: 'orders', schema: 'orders' })
 export class OrderOrmEntity {

@@ -1,10 +1,10 @@
 import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
-import { Logger } from '../../../../shared/application/ports/logger';
-import { EnvironmentVariables } from '../../../../shared/infra/config/env.validation';
-import { BullMqConnection } from '../../../../shared/infra/messaging/bullmq-connection';
-import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case';
+import { Logger } from '#shared/application/ports/logger';
+import { EnvironmentVariables } from '#shared/infra/config/env.validation';
+import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
+import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case.js';
 
 export const ORDERS_JOBS_QUEUE = 'jobs.orders';
 export const EXPIRE_PENDING_ORDERS_SCHEDULER = 'orders.expire-pending-orders';

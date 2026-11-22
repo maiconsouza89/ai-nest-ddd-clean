@@ -1,5 +1,5 @@
-import { PriceCatalog } from '../../src/modules/orders/application/ports/price-catalog';
-import { Money } from '../../src/shared/domain/money.vo';
+import { PriceCatalog } from '#modules/orders/application/ports/price-catalog';
+import { Money } from '#shared/domain/money.vo';
 
 export class FakePriceCatalog implements PriceCatalog {
   constructor(private readonly prices: Map<string, Money>) {}

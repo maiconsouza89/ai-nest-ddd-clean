@@ -11,20 +11,20 @@
     "build": "nest build",
     "start:dev": "nest start --watch",
     "test:e2e": "vitest run --project e2e",
-    "mig:orders:gen": "typeorm-ts-node-commonjs migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
-    "mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
+    "mig:orders:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
+    "mig:orders:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
     "test:int": "vitest run --project int",
-    "mig:identity:gen": "typeorm-ts-node-commonjs migration:generate src/modules/identity/infra/database/typeorm/migrations/change -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
-    "mig:identity:run": "typeorm-ts-node-commonjs migration:run -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
-    "mig:catalog:gen": "typeorm-ts-node-commonjs migration:generate src/modules/catalog/database/migrations/change -d src/modules/catalog/database/catalog.data-source.ts",
-    "mig:catalog:run": "typeorm-ts-node-commonjs migration:run -d src/modules/catalog/database/catalog.data-source.ts",
-    "mig:inventory:gen": "typeorm-ts-node-commonjs migration:generate src/modules/inventory/infra/database/typeorm/migrations/change -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
-    "mig:inventory:run": "typeorm-ts-node-commonjs migration:run -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
-    "mig:outbox:gen": "typeorm-ts-node-commonjs migration:generate src/shared/infra/outbox/migrations/change -d src/shared/infra/outbox/outbox.data-source.ts",
-    "mig:outbox:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infra/outbox/outbox.data-source.ts",
-    "seed:identity": "ts-node src/modules/identity/infra/database/typeorm/seeds/run.ts",
-    "seed:catalog": "ts-node src/modules/catalog/database/seeds/run.ts",
-    "seed:inventory": "ts-node src/modules/inventory/infra/database/typeorm/seeds/run.ts",
+    "mig:identity:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/identity/infra/database/typeorm/migrations/change -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
+    "mig:identity:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/identity/infra/database/typeorm/identity.data-source.ts",
+    "mig:catalog:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/catalog/database/migrations/change -d src/modules/catalog/database/catalog.data-source.ts",
+    "mig:catalog:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/catalog/database/catalog.data-source.ts",
+    "mig:inventory:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/inventory/infra/database/typeorm/migrations/change -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
+    "mig:inventory:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/inventory/infra/database/typeorm/inventory.data-source.ts",
+    "mig:outbox:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/shared/infra/outbox/migrations/change -d src/shared/infra/outbox/outbox.data-source.ts",
+    "mig:outbox:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/shared/infra/outbox/outbox.data-source.ts",
+    "seed:identity": "node --conditions=@app/source --loader ts-node/esm --no-warnings src/modules/identity/infra/database/typeorm/seeds/run.ts",
+    "seed:catalog": "node --conditions=@app/source --loader ts-node/esm --no-warnings src/modules/catalog/database/seeds/run.ts",
+    "seed:inventory": "node --conditions=@app/source --loader ts-node/esm --no-warnings src/modules/inventory/infra/database/typeorm/seeds/run.ts",
     "plop": "plop",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -33,7 +33,20 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "imports": {
+    "#shared/*": {
+      "@app/source": "./src/shared/*.ts",
+      "default": "./dist/shared/*.js"
+    },
+    "#modules/*": {
+      "@app/source": "./src/modules/*.ts",
+      "default": "./dist/modules/*.js"
+    },
+    "#test/*": {
+      "@app/source": "./test/*.ts"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^12.0.15",
@@ -72,6 +85,7 @@
     "@nestjs/typeorm": "^12.0.3",
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/auto-instrumentations-node": "^0.83.1",
+    "@opentelemetry/instrumentation": "^0.301.2",
     "@opentelemetry/sdk-node": "^0.301.2",
     "argon2": "^0.45.2",
     "bullmq": "^6.7.8",

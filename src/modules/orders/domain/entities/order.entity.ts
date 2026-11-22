@@ -1,16 +1,16 @@
-import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
-import { Money } from '../../../../shared/domain/money.vo';
-import { EmptyOrderError } from '../errors/empty-order.error';
-import { OrderCancelled } from '../events/order-cancelled.event';
-import { OrderCreated } from '../events/order-created.event';
-import { OrderPaid } from '../events/order-paid.event';
-import { OrderPlaced } from '../events/order-placed.event';
-import { OrderAlreadyPaidError } from '../errors/order-already-paid.error';
-import { OrderNotCancellableError } from '../errors/order-not-cancellable.error';
-import { OrderNotEditableError } from '../errors/order-not-editable.error';
-import { OrderNotPayableError } from '../errors/order-not-payable.error';
-import { OrderStatus } from '../value-objects/order-status.vo';
-import { OrderItem } from './order-item.entity';
+import { AggregateRoot } from '#shared/domain/aggregate-root';
+import { Money } from '#shared/domain/money.vo';
+import { EmptyOrderError } from '../errors/empty-order.error.js';
+import { OrderCancelled } from '../events/order-cancelled.event.js';
+import { OrderCreated } from '../events/order-created.event.js';
+import { OrderPaid } from '../events/order-paid.event.js';
+import { OrderPlaced } from '../events/order-placed.event.js';
+import { OrderAlreadyPaidError } from '../errors/order-already-paid.error.js';
+import { OrderNotCancellableError } from '../errors/order-not-cancellable.error.js';
+import { OrderNotEditableError } from '../errors/order-not-editable.error.js';
+import { OrderNotPayableError } from '../errors/order-not-payable.error.js';
+import { OrderStatus } from '../value-objects/order-status.vo.js';
+import { OrderItem } from './order-item.entity.js';
 
 export type OrderProps = {
   id: string;

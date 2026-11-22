@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { AggregateRoot } from './aggregate-root';
-import { DomainEvent } from './domain-event';
+import { AggregateRoot } from './aggregate-root.js';
+import { DomainEvent } from './domain-event.js';
 
 class Happened implements DomainEvent {
   readonly type = 'Happened';

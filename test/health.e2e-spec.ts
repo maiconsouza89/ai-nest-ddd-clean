@@ -1,11 +1,11 @@
 import { describe, it, beforeAll, afterAll } from 'vitest';
-import type { TestApp } from './helpers/test-app';
+import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { RedisHealthIndicator } from '../src/shared/infra/health/redis-health.indicator';
-import { configureApp } from '../src/app.setup';
+import { AppModule } from '../src/app.module.js';
+import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
+import { configureApp } from '../src/app.setup.js';
 
 describe('Health (e2e)', () => {
   let app: TestApp;

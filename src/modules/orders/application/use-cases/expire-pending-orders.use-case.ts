@@ -1,11 +1,11 @@
-import { Clock } from '../../../../shared/application/ports/clock';
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { Logger } from '../../../../shared/application/ports/logger';
-import { Outbox } from '../../../../shared/application/ports/outbox';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { DomainError } from '../../../../shared/domain/domain-error';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { publishOrderEvents } from '../events/publish-order-events';
+import { Clock } from '#shared/application/ports/clock';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { Logger } from '#shared/application/ports/logger';
+import { Outbox } from '#shared/application/ports/outbox';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { DomainError } from '#shared/domain/domain-error';
+import { OrderRepository } from '../../domain/repositories/order.repository.js';
+import { publishOrderEvents } from '../events/publish-order-events.js';
 
 export type ExpirePendingOrdersOptions = {
   /** Tempo parado, em ms, a partir do qual um DRAFT/PLACED expira. */

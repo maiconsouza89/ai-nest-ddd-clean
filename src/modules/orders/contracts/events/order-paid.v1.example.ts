@@ -1,4 +1,4 @@
-import { OrderPaidV1 } from './order-paid.event';
+import { OrderPaidV1 } from './order-paid.event.js';
 
 // Exemplo versionado do contrato. Quem publica gera algo compatível com ele e quem consome entende ele.
 // Campo novo opcional: mesma versão. Campo removido, renomeado ou com outro tipo: crie OrderPaidV2.

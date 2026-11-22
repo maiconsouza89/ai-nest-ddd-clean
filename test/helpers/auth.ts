@@ -1,4 +1,4 @@
-import type { TestApp } from './test-app';
+import type { TestApp } from './test-app.js';
 import request from 'supertest';
 
 export const uniqueEmail = () =>

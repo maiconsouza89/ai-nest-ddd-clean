@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { TransactionManager } from '../../application/ports/transaction-manager';
-import { hasActiveTransaction, runWithManager } from './transaction-context';
+import { TransactionManager } from '../../application/ports/transaction-manager.js';
+import { hasActiveTransaction, runWithManager } from './transaction-context.js';
 
 @Injectable()
 export class TypeOrmTransactionManager implements TransactionManager {

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
-import { currentManager } from '../../../../../shared/infra/database/transaction-context';
-import { User } from '../../../domain/entities/user.entity';
-import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error';
-import { UserRepository } from '../../../domain/repositories/user.repository';
-import { Email } from '../../../domain/value-objects/email.vo';
-import { UserOrmEntity } from './entities/user.orm-entity';
-import { UserMapper } from './typeorm-user.mapper';
+import { currentManager } from '#shared/infra/database/transaction-context';
+import { User } from '../../../domain/entities/user.entity.js';
+import { EmailAlreadyInUseError } from '../../../domain/errors/email-already-in-use.error.js';
+import { UserRepository } from '../../../domain/repositories/user.repository.js';
+import { Email } from '../../../domain/value-objects/email.vo.js';
+import { UserOrmEntity } from './entities/user.orm-entity.js';
+import { UserMapper } from './typeorm-user.mapper.js';
 
 const UNIQUE_VIOLATION = '23505';
 

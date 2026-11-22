@@ -1,14 +1,14 @@
-import { Clock } from '../../../../shared/application/ports/clock';
-import { IdGenerator } from '../../../../shared/application/ports/id-generator';
-import { Outbox } from '../../../../shared/application/ports/outbox';
-import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
-import { InvalidIdempotencyKeyError } from '../../domain/errors/invalid-idempotency-key.error';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { PayOrderInput } from '../dtos/pay-order.input';
-import { publishOrderEvents } from '../events/publish-order-events';
-import { loadOwnedOrder } from '../order-access';
-import { IdempotencyStore } from '../ports/idempotency-store';
-import { PaymentGateway } from '../ports/payment-gateway';
+import { Clock } from '#shared/application/ports/clock';
+import { IdGenerator } from '#shared/application/ports/id-generator';
+import { Outbox } from '#shared/application/ports/outbox';
+import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { InvalidIdempotencyKeyError } from '../../domain/errors/invalid-idempotency-key.error.js';
+import { OrderRepository } from '../../domain/repositories/order.repository.js';
+import { PayOrderInput } from '../dtos/pay-order.input.js';
+import { publishOrderEvents } from '../events/publish-order-events.js';
+import { loadOwnedOrder } from '../order-access.js';
+import { IdempotencyStore } from '../ports/idempotency-store.js';
+import { PaymentGateway } from '../ports/payment-gateway.js';
 
 const MAX_KEY_LENGTH = 255;
 

@@ -55,7 +55,7 @@ Monólito modular com NestJS, seguindo DDD e Clean Architecture.
 
 - `src/modules/`: módulos de negócio `orders`, `catalog`, `inventory`, `identity` e `notifications`.
 - `src/shared/`: kernel compartilhado e infraestrutura transversal.
-- `src/app.module.ts`: composição dos módulos. `src/main.ts`: bootstrap.
+- `src/app.module.ts`: composição dos módulos. `src/main.ts`: entrada, carrega o `tracing.ts` e depois o `bootstrap.ts`.
 
 Os módulos se comunicam pelos seus contratos públicos e por eventos de integração.
 

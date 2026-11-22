@@ -1,8 +1,8 @@
 import { OnApplicationShutdown, OnModuleInit, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import IORedis from 'ioredis';
-import { Logger } from '../../application/ports/logger';
-import { EnvironmentVariables } from '../config/env.validation';
+import { Redis } from 'ioredis';
+import { Logger } from '../../application/ports/logger.js';
+import { EnvironmentVariables } from '../config/env.validation.js';
 
 const PRODUCER_READY_TIMEOUT_MS = 5_000;
 
@@ -16,13 +16,13 @@ const PRODUCER_READY_TIMEOUT_MS = 5_000;
  */
 @Injectable()
 export class BullMqConnection implements OnModuleInit, OnApplicationShutdown {
-  readonly producer: IORedis;
-  readonly worker: IORedis;
+  readonly producer: Redis;
+  readonly worker: Redis;
 
   constructor(config: ConfigService<EnvironmentVariables, true>, logger: Logger) {
     const url = config.getOrThrow('REDIS_URL', { infer: true });
-    this.producer = new IORedis(url, { enableOfflineQueue: false });
-    this.worker = new IORedis(url, { maxRetriesPerRequest: null });
+    this.producer = new Redis(url, { enableOfflineQueue: false });
+    this.worker = new Redis(url, { maxRetriesPerRequest: null });
     // sem listener, um erro de conexão derruba o processo; o ioredis reconecta sozinho
     for (const [name, client] of [
       ['producer', this.producer],

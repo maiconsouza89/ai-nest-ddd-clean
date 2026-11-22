@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
-import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
-import { Money } from '../../../../../shared/domain/money.vo';
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
-import { TypeOrmOrderRepository } from './typeorm-order.repository';
+import { startOrdersDatabase } from '#test/helpers/orders-database';
+import { ConcurrencyError } from '#shared/domain/concurrency.error';
+import { Money } from '#shared/domain/money.vo';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderStatus } from '../../../domain/value-objects/order-status.vo.js';
+import { TypeOrmOrderRepository } from './typeorm-order.repository.js';
 
 describe('TypeOrmOrderRepository (integração)', () => {
   let ds: DataSource;

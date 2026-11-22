@@ -38,5 +38,24 @@ export default defineConfig(
     ],
     rules: { '@typescript-eslint/require-await': 'off' },
   },
+  {
+    // O app só pode ser carregado depois do tracing, por `import()` dinâmico. Um import estático seria
+    // resolvido antes do hook ESM do OpenTelemetry, e os spans do ioredis e do express sumiriam sem erro.
+    files: ['src/main.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['./*', '../*', '#*', '!./tracing.js'],
+              message:
+                'No main.ts, só o tracing é import estático. Carregue o app com await import().',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 );

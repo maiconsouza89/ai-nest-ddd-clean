@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
-import { DomainError } from '../../../../../shared/domain/domain-error';
+import { DomainError } from '#shared/domain/domain-error';
 
 const STATUS: Record<string, number> = {
   {{constantCase name}}_NOT_FOUND: 404,

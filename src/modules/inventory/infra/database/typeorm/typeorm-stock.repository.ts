@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { currentManager } from '../../../../../shared/infra/database/transaction-context';
-import { StockLine, StockRepository } from '../../../domain/repositories/stock.repository';
-import { ReservationItemOrmEntity } from './entities/reservation-item.orm-entity';
-import { ReservationOrmEntity } from './entities/reservation.orm-entity';
-import { StockItemOrmEntity } from './entities/stock-item.orm-entity';
+import { currentManager } from '#shared/infra/database/transaction-context';
+import { StockLine, StockRepository } from '../../../domain/repositories/stock.repository.js';
+import { ReservationItemOrmEntity } from './entities/reservation-item.orm-entity.js';
+import { ReservationOrmEntity } from './entities/reservation.orm-entity.js';
+import { StockItemOrmEntity } from './entities/stock-item.orm-entity.js';
 
 @Injectable()
 export class TypeOrmStockRepository implements StockRepository {

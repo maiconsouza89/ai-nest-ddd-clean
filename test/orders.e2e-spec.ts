@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { TestApp } from './helpers/test-app';
+import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/app.setup';
-import { registerAndLogin } from './helpers/auth';
-import { seedProduct } from './helpers/catalog';
+import { AppModule } from '../src/app.module.js';
+import { configureApp } from '../src/app.setup.js';
+import { registerAndLogin } from './helpers/auth.js';
+import { seedProduct } from './helpers/catalog.js';
 import { DataSource } from 'typeorm';
 
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;

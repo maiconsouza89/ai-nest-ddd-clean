@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { FakeCache } from '../../../../../test/fakes/fake-cache';
-import { FakeLogger } from '../../../../../test/fakes/fake-logger';
-import { Page, PageRequest } from '../../../../shared/application/page';
-import { OrderListItem, OrderQueries } from '../../application/queries/order.queries';
-import { CachedOrderQueries } from './cached-order.queries';
+import { FakeCache } from '#test/fakes/fake-cache';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { Page, PageRequest } from '#shared/application/page';
+import { OrderListItem, OrderQueries } from '../../application/queries/order.queries.js';
+import { CachedOrderQueries } from './cached-order.queries.js';
 
 const TTL = 60_000;
 

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { ConcurrencyError } from '../../../../../shared/domain/concurrency.error';
-import { currentManager } from '../../../../../shared/infra/database/transaction-context';
-import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity';
-import { {{pascalCase name}}Repository } from '../../../domain/repositories/{{kebabCase name}}.repository';
-import { {{pascalCase name}}OrmEntity } from './entities/{{kebabCase name}}.orm-entity';
-import { {{pascalCase name}}Mapper } from './typeorm-{{kebabCase name}}.mapper';
+import { ConcurrencyError } from '#shared/domain/concurrency.error';
+import { currentManager } from '#shared/infra/database/transaction-context';
+import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity.js';
+import { {{pascalCase name}}Repository } from '../../../domain/repositories/{{kebabCase name}}.repository.js';
+import { {{pascalCase name}}OrmEntity } from './entities/{{kebabCase name}}.orm-entity.js';
+import { {{pascalCase name}}Mapper } from './typeorm-{{kebabCase name}}.mapper.js';
 
 @Injectable()
 export class TypeOrm{{pascalCase name}}Repository implements {{pascalCase name}}Repository {

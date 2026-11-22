@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Actor } from '../../application/actor';
-import { RolesGuard } from './roles.guard';
+import { Actor } from '../../application/actor.js';
+import { RolesGuard } from './roles.guard.js';
 
 function contextFor(user: Actor | undefined, roles: string[] | undefined) {
   const handler = () => undefined;

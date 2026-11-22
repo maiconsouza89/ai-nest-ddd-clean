@@ -1,5 +1,5 @@
 import type { DataSource } from 'typeorm';
-import { StockItemOrmEntity } from '../entities/stock-item.orm-entity';
+import { StockItemOrmEntity } from '../entities/stock-item.orm-entity.js';
 
 // Mesmos ids do seed do catalog (módulos só se conhecem por id).
 export const SEED_STOCK = [

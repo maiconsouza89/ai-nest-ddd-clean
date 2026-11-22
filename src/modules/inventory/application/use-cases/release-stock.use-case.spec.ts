@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { InMemoryStockRepository } from '../../infra/database/in-memory/in-memory-stock.repository';
-import { ReleaseStockUseCase } from './release-stock.use-case';
-import { ReserveStockUseCase } from './reserve-stock.use-case';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { InMemoryStockRepository } from '../../infra/database/in-memory/in-memory-stock.repository.js';
+import { ReleaseStockUseCase } from './release-stock.use-case.js';
+import { ReserveStockUseCase } from './reserve-stock.use-case.js';
 
 describe('ReleaseStockUseCase', () => {
   const setup = () => {

@@ -1,11 +1,11 @@
 import { Body, Controller, HttpCode, Post, UseFilters } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { seconds, Throttle } from '@nestjs/throttler';
-import { Public } from '../../../../../shared/infra/auth/public.decorator';
-import { LoginUseCase } from '../../../application/use-cases/login.use-case';
-import { RegisterUserUseCase } from '../../../application/use-cases/register-user.use-case';
-import { LoginRequest, RegisterRequest } from '../dtos/identity.requests';
-import { IdentityDomainErrorFilter } from '../filters/domain-error.filter';
+import { Public } from '#shared/infra/auth/public.decorator';
+import { LoginUseCase } from '../../../application/use-cases/login.use-case.js';
+import { RegisterUserUseCase } from '../../../application/use-cases/register-user.use-case.js';
+import { LoginRequest, RegisterRequest } from '../dtos/identity.requests.js';
+import { IdentityDomainErrorFilter } from '../filters/domain-error.filter.js';
 
 @ApiTags('auth')
 @Public()

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startOrdersDatabase } from '../../../../../../test/helpers/orders-database';
-import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
-import { IdempotencyKeyReusedError } from '../../../domain/errors/idempotency-key-reused.error';
-import { TypeOrmIdempotencyStore } from './typeorm-idempotency.store';
+import { startOrdersDatabase } from '#test/helpers/orders-database';
+import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
+import { IdempotencyKeyReusedError } from '../../../domain/errors/idempotency-key-reused.error.js';
+import { TypeOrmIdempotencyStore } from './typeorm-idempotency.store.js';
 
 describe('TypeOrmIdempotencyStore (integração)', () => {
   let ds: DataSource;

@@ -1,5 +1,5 @@
-import { IntegrationEvent } from '../../src/shared/application/integration-event';
-import { EventPublisher } from '../../src/shared/application/ports/event-publisher';
+import { IntegrationEvent } from '#shared/application/integration-event';
+import { EventPublisher } from '#shared/application/ports/event-publisher';
 
 export class FakeEventPublisher implements EventPublisher {
   readonly delivered: IntegrationEvent[] = [];

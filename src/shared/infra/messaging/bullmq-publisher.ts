@@ -1,10 +1,10 @@
 import { Injectable, BeforeApplicationShutdown } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { IntegrationEvent } from '../../application/integration-event';
-import { Logger } from '../../application/ports/logger';
-import { EventPublisher } from '../../application/ports/event-publisher';
-import { BullMqConnection } from './bullmq-connection';
-import { EventSubscriptions, queueNameOf } from './event-subscriptions';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { Logger } from '../../application/ports/logger.js';
+import { EventPublisher } from '../../application/ports/event-publisher.js';
+import { BullMqConnection } from './bullmq-connection.js';
+import { EventSubscriptions, queueNameOf } from './event-subscriptions.js';
 
 const QUEUE_JOB_OPTIONS = {
   // 10 tentativas com 2s, 4s, 8s...: cerca de 17 min até o job ir para `failed`

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { FakeOutbox } from '../../../../../test/fakes/fake-outbox';
-import { FakePriceCatalog } from '../../../../../test/fakes/fake-price-catalog';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { FixedClock } from '../../../../../test/fakes/fixed-clock';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { Money } from '../../../../shared/domain/money.vo';
-import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
-import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository';
-import { CreateOrderUseCase } from './create-order.use-case';
+import { FakeOutbox } from '#test/fakes/fake-outbox';
+import { FakePriceCatalog } from '#test/fakes/fake-price-catalog';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { FixedClock } from '#test/fakes/fixed-clock';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { Money } from '#shared/domain/money.vo';
+import { ProductNotFoundError } from '../../domain/errors/product-not-found.error.js';
+import { InMemoryOrderRepository } from '../../infra/database/in-memory/in-memory-order.repository.js';
+import { CreateOrderUseCase } from './create-order.use-case.js';
 
 function setup() {
   const repo = new InMemoryOrderRepository();

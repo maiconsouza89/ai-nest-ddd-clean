@@ -1,4 +1,4 @@
-import { StockLine, StockRepository } from '../../../domain/repositories/stock.repository';
+import { StockLine, StockRepository } from '../../../domain/repositories/stock.repository.js';
 
 export class InMemoryStockRepository implements StockRepository {
   private readonly levels = new Map<string, number>();

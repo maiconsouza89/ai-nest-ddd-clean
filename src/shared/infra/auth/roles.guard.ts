@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Actor } from '../../application/actor';
-import { ROLES_KEY } from './roles.decorator';
+import { Actor } from '../../application/actor.js';
+import { ROLES_KEY } from './roles.decorator.js';
 
 // Roda depois do JwtAuthGuard, que já colocou o Actor em req.user.
 @Injectable()

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { TestApp } from './helpers/test-app';
+import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 import request from 'supertest';
-import { configureApp } from '../src/app.setup';
+import { configureApp } from '../src/app.setup.js';
 
 describe('Rate limiting (e2e)', () => {
   let app: TestApp;
@@ -11,7 +11,7 @@ describe('Rate limiting (e2e)', () => {
 
   // os contadores ficam no Redis e sobrevivem entre execuções: sem limpar, a segunda rodada em 60s já começa bloqueada
   async function clearThrottleKeys() {
-    const redis = new IORedis(process.env.REDIS_URL!);
+    const redis = new Redis(process.env.REDIS_URL!);
     try {
       const keys = await redis.keys('throttle:*');
       if (keys.length > 0) await redis.del(...keys);

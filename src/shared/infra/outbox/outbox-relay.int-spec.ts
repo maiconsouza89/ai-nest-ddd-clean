@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { FakeEventPublisher } from '../../../../test/fakes/fake-event-publisher';
-import { FakeLogger } from '../../../../test/fakes/fake-logger';
-import { startOutboxDatabase } from '../../../../test/helpers/outbox-database';
-import { IntegrationEvent } from '../../application/integration-event';
-import { DEFAULT_OUTBOX_OPTIONS, OutboxOptions, OutboxRelay } from './outbox-relay';
-import { TypeOrmOutbox } from './typeorm-outbox';
+import { FakeEventPublisher } from '#test/fakes/fake-event-publisher';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { startOutboxDatabase } from '#test/helpers/outbox-database';
+import { IntegrationEvent } from '../../application/integration-event.js';
+import { DEFAULT_OUTBOX_OPTIONS, OutboxOptions, OutboxRelay } from './outbox-relay.js';
+import { TypeOrmOutbox } from './typeorm-outbox.js';
 
 describe('OutboxRelay (integração)', () => {
   let ds: DataSource;

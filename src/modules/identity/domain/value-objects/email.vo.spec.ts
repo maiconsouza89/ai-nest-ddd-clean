@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { InvalidEmailError } from '../errors/invalid-email.error';
-import { Email } from './email.vo';
+import { InvalidEmailError } from '../errors/invalid-email.error.js';
+import { Email } from './email.vo.js';
 
 describe('Email', () => {
   it('normaliza espaços e caixa', () => {

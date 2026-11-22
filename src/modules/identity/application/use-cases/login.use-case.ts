@@ -1,10 +1,10 @@
-import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
-import { InvalidEmailError } from '../../domain/errors/invalid-email.error';
-import { UserRepository } from '../../domain/repositories/user.repository';
-import { Email } from '../../domain/value-objects/email.vo';
-import { LoginInput } from '../dtos/identity.inputs';
-import { PasswordHasher } from '../ports/password-hasher';
-import { TokenIssuer } from '../ports/token-issuer';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error.js';
+import { InvalidEmailError } from '../../domain/errors/invalid-email.error.js';
+import { UserRepository } from '../../domain/repositories/user.repository.js';
+import { Email } from '../../domain/value-objects/email.vo.js';
+import { LoginInput } from '../dtos/identity.inputs.js';
+import { PasswordHasher } from '../ports/password-hasher.js';
+import { TokenIssuer } from '../ports/token-issuer.js';
 
 export class LoginUseCase {
   // hash descartável, gerado uma vez: igualaliza o tempo quando o e-mail não existe

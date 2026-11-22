@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { TestApp } from './helpers/test-app';
+import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/app.setup';
-import { setupSwagger } from '../src/shared/infra/http/swagger.setup';
+import { AppModule } from '../src/app.module.js';
+import { configureApp } from '../src/app.setup.js';
+import { setupSwagger } from '#shared/infra/http/swagger.setup';
 
 describe('Docs (e2e)', () => {
   let app: TestApp;

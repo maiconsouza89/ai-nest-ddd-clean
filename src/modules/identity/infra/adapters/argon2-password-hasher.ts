@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { PasswordHasher } from '../../application/ports/password-hasher';
+import { PasswordHasher } from '../../application/ports/password-hasher.js';
 
 export class Argon2PasswordHasher implements PasswordHasher {
   hash(plain: string) {

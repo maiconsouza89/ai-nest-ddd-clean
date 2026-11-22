@@ -1,6 +1,6 @@
 import type { DataSource } from 'typeorm';
-import { Argon2PasswordHasher } from '../../../adapters/argon2-password-hasher';
-import { UserOrmEntity } from '../entities/user.orm-entity';
+import { Argon2PasswordHasher } from '../../../adapters/argon2-password-hasher.js';
+import { UserOrmEntity } from '../entities/user.orm-entity.js';
 
 // Só para desenvolvimento: senha conhecida de propósito.
 export const SEED_PASSWORD = 'Senha@12345';

@@ -1,5 +1,5 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
-module.exports = {
+export default {
   forbidden: [
     {
       name: 'no-circular',
@@ -33,6 +33,25 @@ module.exports = {
       to: { path: '/(domain|infra)/' },
     },
     {
+      // Convenção do ADR 0005: sair do módulo (ou do shared) é sempre por alias, nunca por `../`.
+      name: 'fronteira-via-alias',
+      severity: 'error',
+      from: { path: '^src/(modules/[^/]+|shared)/' },
+      to: {
+        path: '^src/',
+        pathNot: '^src/$1/',
+        // o import por alias também carrega o tipo `local`, então ele precisa ser excluído aqui
+        dependencyTypesNot: ['aliased-subpath-import'],
+      },
+    },
+    {
+      // Dentro da mesma fronteira o import continua relativo (ADR 0005).
+      name: 'alias-so-entre-fronteiras',
+      severity: 'error',
+      from: { path: '^src/(modules/[^/]+|shared)/' },
+      to: { path: '^src/$1/', dependencyTypes: ['aliased-subpath-import'] },
+    },
+    {
       name: 'modulos-so-via-contracts',
       severity: 'error',
       from: { path: '^src/modules/([^/]+)/' },
@@ -46,6 +65,9 @@ module.exports = {
     // Testes podem montar peças de várias camadas.
     exclude: { path: '\\.(spec|int-spec|e2e-spec)\\.ts$' },
     tsConfig: { fileName: 'tsconfig.json' },
+    // Sem `@app/source`, os aliases `#shared/*` e afins resolvem para `dist`, e as regras de camada
+    // deixam de enxergar o import (ADR 0005).
+    enhancedResolveOptions: { conditionNames: ['@app/source', 'import', 'node', 'default'] },
     tsPreCompilationDeps: 'specify',
     doNotFollow: { path: 'node_modules' },
   },

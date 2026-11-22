@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { startInventoryDatabase } from '../../../../../../test/helpers/inventory-database';
-import { UuidV7Generator } from '../../../../../shared/infra/ids/uuid-v7.generator';
-import { TypeOrmTransactionManager } from '../../../../../shared/infra/database/typeorm-transaction-manager';
-import { ReleaseStockUseCase } from '../../../application/use-cases/release-stock.use-case';
-import { ReserveStockUseCase } from '../../../application/use-cases/reserve-stock.use-case';
-import { InsufficientStockError } from '../../../domain/errors/insufficient-stock.error';
-import { TypeOrmStockRepository } from './typeorm-stock.repository';
+import { startInventoryDatabase } from '#test/helpers/inventory-database';
+import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
+import { ReleaseStockUseCase } from '../../../application/use-cases/release-stock.use-case.js';
+import { ReserveStockUseCase } from '../../../application/use-cases/reserve-stock.use-case.js';
+import { InsufficientStockError } from '../../../domain/errors/insufficient-stock.error.js';
+import { TypeOrmStockRepository } from './typeorm-stock.repository.js';
 
 describe('ReserveStockUseCase com Postgres (integração)', () => {
   let ds: DataSource;

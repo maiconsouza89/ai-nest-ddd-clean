@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FakePasswordHasher } from '../../../../../test/fakes/fake-password-hasher';
-import { FakeTokenIssuer } from '../../../../../test/fakes/fake-token-issuer';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error';
-import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
-import { InvalidNameError } from '../../domain/errors/invalid-name.error';
-import { InvalidEmailError } from '../../domain/errors/invalid-email.error';
-import { InMemoryUserRepository } from '../../infra/database/in-memory/in-memory-user.repository';
-import { LoginUseCase } from './login.use-case';
-import { RegisterUserUseCase } from './register-user.use-case';
+import { FakePasswordHasher } from '#test/fakes/fake-password-hasher';
+import { FakeTokenIssuer } from '#test/fakes/fake-token-issuer';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error.js';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error.js';
+import { InvalidNameError } from '../../domain/errors/invalid-name.error.js';
+import { InvalidEmailError } from '../../domain/errors/invalid-email.error.js';
+import { InMemoryUserRepository } from '../../infra/database/in-memory/in-memory-user.repository.js';
+import { LoginUseCase } from './login.use-case.js';
+import { RegisterUserUseCase } from './register-user.use-case.js';
 
 function setup() {
   const users = new InMemoryUserRepository();

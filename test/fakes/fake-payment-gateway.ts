@@ -1,8 +1,5 @@
-import {
-  ChargeInput,
-  PaymentGateway,
-} from '../../src/modules/orders/application/ports/payment-gateway';
-import { PaymentUnavailableError } from '../../src/modules/orders/domain/errors/payment-unavailable.error';
+import { ChargeInput, PaymentGateway } from '#modules/orders/application/ports/payment-gateway';
+import { PaymentUnavailableError } from '#modules/orders/domain/errors/payment-unavailable.error';
 
 export class FakePaymentGateway implements PaymentGateway {
   readonly charges: ChargeInput[] = [];

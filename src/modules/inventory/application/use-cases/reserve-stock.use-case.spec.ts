@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { SequentialIdGenerator } from '../../../../../test/fakes/sequential-id-generator';
-import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
-import { InMemoryStockRepository } from '../../infra/database/in-memory/in-memory-stock.repository';
-import { ReserveStockUseCase } from './reserve-stock.use-case';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
+import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error.js';
+import { InMemoryStockRepository } from '../../infra/database/in-memory/in-memory-stock.repository.js';
+import { ReserveStockUseCase } from './reserve-stock.use-case.js';
 
 function setup() {
   const stock = new InMemoryStockRepository({ a: 5, b: 1 });

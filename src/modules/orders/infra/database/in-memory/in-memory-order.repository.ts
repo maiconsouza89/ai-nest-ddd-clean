@@ -1,6 +1,6 @@
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderRepository } from '../../../domain/repositories/order.repository';
-import { EXPIRABLE_STATUSES } from '../../../domain/value-objects/order-status.vo';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderRepository } from '../../../domain/repositories/order.repository.js';
+import { EXPIRABLE_STATUSES } from '../../../domain/value-objects/order-status.vo.js';
 
 export class InMemoryOrderRepository implements OrderRepository {
   private readonly orders = new Map<string, { order: Order; savedAt: Date }>();

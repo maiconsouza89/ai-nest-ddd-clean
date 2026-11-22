@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { currentManager } from '../../../../../shared/infra/database/transaction-context';
-import { IdempotencyClaim, IdempotencyStore } from '../../../application/ports/idempotency-store';
-import { IdempotencyKeyReusedError } from '../../../domain/errors/idempotency-key-reused.error';
+import { currentManager } from '#shared/infra/database/transaction-context';
+import {
+  IdempotencyClaim,
+  IdempotencyStore,
+} from '../../../application/ports/idempotency-store.js';
+import { IdempotencyKeyReusedError } from '../../../domain/errors/idempotency-key-reused.error.js';
 
 @Injectable()
 export class TypeOrmIdempotencyStore implements IdempotencyStore {

@@ -1,5 +1,5 @@
-import { Money } from '../../../../shared/domain/money.vo';
-import { InvalidQuantityError } from '../errors/invalid-quantity.error';
+import { Money } from '#shared/domain/money.vo';
+import { InvalidQuantityError } from '../errors/invalid-quantity.error.js';
 
 export class OrderItem {
   constructor(

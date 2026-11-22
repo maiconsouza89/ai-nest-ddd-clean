@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CurrencyMismatchError, InvalidMoneyError, Money } from './money.vo';
+import { CurrencyMismatchError, InvalidMoneyError, Money } from './money.vo.js';
 
 describe('Money', () => {
   it('soma valores na mesma moeda', () => {

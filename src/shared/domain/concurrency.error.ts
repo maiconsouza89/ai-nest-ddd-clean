@@ -1,4 +1,4 @@
-import { DomainError } from './domain-error';
+import { DomainError } from './domain-error.js';
 
 export class ConcurrencyError extends DomainError {
   readonly code = 'CONCURRENCY_CONFLICT';

@@ -1,5 +1,5 @@
-import { Logger } from '../../../../shared/application/ports/logger';
-import { Email, EmailSender } from '../../application/ports/email-sender';
+import { Logger } from '#shared/application/ports/logger';
+import { Email, EmailSender } from '../../application/ports/email-sender.js';
 
 /**
  * Remetente simulado, para desenvolvimento: só registra no log, sem o endereço do destinatário.

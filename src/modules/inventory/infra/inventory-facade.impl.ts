@@ -1,10 +1,10 @@
-import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case';
+import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case.js';
 import {
   InventoryFacade,
   ReserveStockCommand,
   ReserveStockResult,
-} from '../contracts/inventory.facade';
-import { InsufficientStockError } from '../domain/errors/insufficient-stock.error';
+} from '../contracts/inventory.facade.js';
+import { InsufficientStockError } from '../domain/errors/insufficient-stock.error.js';
 
 // Traduz o erro de domínio em resultado do contrato: o contrato não pode importar o domain.
 export class InventoryFacadeImpl implements InventoryFacade {

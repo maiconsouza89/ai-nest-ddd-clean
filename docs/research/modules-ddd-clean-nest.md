@@ -263,7 +263,7 @@ items!: Relation<OrderItemOrmEntity[]>;
 
 // order-item.orm-entity.ts
 import type { Relation } from 'typeorm';
-import type { OrderOrmEntity } from './order.orm-entity'; // só tipo: sem ciclo de import em runtime
+import type { OrderOrmEntity } from './order.orm-entity.js'; // só tipo: sem ciclo de import em runtime
 
 @ManyToOne('OrderOrmEntity', (o: OrderOrmEntity) => o.items, {
   onDelete: 'CASCADE',
@@ -303,14 +303,16 @@ export default new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
   entities: [OrderOrmEntity, OrderItemOrmEntity],
-  migrations: [__dirname + '/migrations/*.{ts,js}'],
+  migrations: [import.meta.dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'orders_migrations',
 });
 ```
 
+O projeto é ESM (`"type": "module"`), então o CLI é o `typeorm-ts-node-esm`, o `__dirname` vira `import.meta.dirname` e todo import relativo termina em `.js`. O data source importa o shared por alias (`#shared/*`), e o `ts-node` só o resolve com a condição `@app/source`, por isso o `NODE_OPTIONS` na frente do script. Detalhes, inclusive dos seeds, no [ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md).
+
 ```json
-"mig:orders:gen": "typeorm-ts-node-commonjs migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
-"mig:orders:run": "typeorm-ts-node-commonjs migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
+"mig:orders:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
+"mig:orders:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
 ```
 
 **Cuidados com migrations**
@@ -332,6 +334,7 @@ export default new DataSource({
 - **Sem FK entre schemas.** Guarde só o ID do outro módulo (`customerId`).
 - **Sem join entre módulos.** Use a facade ou uma cópia local atualizada por eventos.
 - **Outros módulos só importam de `contracts/`.**
+- **Imports que cruzam fronteira usam alias.** `#shared/*` para o shared kernel, `#modules/<módulo>/contracts/*` para o contrato de outro módulo e `#test/*` nos specs. Dentro do mesmo módulo, o import continua relativo (`../domain/x.js`). O alias não substitui a regra acima: o `dependency-cruiser` a aplica também aos imports por alias ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
 - **Sem transação entre módulos.** Use eventos com outbox quando precisar de consistência.
 - Configurações comuns (conexão, `DataSource` global) ficam em `src/shared/infra/database/`.
 
@@ -1147,7 +1150,9 @@ As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem 
 ### Observabilidade
 
 - **Tracing distribuído:** OpenTelemetry com auto-instrumentação para Node. Ele propaga o contexto no padrão W3C (`traceparent`) entre serviços e dispensa um correlation id feito à mão.
-  - O arquivo de tracing precisa ser o **primeiro import** do `main.ts` (ou carregado com `--import`): a auto-instrumentação só enxerga módulos carregados depois dela.
+  - O `main.ts` importa só o `tracing.ts` e depois carrega o app por `import()` dinâmico (`bootstrap.ts`). A auto-instrumentação só enxerga módulos carregados depois dela.
+  - No ESM, o `require` não é interceptado. O `tracing.ts` registra o hook `@opentelemetry/instrumentation/hook.mjs` com `module.register` antes de iniciar o SDK. Sem ele, o que o código importa direto (como o `ioredis`) e o `express` ficam sem spans, e nada falha nem avisa. Um `import` estático do app no `main.ts` seria resolvido antes do hook e teria o mesmo efeito. Uma regra de lint (`no-restricted-imports` em `src/main.ts`) barra esse import estático.
+  - No Node 26, o `module.register` imprime `DEP0205` na subida. É o caminho que a doc do OpenTelemetry indica hoje; a alternativa é o `register-hooks.mjs` do `import-in-the-middle`, que usa `module.registerHooks`.
   - No Nest 12, não há spans da camada Nest (controllers e handlers): o `@opentelemetry/instrumentation-nestjs-core` só suporta o Nest até a versão 11. Os spans de http, express, pg, ioredis e pino continuam, e isso basta para seguir uma requisição.
 - **Logs ligados ao trace:** o id do trace vai em todo log e é copiado para os metadados de cada evento da outbox. Assim dá para seguir uma requisição por todos os módulos. A instrumentação do pino grava os campos `trace_id` e `span_id`, e não `traceId`. Para mudar o nome, use a opção `logKeys`.
 - **Logs estruturados:** JSON com `nestjs-pino`.
@@ -1195,7 +1200,7 @@ Se o módulo só valida campos (categorias, configurações, cadastros simples),
 
 ### Gerador de módulos
 
-Com Plop, `npx plop module <nome>` cria toda a estrutura padrão com os nomes certos. O `plopfile.mjs` é ESM, e os templates ficam em `plop-templates/module/`.
+Com Plop, `npx plop module <nome>` cria toda a estrutura padrão com os nomes certos. O `plopfile.mjs` é ESM, e os templates ficam em `plop-templates/module/`. Eles já geram código ESM (imports com `.js`, `import.meta.dirname` e scripts `typeorm-ts-node-esm`).
 
 ```js
 // plopfile.mjs

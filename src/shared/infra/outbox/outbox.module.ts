@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Clock } from '../../application/ports/clock';
-import { EventPublisher } from '../../application/ports/event-publisher';
-import { Logger } from '../../application/ports/logger';
-import { MessagingModule } from '../messaging/messaging.module';
-import { OutboxRelay } from './outbox-relay';
-import { OutboxWorker } from './outbox-worker';
+import { Clock } from '../../application/ports/clock.js';
+import { EventPublisher } from '../../application/ports/event-publisher.js';
+import { Logger } from '../../application/ports/logger.js';
+import { MessagingModule } from '../messaging/messaging.module.js';
+import { OutboxRelay } from './outbox-relay.js';
+import { OutboxWorker } from './outbox-worker.js';
 
 @Module({
   imports: [MessagingModule],

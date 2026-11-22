@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { FakeLogger } from '../../../../../test/fakes/fake-logger';
-import { FakeProcessedEvents } from '../../../../../test/fakes/fake-processed-events';
-import { FakeTransactionManager } from '../../../../../test/fakes/fake-transaction-manager';
-import { IdempotentConsumer } from '../../../../shared/application/idempotent-consumer';
-import { orderPaidV1Example } from '../../../orders/contracts/events/order-paid.v1.example';
-import { Email, EmailSender } from '../../application/ports/email-sender';
-import { RecipientDirectory } from '../../application/ports/recipient-directory';
-import { SendOrderPaidEmailUseCase } from '../../application/use-cases/send-order-paid-email.use-case';
-import { OnOrderPaidHandler } from './on-order-paid.handler';
+import { FakeLogger } from '#test/fakes/fake-logger';
+import { FakeProcessedEvents } from '#test/fakes/fake-processed-events';
+import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
+import { IdempotentConsumer } from '#shared/application/idempotent-consumer';
+import { orderPaidV1Example } from '#modules/orders/contracts/events/order-paid.v1.example';
+import { Email, EmailSender } from '../../application/ports/email-sender.js';
+import { RecipientDirectory } from '../../application/ports/recipient-directory.js';
+import { SendOrderPaidEmailUseCase } from '../../application/use-cases/send-order-paid-email.use-case.js';
+import { OnOrderPaidHandler } from './on-order-paid.handler.js';
 
 class FakeEmailSender implements EmailSender {
   readonly sent: Email[] = [];

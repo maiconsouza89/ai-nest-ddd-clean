@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { Actor } from '../../application/actor';
-import { IS_PUBLIC_KEY } from './public.decorator';
+import { Actor } from '../../application/actor.js';
+import { IS_PUBLIC_KEY } from './public.decorator.js';
 
 type AuthRequest = { headers: Record<string, string | undefined>; user?: Actor };
 

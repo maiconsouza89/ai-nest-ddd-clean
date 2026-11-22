@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway';
+import { ChargeInput, PaymentGateway } from '../../application/ports/payment-gateway.js';
 
 /**
  * Fornecedor de pagamento simulado, para desenvolvimento: aprova tudo e deriva o `paymentId` da chave

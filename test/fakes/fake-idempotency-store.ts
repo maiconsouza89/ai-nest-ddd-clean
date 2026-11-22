@@ -1,8 +1,8 @@
 import {
   IdempotencyClaim,
   IdempotencyStore,
-} from '../../src/modules/orders/application/ports/idempotency-store';
-import { IdempotencyKeyReusedError } from '../../src/modules/orders/domain/errors/idempotency-key-reused.error';
+} from '#modules/orders/application/ports/idempotency-store';
+import { IdempotencyKeyReusedError } from '#modules/orders/domain/errors/idempotency-key-reused.error';
 
 export class FakeIdempotencyStore implements IdempotencyStore {
   private readonly rows = new Map<string, { fingerprint: string; expiresAt: Date }>();

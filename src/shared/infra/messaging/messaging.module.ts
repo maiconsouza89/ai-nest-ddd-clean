@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
-import { EventPublisher } from '../../application/ports/event-publisher';
-import { BullMqConnection } from './bullmq-connection';
-import { BullMqPublisher } from './bullmq-publisher';
-import { EventSubscriptions } from './event-subscriptions';
-import { EventWorkers } from './event-workers';
+import { EventPublisher } from '../../application/ports/event-publisher.js';
+import { BullMqConnection } from './bullmq-connection.js';
+import { BullMqPublisher } from './bullmq-publisher.js';
+import { EventSubscriptions } from './event-subscriptions.js';
+import { EventWorkers } from './event-workers.js';
 
 /** Transporte dos eventos de integração: uma fila BullMQ por consumidor. */
 @Module({

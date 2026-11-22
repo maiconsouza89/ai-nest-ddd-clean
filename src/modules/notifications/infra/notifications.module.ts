@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { Logger } from '../../../shared/application/ports/logger';
-import { UserDirectoryFacade } from '../../identity/contracts/user-directory.facade';
-import { EmailSender } from '../application/ports/email-sender';
-import { RecipientDirectory } from '../application/ports/recipient-directory';
-import { SendOrderPaidEmailUseCase } from '../application/use-cases/send-order-paid-email.use-case';
-import { IdentityRecipientDirectory } from './adapters/identity-recipient-directory';
-import { LoggingEmailSender } from './adapters/logging-email-sender';
-import { OnOrderPaidHandler } from './events/on-order-paid.handler';
+import { Logger } from '#shared/application/ports/logger';
+import { UserDirectoryFacade } from '#modules/identity/contracts/user-directory.facade';
+import { EmailSender } from '../application/ports/email-sender.js';
+import { RecipientDirectory } from '../application/ports/recipient-directory.js';
+import { SendOrderPaidEmailUseCase } from '../application/use-cases/send-order-paid-email.use-case.js';
+import { IdentityRecipientDirectory } from './adapters/identity-recipient-directory.js';
+import { LoggingEmailSender } from './adapters/logging-email-sender.js';
+import { OnOrderPaidHandler } from './events/on-order-paid.handler.js';
 
 @Module({
   providers: [

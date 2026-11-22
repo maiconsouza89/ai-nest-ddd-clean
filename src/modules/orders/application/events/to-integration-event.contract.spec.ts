@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { incompatibilities } from '../../../../../test/helpers/contract';
-import { Order } from '../../domain/entities/order.entity';
-import { Money } from '../../../../shared/domain/money.vo';
-import { orderCreatedV1Example } from '../../contracts/events/order-created.v1.example';
-import { orderPlacedV1Example } from '../../contracts/events/order-placed.v1.example';
-import { orderCancelledV1Example } from '../../contracts/events/order-cancelled.v1.example';
-import { orderPaidV1Example } from '../../contracts/events/order-paid.v1.example';
-import { toIntegrationEvent } from './to-integration-event';
+import { incompatibilities } from '#test/helpers/contract';
+import { Order } from '../../domain/entities/order.entity.js';
+import { Money } from '#shared/domain/money.vo';
+import { orderCreatedV1Example } from '../../contracts/events/order-created.v1.example.js';
+import { orderPlacedV1Example } from '../../contracts/events/order-placed.v1.example.js';
+import { orderCancelledV1Example } from '../../contracts/events/order-cancelled.v1.example.js';
+import { orderPaidV1Example } from '../../contracts/events/order-paid.v1.example.js';
+import { toIntegrationEvent } from './to-integration-event.js';
 
 // Lado de quem publica: o que o orders realmente gera precisa ser compatível com o exemplo do contrato.
 describe('contrato dos eventos publicados pelo orders', () => {

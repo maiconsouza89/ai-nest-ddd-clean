@@ -1,5 +1,5 @@
-import { InvalidNameError } from '../errors/invalid-name.error';
-import { Email } from '../value-objects/email.vo';
+import { InvalidNameError } from '../errors/invalid-name.error.js';
+import { Email } from '../value-objects/email.vo.js';
 
 const MAX_NAME_LENGTH = 100;
 

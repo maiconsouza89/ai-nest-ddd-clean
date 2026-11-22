@@ -1,5 +1,5 @@
-import { {{pascalCase name}}NotFoundError } from '../../domain/errors/{{kebabCase name}}-not-found.error';
-import { {{pascalCase name}}Repository } from '../../domain/repositories/{{kebabCase name}}.repository';
+import { {{pascalCase name}}NotFoundError } from '../../domain/errors/{{kebabCase name}}-not-found.error.js';
+import { {{pascalCase name}}Repository } from '../../domain/repositories/{{kebabCase name}}.repository.js';
 
 export class Get{{pascalCase name}}UseCase {
   constructor(private readonly repo: {{pascalCase name}}Repository) {}
