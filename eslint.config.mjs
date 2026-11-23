@@ -24,6 +24,11 @@ export default defineConfig(
     },
   },
   {
+    // Scripts de ferramenta em JS puro, sem tipos.
+    files: ['scripts/**/*.mjs'],
+    extends: [js.configs.recommended],
+  },
+  {
     // Testes: supertest, matchers do Vitest e `ds.query` cru devolvem `any`, e o `?.` do `afterAll` e o `!`
     // depois de um `findById` são intencionais. Em produção, essas regras ficam ligadas. Ver ADR 0004.
     files: testFiles,

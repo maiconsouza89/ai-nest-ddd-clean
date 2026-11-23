@@ -1,0 +1,431 @@
+# Plano de documentação: Diátaxis e roteamento para agentes
+
+Este plano reorganiza a documentação do repositório em dois níveis:
+
+- **Para humanos:** `docs/`, no modelo [Diátaxis](https://diataxis.fr/), com tutoriais, how-tos, referência e explicação.
+- **Para agentes:** uma camada fina de roteamento (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/` e `.claude/skills/`). Ela aponta para `docs/` e não repete conteúdo.
+
+As decisões e as alternativas descartadas ficam registradas no ADR 0006, criado no passo 1. Este plano diz só **o que fazer** e **como validar**.
+
+## Como usar
+
+- Cada passo tem **Por quê**, **Faça** e **Pronto quando**.
+- A fase termina quando todos os seus passos estão marcados e o checklist da fase, na seção [Validação da entrega](#validação-da-entrega), passa.
+- Passos que mudam scripts, configuração ou templates do plop passam por `/simplify` e depois `/code-review`, como manda o fluxo de entrega. Passos só de texto pulam essa etapa e registram isso no "Como ficou".
+- As fases 1 e 2 são entregas fechadas, um PR cada. A fase 3 é **sob demanda**: cada passo é feito quando o assunto for tocado, como o Diátaxis recomenda (melhorar aos poucos, em pedaços pequenos, sem reescrever tudo de uma vez).
+- Não crie pastas vazias. Uma pasta de quadrante só nasce com a primeira página que entrar nela.
+- Legenda: ⬜ não iniciada, 🟡 em andamento, ✅ concluída. Ao começar uma fase, marque 🟡 e preencha **Início**.
+
+## Estrutura alvo
+
+```text
+README.md                         o que é, quickstart, mapa da documentação
+AGENTS.md                         roteador neutro (qualquer agente)
+CLAUDE.md                         @AGENTS.md + regras exclusivas do Claude
+.claude/
+  rules/modules.md                paths: src/modules/** → aponta para docs/reference/modules/<m>.md
+  rules/<camada>.md               paths por camada → aponta para docs/reference/camadas.md
+  skills/<procedimento>/SKILL.md  descrição com gatilho; o corpo aponta para docs/how-to/
+docs/
+  README.md                       índice por quadrante + bússola do Diátaxis
+  tutorials/
+  how-to/
+  reference/
+    comandos.md
+    variaveis-de-ambiente.md
+    versoes-e-excecoes.md
+    convencoes.md
+    autenticacao.md
+    camadas.md
+    glossario.md
+    modules/<módulo>.md
+  explanation/
+  adr/                            fora dos quadrantes: registro imutável (MADR 4)
+  plan/                           fora dos quadrantes: trabalho interno
+plop-templates/doc/               um template por tipo
+```
+
+Convenções:
+
+- Pastas em inglês, nomes de arquivo e conteúdo em pt-BR. A exceção são os docs de módulo, que usam o nome do módulo no código (`orders.md`).
+- Toda página de quadrante tem frontmatter `type:` igual à pasta onde está: `tutorial`, `how-to`, `reference` ou `explanation`.
+- Agentes citam `docs/` por caminho em texto simples. Não use `@docs/...`, porque o import carrega o arquivo em toda sessão.
+
+## Mapa
+
+| Fase | O que entrega | Status |
+| --- | --- | --- |
+| 1. Fundação | ADR 0006, `docs:check`, templates, referência operacional, `AGENTS.md`, `CLAUDE.md` enxuto, READMEs | 🟡 |
+| 2. Módulos e glossário | `docs/reference/modules/*.md`, `glossario.md`, regra-ponteiro, plop gera doc de módulo | ⬜ |
+| 3. Sob demanda | Camadas (check primeiro), divisão do guia de pesquisa, how-tos e skills, tutoriais | ⬜ |
+
+---
+
+## Fase 1: fundação
+
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
+>
+> - [x] Passo 1: ADR 0006
+> - [x] Passo 2: `docs:check` no CI
+> - [ ] Passo 3: templates `plop doc`
+> - [ ] Passo 4: referência operacional
+> - [ ] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
+> - [ ] Passo 6: `README.md` e `docs/README.md`
+
+### Passo 1: ADR 0006
+
+**Por quê:** a estrutura passa nos três critérios para virar ADR. É cara de desfazer depois que os ponteiros se espalham, surpreende quem chega sem contexto e saiu de uma escolha entre alternativas reais.
+
+**Faça:** crie `docs/adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md` no formato dos ADRs existentes (`status: accepted`, "Considered Options", "Consequences"). Registre as decisões da discussão:
+
+1. A doc é para humanos e agentes. Os agentes recebem uma camada de roteamento, não textos próprios.
+2. `docs/` é a fonte da verdade. Os arquivos de agente citam caminhos em texto simples, e só um resumo de comandos aparece repetido.
+3. O `AGENTS.md` é o roteador neutro, e o `CLAUDE.md` começa com `@AGENTS.md`. As alternativas foram usar só o `CLAUDE.md` ou um symlink.
+4. O conhecimento de cada módulo fica em `docs/reference/modules/<m>.md`. As alternativas foram um `AGENTS.md` dentro do módulo ou regras com o conteúdo.
+5. O agente descobre esse arquivo pela tabela de rotas no `AGENTS.md` e por uma única regra-ponteiro com `paths`.
+6. Camadas: o que dá para verificar vira check, e o que exige julgamento vira texto com regras-ponteiro.
+7. Procedimentos: o passo a passo fica em `docs/how-to/`, com skills-ponteiro para os mais frequentes.
+8. A linguagem ubíqua fica numa seção de cada doc de módulo. O `glossario.md` guarda os termos compartilhados e um índice.
+9. Pastas em inglês, arquivos em pt-BR.
+10. `adr/` e `plan/` ficam fora dos quadrantes, e o `research/` é dividido entre eles.
+11. `docs:check` no CI e uma definição de pronto no `AGENTS.md`.
+12. Frontmatter `type:` obrigatório e páginas geradas pelo `plop doc`.
+13. Entrega em três etapas: fundação, módulos e glossário, e o resto sob demanda.
+14. Nenhum hook: as regras sem exceção continuam como texto.
+15. Só Markdown, sem site gerado.
+
+**Pronto quando:** o ADR existe, está linkado no `evolucao.md` (lista de ADRs no topo) e no `docs/README.md` (passo 6).
+
+**Como ficou (2026-11-23):** ADR criado com as decisões agrupadas em seções (fonte da verdade, onde fica cada conhecimento, formato, verificação e entrega) e uma alternativa descartada para cada decisão que teve escolha real. Linkado no topo do `evolucao.md`. O link no `docs/README.md` entra no passo 6, que cria o arquivo. O passo 2 acrescentou as ferramentas do `docs:check` e o motivo do `.prettierignore`. Passo só de texto: `/simplify` e `/code-review` pulados.
+
+### Passo 2: `docs:check` no CI
+
+**Por quê:** a arquitetura de ponteiros só funciona se os caminhos citados existirem. Hoje o `*.md` está no `.prettierignore` (desde o commit `5f805e9`, que criou a configuração do Prettier sem registrar o motivo), e nada confere a documentação.
+
+**Faça:**
+
+- Escolha as ferramentas consultando o Context7, como pede a regra de dependências do `CLAUDE.md`, e registre a versão consultada:
+  - **lint de Markdown:** `markdownlint-cli2` ou equivalente;
+  - **links e âncoras locais, offline:** `remark-validate-links` (npm) ou `lychee --offline --include-fragments`. O lychee é um binário Rust e exigiria Docker ou instalação à parte.
+- Um script `scripts/check-doc-types.mjs` confere duas coisas:
+  - toda página em `docs/{tutorials,how-to,reference,explanation}/` tem `type:` igual à pasta;
+  - nenhum `AGENTS.md` ou `CLAUDE.md` usa `@docs/` (a exceção permitida é `@AGENTS.md`).
+- Crie `npm run docs:check`, cobrindo `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**` e `.claude/**`, e inclua no `npm run ci`.
+- Descubra por que o `*.md` foi excluído do Prettier. Se não houver motivo, inclua o Markdown no `format:check`. Se houver, registre o motivo no ADR 0006.
+- Links externos ficam fora do CI. Documente o comando para checá-los sob demanda em `reference/comandos.md`.
+
+**Pronto quando:** `npm run ci` passa, e quebrar de propósito um link, uma âncora ou um `type:` faz o `docs:check` falhar com mensagem clara.
+
+**Como ficou (2026-11-23):**
+
+- **Ferramentas:** `markdownlint-cli2` 0.24.2, consultado no Context7 (`/davidanson/markdownlint-cli2`, v0.24.0). `remark-cli` 12.0.1 com `remark-validate-links` 13.1.0, `remark-frontmatter` 5.0.0 e `remark-gfm` 4.0.1. O Context7 não tem o `remark-validate-links`, então a fonte foi o README do pacote no npm, e o `remark-cli` foi conferido no Context7 (`/remarkjs/remark`). Todas na latest. O lychee ficou só para os links externos.
+- **Arquivos:** todo `*.md` que o `.gitignore` não exclui, nas duas ferramentas e no lychee. Assim um `CLAUDE.md` dentro de um módulo também entra. O `.claude/worktrees/` foi para o `.gitignore`, para os worktrees do Claude Code não serem conferidos em dobro.
+- **Configuração:** `.markdownlint-cli2.jsonc` com o `MD013` desligado, o `MD024` só entre irmãos e o `MD041` desligado no `CLAUDE.md` (motivos no ADR 0006). `.remarkrc.json` com `repository: false`, porque o repositório não tem remote. Os 17 rótulos em negrito que o `MD036` apontava no guia de pesquisa e no `passo-a-passo.md` eram títulos de fato e viraram títulos.
+- **Regras do projeto:** um plugin do remark, `scripts/remark-docs-rules.mjs`, no lugar do `scripts/check-doc-types.mjs`. Ele usa a árvore do remark, que já separa código de texto, e o mesmo conjunto de arquivos. Ele faz três coisas:
+  - confere o `type:` das páginas de quadrante;
+  - barra qualquer `@caminho` (com `/` ou extensão) nos `AGENTS.md` e `CLAUDE.md`, exceto o `@AGENTS.md` no `CLAUDE.md`. É o item "os únicos imports com `@`" do checklist;
+  - confere se cada caminho de `docs/` citado em texto ou entre crases nos arquivos de agente e em `.claude/` existe. Placeholders como `<módulo>` são pulados. Sem isso, os ponteiros em texto simples prescritos pelo ADR não seriam validados.
+- **Prettier:** havia motivo, registrado no `evolucao.md` (passo 4 da fase 2): o Prettier alinharia as tabelas. Na conferência, ele mudaria 6 arquivos, com linhas de tabela acima de 300 caracteres. O `*.md` continua no `.prettierignore`, e o motivo foi para o ADR 0006.
+- **Links externos:** `npm run docs:links` roda o lychee via Docker (`--scheme https --scheme http`). Rodado em 2026-11-23: 43 OK, 0 erros. O passo 4 o documenta em `reference/comandos.md`.
+- **O que o check encontrou:** 13 links quebrados no `passo-a-passo.md` (`research/...` no lugar de `../research/...`), corrigidos. Também 5 blocos de código sem linguagem (MD040), que viraram `text`.
+- **Testes negativos:** cada caso falhou com mensagem clara e foi desfeito depois. Os casos foram:
+  - link quebrado;
+  - âncora quebrada em outro arquivo;
+  - `type:` errado e página sem frontmatter;
+  - `@docs/` e `@package.json` no `AGENTS.md`;
+  - caminho de `docs/` inexistente em texto simples e entre crases;
+  - `@docs/` num `CLAUDE.md` aninhado;
+  - ponteiro e link quebrados em `.claude/rules/`.
+
+  Passaram sem aviso: e-mail, `@` entre crases ou em bloco de código, `@fulano`, um placeholder `<m>` e um arquivo quebrado dentro de `.claude/worktrees/`. O `npm run ci` passa.
+- **`/simplify`:** quatro revisores. O resultado foi o plugin no lugar do script, a lista única de arquivos, o `.claude/worktrees/` no `.gitignore`, o `MD036` religado (o motivo registrado antes estava errado, porque o `MD036` já ignora rótulos com `:`) e a validação dos ponteiros em texto simples. Ficaram de fora o cache do lychee e rodar as ferramentas em paralelo: cerca de 0,4 s num `ci` de cerca de 21 s, e exigiria uma dependência nova.
+- **`/code-review`:** corrigiu três falsos positivos que quebrariam o CI: ponteiro com âncora ou linha (`docs/x.md#secao`, `docs/x.md:12`), ponteiro no fim de pergunta (`?`, `!`) e `type:` entre aspas ou com comentário. Também passaram a ser conferidos os ponteiros `./docs/...` e `../docs/...`, o `CLAUDE.local.md` e as pastas `.claude/` aninhadas. O ESLint passou a cobrir `scripts/**/*.mjs`, e o `CLAUDE.md` cita o `docs:check` e o `docs:links`. A imagem do lychee não foi fixada: a regra de versões pede a latest, e o comando roda só sob demanda.
+
+### Passo 3: templates `plop doc`
+
+**Por quê:** a página nasce com o formato do seu tipo, e o agente não precisa adivinhar a estrutura.
+
+**Faça:** crie `plop-templates/doc/{tutorial,how-to,reference,explanation}.md.hbs` e um gerador `doc` no `plopfile.mjs`, chamado com `npm run plop doc <tipo> <nome>`. Cada template:
+
+- **tutorial:** objetivo, o que você vai construir, pré-requisitos, passos numerados com o resultado esperado em cada um, e o que você aprendeu.
+- **how-to:** título "Como …", pré-requisitos, passos, como verificar e "Veja também".
+- **reference:** descrição em uma frase e tabelas ou listas secas, sem passo a passo nem opinião.
+- **explanation:** contexto, o porquê, alternativas e trade-offs, e links para os ADRs.
+
+**Pronto quando:** o gerador cria uma página de cada tipo, e as quatro passam no `docs:check`. Apague as páginas de teste depois.
+
+### Passo 4: referência operacional
+
+**Por quê:** hoje o `CLAUDE.md` é a única cópia dos comandos, do setup e das convenções. Um humano sem o Claude não tem onde encontrá-los.
+
+**Faça:** mova o conteúdo conforme a tabela abaixo. Mover significa que o texto sai do `CLAUDE.md` e vai para `docs/`. O `AGENTS.md` só resume ou aponta (passo 5).
+
+| Seção atual do `CLAUDE.md` | Destino |
+| --- | --- |
+| Comandos, setup do zero, migrations, seeds, testes, novo módulo | `docs/reference/comandos.md` |
+| Variáveis citadas (`DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_TTL_SECONDS`, `NODE_ENV`) | `docs/reference/variaveis-de-ambiente.md`, partindo do `.env.example` e da validação de env |
+| Regra de versões | `docs/reference/versoes-e-excecoes.md`. A tabela de exceções **sai** do `evolucao.md`, que passa a apontar para cá |
+| Imports (ESM), aliases `#...`, `import type`, `import.meta.dirname` | `docs/reference/convencoes.md` |
+| Autenticação (rotas, payload, TTL, refresh, logout) | `docs/reference/autenticacao.md`. O porquê continua no ADR 0002 |
+| Arquitetura (visão geral) | Um parágrafo no `README.md` com link para o guia de pesquisa, até a fase 3 dividi-lo |
+
+Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em registro, por exemplo "consultado em 2026-11-23".
+
+**Pronto quando:** cada fato da tabela existe em `docs/` com `type: reference`, e o `evolucao.md` aponta para `versoes-e-excecoes.md` em vez de manter a tabela.
+
+### Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
+
+**Por quê:** o arquivo raiz carrega em toda sessão. A doc do Claude Code recomenda menos de 200 linhas e só o que o agente não deduz lendo o código.
+
+**Faça:**
+
+- **`AGENTS.md`**, com meta de até 100 linhas:
+  - projeto em três linhas;
+  - comandos de verificação: `typecheck`, `lint`, `test`, um arquivo, `ci`, `arch`;
+  - armadilhas:
+    - imports relativos com `.js` e aliases entre fronteiras;
+    - nada de `import type` em classe injetada;
+    - `"mig:${m}:run"` no zsh;
+    - a condição `@app/source`;
+    - as migrations não rodam ao subir a app;
+    - o e2e grava no banco e conflita com um `start:dev` aberto;
+    - `docker compose down -v` só neste repo, nunca `prune`;
+    - o oxc usa `Object` em tipos inferidos;
+  - regra de versões em uma linha, apontando para `docs/reference/versoes-e-excecoes.md`;
+  - definição de pronto: "uma mudança de comportamento atualiza a página do quadrante afetado, ou o PR diz por que não precisa";
+  - **tabela de rotas** ("vai fazer X → leia Y"), apontando para `docs/` por caminho em texto simples.
+- **`CLAUDE.md`**: `@AGENTS.md` na primeira linha. Depois, só o que é do Claude: pesquisa com o Context7 e o fluxo de entrega (`/simplify` → `/code-review`).
+- Use comentários HTML (`<!-- -->`) para notas de manutenção. O Claude Code os remove antes de pôr o arquivo no contexto.
+
+**Pronto quando:** `CLAUDE.md` com o `AGENTS.md` expandido fica abaixo de 200 linhas, nenhum fato do `CLAUDE.md` antigo se perdeu (confira item a item contra a tabela do passo 4), e o checklist da fase 1 passa.
+
+### Passo 6: `README.md` e `docs/README.md`
+
+**Por quê:** o repositório não tem porta de entrada.
+
+**Faça:**
+
+- **`README.md`:** o que é o projeto (um parágrafo), requisitos, quickstart com os passos numerados do setup (cada um com link para `docs/reference/comandos.md`) e um mapa da documentação.
+- **`docs/README.md`:** a bússola do Diátaxis (ação ou conhecimento, adquirir ou aplicar), um índice por quadrante com só as páginas que existem, a lista de ADRs e uma seção "Como escrever uma página" (`npm run plop doc`, `type:`, `docs:check`).
+
+**Pronto quando:** alguém sem contexto chega do `README.md` à app rodando seguindo só links, e o `docs/README.md` lista todas as páginas existentes.
+
+---
+
+## Fase 2: módulos e glossário
+
+> **Status:** ⬜ · **Início:** — · **Conclusão:** —
+>
+> - [ ] Passo 7: template de módulo e `plop module`
+> - [ ] Passo 8: um doc por módulo
+> - [ ] Passo 9: `glossario.md`
+> - [ ] Passo 10: regra-ponteiro e rotas
+
+### Passo 7: template de módulo e `plop module`
+
+**Por quê:** todo módulo novo nasce com a sua doc, e a referência não fica para depois.
+
+**Faça:** crie `plop-templates/doc/module.md.hbs` (`type: reference`) com estas seções:
+
+- propósito, em uma frase;
+- linguagem ubíqua;
+- contrato público (facade e o que ela devolve);
+- eventos publicados (nome, versão, exemplo em `contracts/events/*.example.ts`);
+- eventos consumidos;
+- invariantes;
+- dependências (`imports`);
+- schema e migrations;
+- links para os ADRs.
+
+Inclua o template na lista `FILES` do gerador `module`, com destino em `docs/reference/modules/{{kebabCase name}}.md`.
+
+**Pronto quando:** `npm run plop module teste` gera a doc junto com o código, e a doc passa no `docs:check`. Desfaça o módulo de teste depois.
+
+### Passo 8: um doc por módulo
+
+**Por quê:** é onde o agente mais ganha ao navegar o código.
+
+**Faça:** escreva `orders`, `catalog`, `inventory`, `identity` e `notifications`, sempre a partir do código e nunca de memória. Resolva os termos que ficaram abertos na discussão:
+
+- `User` (identity), `Actor` (shared) e `Customer` (`customerId` em orders) são três conceitos diferentes? Cenário: um admin age sobre o pedido de outro usuário.
+- `OrderCreated` (rascunho `DRAFT`) e `OrderPlaced` (`DRAFT` → `PLACED`): confirme os dois momentos e defina os verbos "criar" e "fechar".
+- O `catalog` não segue as pastas `domain/`, `application/` e `infra/`. Registre se é intencional, por ser um módulo CRUD simples, e por quê.
+
+**Pronto quando:**
+
+- os cinco docs existem;
+- cada facade e cada evento em `contracts/` aparece no doc do seu módulo;
+- cada termo da seção "Linguagem ubíqua" é usado com o mesmo nome no código ou tem a diferença explicada.
+
+### Passo 9: `glossario.md`
+
+**Por quê:** alguns termos atravessam os módulos: `Actor`, facade, evento de domínio e evento de integração, outbox, idempotency key, shared kernel.
+
+**Faça:** crie `docs/reference/glossario.md` com duas partes:
+
+- os termos compartilhados, definidos sem detalhe de implementação;
+- um índice A–Z de todos os termos, com link para a seção do módulo dono.
+
+Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os dois e diga em qual contexto vale cada um.
+
+**Pronto quando:** todo termo das seções "Linguagem ubíqua" está no índice, e todo link do índice resolve, conferido pelo `docs:check`.
+
+### Passo 10: regra-ponteiro e rotas
+
+**Por quê:** nada da doc de módulo carrega sozinho. A regra faz o Claude abrir o arquivo certo, e a tabela do `AGENTS.md` cobre os outros agentes.
+
+**Faça:**
+
+- Crie `.claude/rules/modules.md` com `paths: ["src/modules/**"]` e duas linhas: "Antes de alterar um módulo, leia `docs/reference/modules/<módulo>.md`. Para termos compartilhados, `docs/reference/glossario.md`."
+- Acrescente as linhas correspondentes à tabela de rotas do `AGENTS.md`.
+
+**Pronto quando:** numa sessão nova, `/context` mostra que a regra **não** carregou no início e **passa** a carregar depois de ler um arquivo em `src/modules/orders/`.
+
+---
+
+## Fase 3: sob demanda
+
+> **Status:** ⬜ · **Início:** — · **Conclusão:** —
+>
+> - [ ] Passo 11: camadas (check primeiro)
+> - [ ] Passo 12: dividir o guia de pesquisa
+> - [ ] Passo 13: how-tos e skills-ponteiro
+> - [ ] Passo 14: tutoriais
+> - [ ] Passo 15: remover `docs/research/`
+
+Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar marcado parcialmente, com uma nota do que já foi feito.
+
+### Passo 11: camadas (check primeiro)
+
+**Por quê:** uma regra verificada por ferramenta ensina o agente pela mensagem de erro e não depende de ele ler a doc.
+
+**Faça:**
+
+- Liste as convenções de camada do guia de pesquisa (domain sem Nest e sem TypeORM, application só com ports, infra com adapters, etc.).
+- Para cada uma, decida:
+  - **dá para verificar** → vira regra do dependency-cruiser ou do ESLint, com mensagem que cita a doc;
+  - **exige julgamento** → vai para `docs/reference/camadas.md`.
+- Crie regras-ponteiro por camada (`.claude/rules/domain.md` com `paths: ["src/**/domain/**"]`, e o mesmo para as outras camadas) apontando para a seção certa de `camadas.md`.
+
+**Pronto quando:** cada convenção está como check ou como texto (nunca nos dois), e uma violação de propósito em `domain/` falha no `npm run arch` ou no `npm run lint`.
+
+### Passo 12: dividir o guia de pesquisa
+
+**Por quê:** as 1474 linhas misturam os quatro quadrantes. Destinos sugeridos (confirme ao dividir):
+
+| Seção do guia | Destino |
+| --- | --- |
+| Visão geral | `explanation/arquitetura.md` |
+| Estrutura de pastas | `reference/estrutura-de-pastas.md` |
+| Camadas | `reference/camadas.md` (regras) e `explanation/arquitetura.md` (porquê) |
+| Persistência com TypeORM | `explanation/persistencia.md` e `how-to/gerar-migration.md` |
+| Módulos independentes; dependências e contratos | `explanation/comunicacao-entre-modulos.md` |
+| Shared kernel | `explanation/shared-kernel.md` |
+| Autenticação e ownership | `explanation/autenticacao.md` (o `reference/autenticacao.md` já existe) |
+| Agregados e comunicação entre módulos | `explanation/agregados.md` |
+| Transações, concorrência e eventos | `explanation/consistencia-e-eventos.md` e `how-to/publicar-evento-de-integracao.md` |
+| Paginação | `how-to/paginar-listagem.md` |
+| Modelagem do domínio | `explanation/modelagem-do-dominio.md` |
+| Infra: configuração, jobs, cache, serviços externos | how-tos por tarefa e `reference/variaveis-de-ambiente.md` |
+| Qualidade | `reference/qualidade.md` |
+| Operação | `reference/operacao.md` (health, logs, tracing) |
+| Pragmatismo e checklist | `explanation/pragmatismo.md` e `how-to/revisar-um-modulo.md` |
+| Referências | Seção "Leituras" no `docs/README.md` |
+
+**Faça:** uma seção por vez:
+
+1. Gere a página com o `plop doc`.
+2. Mova o texto e divida o que mistura tipos.
+3. Confira cada trecho de código contra o código atual.
+4. No guia, troque a seção por um link para o novo destino.
+5. Atualize a tabela de rotas do `AGENTS.md`.
+
+**Pronto quando:** a seção virou link no guia, a página nova passa no `docs:check` e aparece no índice do `docs/README.md`.
+
+### Passo 13: how-tos e skills-ponteiro
+
+**Por quê:** num how-to, o humano lê o passo a passo. Numa skill, a descrição fica sempre visível para o Claude, e o corpo só carrega quando a skill é usada.
+
+**Faça:**
+
+- Escreva os how-tos que a fase 1 deixou só em `reference/comandos.md`: rodar migrations e seeds, criar um módulo, rodar um teste específico, resetar o ambiente, publicar evento de integração.
+- Crie skills-ponteiro **só** para os procedimentos que se repetem. Os candidatos são criar módulo, gerar migration e publicar evento de integração.
+- Cada skill fica em `.claude/skills/<nome>/SKILL.md`. A `description` começa pelo gatilho ("Use ao …"), e o corpo diz "siga `docs/how-to/x.md`; verifique com `npm run …`".
+
+**Pronto quando:** em uma sessão nova, um pedido como "crie um módulo billing" faz o Claude escolher a skill sem que ela seja citada, e o how-to funciona seguido à mão.
+
+### Passo 14: tutoriais
+
+**Por quê:** o tutorial é onde o leitor aprende fazendo. Um tutorial que quebra afasta quem está começando.
+
+**Faça:**
+
+- **`tutorials/01-do-clone-ao-primeiro-pedido.md`:** registrar, fazer login, criar o pedido, fechar e pagar. Os passos seguem o mesmo fluxo de um teste e2e existente ou novo, que serve de verificação do tutorial. Cite o arquivo do teste no tutorial.
+- **`tutorials/02-construindo-do-zero.md`:** mova o `docs/plan/passo-a-passo.md`, acrescente `type: tutorial` e corrija os links (o `evolucao.md` o chama de "roteiro original").
+
+**Pronto quando:** o tutorial 01 seguido à mão num banco vazio funciona, o e2e correspondente passa, e nenhum link para o `passo-a-passo.md` antigo sobra.
+
+### Passo 15: remover `docs/research/`
+
+**Faça:** quando todas as seções do guia tiverem virado link, apague o arquivo e a pasta. Atualize as referências no `CLAUDE.md`, no `AGENTS.md`, no `evolucao.md` e nos ADRs.
+
+**Pronto quando:** `grep -r "research/" .` (fora de `node_modules` e `dist`) não encontra nada, e o `docs:check` passa.
+
+---
+
+## Validação da entrega
+
+Marque cada item com a evidência: o comando e o resultado, ou a observação.
+
+### Fase 1
+
+**Automático:**
+
+- [ ] `npm run ci` passa, com o `docs:check` incluído.
+- [ ] Teste negativo: quebrar um link interno, uma âncora, um `type:` e incluir um `@docs/` no `AGENTS.md`. Cada caso faz o `docs:check` falhar e é desfeito depois.
+- [ ] `npm run plop doc` gera os quatro tipos, e todos passam no `docs:check`.
+
+**Conteúdo:**
+
+- [ ] Cada seção do `CLAUDE.md` antigo tem destino conferido na tabela do passo 4. Nenhum fato se perdeu.
+- [ ] O `CLAUDE.md` com o `AGENTS.md` expandido tem menos de 200 linhas, e o `AGENTS.md` sozinho tem até 100.
+- [ ] Os únicos imports com `@` nos arquivos de agente são `@AGENTS.md` no `CLAUDE.md`.
+- [ ] O `evolucao.md` aponta para `reference/versoes-e-excecoes.md`, e a tabela de exceções existe num lugar só.
+- [ ] Nenhum termo datado em páginas de quadrante: `grep -rniE "\b(hoje|atualmente|recentemente|novo)\b" docs/{tutorials,how-to,reference,explanation}` só encontra usos legítimos.
+- [ ] Cada "ADR 000N" citado no código (`grep -rhoE "ADR [0-9]{4}" src | sort -u`) tem o arquivo correspondente em `docs/adr/`.
+
+**Uso real:**
+
+- [ ] Setup do zero pelo `README.md` num banco vazio (sem `.env`, sem volumes): migrations, seeds, `start:dev`, `/health/live` e `/docs` funcionam seguindo só links.
+- [ ] Numa sessão nova do Claude Code, `/memory` (ou `/context`) mostra o `CLAUDE.md` e o `AGENTS.md` carregados.
+- [ ] Teste de roteamento numa sessão nova, sem dicas. O agente acha a resposta lendo a página certa de `docs/`, sem varrer o repositório com grep, para estas perguntas:
+  - "Como rodo só o teste de integração do pay-order?"
+  - "Por que o token não leva as roles?"
+  - "Qual versão do TypeScript devo usar e por quê?"
+- [ ] `/doctor prompt-audit` (se disponível na versão instalada) não aponta contradição nem arquivo inexistente.
+- [ ] `/simplify` e `/code-review` rodados sobre scripts, `plopfile.mjs` e `package.json`.
+
+### Fase 2
+
+- [ ] Os cinco `docs/reference/modules/*.md` existem e passam no `docs:check`.
+- [ ] Cada facade em `src/modules/*/contracts/` e cada evento em `contracts/events/` aparecem no doc do seu módulo: `ls src/modules/*/contracts` comparado com as seções "Contrato público" e "Eventos publicados".
+- [ ] Os termos `User`, `Actor` e `Customer`, e `OrderCreated` e `OrderPlaced`, estão definidos sem ambiguidade.
+- [ ] Todo termo das seções "Linguagem ubíqua" está no índice do `glossario.md`.
+- [ ] `npm run plop module teste` gera a doc do módulo, que é desfeita depois.
+- [ ] `/context` numa sessão nova: a `.claude/rules/modules.md` não carrega no início e carrega depois de ler um arquivo em `src/modules/`.
+- [ ] Teste de roteamento numa sessão nova: para "Quais eventos o orders publica e quem consome?", o agente responde a partir de `docs/reference/modules/` e acerta.
+- [ ] `/simplify` e `/code-review` rodados sobre o template e o `plopfile.mjs`.
+
+### Fase 3 (por passo)
+
+- [ ] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código.
+- [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
+- [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
+- [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.
+
+### Contínuo (depois da entrega)
+
+- [ ] Todo PR que muda comportamento atualiza a página do quadrante afetado ou diz por que não precisa (definição de pronto do `AGENTS.md`).
+- [ ] Ao trocar de modelo ou atualizar o Claude Code, refazer o teste de roteamento e o `/doctor prompt-audit`.
+- [ ] Links externos conferidos sob demanda, com o comando documentado em `reference/comandos.md`.

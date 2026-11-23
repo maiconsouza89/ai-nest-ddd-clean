@@ -1,6 +1,6 @@
 # Passo a passo: construindo o projeto do zero
 
-Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos com DDD e Clean Architecture no NestJS](research/modules-ddd-clean-nest.md), chamado aqui de **guia de referência**. A primeira etapa é TypeScript puro, e cada peça nova só entra quando o projeto precisa dela.
+Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos com DDD e Clean Architecture no NestJS](../research/modules-ddd-clean-nest.md), chamado aqui de **guia de referência**. A primeira etapa é TypeScript puro, e cada peça nova só entra quando o projeto precisa dela.
 
 ## Como usar
 
@@ -91,7 +91,7 @@ Sem `"type": "module"` no `package.json`, a saída é CommonJS, que é o formato
 
 `.gitignore` com `node_modules`, `dist` e `.env`.
 
-```
+```text
 src/
 ├── modules/orders/domain/
 └── shared/domain/
@@ -119,7 +119,7 @@ export abstract class DomainError extends Error {
 }
 ```
 
-- `shared/domain/money.vo.ts`: copie o `Money` do guia de referência ([Modelagem do domínio](research/modules-ddd-clean-nest.md#modelagem-do-domínio)). O valor fica em centavos inteiros, e somar moedas diferentes é erro.
+- `shared/domain/money.vo.ts`: copie o `Money` do guia de referência ([Modelagem do domínio](../research/modules-ddd-clean-nest.md#modelagem-do-domínio)). O valor fica em centavos inteiros, e somar moedas diferentes é erro.
 - Testes: soma, `times` com quantidade não inteira e soma de moedas diferentes.
 
 Só entra no `shared` o que vale do mesmo jeito para todos os módulos. `Money` atende a esse critério.
@@ -256,7 +256,7 @@ Testes: cria o pedido com preços do catálogo, lança `ProductNotFoundError` pa
 **Faça:**
 
 - `shared/application/actor.ts`: `type Actor = { id: string; roles: string[] }`.
-- Os casos de uso recebem `{ orderId, actor }`, buscam o pedido, verificam a posse e chamam o método do domínio (ver [Autenticação e ownership](research/modules-ddd-clean-nest.md#autenticação-e-ownership)).
+- Os casos de uso recebem `{ orderId, actor }`, buscam o pedido, verificam a posse e chamam o método do domínio (ver [Autenticação e ownership](../research/modules-ddd-clean-nest.md#autenticação-e-ownership)).
 - Erros novos: `OrderNotFoundError` e `NotOrderOwnerError`.
 
 Testes: o dono fecha e paga, outro usuário recebe `NotOrderOwnerError` e um admin consegue.
@@ -282,7 +282,7 @@ npm i -D dependency-cruiser
 npx depcruise --init
 ```
 
-- Copie as regras `forbidden` do guia de referência ([Qualidade](research/modules-ddd-clean-nest.md#qualidade)). Inclua todas, até as de módulos, que ainda não custam nada.
+- Copie as regras `forbidden` do guia de referência ([Qualidade](../research/modules-ddd-clean-nest.md#qualidade)). Inclua todas, até as de módulos, que ainda não custam nada.
 - Tire os testes da análise com `options.exclude: { path: '\\.(spec|int-spec|e2e-spec)\\.ts$' }`. Um teste pode montar peças de várias camadas.
 - Script `"arch": "depcruise src"`.
 - No pipeline, rode `npm run typecheck && npm test && npm run arch`.
@@ -347,7 +347,7 @@ O versionamento entra desde o primeiro dia porque, agora, não custa nada. Adici
 
 **Faça:**
 
-- `orders/infra/orders.module.ts` segue o guia de referência ([Camadas](research/modules-ddd-clean-nest.md#camadas)), com estas implementações por enquanto:
+- `orders/infra/orders.module.ts` segue o guia de referência ([Camadas](../research/modules-ddd-clean-nest.md#camadas)), com estas implementações por enquanto:
   - `OrderRepository` com `useClass: InMemoryOrderRepository`. O provider é singleton por padrão, então os dados sobrevivem entre requisições.
   - `PriceCatalog` com `useClass: StaticPriceCatalog`, um `Map` fixo em `infra/gateways/`. É **provisório** e sai no passo 22.
   - `IdGenerator` com `useClass: UuidV7Generator`, em `shared/infra/ids/` (`npm i uuid`, `import { v7 } from 'uuid'`).
@@ -443,7 +443,7 @@ Poucos testes e2e bastam, só para os fluxos críticos.
 npm i @nestjs/config
 ```
 
-- `ConfigModule.forRoot` no `AppModule` e `validateEnv` em `shared/infra/config/env.validation.ts`, os dois do guia de referência ([Infra: configuração, jobs, cache e serviços externos](research/modules-ddd-clean-nest.md#infra-configuração-jobs-cache-e-serviços-externos)).
+- `ConfigModule.forRoot` no `AppModule` e `validateEnv` em `shared/infra/config/env.validation.ts`, os dois do guia de referência ([Infra: configuração, jobs, cache e serviços externos](../research/modules-ddd-clean-nest.md#infra-configuração-jobs-cache-e-serviços-externos)).
 - Valide só o que já existe: `NODE_ENV`, `PORT` e `DATABASE_URL`. O `JWT_SECRET` entra no passo 18.
 - Versione um `.env.example` sem valores reais.
 
@@ -487,7 +487,7 @@ Com `synchronize: false` desde já, o schema só muda por migration (passo 15).
 
 **Faça:**
 
-- ORM entities em `infra/database/typeorm/entities/`, com `schema: 'orders'` (ver [Persistência com TypeORM](research/modules-ddd-clean-nest.md#persistência-com-typeorm)):
+- ORM entities em `infra/database/typeorm/entities/`, com `schema: 'orders'` (ver [Persistência com TypeORM](../research/modules-ddd-clean-nest.md#persistência-com-typeorm)):
   - `OrderOrmEntity`: `id` (`uuid`, gerado pelo domínio, não pelo banco), `customerId`, `status`, `createdAt` e `updatedAt` (`@CreateDateColumn` e `@UpdateDateColumn`, que são detalhe técnico e não vão para o domínio), além de `items` com `cascade: true`.
   - `OrderItemOrmEntity`: chave composta (`orderId` e `productId`), `qty`, `unitPriceCents` como `bigint` e `currency`, além de `@ManyToOne` com `onDelete: 'CASCADE'` e `orphanedRowAction: 'delete'`.
 - `typeorm-order.mapper.ts`: `toDomain` usa `Order.restore` e converte o `bigint`, que chega como `string`, com `Number(...)`. `toPersistence` lê os getters.
@@ -509,7 +509,7 @@ npm i dotenv
 npm i -D ts-node
 ```
 
-- `orders.data-source.ts` (ver [Módulos independentes](research/modules-ddd-clean-nest.md#módulos-independentes)) com as entidades do módulo e `migrationsTableName: 'orders_migrations'`. Ele carrega o `.env` com `dotenv` e reaproveita o `validateEnv`.
+- `orders.data-source.ts` (ver [Módulos independentes](../research/modules-ddd-clean-nest.md#módulos-independentes)) com as entidades do módulo e `migrationsTableName: 'orders_migrations'`. Ele carrega o `.env` com `dotenv` e reaproveita o `validateEnv`.
 - Primeira migration, criada vazia com `migration:create`, só com `CREATE SCHEMA IF NOT EXISTS orders`. Rode-a.
 - Em seguida, `npm run mig:orders:gen` gera as tabelas. **Revise o SQL** antes do commit.
 - Scripts `mig:orders:gen` e `mig:orders:run`, copiados do guia de referência.
@@ -552,7 +552,7 @@ npm i -D @testcontainers/postgresql
 - `shared/application/page.ts` com `PageRequest` e `Page<T>`.
 - `shared/infra/http/pagination.query.ts` com `PaginationQuery` (`limit` máximo de 100).
 - `orders/application/queries/order.queries.ts`: classe abstrata com `listByCustomer(customerId, page)`.
-- `infra/database/typeorm/typeorm-order.queries.ts`: query builder devolvendo um DTO pronto, sem agregado (ver [Paginação](research/modules-ddd-clean-nest.md#paginação)).
+- `infra/database/typeorm/typeorm-order.queries.ts`: query builder devolvendo um DTO pronto, sem agregado (ver [Paginação](../research/modules-ddd-clean-nest.md#paginação)).
 - `GET /v1/orders` passa `actor.id` para a query. O filtro de dono fica na query, nunca depois de carregar.
 
 Comece com offset. Troque para cursor quando a lista crescer ou virar scroll infinito.
@@ -617,7 +617,7 @@ Como alternativa, a documentação atual do Nest apresenta o `@nestjs/authentica
 
 **Faça:**
 
-- Port `shared/application/ports/transaction-manager.ts` e a implementação `shared/infra/database/typeorm-transaction-manager.ts` com `AsyncLocalStorage` (ver [Transações, concorrência e eventos](research/modules-ddd-clean-nest.md#transações-concorrência-e-eventos)).
+- Port `shared/application/ports/transaction-manager.ts` e a implementação `shared/infra/database/typeorm-transaction-manager.ts` com `AsyncLocalStorage` (ver [Transações, concorrência e eventos](../research/modules-ddd-clean-nest.md#transações-concorrência-e-eventos)).
 - Se já houver uma transação ativa, reaproveite em vez de abrir outra:
 
 ```ts
@@ -675,7 +675,7 @@ await manager.getRepository(OrderOrmEntity).save({ ...OrderMapper.toPersistence(
 
 **Faça:**
 
-- `catalog` é um cadastro simples, então não precisa de DDD completo: controller, service e repositório TypeORM, dentro de `modules/catalog/` e com schema `catalog` próprio (ver [Pragmatismo e checklist](research/modules-ddd-clean-nest.md#pragmatismo-e-checklist)).
+- `catalog` é um cadastro simples, então não precisa de DDD completo: controller, service e repositório TypeORM, dentro de `modules/catalog/` e com schema `catalog` próprio (ver [Pragmatismo e checklist](../research/modules-ddd-clean-nest.md#pragmatismo-e-checklist)).
 - `catalog/contracts/catalog.facade.ts`:
 
 ```ts
@@ -704,7 +704,7 @@ O contrato expõe só primitivos. A regra `contracts-sem-domain-e-infra` impede 
   2. Para cada item, faz o update atômico condicional (`available >= :qty`). Se algum afetar 0 linhas, lança `InsufficientStockError` e a transação desfaz tudo.
 - `InventoryFacade` em `contracts/`, e o `InventoryModule` exporta só ela.
 - A facade devolve um resultado (`{ ok: true }` ou `{ ok: false, reason: 'INSUFFICIENT_STOCK', productId }`), porque o contrato não pode importar o `InsufficientStockError` do domain. O `InventoryModule` é `@Global`, como o `CatalogModule`.
-- Em orders, o port `StockGateway` e o adapter `InventoryStockGateway` (ver [Agregados e comunicação entre módulos](research/modules-ddd-clean-nest.md#agregados-e-comunicação-entre-módulos)).
+- Em orders, o port `StockGateway` e o adapter `InventoryStockGateway` (ver [Agregados e comunicação entre módulos](../research/modules-ddd-clean-nest.md#agregados-e-comunicação-entre-módulos)).
 - O `PlaceOrderUseCase` chama `stock.reserve(order.id, items)` antes de `order.place()` e do `save`.
 
 Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado. Por enquanto, aceite isso ou compense com `release`. A fase 10 resolve de forma robusta.
@@ -807,7 +807,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 
 **Faça:**
 
-- Siga as regras de versão do guia de referência ([Dependências e contratos entre módulos](research/modules-ddd-clean-nest.md#dependências-e-contratos-entre-módulos)): mudança aditiva mantém a versão, e mudança que quebra publica v1 e v2 juntas.
+- Siga as regras de versão do guia de referência ([Dependências e contratos entre módulos](../research/modules-ddd-clean-nest.md#dependências-e-contratos-entre-módulos)): mudança aditiva mantém a versão, e mudança que quebra publica v1 e v2 juntas.
 - Guarde exemplos versionados de cada evento em `contracts/events/` (`*.v1.example.ts`, tipados com o contrato) e teste os dois lados: quem publica gera um payload compatível, e quem consome entende o exemplo. As facades têm teste do formato do resultado.
 
 **Pronto quando:** remover um campo do `OrderPaidV1` quebra um teste.
@@ -884,14 +884,14 @@ npm i -D @testcontainers/redis
 
 Versões consultadas em 2026-11-21: `@nestjs/cache-manager` 12.0.5, `cache-manager` 7.2, `keyv` 5.6, `@keyv/redis` 5.1 e `@testcontainers/redis` 12.2 (mesma linha do `@testcontainers/postgresql`). O cache usa a Keyv, que é o caminho da documentação atual do Nest. A Keyv 6 e o `@keyv/redis` 6 já saíram, mas o `cache-manager` 7.2 ainda depende da `keyv` 5. Fique na linha 5 até o `cache-manager` subir, para não misturar duas versões da Keyv. Confira de novo ao instalar.
 
-**Base do Redis**
+#### Base do Redis
 
-- Serviço `redis` no `docker-compose.yml` (imagem oficial `redis:8`, `127.0.0.1:6379`, volume e healthcheck com `redis-cli ping`), iniciado com `--appendonly yes --maxmemory-policy noeviction`. O BullMQ só funciona com `noeviction` (ver [Redis](research/modules-ddd-clean-nest.md#redis)), então o mesmo Redis já nasce pronto para a fase 12.
+- Serviço `redis` no `docker-compose.yml` (imagem oficial `redis:8`, `127.0.0.1:6379`, volume e healthcheck com `redis-cli ping`), iniciado com `--appendonly yes --maxmemory-policy noeviction`. O BullMQ só funciona com `noeviction` (ver [Redis](../research/modules-ddd-clean-nest.md#redis)), então o mesmo Redis já nasce pronto para a fase 12.
 - `REDIS_URL` no `validateEnv` e no `.env.example`.
 - `/health/ready` passa a checar o Redis com um `PING` (indicador próprio com o `HealthIndicatorService` do terminus). O `live` continua sem dependências.
 - Os testes de integração que precisarem sobem um Redis descartável com `@testcontainers/redis`, como já fazem com o Postgres. O e2e passa a exigir o Redis do compose. `npm run ci` continua sem Redis.
 
-**Cache**
+#### Cache
 
 - `shared/infra/cache/cache.module.ts`: `CacheModule.registerAsync({ isGlobal: true, ... })` com `stores: [createKeyv(REDIS_URL)]` e um listener de `error` no store (sem ele, uma queda do Redis derruba o processo).
 - `orders/infra/cache/cached-order.queries.ts`: `CachedOrderQueries implements OrderQueries`, envolvendo a `TypeOrmOrderQueries`. No `OrdersModule`, o provider de `OrderQueries` passa a ser um `useFactory` que monta o decorator em volta da implementação TypeORM.
@@ -957,7 +957,7 @@ Versões consultadas em 2026-11-21: `bullmq` 6.7.8 e `ioredis` 5 (a que o `bullm
 
 > Implementado em `shared/infra/messaging/`. O `@nestjs/event-emitter` foi removido. O BullMQ usa `ioredis`, e a Keyv do cache usa o cliente `redis`: são duas conexões, apontando para o mesmo `REDIS_URL`.
 
-```
+```text
 caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Redis) ─▶ handler
 ```
 

@@ -1,0 +1,19 @@
+// Lint do Markdown (npm run docs:check). Motivos na ADR 0006.
+{
+  "globs": ["**/*.md"],
+  "gitignore": true,
+  "config": {
+    // Um parágrafo por linha, e tabelas largas. Quebrar linhas não ajuda a leitura nem o diff.
+    "MD013": false,
+    // Um checklist repete os títulos das seções que resume ("Operação" na seção e no checklist).
+    "MD024": { "siblings_only": true },
+  },
+  "overrides": [
+    {
+      // O CLAUDE.md começa com `@AGENTS.md` na primeira linha, antes do título.
+      "filter": ["**/CLAUDE.md", "**/CLAUDE.local.md"],
+      "config": { "MD041": false },
+      "combine": "merge",
+    },
+  ],
+}

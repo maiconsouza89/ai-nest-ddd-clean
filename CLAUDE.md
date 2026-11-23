@@ -34,7 +34,8 @@ Setup do zero, nesta ordem:
 - Lint: `npm run lint` (ESLint com regras que usam tipos, `--max-warnings 0`)
 - Formatação: `npm run format` aplica o Prettier, `npm run format:check` só confere
 - Regras de arquitetura: `npm run arch`
-- `npm run ci` = typecheck + lint + format:check + unitários + arch. **Não** roda integração nem e2e.
+- Documentação: `npm run docs:check` (lint do Markdown, links e âncoras locais, `type:` das páginas e ponteiros dos arquivos de agente). Links externos, sob demanda: `npm run docs:links` (lychee via Docker)
+- `npm run ci` = typecheck + lint + format:check + docs:check + unitários + arch. **Não** roda integração nem e2e.
 
 ### Baixar o ambiente
 

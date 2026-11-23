@@ -8,7 +8,7 @@ Cada módulo é organizado em camadas, com as regras de negócio no centro e o N
 
 **Quando é de fato um monólito modular:** é monólito porque tudo sobe em um único deploy e roda em um processo. É modular só enquanto as fronteiras forem respeitadas na prática: dados próprios por módulo, comunicação só por contratos e regras no CI barrando imports proibidos. Pastas por módulo, sozinhas, não bastam. Agregados e `AggregateRoot` organizam o código dentro de cada módulo, mas não são o que torna o sistema modular.
 
-**Princípios**
+### Princípios
 
 - **Regra de dependência:** as dependências apontam para dentro. Infra depende de application, que depende de domain. O domain não depende de ninguém.
 - **Nest só na infra:** domain e application são TypeScript puro, sem decorators e sem imports de `@nestjs/*` ou `typeorm`.
@@ -21,7 +21,7 @@ Cada módulo é organizado em camadas, com as regras de negócio no centro e o N
 
 Um módulo completo tem quatro partes: domain, application, infra (organizada por tipo e depois por tecnologia) e contracts.
 
-```
+```text
 src/
 ├── modules/
 │   ├── catalog/                        # CRUD simples, sem camadas (ver Pragmatismo)
@@ -260,7 +260,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
 O repositório pega o `EntityManager` da transação ativa. Se injetar o `Repository` direto com `@InjectRepository`, ele roda fora da transação do caso de uso.
 
-**Regras**
+### Regras
 
 - Nunca devolva a ORM entity como se fosse a entidade de domínio. Se misturar, trocar de ORM deixa de ser simples.
 - O mapper fica junto da tecnologia (`infra/database/typeorm/`), porque conhece o formato de persistência dela.
@@ -333,7 +333,7 @@ O projeto é ESM (`"type": "module"`), então o CLI é o `typeorm-ts-node-esm`, 
 "mig:orders:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
 ```
 
-**Cuidados com migrations**
+#### Cuidados com migrations
 
 - `synchronize: false` fora de testes locais. O schema muda só por migration.
 - A primeira migration do módulo só faz o `CREATE SCHEMA`. O gerador (`npm run plop module`) já a cria. Sem ele, crie-a vazia com `migration:create`. As outras vêm do `migration:generate`.
@@ -373,7 +373,7 @@ Um value object usado por um módulo só fica nele, mesmo que pareça genérico.
 
 Cada módulo tem a própria visão de um conceito. Para o catálogo, `Product` tem descrição e fotos. Para orders, basta `productId` e o preço da compra.
 
-**Regras do shared**
+### Regras do shared
 
 - Mantenha pequeno e estável. Qualquer mudança afeta todos os módulos.
 - Siga as mesmas camadas (`shared/domain`, `shared/application`, `shared/infra`).
@@ -752,18 +752,18 @@ export abstract class AggregateRoot {
 2. Um worker lê a outbox, publica (EventEmitter, BullMQ, RabbitMQ, Kafka) e marca como enviado.
 3. Resultado: nunca salva sem publicar, nem publica sem salvar.
 
-**Worker resiliente**
+#### Worker resiliente
 
 - **Várias instâncias:** busque lotes com `FOR UPDATE SKIP LOCKED`, assim dois workers nunca pegam o mesmo evento. Num select simples, o query builder resolve com `.setLock('pessimistic_write').setOnLocked('skip_locked')`. Aqui, a ordem por agregado exige uma subquery `NOT EXISTS` e um outer join, e o Postgres recusa `FOR UPDATE` do lado anulável de um outer join. Por isso o relay usa SQL com `FOR UPDATE OF o SKIP LOCKED`, que trava só as linhas da outbox.
 - **Falhas:** retry com backoff exponencial e contador de tentativas. Depois de N falhas, mova o evento para uma fila de mensagens mortas.
 - **Ordem:** publique em ordem de criação por agregado quando o consumidor depender da sequência.
 - **Limpeza:** apague ou arquive os eventos já publicados periodicamente.
 
-**Transporte com filas (BullMQ)**
+#### Transporte com filas (BullMQ)
 
 Com um barramento em memória, o relay chama os handlers dentro da própria transação. Um handler lento segura o lote, e a falha de um consumidor devolve o evento para todos. Com o BullMQ, o relay só enfileira, e cada consumidor processa na sua fila.
 
-```
+```text
 caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Redis) ─▶ handler
 ```
 
@@ -1040,7 +1040,7 @@ export function validateEnv(config: Record<string, unknown>) {
 
 `ConfigService<EnvironmentVariables, true>` com `{ infer: true }` tipa a chave e o valor: uma chave que não existe na classe não compila. Se a configuração de um módulo crescer, o `@nestjs/config` oferece `registerAs` com `ConfigModule.forFeature` para separá-la por módulo. O projeto ainda não precisou.
 
-**Cuidados**
+#### Cuidados
 
 - Versione um `.env.example` com todas as chaves e sem valores reais. O `.env` fica no `.gitignore`.
 - O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv` (ver Migrations por módulo).
@@ -1150,7 +1150,7 @@ Use cache só no lado de leitura, nunca para carregar agregados que serão alter
 
 Ports na application (`StorageGateway`, `EmailSender`, `PaymentGateway`) e adapters na infra (`S3StorageGateway`, `SesEmailSender`). O adapter traduz os erros do fornecedor para erros próprios. Nos testes, use implementações fake.
 
-**Resiliência nas chamadas externas**
+#### Resiliência nas chamadas externas
 
 - **Timeout em toda chamada.** Sem ele, uma dependência lenta prende conexões e derruba a aplicação.
 - **Retry com backoff só em operações idempotentes.** Repetir uma cobrança sem chave de idempotência pode cobrar duas vezes.
@@ -1374,7 +1374,7 @@ export default function (plop) {
 
 ### Checklist de um módulo novo
 
-**Arquitetura**
+#### Arquitetura
 
 - [ ] domain e application sem imports de `@nestjs/*` ou `typeorm`
 - [ ] Repositórios e ports como `abstract class`; casos de uso registrados com `useFactory`
@@ -1383,7 +1383,7 @@ export default function (plop) {
 - [ ] Nada de negócio no `shared`
 - [ ] Regras do `dependency-cruiser` com `severity: 'error'` passando no CI
 
-**Domínio**
+#### Domínio
 
 - [ ] Entidades com `create` (regras) e `restore` (reconstrução)
 - [ ] Validação em três níveis: DTO, entidade e caso de uso
@@ -1391,7 +1391,7 @@ export default function (plop) {
 - [ ] Ownership verificado no caso de uso e filtro de dono nas queries
 - [ ] Erros de domínio mapeados no exception filter
 
-**Persistência**
+#### Persistência
 
 - [ ] `@nestjs/typeorm` 12 (Nest 12) com TypeORM 1.x
 - [ ] ORM entities separadas, com mapper e `orphanedRowAction: 'delete'` nos filhos
@@ -1401,7 +1401,7 @@ export default function (plop) {
 - [ ] Optimistic locking ou update atômico onde há disputa
 - [ ] Listagens paginadas com `limit` máximo
 
-**Eventos e integração**
+#### Eventos e integração
 
 - [ ] Eventos com `eventId`, `type` e `version`, payload só com primitivos
 - [ ] Outbox com `SKIP LOCKED`, retry e fila de mensagens mortas
@@ -1410,7 +1410,7 @@ export default function (plop) {
 - [ ] Cache só na leitura, com TTL, invalidação por evento e leitura direta do banco se o cache falhar
 - [ ] Chamadas externas com timeout; retry só em operações idempotentes
 
-**Operação**
+#### Operação
 
 - [ ] Variáveis de ambiente validadas na subida
 - [ ] `.env.example` versionado, `.env` fora do Git
@@ -1426,7 +1426,7 @@ export default function (plop) {
 
 Fontes consultadas na revisão de novembro de 2026.
 
-**Documentação oficial**
+### Documentação oficial
 
 - [NestJS: Custom providers](https://docs.nestjs.com/fundamentals/custom-providers)
 - [NestJS: Circular dependency](https://docs.nestjs.com/fundamentals/circular-dependency)
@@ -1461,7 +1461,7 @@ Fontes consultadas na revisão de novembro de 2026.
 - [OpenTelemetry JS: Propagation](https://opentelemetry.io/docs/languages/js/propagation/)
 - [pg-types (node-postgres)](https://www.npmjs.com/package/pg-types)
 
-**Padrões e especificações**
+### Padrões e especificações
 
 - [Robert C. Martin: The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [Vaughn Vernon: Effective Aggregate Design, parte II](https://www.dddcommunity.org/wp-content/uploads/files/pdf_articles/Vernon_2011_2.pdf)
