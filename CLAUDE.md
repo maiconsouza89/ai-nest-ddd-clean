@@ -39,6 +39,7 @@ Setup do zero, nesta ordem:
 ### Migrations
 
 - Rodar: `npm run mig:<módulo>:run`, para `orders`, `identity`, `catalog`, `inventory` e `outbox`. Não rodam sozinhas ao subir a app.
+- Em loop no zsh, escreva `"mig:${m}:run"` (com chaves e aspas). `mig:$m:run` vira `mig:$m` + modificador `:r` e o npm diz que o script não existe.
 - Gerar: `npm run mig:<módulo>:gen` (precisa do banco no ar, pois compara com as entidades).
 - Os scripts usam `typeorm-ts-node-esm` com `NODE_OPTIONS=--conditions=@app/source`. Sem essa condição, os aliases `#...` carregam o `dist/`, que pode estar desatualizado, e não dá erro (ADR 0005).
 
