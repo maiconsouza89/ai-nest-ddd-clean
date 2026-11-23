@@ -282,7 +282,7 @@ npm i -D dependency-cruiser
 npx depcruise --init
 ```
 
-- Copie as regras `forbidden` do guia de referência ([Qualidade](../research/modules-ddd-clean-nest.md#qualidade)). Inclua todas, até as de módulos, que ainda não custam nada.
+- Copie o `.dependency-cruiser.js` do projeto: a lista `rules` e o `forbidden` que aplica `severity: 'error'` a cada regra. Sem a `severity`, a regra vale como `warn`, e o `arch` passa com a violação. Inclua todas as regras, até as de módulos, que ainda não custam nada. O que cada uma barra está no `comment` dela.
 - Tire os testes da análise com `options.exclude: { path: '\\.(spec|int-spec|e2e-spec)\\.ts$' }`. Um teste pode montar peças de várias camadas.
 - Script `"arch": "depcruise src"`.
 - No pipeline, rode `npm run typecheck && npm test && npm run arch`.

@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio e Infra)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio, Infra e Qualidade)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -406,7 +406,7 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 | Paginação | `how-to/paginar-uma-listagem.md` |
 | Modelagem do domínio | `explanation/modelagem-do-dominio.md` |
 | Infra: configuração, jobs, cache, serviços externos | how-tos por tarefa e `reference/variaveis-de-ambiente.md` |
-| Qualidade | `reference/qualidade.md` |
+| Qualidade | `reference/testes.md` e `explanation/observabilidade.md` (era `reference/qualidade.md`) |
 | Operação | `reference/operacao.md` (health, logs, tracing) |
 | Pragmatismo e checklist | `explanation/pragmatismo.md` e `how-to/revisar-um-modulo.md` |
 | Referências | Seção "Leituras" no `docs/README.md` |
@@ -485,6 +485,20 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
   - **E-mail:** o guia mandava retry com backoff em operações idempotentes, sem dizer onde. O e-mail não tem retry no adapter, porque a fila do consumidor já repete.
 
   Fora do escopo: os comentários do `LoggingEmailSender` e do port `EmailSender` dizem que "a outbox" repete o envio, mas quem repete é a fila do consumidor (10 tentativas). Os links dos passos de configuração e do Redis do `passo-a-passo.md` apontam para as páginas novas. Seis rotas novas ou ampliadas no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
+
+- **Qualidade (2026-11-23):** a seção virou duas páginas, e não `reference/qualidade.md`, porque duas das quatro subseções já tinham casa:
+  - `reference/testes.md`: o runner, a decorator metadata e o `setup-env` (que saíram de `comandos.md`, agora com um link para a página), o tipo de teste de cada camada, os helpers que pedem atenção e as convenções que nenhuma config confere;
+  - `explanation/observabilidade.md`: o trace no lugar do correlation id, o tracing antes da app, o `traceparent` que atravessa a outbox e as filas, o `trace_id` nos logs, o port `Logger` e o que fica sem span. O item "O trace atravessa a fila" de `consistencia-e-eventos.md` virou link para ela;
+  - **Lint e formatação:** já estava no ADR 0004 e em `comandos.md`. Só a versão exata do Prettier não tinha registro e foi para a seção "Versão exata" de `versoes-e-excecoes.md`, com a recomendação da documentação do Prettier (Context7);
+  - **Regras de arquitetura no CI:** já estavam no `.dependency-cruiser.js` desde o passo 11. O porquê do `tsPreCompilationDeps: 'specify'` virou comentário no arquivo, e o `severity: 'error'` passou a ser o padrão de todas as regras por um `map`, no lugar de 11 cópias (uma regra nova não cai mais em `warn` por esquecimento, e uma regra ainda pode declarar outra `severity`). Uma violação de propósito em `domain/` fez o `arch` sair com 1.
+
+  Conferido contra o código, o guia errava ou omitia em quatro pontos:
+  - **Contrato da facade:** o guia falava em exemplos versionados de chamadas da facade. Só os eventos têm exemplo e teste de contrato, e o `typecheck` confere a facade dos dois lados;
+  - **Unitários além do domain e dos casos de uso:** adapters, gateways, guards, handlers e o decorator de cache têm spec com fakes, e o Redis dos testes de integração sobe pelo `test/helpers/redis.ts`;
+  - **Hook ESM:** o guia dizia que o `module.register` é o caminho da documentação do OpenTelemetry. A documentação (Context7, 2026-11-23) mostra a flag `--experimental-loader` na linha de comando, e o `module.register` é o equivalente em código;
+  - **Spans do pino:** a instrumentação do pino não cria spans, só põe o `trace_id` e o `span_id` no log. A versão da instrumentação do Nest (0.72.1, `>=4.0.0 <12`) e o `logKeys` do pino foram conferidos em `node_modules`.
+
+  Ficam para a seção Operação os fatos de log que são referência: o `x-request-id`, os campos do log de acesso e o `redact`. O link do passo 7 do `passo-a-passo.md` aponta para o `.dependency-cruiser.js`. Duas rotas novas no `AGENTS.md`, índice e mapa atualizados. `/simplify` (quatro revisores): saíram as repetições de `comandos.md`, do ADR 0004 e do `eslint.config.mjs` na página de testes, o catálogo arquivo por arquivo de `test/helpers/`, as versões e o histórico na explicação, o número da versão do Prettier e o `severity` repetido. `/code-review`: o `map` passou a aceitar uma `severity` declarada na regra, o passo 7 do `passo-a-passo.md` manda copiar a lista junto com o `map`, e a coluna "Arquivo" dos testes de Postgres deixou de prender todos em `infra/database/typeorm/` (o catalog e a outbox têm os seus em outro lugar). Ficou de fora um spec que confira se cada migration está na lista do helper de integração e um teste dos spans do `ioredis` e do `express`: são checks novos, maiores que este passo, e ficam registrados aqui como candidatos.
 
 ### Passo 13: how-tos e skills-ponteiro
 
@@ -569,7 +583,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

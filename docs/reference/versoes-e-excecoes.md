@@ -13,7 +13,11 @@ type: reference
 - Ao propor uma dependência, informe a versão consultada e por que ela é a recomendada.
 - Pacotes pré-1.0 sem histórico ficam de fora. Por exemplo, `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09. O gatilho para reavaliá-los está no [passo 18 do plano de evolução](../plan/evolucao.md#passo-18-evoluções-sob-demanda).
 
-`npm outdated` deve listar só os pacotes da tabela.
+`npm outdated` deve listar só os pacotes da tabela, mais o `prettier` quando sai uma versão nova dele ([Versão exata](#versão-exata)).
+
+## Versão exata
+
+O `prettier` fica na latest, com a versão exata no `package.json` (sem `^`). O Prettier muda a formatação em versões patch, e com o `^` um `npm install` poderia fazer o `format:check` falhar sem mudança no código. A documentação do Prettier recomenda o mesmo (consultada no Context7 em 2026-11-23). Para atualizar: `npm install --save-dev --save-exact prettier@latest`, depois `npm run format`, num commit só da formatação.
 
 ## Exceções
 

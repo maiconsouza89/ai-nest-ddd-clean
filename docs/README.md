@@ -38,6 +38,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Serviços externos](explanation/servicos-externos.md): port e adapter para cada fornecedor, a tradução de erros, timeout em toda chamada, retry só no que é idempotente e o circuit breaker que ainda não existe.
 - [Shared kernel](explanation/shared-kernel.md): por que o `shared` guarda só blocos técnicos e por que, na dúvida, o tipo fica duplicado.
 - [Autenticação e ownership](explanation/autenticacao.md): autenticação na infra e ownership no caso de uso, o ator carregado a cada requisição, o refresh token rotativo e a corrida da renovação.
+- [Observabilidade](explanation/observabilidade.md): por que o tracing carrega antes da app, o trace que atravessa a outbox e as filas, os logs com o id do trace e o que fica sem span.
 
 ## Referência
 
@@ -45,6 +46,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...`, `import type`, versão da API HTTP e as regras das ORM entities do TypeORM.
+- [Testes](reference/testes.md): o tipo de teste de cada camada, onde fica, com que fakes e containers, e o teste de contrato dos eventos.
 - [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, em qual pasta, e as regras entre módulos.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.

@@ -67,6 +67,8 @@ O health não tem versão na URL, não pede token e fica fora do rate limit.
 | `npm run test:int` | Integração (`*.int-spec.ts`). Sobe Postgres e Redis descartáveis com o Testcontainers, então exige Docker. Leva cerca de 75 s |
 | `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` |
 
+O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).
+
 Para rodar um arquivo só, passe um padrão de caminho depois do `--`:
 
 - `npm test -- money.vo`
@@ -78,10 +80,6 @@ Cuidados com o e2e:
 - Por padrão, `DATABASE_URL` e `REDIS_URL` apontam para o Postgres e o Redis do `docker-compose.yml`. Os dois precisam estar no ar.
 - O e2e **grava dados** nesse banco.
 - Encerre qualquer `start:dev` antes. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
-
-O runner é o Vitest ([ADR 0001](../adr/0001-vitest-e-esm.md)), sem globals: os testes importam `describe`, `it`, `expect` e `vi` de `'vitest'`. O `test/setup-env.ts` preenche as variáveis mínimas e desliga os workers, os jobs, o throttle, os logs e o tracing. Os testes que precisam de um deles o ligam por conta própria.
-
-A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transformador padrão do Vite. O oxc emite `Object` para tipos que exigem inferência (type alias, utility types). Se um construtor falhar com "can't resolve dependencies" nos testes, confira o tipo do parâmetro.
 
 ## Migrations
 

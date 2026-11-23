@@ -56,65 +56,7 @@ Movida. Os passos estão em [Como adicionar uma variável de ambiente](../how-to
 
 ## Qualidade
 
-### Testes por camada
-
-| Camada | Tipo | Como |
-| --- | --- | --- |
-| Domain | Unitário | Puro, sem mocks |
-| Casos de uso | Unitário | Repositórios em memória |
-| Repositórios e mappers | Integração | Postgres real com Testcontainers e migrations aplicadas |
-| Contratos entre módulos | Contrato | Exemplos versionados de eventos e chamadas da facade, validados por quem publica e por quem consome |
-| Fluxos críticos | E2E | Poucos, via HTTP |
-
-```ts
-it('não paga duas vezes', () => {
-  const order = makeOrder();
-  order.pay();
-  expect(() => order.pay()).toThrow(OrderAlreadyPaidError);
-});
-```
-
-O runner é o Vitest, com três projetos no `vitest.config.ts`: `unit` (`*.spec.ts`), `int` (`*.int-spec.ts`) e `e2e` (`test/*.e2e-spec.ts`). A decorator metadata, sem a qual o Nest não injeta por classe, vem do oxc, o transformador padrão do Vite 8, que lê `emitDecoratorMetadata` do `tsconfig.json`. O suporte é parcial: tipos que exigem inferência (type alias, utility types) viram `Object`, então injete sempre por classe ou `@Inject`. Os testes importam `describe`, `it`, `expect` e `vi` de `'vitest'`, sem `globals`. O `src/shared/testing/decorator-metadata.spec.ts` falha se a metadata deixar de ser emitida.
-
-Na integração, o módulo `@testcontainers/postgresql` sobe um Postgres descartável por execução. Rode as migrations reais nele antes dos testes, assim elas também são testadas. Cache e filas usam o `@testcontainers/redis` do mesmo jeito.
-
-### Lint e formatação
-
-Quatro ferramentas, cada uma com uma responsabilidade e nenhuma sobreposta:
-
-| Ferramenta | Responsável por |
-| --- | --- |
-| `tsc --noEmit` | tipos |
-| dependency-cruiser | fronteiras entre módulos e camadas |
-| ESLint + `typescript-eslint` | bugs que compilam: promises, `any` inseguro, código morto |
-| Prettier | formatação |
-
-O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem `^`, porque até um patch pode mudar a formatação. O ESLint usa `recommendedTypeChecked` com `projectService` (flat config), mais algumas regras do `strictTypeChecked` escolhidas uma a uma (lista na ADR 0004), e o `eslint-config-prettier`, que só desliga as regras de estilo. Não use `consistent-type-imports`: com `emitDecoratorMetadata`, um `import type` numa classe injetada pelo construtor quebra a injeção do Nest em tempo de execução. As fronteiras entre módulos ficam só no dependency-cruiser. Detalhes e regras desligadas: ADR 0004.
-
-`npm run ci` roda typecheck, lint, `format:check`, testes unitários e arch.
-
-### Regras de arquitetura no CI
-
-Com `dependency-cruiser`, rodando `npm run arch` (`depcruise src --output-type err-long`) no pipeline. Se alguém quebrar a regra, o build falha.
-
-As regras ficam no `.dependency-cruiser.js`, e o `comment` de cada uma, impresso junto com a violação, diz o que ela barra. O que nenhuma regra confere está em [Camadas](../reference/camadas.md).
-
-Mantenha `tsPreCompilationDeps: 'specify'`: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido, e com `'specify'` o import só de tipo ganha o rótulo `type-only`, que a `no-circular` usa. Com os aliases `#...`, o `enhancedResolveOptions.conditionNames` precisa incluir `@app/source`. Sem ele, os aliases resolvem para o `dist/`, e as regras deixam de enxergar esses imports sem avisar ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
-
-A exceção da `modulos-so-via-contracts` é o arquivo do módulo Nest, que importa o módulo Nest do outro para declarar a dependência em `imports`. Os `exports` de um `@Module` são a API pública dele: importar o `CatalogModule` só expõe a `CatalogFacade`. Por isso os módulos de negócio não são `@Global` (só a infraestrutura do `shared` é, ver o [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
-
-Sem `severity: 'error'`, a violação vira só aviso e o build não falha.
-
-### Observabilidade
-
-- **Tracing distribuído:** OpenTelemetry com auto-instrumentação para Node. Ele propaga o contexto no padrão W3C (`traceparent`) entre serviços e dispensa um correlation id feito à mão.
-  - O `main.ts` importa só o `tracing.ts` e depois carrega o app por `import()` dinâmico (`bootstrap.ts`). A auto-instrumentação só enxerga módulos carregados depois dela.
-  - No ESM, o `require` não é interceptado. O `tracing.ts` registra o hook `@opentelemetry/instrumentation/hook.mjs` com `module.register` antes de iniciar o SDK. Sem ele, o que o código importa direto (como o `ioredis`) e o `express` ficam sem spans, e nada falha nem avisa. Um `import` estático do app no `main.ts` seria resolvido antes do hook e teria o mesmo efeito. Uma regra de lint (`no-restricted-imports` em `src/main.ts`) barra esse import estático.
-  - No Node 26, o `module.register` imprime `DEP0205` na subida. É o caminho que a doc do OpenTelemetry indica hoje; a alternativa é o `register-hooks.mjs` do `import-in-the-middle`, que usa `module.registerHooks`.
-  - No Nest 12, não há spans da camada Nest (controllers e handlers): o `@opentelemetry/instrumentation-nestjs-core` só suporta o Nest até a versão 11. Os spans de http, express, pg, ioredis e pino continuam, e isso basta para seguir uma requisição.
-- **Logs ligados ao trace:** o id do trace vai em todo log. A outbox copia o `traceparent` (que carrega esse id) para os metadados de cada evento, e o consumidor continua o mesmo trace (`runInEventTrace`). Assim dá para seguir uma requisição por todos os módulos. A instrumentação do pino grava os campos `trace_id` e `span_id`, e não `traceId`. Para mudar o nome, use a opção `logKeys`.
-- **Logs estruturados:** JSON com `nestjs-pino`.
-- **Na application:** se precisar logar, use um port `Logger`, sem importar o Nest.
+Movida. Que teste cobre cada camada, e com o quê, está em [Testes](../reference/testes.md). A divisão entre `tsc`, ESLint, Prettier e dependency-cruiser está no [ADR 0004](../adr/0004-lint-e-formatacao.md), e os comandos em [Comandos](../reference/comandos.md#verificação). As regras de arquitetura ficam no `.dependency-cruiser.js`, cada uma com o comentário que o `npm run arch` imprime, e o que nenhuma regra confere está em [Camadas](../reference/camadas.md). O porquê do tracing, do trace que atravessa a outbox e dos logs ligados a ele está em [Observabilidade](../explanation/observabilidade.md).
 
 ## Operação
 

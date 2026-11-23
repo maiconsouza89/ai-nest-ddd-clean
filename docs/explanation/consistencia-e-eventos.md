@@ -152,7 +152,7 @@ Chamar os handlers no relay os poria dentro da transação que trava o lote: um 
 - **Uma fila com problema não esconde as outras.** O publicador usa `Promise.allSettled`: tenta todas as filas e, se alguma falhar, o relay registra a falha e repete o evento depois. As filas que já tinham o job ignoram a repetição pelo `jobId`.
 - **Duas filas de mortos.** Um job que esgota as tentativas fica no conjunto `failed` da fila do consumidor. O `deadAt` da outbox passa a valer só para o evento que não conseguiu ser enfileirado, com o Redis fora do ar, por exemplo.
 - **A ordem vale até a fila.** Dentro dela, um retry com backoff pode inverter dois eventos do mesmo agregado, então nenhum consumidor pode depender da sequência. Os do projeto não dependem: pago e cancelado são estados que se excluem.
-- **O trace atravessa a fila.** A outbox grava o `traceparent` da requisição nos metadados do evento, e o relay e o worker abrem o span a partir dele. O log do handler aparece no mesmo trace da requisição que originou o evento.
+- **O trace atravessa a fila.** O handler aparece no mesmo trace da requisição que originou o evento ([Observabilidade](observabilidade.md#o-trace-atravessa-a-outbox-e-as-filas)).
 
 ### Pelo menos uma vez, efeito uma vez só
 
