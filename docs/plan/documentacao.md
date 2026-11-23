@@ -56,7 +56,7 @@ Convenções:
 | Fase | O que entrega | Status |
 | --- | --- | --- |
 | 1. Fundação | ADR 0006, `docs:check`, templates, referência operacional, `AGENTS.md`, `CLAUDE.md` enxuto, READMEs | ✅ |
-| 2. Módulos e glossário | `docs/reference/modules/*.md`, `glossario.md`, regra-ponteiro, plop gera doc de módulo | ⬜ |
+| 2. Módulos e glossário | `docs/reference/modules/*.md`, `glossario.md`, regra-ponteiro, plop gera doc de módulo | ✅ |
 | 3. Sob demanda | Camadas (check primeiro), divisão do guia de pesquisa, how-tos e skills, tutoriais | ⬜ |
 
 ---
@@ -259,12 +259,12 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 
 ## Fase 2: módulos e glossário
 
-> **Status:** ⬜ · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-23 · **Conclusão:** 2026-11-23
 >
-> - [ ] Passo 7: template de módulo e `plop module`
-> - [ ] Passo 8: um doc por módulo
-> - [ ] Passo 9: `glossario.md`
-> - [ ] Passo 10: regra-ponteiro e rotas
+> - [x] Passo 7: template de módulo e `plop module`
+> - [x] Passo 8: um doc por módulo
+> - [x] Passo 9: `glossario.md`
+> - [x] Passo 10: regra-ponteiro e rotas
 
 ### Passo 7: template de módulo e `plop module`
 
@@ -286,6 +286,16 @@ Acrescente ao gerador `module` uma action `add` própria, com destino em `docs/r
 
 **Pronto quando:** `npm run plop module teste` gera a doc junto com o código, e a doc passa no `docs:check`. Desfaça o módulo de teste depois.
 
+**Como ficou (2026-11-23):**
+
+- **Template:** `plop-templates/doc/module.md.hbs`, com as seções pedidas e mais as rotas HTTP dentro de "Contrato público". O que o gerador sabe já vem escrito: nome do módulo, rotas do CRUD gerado, schema, tabela, tabela de migrations e scripts `mig:<nome>:*`. O resto tem comentário de template.
+- **Gerador:** uma action `add` própria, fora do `FILES`, e uma `modify` que acrescenta o módulo à lista "Módulos" do `docs/README.md`. O plop recusa o nome se a pasta do módulo ou a doc já existirem, antes de gravar qualquer arquivo. A conferência do índice roda por último, para um índice fora do padrão não impedir os scripts de migration.
+- **Mudança no "Pronto quando":** como no `plop doc` (passo 3), a doc recém-gerada falha no `docs:check`, só pela regra `scaffold` (7 avisos). Com os comentários apagados, ela passa. `npm run plop module teste-doc` rodado duas vezes (antes e depois do `/simplify`) e desfeito.
+- **Regra nova no `docs:check` (`module-doc`):** todo diretório de `src/modules/` precisa de link para `reference/modules/<m>.md` no `docs/README.md`, e toda página em `docs/reference/modules/` precisa de um módulo com o mesmo nome. O link resolvido, que o `remark-validate-links` confere, garante que a página existe. Os dois casos foram testados de propósito (módulo sem doc, doc sem módulo).
+- **`/simplify`:** quatro revisores. Daí saíram a regra `module-doc` e a entrada no índice pelo gerador, a doc do `orders` com as transições só no "Ciclo de vida" (com evento e erro), a coluna "Consumido por" no lugar da tabela de consumidores repetida, o índice do glossário só com termo e link, e a rota do guia de pesquisa no `AGENTS.md` restrita a criar algo novo, para uma mudança num módulo existente não carregar o guia inteiro (78 KB). Ficaram de fora a linha do ADR 0003 em cada doc (curta, aponta para a regra), as linhas derivadas do nome do módulo (caminhos e scripts, úteis para navegar) e links do glossário para o guia de pesquisa (o passo 15 o remove).
+- **`/code-review`:** corrigiu a ordem das actions (a conferência do índice impedia os scripts de migration), a regra `module-doc` para aceitar `./reference/...` e links por referência, o `GET` gerado na doc (devolve `{ id, name }`), a ordem real das checagens ao fechar o pedido e a promessa de e-mail único do notifications. Ficou de fora a recusa de outras páginas em `docs/reference/modules/`: a pasta só tem docs de módulo.
+- **Lacuna conhecida:** nada confere se cada facade e evento de `contracts/` aparece na doc do módulo. A regra-ponteiro pede para mudar a doc junto. Um check por nome de arquivo fica para quando um contrato novo escapar.
+
 ### Passo 8: um doc por módulo
 
 **Por quê:** é onde o agente mais ganha ao navegar o código.
@@ -302,6 +312,15 @@ Acrescente ao gerador `module` uma action `add` própria, com destino em `docs/r
 - cada facade e cada evento em `contracts/` aparece no doc do seu módulo;
 - cada termo da seção "Linguagem ubíqua" é usado com o mesmo nome no código ou tem a diferença explicada.
 
+**Como ficou (2026-11-23):**
+
+- **Docs:** `docs/reference/modules/{orders,catalog,inventory,identity,notifications}.md`, escritos a partir do código: módulos Nest, contracts, entidades, casos de uso, filtros de erro, handlers, jobs, migrations e seeds. O `identity` aponta para `autenticacao.md` em rotas, tokens e prazos, sem repeti-los.
+- **`User`, `Actor` e `Customer`:** três conceitos. Usuário é a conta (identity), ator é quem faz a requisição (shared, carregado a cada requisição) e cliente é o dono do pedido (`customerId`, o id do usuário que o criou). No cenário do admin que cancela o pedido de outro, o ator é o admin, e o cliente continua o dono. Definidos na seção "Usuário, ator e cliente" do glossário.
+- **`OrderCreated` e `OrderPlaced`:** dois momentos. "Criar" abre o pedido em `DRAFT` já com os itens e os preços do catalog. "Fechar" (`place()`) reserva o estoque e passa a `PLACED`, e depois disso os itens não mudam.
+- **`catalog`:** CRUD intencional, pelo "Nem todo módulo precisa de DDD" do guia e pelo comentário do `products.service.ts`. Registrado na seção "Estrutura" da doc. O `inventory` também não tem entidade (as regras são operações atômicas no repositório), e o `notifications` não tem `domain/`. As duas docs dizem isso.
+- **Achados no código, fora do escopo de docs:** um id que não é uuid em `/v1/orders/:id/*` ou num `productId` do `POST /v1/orders` chega a uma coluna `uuid` e responde 500, não 404. No catalog, um nome só com espaços passa na validação (`@Length` antes do `trim`) e é gravado vazio. As docs descrevem o comportamento pretendido.
+- **`/simplify` e `/code-review`:** ver o passo 7, que os rodou sobre a fase toda.
+
 ### Passo 9: `glossario.md`
 
 **Por quê:** alguns termos atravessam os módulos: `Actor`, facade, evento de domínio e evento de integração, outbox, idempotency key, shared kernel.
@@ -315,6 +334,8 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 
 **Pronto quando:** todo termo das seções "Linguagem ubíqua" está no índice, e todo link do índice resolve, conferido pelo `docs:check`.
 
+**Como ficou (2026-11-23):** termos compartilhados (usuário, ator e cliente, agregado, evento de domínio e de integração, outbox, consumidor, consumidor idempotente, idempotency key, facade, port e adapter, contrato, shared kernel, dinheiro, concorrência otimista), "Mesmo termo, sentidos diferentes" (o `Email` do identity e o do notifications) e o índice, com termo e link. Os 29 termos das cinco docs estão no índice, conferidos por script. "Criar" e "Status" entram como "Criar (pedido)" e "Status (do pedido)". O `docs:check` resolve todos os links e âncoras, e uma âncora quebrada de propósito falhou.
+
 ### Passo 10: regra-ponteiro e rotas
 
 **Por quê:** nada da doc de módulo carrega sozinho. A regra faz o Claude abrir o arquivo certo, e a tabela do `AGENTS.md` cobre os outros agentes.
@@ -325,6 +346,8 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 - Acrescente as linhas correspondentes à tabela de rotas do `AGENTS.md`.
 
 **Pronto quando:** numa sessão nova, `/context` mostra que a regra **não** carregou no início e **passa** a carregar depois de ler um arquivo em `src/modules/orders/`.
+
+**Como ficou (2026-11-23):** `.claude/rules/modules.md` com `paths: ["src/modules/**"]`. Ela manda ler a doc do módulo e mudá-la junto com o código, e cita o glossário só para um termo que não está na doc. O `AGENTS.md` ganhou as rotas "Mudar um módulo existente" e "Entender um termo do domínio". O índice do `docs/README.md` ganhou o glossário e a seção "Módulos", e o `README.md` e o `comandos.md` citam as docs de módulo. Numa sessão nova, a regra só entrou no contexto depois do Read de um arquivo em `src/modules/`. Grep e `ls` não a carregaram. O `/context` e o `/memory` não listam regras, então a conferência foi feita perguntando à sessão (ver o checklist da fase).
 
 ---
 
@@ -458,14 +481,14 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 ### Fase 2
 
-- [ ] Os cinco `docs/reference/modules/*.md` existem e passam no `docs:check`.
-- [ ] Cada facade em `src/modules/*/contracts/` e cada evento em `contracts/events/` aparecem no doc do seu módulo: `ls src/modules/*/contracts` comparado com as seções "Contrato público" e "Eventos publicados".
-- [ ] Os termos `User`, `Actor` e `Customer`, e `OrderCreated` e `OrderPlaced`, estão definidos sem ambiguidade.
-- [ ] Todo termo das seções "Linguagem ubíqua" está no índice do `glossario.md`.
-- [ ] `npm run plop module teste` gera a doc do módulo, que é desfeita depois.
-- [ ] `/context` numa sessão nova: a `.claude/rules/modules.md` não carrega no início e carrega depois de ler um arquivo em `src/modules/`.
-- [ ] Teste de roteamento numa sessão nova: para "Quais eventos o orders publica e quem consome?", o agente responde a partir de `docs/reference/modules/` e acerta.
-- [ ] `/simplify` e `/code-review` rodados sobre o template e o `plopfile.mjs`.
+- [x] Os cinco `docs/reference/modules/*.md` existem e passam no `docs:check`. 2026-11-23: `npm run ci` com exit 0.
+- [x] Cada facade em `src/modules/*/contracts/` e cada evento em `contracts/events/` aparecem no doc do seu módulo: `ls src/modules/*/contracts` comparado com as seções "Contrato público" e "Eventos publicados". 2026-11-23: `CatalogFacade`, `InventoryFacade`, `UserDirectoryFacade` e os quatro eventos do orders.
+- [x] Os termos `User`, `Actor` e `Customer`, e `OrderCreated` e `OrderPlaced`, estão definidos sem ambiguidade. 2026-11-23: ver o passo 8.
+- [x] Todo termo das seções "Linguagem ubíqua" está no índice do `glossario.md`. 2026-11-23: 29 termos.
+- [x] `npm run plop module teste` gera a doc do módulo, que é desfeita depois. 2026-11-23: com `teste-doc`, ver o passo 7.
+- [x] `/context` numa sessão nova: a `.claude/rules/modules.md` não carrega no início e carrega depois de ler um arquivo em `src/modules/`. 2026-11-23: nem o `/context` nem o `/memory` listam as regras de `.claude/rules/`, por isso a conferência foi pela pergunta "Quais instruções de `.claude/rules/` estão no seu contexto agora?", feita depois do Read do `order.entity.ts`. A sessão citou o texto da regra e disse que ele chegou como lembrete do sistema depois dessa leitura. Antes dela, grep e `ls` em `src/modules/` não a carregaram.
+- [x] Teste de roteamento numa sessão nova: para "Quais eventos o orders publica e quem consome?", o agente responde a partir de `docs/reference/modules/` e acerta. Feito em 2026-11-23: a primeira leitura foi o `orders.md`, e a resposta trouxe os quatro eventos e os três consumidores certos. Depois o agente rodou grep nos handlers para conferir a tabela, e o código bateu com a doc.
+- [x] `/simplify` e `/code-review` rodados sobre o template e o `plopfile.mjs`. 2026-11-23: também sobre a regra `module-doc` e as docs. Ver o passo 7.
 
 ### Fase 3 (por passo)
 

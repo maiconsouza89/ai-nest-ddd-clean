@@ -23,6 +23,17 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...` e `import type`.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
+- [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.
+
+### Módulos
+
+Uma página por módulo: linguagem ubíqua, contrato público, eventos, invariantes, dependências e schema.
+
+- [orders](reference/modules/orders.md): pedidos, do rascunho ao pagamento ou ao cancelamento.
+- [catalog](reference/modules/catalog.md): produtos e preços.
+- [inventory](reference/modules/inventory.md): saldo de estoque e reservas.
+- [identity](reference/modules/identity.md): contas, login, sessões e o ator de cada requisição.
+- [notifications](reference/modules/notifications.md): avisos disparados por eventos.
 
 ## Decisões (ADR)
 

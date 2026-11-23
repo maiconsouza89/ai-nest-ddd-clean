@@ -43,7 +43,7 @@ Uma mudança de comportamento atualiza a página afetada em `docs/`, ou o PR diz
 | Onde | O que tem |
 | --- | --- |
 | [docs/](docs/README.md) | Índice da documentação, organizada no modelo Diátaxis, e como escrever uma página |
-| [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções e autenticação |
+| [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, autenticação, glossário e uma página por módulo |
 | [docs/adr/](docs/README.md#decisões-adr) | As decisões de arquitetura e o porquê de cada uma |
 | [Guia de módulos com DDD e Clean Architecture](docs/research/modules-ddd-clean-nest.md) | Camadas, agregados, eventos e convenções de cada módulo |
 | [AGENTS.md](AGENTS.md) | Instruções para agentes de código: armadilhas e rotas para `docs/` |

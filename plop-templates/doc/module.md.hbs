@@ -1,0 +1,59 @@
+---
+type: reference
+---
+
+# Módulo {{kebabCase name}}
+
+<!-- O propósito do módulo, em uma frase. Referência: fatos do código, sem passo a passo (docs/how-to/) e sem
+porquê (vai para um ADR). Ao mudar o módulo, mude esta página junto. Apague os comentários ao preencher. -->
+
+Código em `src/modules/{{kebabCase name}}/`, registrado no `src/app.module.ts` como `{{pascalCase name}}Module`.
+
+## Linguagem ubíqua
+
+<!-- Um termo do negócio por linha, com o nome igual ao do código. Se o nome no código for outro, diga qual e
+por quê. Termo que outro módulo usa com outro sentido também vai para o docs/reference/glossario.md. -->
+
+| Termo | No código | Significado |
+| --- | --- | --- |
+| {{sentenceCase name}} | `{{pascalCase name}}` | |
+
+## Contrato público
+
+<!-- Para outros módulos: a facade em contracts/, cada método e o que ele devolve. Para clientes: as rotas HTTP.
+-->
+
+- **Facade:** nenhuma. Nenhum módulo consome este.
+- **HTTP:** `POST /v1/{{kebabCase name}}` devolve `{ id }`. `GET /v1/{{kebabCase name}}/:id` devolve `{ id, name }`.
+
+## Eventos publicados
+
+<!-- Um evento de integração por linha: nome, versão, quando é publicado, o exemplo em
+contracts/events/*.example.ts e os módulos que o consomem, com link para a seção "Eventos consumidos" deles. -->
+
+Nenhum.
+
+## Eventos consumidos
+
+<!-- Um evento por linha: o módulo que publica, o consumidor (nome e handler) e o que ele faz. -->
+
+Nenhum.
+
+## Invariantes
+
+<!-- As regras que o agregado garante, cada uma com o erro de domínio que a viola. -->
+
+## Dependências
+
+<!-- Os módulos de negócio no `imports` do módulo Nest e o que cada um fornece. -->
+
+Nenhum módulo de negócio.
+
+## Schema e migrations
+
+- Schema `{{snakeCase name}}`, tabela `{{snakeCase name}}`. As migrations deste módulo ficam registradas em `{{snakeCase name}}_migrations`.
+- Migrations em `src/modules/{{kebabCase name}}/infra/database/typeorm/migrations/`. Aplique com `npm run mig:{{kebabCase name}}:run` e gere com `npm run mig:{{kebabCase name}}:gen`.
+
+## Decisões
+
+- [ADR 0003](../../adr/0003-imports-explicitos-entre-modulos.md): o módulo declara de quem depende em `imports`, sem `@Global`.

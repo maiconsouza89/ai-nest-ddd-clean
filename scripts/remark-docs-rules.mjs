@@ -1,6 +1,6 @@
 // Plugin do remark com as regras da documentação que o markdownlint e o remark-validate-links não cobrem
 // (ADR 0006). Roda no `npm run docs:check`, que falha em qualquer aviso (`--frail`).
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 
 // Pasta do quadrante em docs/ → `type:` da página. O gerador `plop doc` usa o mesmo mapa.
@@ -11,6 +11,10 @@ export const quadrantTypes = {
   explanation: 'explanation',
 };
 const agentFiles = new Set(['AGENTS.md', 'CLAUDE.md', 'CLAUDE.local.md']);
+// Cada módulo de src/modules/ tem a sua página de referência, listada no índice de docs/ (ADR 0006).
+const MODULES_DIR = 'src/modules';
+const DOCS_INDEX = 'docs/README.md';
+const moduleDocLink = (module) => `reference/modules/${module}.md`;
 
 // `@caminho` fora de código é import no Claude Code. Conta como caminho o que tem `/` ou extensão.
 // O `(?<!\w)` deixa de fora e-mails (user@example.com).
@@ -79,6 +83,35 @@ export default function remarkDocsRules() {
           );
         }
       });
+    }
+
+    // O remark-validate-links confere que o link resolve; aqui, que todo módulo tem o seu.
+    if (path === DOCS_INDEX) {
+      const links = new Set();
+      visit(tree, ['link', 'definition'], (node) =>
+        links.add(node.url.split('#')[0].replace(/^\.\//, '')),
+      );
+      const modules = readdirSync(resolve(file.cwd, MODULES_DIR), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name);
+      for (const module of modules) {
+        if (!links.has(moduleDocLink(module))) {
+          fail(
+            `O módulo \`${module}\` não está no índice. Liste \`${moduleDocLink(module)}\` em "Módulos".`,
+            tree,
+            'module-doc',
+          );
+        }
+      }
+    }
+
+    const documentedModule = /^docs\/reference\/modules\/([^/]+)\.md$/.exec(path)?.[1];
+    if (documentedModule && !existsSync(resolve(file.cwd, MODULES_DIR, documentedModule))) {
+      fail(
+        `\`${MODULES_DIR}/${documentedModule}\` não existe. Apague a página ou renomeie junto com o módulo.`,
+        tree,
+        'module-doc',
+      );
     }
 
     // Os arquivos de agente apontam para `docs/` em texto simples, que o remark-validate-links não vê.

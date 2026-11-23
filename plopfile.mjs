@@ -3,6 +3,7 @@ import { quadrantTypes } from './scripts/remark-docs-rules.mjs';
 
 const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
+const DOCS_INDEX = 'docs/README.md';
 // `@app/source` resolve os aliases `#shared/*` para `src` quando o ts-node carrega o data source
 const TYPEORM_CLI = 'NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm';
 
@@ -110,7 +111,8 @@ export default function (plop) {
       const kebab = plop.getHelper('kebabCase')(data.name);
       const pascal = plop.getHelper('pascalCase')(data.name);
       const dir = `${MODULES_DIR}/${kebab}`;
-      if (existsSync(dir)) throw new Error(`${dir} já existe`);
+      const doc = `docs/reference/modules/${kebab}.md`;
+      for (const path of [dir, doc]) if (existsSync(path)) throw new Error(`${path} já existe`);
 
       // timestamps das migrations: o do schema vem antes do da tabela
       data.timestamp = Date.now();
@@ -124,6 +126,15 @@ export default function (plop) {
 
       return [
         ...add,
+        // a doc do módulo nasce com ele (ADR 0006) e falha no docs:check até os comentários saírem
+        { type: 'add', path: doc, templateFile: 'plop-templates/doc/module.md.hbs' },
+        // o docs:check exige cada módulo no índice: entra no fim da lista "Módulos"
+        {
+          type: 'modify',
+          path: DOCS_INDEX,
+          pattern: /(\n### Módulos\n\n[^\n]*\n\n(?:- [^\n]*\n)*)/,
+          template: `$1- [${kebab}](reference/modules/${kebab}.md)\n`,
+        },
         {
           type: 'modify',
           path: 'src/app.module.ts',
@@ -159,6 +170,13 @@ export default function (plop) {
           pkg.scripts[`mig:${kebab}:run`] = `${TYPEORM_CLI} migration:run -d ${ds}`;
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
           return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;
+        },
+        // por último: um índice fora do padrão não impede os scripts de migration
+        () => {
+          if (!readFileSync(DOCS_INDEX, 'utf8').includes(`(reference/modules/${kebab}.md)`)) {
+            throw new Error(`${kebab} não entrou no índice de ${DOCS_INDEX}: adicione à mão`);
+          }
+          return `${kebab} listado em ${DOCS_INDEX}: escreva a descrição de uma linha`;
         },
       ];
     },
