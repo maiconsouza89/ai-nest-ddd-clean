@@ -8,7 +8,7 @@ import { Actor } from '../../application/actor.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { jwtModuleOptions } from './jwt-config.module.js';
 
-const jwt = new JwtService(jwtModuleOptions('s'.repeat(32), 60));
+const jwt = new JwtService(jwtModuleOptions('s'.repeat(32)));
 
 function setup({ isPublic = false } = {}) {
   const reflector = new Reflector();
@@ -24,7 +24,8 @@ function setup({ isPublic = false } = {}) {
   return { actors, run };
 }
 
-const bearer = async (payload: object) => `Bearer ${await jwt.signAsync(payload)}`;
+const bearer = async (payload: object) =>
+  `Bearer ${await jwt.signAsync(payload, { expiresIn: 60 })}`;
 
 describe('JwtAuthGuard', () => {
   it('põe no request o ator atual do resolver, e não as roles do token', async () => {
@@ -58,6 +59,13 @@ describe('JwtAuthGuard', () => {
     const { run } = setup();
     await expect(run().result).rejects.toThrow(UnauthorizedException);
     await expect(run(await bearer({ foo: 'bar' })).result).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('responde 401 com token sem exp, que nunca venceria', async () => {
+    const { actors, run } = setup();
+    actors.actors.set('u1', { id: 'u1', roles: [] });
+    const forever = await jwt.signAsync({ sub: 'u1' }); // o JwtConfigModule não põe exp padrão
+    await expect(run(`Bearer ${forever}`).result).rejects.toThrow(UnauthorizedException);
   });
 
   it('não converte em 401 uma falha do resolver', async () => {

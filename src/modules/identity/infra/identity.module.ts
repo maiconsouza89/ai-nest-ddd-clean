@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
@@ -23,7 +26,12 @@ import { TypeOrmUserDirectoryFacade } from './typeorm-user-directory.facade.js';
     { provide: UserRepository, useClass: TypeOrmUserRepository },
     { provide: UserDirectoryFacade, useClass: TypeOrmUserDirectoryFacade },
     { provide: PasswordHasher, useClass: Argon2PasswordHasher },
-    { provide: TokenIssuer, useClass: JwtTokenIssuer },
+    {
+      provide: TokenIssuer,
+      useFactory: (jwt: JwtService, config: ConfigService<EnvironmentVariables, true>) =>
+        new JwtTokenIssuer(jwt, config.getOrThrow('JWT_ACCESS_TTL_SECONDS', { infer: true })),
+      inject: [JwtService, ConfigService],
+    },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: RegisterUserUseCase,

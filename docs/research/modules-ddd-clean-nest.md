@@ -369,6 +369,8 @@ Autenticação (quem é você) fica na infra. Ownership (você pode mexer neste 
 
 O módulo `identity` é dono dos usuários e emite o JWT. O token leva só o `sub`: nada que possa mudar vai nas claims. Um guard global em `shared/infra/auth` valida o token e, a cada requisição, monta o `Actor` com as roles atuais por meio do port `ActorResolver`. Role removida ou conta apagada valem na requisição seguinte, e não quando o token expirar ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)).
 
+O access token vale 15 minutos (`JWT_ACCESS_TTL_SECONDS`, padrão 900), e o login devolve `{ accessToken, expiresIn }`, com `expiresIn` em segundos. Quem define a validade é o `TokenIssuer` do `identity`, que assina e informa o prazo, e não o `JwtConfigModule`: esse módulo do `shared` só fixa o segredo e o algoritmo, que valem tanto para assinar quanto para verificar.
+
 O port fica no `shared`, e o `identity` o implementa com uma leitura por PK. O `shared` não importa o `identity`: quem liga os dois é o `AppModule`, a raiz de composição. Os outros módulos continuam sem consultar a tabela de usuários.
 
 ```ts

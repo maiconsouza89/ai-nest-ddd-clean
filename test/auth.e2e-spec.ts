@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app.js';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -34,7 +35,11 @@ describe('Auth (e2e)', () => {
     const claims = await app.get(JwtService).verifyAsync(login.body.accessToken);
     expect(claims.sub).toBe(reg.body.id);
     expect(claims).not.toHaveProperty('roles'); // as roles vêm do banco a cada requisição
-    expect(claims.exp).toBeGreaterThan(claims.iat);
+    // lido da configuração: um JWT_ACCESS_TTL_SECONDS no .env não quebra o teste (o padrão, 900,
+    // é coberto pelo spec do validateEnv)
+    const ttl = app.get(ConfigService).getOrThrow<number>('JWT_ACCESS_TTL_SECONDS');
+    expect(claims.exp - claims.iat).toBe(ttl);
+    expect(login.body.expiresIn).toBe(ttl);
   });
 
   it('não devolve a senha nem o hash em nenhuma resposta', async () => {

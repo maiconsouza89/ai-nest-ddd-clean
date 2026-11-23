@@ -38,7 +38,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 5 de 8 fases concluídas · 12 de 18 passos concluídos · **Fase atual:** 6
+**Progresso geral:** 5 de 8 fases concluídas · 13 de 18 passos concluídos · **Fase atual:** 6
 
 ---
 
@@ -392,7 +392,7 @@ Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modul
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-22 · **Conclusão:** —
 >
 > - [x] Passo 12: `ActorResolver` e ator carregado por requisição
-> - [ ] Passo 13: access token de 15 minutos
+> - [x] Passo 13: access token de 15 minutos
 > - [ ] Passo 14: refresh token rotativo e logout
 
 Contexto e alternativas no [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md). A base continua sendo o `@nestjs/jwt` (oficial e estável) com o guard próprio.
@@ -436,6 +436,8 @@ export abstract class ActorResolver {
 **Faça:** troque `JWT_EXPIRES_IN_SECONDS` (padrão 3600) por `JWT_ACCESS_TTL_SECONDS` (padrão 900) no `validateEnv` e no `.env.example`. A resposta do login passa a trazer `expiresIn` em segundos.
 
 **Pronto quando:** o token emitido tem `exp - iat = 900`, e o `validateEnv` recusa a variável antiga com uma mensagem clara.
+
+**Como ficou:** o `expiresIn` saiu do `JwtConfigModule`, que agora só fixa o segredo e o algoritmo. O `TokenIssuer` devolve `{ accessToken, expiresIn }`, que o login repassa sem mapear, e o `JwtTokenIssuer` recebe o TTL pela factory do `IdentityModule` e o passa no `signAsync`. Assim o prazo do token e o prazo informado ao cliente saem do mesmo número. O `validateEnv` tem uma tabela `RENAMED` de variáveis renomeadas: se o ambiente ainda define a antiga, ele falha com `JWT_EXPIRES_IN_SECONDS: renamed to JWT_ACCESS_TTL_SECONDS`, em vez de ignorar o valor sem avisar. Como o `JwtConfigModule` deixou de ter validade padrão, o `JwtAuthGuard` passou a recusar token sem `exp`: o jsonwebtoken só confere a expiração quando ela existe, e um `signAsync` sem `expiresIn` geraria um token eterno (achado do `/code-review`). O passo 14 reaproveita o mesmo `TokenIssuer` no `RefreshSessionUseCase`.
 
 ### Passo 14: refresh token rotativo e logout
 

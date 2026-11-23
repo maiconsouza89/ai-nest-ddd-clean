@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { TokenClaims, TokenIssuer } from '../../application/ports/token-issuer.js';
+import {
+  IssuedAccessToken,
+  TokenClaims,
+  TokenIssuer,
+} from '../../application/ports/token-issuer.js';
 
-@Injectable()
 export class JwtTokenIssuer implements TokenIssuer {
-  constructor(private readonly jwt: JwtService) {}
+  constructor(
+    private readonly jwt: JwtService,
+    private readonly ttlSeconds: number,
+  ) {}
 
-  issue(claims: TokenClaims) {
-    return this.jwt.signAsync({ ...claims });
+  async issue(claims: TokenClaims): Promise<IssuedAccessToken> {
+    const accessToken = await this.jwt.signAsync({ ...claims }, { expiresIn: this.ttlSeconds });
+    return { accessToken, expiresIn: this.ttlSeconds };
   }
 }

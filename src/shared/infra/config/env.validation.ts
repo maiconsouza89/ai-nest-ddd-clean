@@ -32,9 +32,10 @@ export class EnvironmentVariables {
   @MinLength(32)
   JWT_SECRET!: string;
 
+  // curto porque não há como revogar um access token antes de ele vencer
   @IsInt()
   @Min(1)
-  JWT_EXPIRES_IN_SECONDS: number = 3600;
+  JWT_ACCESS_TTL_SECONDS: number = 900;
 
   // texto, e não boolean: o `enableImplicitConversion` transformaria 'false' em true
   @IsIn(['true', 'false'])
@@ -69,14 +70,21 @@ export class EnvironmentVariables {
   THROTTLE_ENABLED: string = 'true';
 }
 
+// Variáveis que mudaram de nome. Sem esta checagem, o valor antigo seria ignorado sem aviso e o
+// padrão da nova valeria no lugar dele.
+const RENAMED: Record<string, string> = { JWT_EXPIRES_IN_SECONDS: 'JWT_ACCESS_TTL_SECONDS' };
+
 export function validateEnv(config: Record<string, unknown>) {
   const env = plainToInstance(EnvironmentVariables, config, { enableImplicitConversion: true });
-  const errors = validateSync(env, { skipMissingProperties: false });
-  if (errors.length) {
-    const details = errors
-      .map((e) => `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`)
-      .join('\n');
-    throw new Error(`Invalid environment configuration:\n${details}`);
+  const renamed = Object.entries(RENAMED)
+    .filter(([old]) => old in config)
+    .map(([old, current]) => `  - ${old}: renamed to ${current}`);
+  const invalid = validateSync(env, { skipMissingProperties: false }).map(
+    (e) => `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`,
+  );
+  const details = [...renamed, ...invalid];
+  if (details.length) {
+    throw new Error(`Invalid environment configuration:\n${details.join('\n')}`);
   }
   return env;
 }

@@ -33,13 +33,17 @@ export class JwtAuthGuard implements CanActivate {
     return true;
   }
 
-  // Sem token, assinatura ou expiração inválidas e sem `sub`: mesma resposta.
+  // Sem token, assinatura ou expiração inválidas, sem `exp` e sem `sub`: mesma resposta.
   private async verifiedUserId(req: AuthRequest) {
     const token = this.extractBearerToken(req);
     try {
       // algoritmo e segredo vêm da configuração do JwtModule (JwtConfigModule)
-      const { sub } = token ? await this.jwt.verifyAsync<{ sub?: unknown }>(token) : {};
-      if (typeof sub === 'string') return sub;
+      const { sub, exp } = token
+        ? await this.jwt.verifyAsync<{ sub?: unknown; exp?: unknown }>(token)
+        : {};
+      // o jsonwebtoken só confere o `exp` se ele existir; o JwtConfigModule não define validade
+      // padrão, então um token assinado sem `expiresIn` valeria para sempre
+      if (typeof sub === 'string' && typeof exp === 'number') return sub;
     } catch {
       // cai no 401 abaixo
     }

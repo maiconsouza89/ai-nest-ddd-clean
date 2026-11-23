@@ -3,8 +3,10 @@ import { TokenClaims, TokenIssuer } from '#modules/identity/application/ports/to
 export class FakeTokenIssuer implements TokenIssuer {
   readonly issued: TokenClaims[] = [];
 
+  constructor(readonly expiresIn = 60) {}
+
   async issue(claims: TokenClaims) {
     this.issued.push(claims);
-    return `token-for-${claims.sub}`;
+    return { accessToken: `token-for-${claims.sub}`, expiresIn: this.expiresIn };
   }
 }

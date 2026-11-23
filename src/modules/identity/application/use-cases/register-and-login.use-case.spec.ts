@@ -72,9 +72,9 @@ describe('LoginUseCase', () => {
       password: 'secret-123',
     });
 
-    const { accessToken } = await login.execute({ email: 'A@x.com', password: 'secret-123' });
+    const result = await login.execute({ email: 'A@x.com', password: 'secret-123' });
 
-    expect(accessToken).toBe(`token-for-${id}`);
+    expect(result).toEqual({ accessToken: `token-for-${id}`, expiresIn: tokens.expiresIn });
     expect(tokens.issued).toEqual([{ sub: id }]);
   });
 
