@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral e Camadas)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -420,6 +420,10 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 5. Atualize a tabela de rotas do `AGENTS.md`.
 
 **Pronto quando:** a seção virou link no guia, a página nova passa no `docs:check` e aparece no índice do `docs/README.md`.
+
+**Como ficou (parcial):**
+
+- **Visão geral e Camadas (2026-11-23):** as duas foram para `docs/explanation/arquitetura.md`, a primeira página do quadrante de explicação. As regras de camada já estavam em `reference/camadas.md` desde o passo 11, então a página ficou só com o porquê: o que torna o sistema um monólito modular, a regra de dependência, o Nest só na infra (`abstract class` como token, `useFactory` no módulo), o papel da entidade, do caso de uso e do controller, e as alternativas descartadas (microsserviços desde o início, `@Injectable()` no caso de uso, `interface` como contrato, uma entidade só para domínio e ORM). Os trechos de código foram conferidos contra o orders e atualizados: o `CreateOrderUseCase` ganhou outbox, clock e transação, o módulo ganhou os imports do inventory e do messaging, e o controller, o `@UseFilters`. No guia, as duas seções viraram ponteiro, com o título mantido para não quebrar âncoras. O link do `passo-a-passo.md` para `#camadas` aponta para as páginas novas. A linha "Versões de referência" saiu: as versões estão no `package.json`, e a incompatibilidade do `@nestjs/typeorm` 10 e 11.0.0 com o TypeORM 1.x foi para "Combinações que quebram" em `versoes-e-excecoes.md`. Rota nova no `AGENTS.md`, entrada nova no índice do `docs/README.md` e no mapa do `README.md`. Passo só de texto: `/simplify` e `/code-review` pulados.
 
 ### Passo 13: how-tos e skills-ponteiro
 
@@ -504,7 +508,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

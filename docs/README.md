@@ -16,6 +16,10 @@ A documentação segue o [Diátaxis](https://diataxis.fr/): cada página tem um 
 
 Uma pasta de quadrante só existe a partir da primeira página dela.
 
+## Explicação
+
+- [Arquitetura](explanation/arquitetura.md): monólito modular, regra de dependência, Nest só na infra e o papel de cada camada, com exemplos do orders.
+
 ## Referência
 
 - [Comandos](reference/comandos.md): setup do zero, verificação, testes, migrations, seeds, geradores e como baixar o ambiente.
@@ -49,7 +53,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Guia: módulos com DDD e Clean Architecture](research/modules-ddd-clean-nest.md): camadas, agregados, eventos e convenções de cada módulo. Vai sendo dividido entre os quadrantes ([plano de documentação](plan/documentacao.md), fase 3).
+- [Guia: módulos com DDD e Clean Architecture](research/modules-ddd-clean-nest.md): agregados, eventos, persistência e o resto do desenho. Vai sendo dividido entre os quadrantes ([plano de documentação](plan/documentacao.md), fase 3).
 - [Planos](plan/): trabalho interno. O [passo a passo](plan/passo-a-passo.md) que montou o projeto do zero, o [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
 
 ## Como escrever uma página

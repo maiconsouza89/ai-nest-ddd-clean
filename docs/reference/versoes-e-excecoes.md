@@ -25,3 +25,7 @@ Consultadas em 2026-11-21.
 | `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
 | `ioredis` | `^5.11` | 6.1.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830). Revise então `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: `protocol: 2` mantém o formato do 5 |
 | `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
+
+## Combinações que quebram
+
+- `@nestjs/typeorm` 10 e 11.0.0 quebram na inicialização com o TypeORM 1.x. Use o `@nestjs/typeorm` 12 ou superior.

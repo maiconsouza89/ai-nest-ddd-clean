@@ -347,7 +347,7 @@ O versionamento entra desde o primeiro dia porque, agora, não custa nada. Adici
 
 **Faça:**
 
-- `orders/infra/orders.module.ts` segue o guia de referência ([Camadas](../research/modules-ddd-clean-nest.md#camadas)), com estas implementações por enquanto:
+- `orders/infra/orders.module.ts` segue a [arquitetura](../explanation/arquitetura.md#nest-e-typeorm-só-na-infra) e as [camadas](../reference/camadas.md#infra), com estas implementações por enquanto:
   - `OrderRepository` com `useClass: InMemoryOrderRepository`. O provider é singleton por padrão, então os dados sobrevivem entre requisições.
   - `PriceCatalog` com `useClass: StaticPriceCatalog`, um `Map` fixo em `infra/gateways/`. É **provisório** e sai no passo 22.
   - `IdGenerator` com `useClass: UuidV7Generator`, em `shared/infra/ids/` (`npm i uuid`, `import { v7 } from 'uuid'`).
