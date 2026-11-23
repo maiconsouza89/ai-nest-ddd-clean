@@ -6,7 +6,7 @@
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
     "typecheck": "tsc --noEmit",
-    "arch": "depcruise src",
+    "arch": "depcruise src --output-type err-long",
     "ci": "npm run typecheck && npm run lint && npm run format:check && npm run docs:check && npm test && npm run arch",
     "build": "nest build",
     "start:dev": "nest start --watch",

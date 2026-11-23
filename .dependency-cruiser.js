@@ -1,40 +1,80 @@
+// Cada regra traz no `comment` o que ela barra e como consertar. O `npm run arch` usa a saída `err-long`,
+// que imprime esse comentário junto com a violação. O que exige julgamento fica em docs/reference/camadas.md.
+const CAMADAS = 'docs/reference/camadas.md';
+const CONVENCOES = 'docs/reference/convencoes.md';
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 export default {
   forbidden: [
     {
       name: 'no-circular',
+      comment:
+        'Ciclo de imports. Entre módulos, uma direção pode ser síncrona (facade) e a volta é por evento. ' +
+        'Um `import type` não forma ciclo.',
       severity: 'error',
       from: {},
-      // imports só de tipo (import type) somem na compilação e não formam ciclo real
       to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
     },
     {
-      name: 'domain-e-application-sem-framework',
+      name: 'camadas-internas-sem-pacotes',
+      comment:
+        'domain, application e contracts são TypeScript puro: não importam pacote npm nem módulo do Node ' +
+        '(Nest, TypeORM, class-validator, crypto...). Declare um port (abstract class) na application e ' +
+        'implemente na infra. Para liberar um pacote puro, sem I/O nem framework, acrescente um `pathNot` ' +
+        `no \`to\` desta regra. Ver ${CAMADAS}.`,
       severity: 'error',
-      from: { path: '/(domain|application)/' },
-      to: { path: 'node_modules/(@nestjs|typeorm)' },
+      from: { path: '/(domain|application|contracts)/' },
+      // Todo import resolvido dentro de src/, por caminho ou por alias, tem o tipo `local`.
+      to: { dependencyTypesNot: ['local'] },
     },
     {
       name: 'domain-nao-conhece-camadas-externas',
+      comment: `O domain não importa application nem infra: as dependências apontam para dentro. Ver ${CAMADAS}.`,
       severity: 'error',
       from: { path: '/domain/' },
       to: { path: '/(application|infra)/' },
     },
     {
       name: 'application-nao-conhece-infra',
+      comment:
+        'A application não importa a infra. Declare um port (abstract class) em application/ports, ' +
+        `implemente na infra e ligue no módulo Nest. Ver ${CAMADAS}.`,
       severity: 'error',
       from: { path: '/application/' },
       to: { path: '/infra/' },
     },
     {
       name: 'contracts-sem-domain-e-infra',
+      comment:
+        'O contracts é a API pública do módulo: tipos com primitivos, sem entidade nem erro de domínio. ' +
+        `Ver ${CAMADAS}.`,
       severity: 'error',
       from: { path: '/contracts/' },
       to: { path: '/(domain|infra)/' },
     },
     {
-      // Convenção do ADR 0005: sair do módulo (ou do shared) é sempre por alias, nunca por `../`.
+      name: 'porta-de-entrada-sem-persistencia',
+      comment:
+        'Controller, job e handler de evento só convertem a entrada e chamam um caso de uso ou uma query. ' +
+        `Não usam repositório, persistência (do módulo ou do shared) nem TypeORM. Ver ${CAMADAS}.`,
+      severity: 'error',
+      from: { path: '^src/modules/[^/]+/infra/(http|jobs|events)/' },
+      to: { path: ['/(domain/repositories|infra/database)/', '^node_modules/(@nestjs/)?typeorm/'] },
+    },
+    {
+      name: 'shared-nao-importa-modulos',
+      comment:
+        'O shared não conhece os módulos, nem por alias. Quem liga um port do shared à implementação de um ' +
+        `módulo é o AppModule (ADR 0002). Ver ${CAMADAS}.`,
+      severity: 'error',
+      from: { path: '^src/shared/' },
+      to: { path: '^src/modules/' },
+    },
+    {
       name: 'fronteira-via-alias',
+      comment:
+        'Saindo do módulo ou do shared, use o alias (`#shared/*`, `#modules/*`), não `../`. ' +
+        `Ver ${CONVENCOES} (ADR 0005).`,
       severity: 'error',
       from: { path: '^src/(modules/[^/]+|shared)/' },
       to: {
@@ -45,14 +85,19 @@ export default {
       },
     },
     {
-      // Dentro da mesma fronteira o import continua relativo (ADR 0005).
       name: 'alias-so-entre-fronteiras',
+      comment:
+        'Dentro do mesmo módulo (ou do shared), o import é relativo e com `.js`. ' +
+        `Ver ${CONVENCOES} (ADR 0005).`,
       severity: 'error',
       from: { path: '^src/(modules/[^/]+|shared)/' },
       to: { path: '^src/$1/', dependencyTypes: ['aliased-subpath-import'] },
     },
     {
       name: 'modulos-so-via-contracts',
+      comment:
+        'De outro módulo, importe só o `contracts/` (facade ou evento). ' +
+        'Ver docs/reference/modules/ e o ADR 0003.',
       severity: 'error',
       from: { path: '^src/modules/([^/]+)/', pathNot: '\\.module\\.ts$' },
       to: {
@@ -61,9 +106,10 @@ export default {
       },
     },
     {
-      // O arquivo do módulo Nest é a única exceção (ADR 0003): só pode importar, de outro módulo,
-      // o contracts/ ou o módulo Nest dele.
       name: 'modulo-nest-so-importa-modulo-nest',
+      comment:
+        'O arquivo do módulo Nest só importa, de outro módulo, o `contracts/` ou o módulo Nest dele, para ' +
+        'declarar a dependência em `imports` (ADR 0003).',
       severity: 'error',
       from: { path: '^src/modules/([^/]+)/.+\\.module\\.ts$' },
       to: {

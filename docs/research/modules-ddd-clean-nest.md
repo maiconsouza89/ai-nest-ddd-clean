@@ -1202,92 +1202,15 @@ O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem
 
 ### Regras de arquitetura no CI
 
-Com `dependency-cruiser`, rodando `depcruise src` no pipeline. Se alguém quebrar a regra, o build falha.
+Com `dependency-cruiser`, rodando `npm run arch` (`depcruise src --output-type err-long`) no pipeline. Se alguém quebrar a regra, o build falha.
 
-Substitua as regras padrão que o `depcruise --init` gera (`no-orphans`, `not-to-dev-dep` e outras) por estas. Mantenha `tsPreCompilationDeps: 'specify'`: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido, e com `'specify'` o import só de tipo ganha o rótulo `type-only`, que a `no-circular` usa. Com os aliases `#...`, o `enhancedResolveOptions.conditionNames` precisa incluir `@app/source`. Sem ele, os aliases resolvem para o `dist/`, e as regras deixam de enxergar esses imports sem avisar ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
+As regras ficam no `.dependency-cruiser.js`, e o `comment` de cada uma, impresso junto com a violação, diz o que ela barra. O que nenhuma regra confere está em [Camadas](../reference/camadas.md).
 
-```js
-forbidden: [
-  {
-    name: 'no-circular',
-    severity: 'error',
-    from: {},
-    // imports só de tipo (import type) somem na compilação e não formam ciclo real
-    to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
-  },
-  {
-    name: 'domain-e-application-sem-framework',
-    severity: 'error',
-    from: { path: '/(domain|application)/' },
-    to: { path: 'node_modules/(@nestjs|typeorm)' },
-  },
-  {
-    name: 'domain-nao-conhece-camadas-externas',
-    severity: 'error',
-    from: { path: '/domain/' },
-    to: { path: '/(application|infra)/' },
-  },
-  {
-    name: 'application-nao-conhece-infra',
-    severity: 'error',
-    from: { path: '/application/' },
-    to: { path: '/infra/' },
-  },
-  {
-    name: 'contracts-sem-domain-e-infra',
-    severity: 'error',
-    from: { path: '/contracts/' },
-    to: { path: '/(domain|infra)/' },
-  },
-  {
-    // ADR 0005: sair do módulo (ou do shared) é sempre por alias, nunca por `../`
-    name: 'fronteira-via-alias',
-    severity: 'error',
-    from: { path: '^src/(modules/[^/]+|shared)/' },
-    to: {
-      path: '^src/',
-      pathNot: '^src/$1/',
-      // o import por alias também carrega o tipo `local`, então ele precisa ser excluído aqui
-      dependencyTypesNot: ['aliased-subpath-import'],
-    },
-  },
-  {
-    // dentro da mesma fronteira o import continua relativo (ADR 0005)
-    name: 'alias-so-entre-fronteiras',
-    severity: 'error',
-    from: { path: '^src/(modules/[^/]+|shared)/' },
-    to: { path: '^src/$1/', dependencyTypes: ['aliased-subpath-import'] },
-  },
-  {
-    name: 'modulos-so-via-contracts',
-    severity: 'error',
-    from: { path: '^src/modules/([^/]+)/', pathNot: '\\.module\\.ts$' },
-    to: {
-      path: '^src/modules/[^/]+/',
-      pathNot: ['^src/modules/$1/', '^src/modules/[^/]+/contracts/'],
-    },
-  },
-  {
-    // O arquivo do módulo Nest é a única exceção (ADR 0003): só pode importar, de outro módulo,
-    // o contracts/ ou o módulo Nest dele.
-    name: 'modulo-nest-so-importa-modulo-nest',
-    severity: 'error',
-    from: { path: '^src/modules/([^/]+)/.+\\.module\\.ts$' },
-    to: {
-      path: '^src/modules/[^/]+/',
-      pathNot: [
-        '^src/modules/$1/',
-        '^src/modules/[^/]+/contracts/',
-        '^src/modules/[^/]+/(infra/)?[^/]+\\.module\\.ts$',
-      ],
-    },
-  },
-],
-```
+Mantenha `tsPreCompilationDeps: 'specify'`: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido, e com `'specify'` o import só de tipo ganha o rótulo `type-only`, que a `no-circular` usa. Com os aliases `#...`, o `enhancedResolveOptions.conditionNames` precisa incluir `@app/source`. Sem ele, os aliases resolvem para o `dist/`, e as regras deixam de enxergar esses imports sem avisar ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
 
-A exceção da `modulos-so-via-contracts` existe porque os `exports` de um `@Module` são a API pública dele: importar o `CatalogModule` só expõe a `CatalogFacade`. Por isso os módulos de negócio não são `@Global` (só a infraestrutura do `shared` é, ver o [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
+A exceção da `modulos-so-via-contracts` é o arquivo do módulo Nest, que importa o módulo Nest do outro para declarar a dependência em `imports`. Os `exports` de um `@Module` são a API pública dele: importar o `CatalogModule` só expõe a `CatalogFacade`. Por isso os módulos de negócio não são `@Global` (só a infraestrutura do `shared` é, ver o [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
 
-As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem `severity: 'error'`, a violação vira só aviso e o build não falha.
+Sem `severity: 'error'`, a violação vira só aviso e o build não falha.
 
 ### Observabilidade
 

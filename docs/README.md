@@ -22,6 +22,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...` e `import type`.
+- [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, e em qual pasta.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.
 

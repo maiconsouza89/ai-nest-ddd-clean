@@ -24,6 +24,32 @@ export default defineConfig(
     },
   },
   {
+    // Repositório, port, query e facade: contrato com método é abstract class, para servir de token de injeção.
+    files: [
+      'src/**/domain/repositories/**/*.ts',
+      'src/**/application/ports/**/*.ts',
+      'src/**/application/queries/**/*.ts',
+      'src/modules/*/contracts/*.facade.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSInterfaceDeclaration',
+          message:
+            'Use `type` para formato de dados e `abstract class` para contrato: a interface some na compilação e não serve de token de injeção. Ver docs/reference/camadas.md.',
+        },
+        {
+          // `save(): …` é TSMethodSignature; `save: () => …` é uma propriedade com tipo de função
+          selector:
+            'TSTypeAliasDeclaration:matches(:has(TSMethodSignature), :has(TSPropertySignature > TSTypeAnnotation > TSFunctionType))',
+          message:
+            'Contrato com método é `abstract class`: o `type` some na compilação e não serve de token de injeção. Ver docs/reference/camadas.md.',
+        },
+      ],
+    },
+  },
+  {
     // Scripts de ferramenta em JS puro, sem tipos.
     files: ['scripts/**/*.mjs'],
     extends: [js.configs.recommended],

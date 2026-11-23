@@ -57,7 +57,7 @@ Convenções:
 | --- | --- | --- |
 | 1. Fundação | ADR 0006, `docs:check`, templates, referência operacional, `AGENTS.md`, `CLAUDE.md` enxuto, READMEs | ✅ |
 | 2. Módulos e glossário | `docs/reference/modules/*.md`, `glossario.md`, regra-ponteiro, plop gera doc de módulo | ✅ |
-| 3. Sob demanda | Camadas (check primeiro), divisão do guia de pesquisa, how-tos e skills, tutoriais | ⬜ |
+| 3. Sob demanda | Camadas (check primeiro), divisão do guia de pesquisa, how-tos e skills, tutoriais | 🟡 |
 
 ---
 
@@ -353,9 +353,9 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 
 ## Fase 3: sob demanda
 
-> **Status:** ⬜ · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
-> - [ ] Passo 11: camadas (check primeiro)
+> - [x] Passo 11: camadas (check primeiro)
 > - [ ] Passo 12: dividir o guia de pesquisa
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
@@ -376,6 +376,17 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 - Crie regras-ponteiro por camada (`.claude/rules/domain.md` com `paths: ["src/**/domain/**"]`, e o mesmo para as outras camadas) apontando para a seção certa de `camadas.md`.
 
 **Pronto quando:** cada convenção está como check ou como texto (nunca nos dois), e uma violação de propósito em `domain/` falha no `npm run arch` ou no `npm run lint`.
+
+**Como ficou (2026-11-23):**
+
+- **Checks no `arch`:** a regra que barrava só `@nestjs` e `typeorm` em domain e application virou `camadas-internas-sem-pacotes`. Ela vale também para o contracts e barra qualquer pacote npm ou módulo do Node (`dependencyTypesNot: ['local']`). Os 94 arquivos dessas camadas não importavam nenhum. Um pacote puro entra por `pathNot`. Regras novas: `porta-de-entrada-sem-persistencia` (`infra/http`, `infra/jobs` e `infra/events` de um módulo sem repositório, sem `infra/database` e sem TypeORM) e `shared-nao-importa-modulos` (o alias `#modules/...` passava pela `fronteira-via-alias`). Toda regra ganhou um `comment` com o que barra, como consertar e a doc, e o `arch` passou a usar `--output-type err-long`, que imprime esse comentário.
+- **Check no `lint`:** em `domain/repositories`, `application/ports`, `application/queries` e `contracts/*.facade.ts`, uma `interface` ou um `type` com método falha. Contrato é `abstract class`, para servir de token de injeção.
+- **Texto:** `docs/reference/camadas.md`, com o que fica em cada camada e em qual pasta, para o que nenhuma ferramenta confere. Ela não repete o que as regras barram.
+- **Regra-ponteiro:** uma só, `.claude/rules/camadas.md`, com os caminhos das quatro camadas, mandando ler a seção da camada. Quatro arquivos quase iguais apontariam para a mesma página curta. Rotas: uma linha no `AGENTS.md` e uma no índice do `docs/README.md`.
+- **Guia de pesquisa:** a cópia das regras do dependency-cruiser em "Regras de arquitetura no CI" virou ponteiro para o `.dependency-cruiser.js` e para `camadas.md`. O resto da seção "Camadas" fica para o passo 12.
+- **Teste negativo:** um import de `@nestjs/common` e de `node:crypto` em `domain/`, um alias para `#modules/...` no shared, um controller importando repositório e TypeORM, e uma `interface` e um `type` com método num port. Cada um falhou com a sua mensagem, e um `type` só de dados e um job do shared usando `infra/database` passaram. Todos desfeitos depois.
+- **`/simplify`:** quatro revisores. Daí saíram o `dependencyTypesNot: ['local']` no lugar da lista de oito tipos, a âncora da porta de entrada em `src/modules/` (pegava `shared/infra/jobs`), o TypeORM barrado também na porta de entrada, o `type` com método barrado no lint, a constante `CONVENCOES`, o mapa da página só com o papel de cada camada, e o corte das frases que repetiam um check, o glossário ou um porquê. Ficaram de fora o resto da seção "Camadas" do guia (passo 12), o `convencoes.md`, que também repete as regras de alias (fora deste passo), e a mensagem dobrada quando um import cai em duas regras de propósitos diferentes.
+- **`/code-review`:** o lint passou a barrar também o `type` com propriedade de função (`save: () => …`), que escapava do seletor de método. Ajustes de texto: a página e a regra-ponteiro dizem que o `lint` confere a forma dos contratos, não imports; a página ganhou a linha de value object; o `comment` da porta de entrada cita a persistência do shared, que a regra também barra; o `comment` do contracts perdeu a frase sobre o retorno da facade, que fica só no texto; e o guia cita o `npm run arch`, que imprime os comentários.
 
 ### Passo 12: dividir o guia de pesquisa
 
@@ -492,7 +503,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 ### Fase 3 (por passo)
 
-- [ ] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`.
+- [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
 - [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
