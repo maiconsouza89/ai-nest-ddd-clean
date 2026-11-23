@@ -26,7 +26,7 @@ export class TypeOrmUserRepository implements UserRepository {
       // duas requisições simultâneas passam pela checagem do caso de uso; o UNIQUE decide
       if (
         e instanceof QueryFailedError &&
-        (e.driverError as { code?: string })?.code === UNIQUE_VIOLATION
+        (e.driverError as { code?: string }).code === UNIQUE_VIOLATION
       ) {
         throw new EmailAlreadyInUseError();
       }

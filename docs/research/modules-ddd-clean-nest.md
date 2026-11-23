@@ -691,7 +691,9 @@ async save(order: Order) {
     const res = await this.repo.update({ id: order.id, version: order.version }, { version: next });
     if (res.affected === 0) throw new ConcurrencyError(); // o cliente recarrega e tenta de novo
   }
-  await this.repo.save({ ...OrderMapper.toPersistence(order), version: next });
+  const row = OrderMapper.toPersistence(order);
+  row.version = next;
+  await this.repo.save(row);
 }
 ```
 
@@ -1194,7 +1196,7 @@ Quatro ferramentas, cada uma com uma responsabilidade e nenhuma sobreposta:
 | ESLint + `typescript-eslint` | bugs que compilam: promises, `any` inseguro, código morto |
 | Prettier | formatação |
 
-O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem `^`, porque até um patch pode mudar a formatação. O ESLint usa `recommendedTypeChecked` com `projectService` (flat config) e o `eslint-config-prettier`, que só desliga as regras de estilo. Não use `consistent-type-imports`: com `emitDecoratorMetadata`, um `import type` numa classe injetada pelo construtor quebra a injeção do Nest em tempo de execução. As fronteiras entre módulos ficam só no dependency-cruiser. Detalhes e regras desligadas: ADR 0004.
+O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem `^`, porque até um patch pode mudar a formatação. O ESLint usa `recommendedTypeChecked` com `projectService` (flat config), mais algumas regras do `strictTypeChecked` escolhidas uma a uma (lista na ADR 0004), e o `eslint-config-prettier`, que só desliga as regras de estilo. Não use `consistent-type-imports`: com `emitDecoratorMetadata`, um `import type` numa classe injetada pelo construtor quebra a injeção do Nest em tempo de execução. As fronteiras entre módulos ficam só no dependency-cruiser. Detalhes e regras desligadas: ADR 0004.
 
 `npm run ci` roda typecheck, lint, `format:check`, testes unitários e arch.
 

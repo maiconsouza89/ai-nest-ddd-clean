@@ -18,9 +18,9 @@ Sempre a **latest estável**. Quando a latest de um pacote quebra a latest de ou
 
 | Pacote | Fica em | Latest | Motivo | Atualize quando |
 | --- | --- | --- | --- | --- |
-| `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `dependency-cruiser` 18.8 recusa o TS 7, o `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2` e o `typescript-eslint` 8.73 (passo 4) aceita só `>=4.8.4 <6.1.0`. | Os três aceitarem o TS 7. Para o TS 6.1, basta o `typescript-eslint` aceitar |
+| `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2` e o `typescript-eslint` 8.73 (passo 4) aceita só `>=4.8.4 <6.1.0`. O `dependency-cruiser` 18.9 já aceita o TS `>=7.1` (o 7.0 não, conferido em 2026-11-23). | O `@nestjs/cli` e o `typescript-eslint` aceitarem o TS 7.1 ou superior. Para o TS 6.1, basta o `typescript-eslint` aceitar |
 | `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
-| `ioredis` | `^5.11` | 6.0.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830) |
+| `ioredis` | `^5.11` | 6.1.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830) |
 | `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
 
 Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09 (ver passo 18).
@@ -36,9 +36,9 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ✅ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ✅ |
-| 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | 🟡 |
+| 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ✅ |
 
-**Progresso geral:** 7 de 8 fases concluídas · 17 de 18 passos concluídos · **Fase atual:** 8
+**Progresso geral:** 8 de 8 fases concluídas · 18 de 18 passos concluídos · Novos itens entram pelos gatilhos do passo 18
 
 ---
 
@@ -499,11 +499,11 @@ export abstract class ActorResolver {
 
 ## Fase 8: documentação
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-23 · **Conclusão:** 2026-11-23
 >
 > - [x] Passo 16: `CLAUDE.md`
 > - [x] Passo 17: alinhar o guia de referência
-> - [ ] Passo 18: evoluções sob demanda
+> - [x] Passo 18: evoluções sob demanda
 
 ### Passo 16: `CLAUDE.md`
 
@@ -567,10 +567,14 @@ Adote estes itens só quando a condição for atendida:
 | Condição | O que fazer |
 | --- | --- |
 | `@nestjs/authentication` e `@nestjs/authorization` chegarem à 1.0 | Reavaliar a troca do guard próprio, do refresh token e do `RolesGuard` pelos pacotes oficiais (o `@nestjs/authorization` nega por padrão com `@Can()`) |
-| `dependency-cruiser`, `@nestjs/cli` e `typescript-eslint` aceitarem o TS 7 | Atualizar o `typescript` e tirar a exceção da tabela |
+| `@nestjs/cli` e `typescript-eslint` aceitarem o TS 7.1 ou superior | Atualizar o `typescript` e tirar a exceção da tabela |
 | O `cache-manager` depender da `keyv` 6 | Atualizar `keyv` e `@keyv/redis` juntos |
 | Uma medição mostrar custo no `ActorResolver` | Cache curto no Redis com invalidação por evento quando as roles mudarem |
 | O `instrumentation-nestjs-core` suportar o Nest 12 | Reativar os spans de controller |
 | Permissões crescerem além de roles | CASL (`@casl/ability`, com receita na doc do Nest) |
 | Clientes legítimos perderem a sessão por renovar em paralelo com o mesmo refresh token, ou por repetir a renovação depois de perder a resposta | Janela de tolerância curta no reuso: devolver o sucessor já emitido em vez de revogar a família |
-| O lint estiver limpo há algumas fases | Avaliar regras do `strictTypeChecked` uma a uma, e reavaliar as regras desligadas no passo 4 (`no-unsafe-*` nos testes e `require-await`, ver ADR 0004) |
+| O `engines` exigir Node `>=22.22.3` (linha 22) ou `>=24.11.1` | Trocar o `module.register` do `tracing.ts` (depreciado, DEP0205) pelo `register` de `import-in-the-middle/register-hooks.mjs`, que usa o `module.registerHooks`. O `import-in-the-middle` hoje é dependência transitiva do `@opentelemetry/instrumentation`: adicione-o ao `package.json` na mesma versão, para que o hook e o `Hook()` do OpenTelemetry usem a mesma instância. Confira que os spans do `ioredis` e do `express` continuam aparecendo |
+| Uma regra do `strictTypeChecked` deixada de fora passar a pegar bug real, ou o desenho que a impede mudar | Reavaliar a regra (lista e motivos na ADR 0004) |
+| Um acesso por índice sem checagem causar bug, ou a `no-unnecessary-condition` pedir para tirar uma guarda de índice | Ligar o `noUncheckedIndexedAccess` no `tsconfig.json` (29 erros do `tsc` em 2026-11-23, 9 arquivos de teste e 5 de produção) |
+
+**Como ficou (2026-11-23):** o único gatilho atendido era o do lint, limpo desde a fase 2. O resultado e os ajustes que ele pediu estão na ADR 0004. Fora da tabela, o `dependency-cruiser` estava no 18.8 sem exceção registrada e foi para o 18.9.

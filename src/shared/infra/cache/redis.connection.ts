@@ -32,7 +32,9 @@ export class RedisConnection implements OnModuleInit, BeforeApplicationShutdown 
 
   onModuleInit() {
     // não bloqueia a subida: a aplicação funciona sem cache, e o /health/ready acusa a falta do Redis
-    this.client.connect().catch((err: Error) => this.logger.warn({ err }, 'redis connect failed'));
+    this.client
+      .connect()
+      .catch((err: unknown) => this.logger.warn({ err }, 'redis connect failed'));
   }
 
   beforeApplicationShutdown() {

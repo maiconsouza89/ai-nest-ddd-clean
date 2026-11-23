@@ -19,6 +19,7 @@ if (process.env.NODE_ENV !== 'production') {
 if (process.env.OTEL_SDK_DISABLED !== 'true') {
   // Em ESM, o `require` não é interceptado: o hook do import-in-the-middle é o que permite instrumentar
   // o que o código importa direto (como o `ioredis`). Precisa vir antes de carregar o app.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- DEP0205: a troca exige um Node acima do `engines` (passo 18 do plano)
   register('@opentelemetry/instrumentation/hook.mjs', import.meta.url);
   const sdk = new NodeSDK({
     instrumentations: [

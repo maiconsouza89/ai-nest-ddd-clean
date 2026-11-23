@@ -27,7 +27,9 @@ export class TypeOrmOrderRepository implements OrderRepository {
       );
       if (res.affected === 0) throw new ConcurrencyError();
     }
-    await this.repo.save({ ...OrderMapper.toPersistence(order), version: next });
+    const row = OrderMapper.toPersistence(order);
+    row.version = next;
+    await this.repo.save(row);
   }
 
   async findById(id: string) {
