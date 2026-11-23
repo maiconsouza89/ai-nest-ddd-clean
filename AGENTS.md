@@ -52,6 +52,7 @@ Leia a página antes de agir no assunto.
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
 | Decidir em qual camada e pasta fica uma classe | `docs/reference/camadas.md` |
 | Entender por que o projeto é um monólito modular em camadas | `docs/explanation/arquitetura.md` |
+| Decidir se um objeto entra num agregado ou vira outro módulo | `docs/explanation/agregados.md` |
 | Fazer um módulo usar outro, ou mudar um evento ou uma facade | `docs/explanation/comunicacao-entre-modulos.md` e `docs/reference/camadas.md` |
 | Gerar uma migration depois de mudar uma ORM entity | `docs/how-to/gerar-uma-migration.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |

@@ -704,7 +704,7 @@ O contrato expõe só primitivos. A regra `contracts-sem-domain-e-infra` impede 
   2. Para cada item, faz o update atômico condicional (`available >= :qty`). Se algum afetar 0 linhas, lança `InsufficientStockError` e a transação desfaz tudo.
 - `InventoryFacade` em `contracts/`, e o `InventoryModule` exporta só ela.
 - A facade devolve um resultado (`{ ok: true }` ou `{ ok: false, reason: 'INSUFFICIENT_STOCK', productId }`), porque o contrato não pode importar o `InsufficientStockError` do domain. O `InventoryModule` é `@Global`, como o `CatalogModule`.
-- Em orders, o port `StockGateway` e o adapter `InventoryStockGateway` (ver [Agregados e comunicação entre módulos](../research/modules-ddd-clean-nest.md#agregados-e-comunicação-entre-módulos)).
+- Em orders, o port `StockGateway` e o adapter `InventoryStockGateway` (ver [Agregados](../explanation/agregados.md#o-estoque-entra-por-um-port-do-orders)).
 - O `PlaceOrderUseCase` chama `stock.reserve(order.id, items)` antes de `order.place()` e do `save`.
 
 Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado. Por enquanto, aceite isso ou compense com `release`. A fase 10 resolve de forma robusta.

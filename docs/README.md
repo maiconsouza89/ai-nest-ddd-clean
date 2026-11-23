@@ -25,6 +25,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Arquitetura](explanation/arquitetura.md): monólito modular, regra de dependência, Nest só na infra e o papel de cada camada, com exemplos do orders.
 - [Persistência](explanation/persistencia.md): por que a entidade de domínio e a ORM entity são classes diferentes, o mapper e a transação do caso de uso.
 - [Comunicação entre módulos](explanation/comunicacao-entre-modulos.md): dados próprios por módulo, dependência numa direção só, facade que devolve resultado e contratos com versão.
+- [Agregados](explanation/agregados.md): por que o item fica no `Order` e o estoque no inventory, o port `StockGateway` e a reserva síncrona dentro da transação do pedido.
 - [Shared kernel](explanation/shared-kernel.md): por que o `shared` guarda só blocos técnicos e por que, na dúvida, o tipo fica duplicado.
 - [Autenticação e ownership](explanation/autenticacao.md): autenticação na infra e ownership no caso de uso, o ator carregado a cada requisição, o refresh token rotativo e a corrida da renovação.
 

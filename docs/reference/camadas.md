@@ -124,7 +124,7 @@ Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/
 | Migrations | DataSource da CLI por módulo (`<módulo>.data-source.ts`), só com as entidades do módulo e `migrationsTableName: '<módulo>_migrations'` |
 | Referência a dado de outro módulo | Só o id (`customerId`), sem FK |
 | Leitura de dado de outro módulo | Pela facade, ou por uma cópia local atualizada por eventos. Sem join |
-| Mudança que precisa refletir em outro módulo | Evento de integração pela outbox. Sem transação entre módulos |
+| Mudança que precisa refletir em outro módulo | Evento de integração pela outbox. Sem transação entre módulos, exceto a reserva de estoque do orders ([Agregados](../explanation/agregados.md#síncrono-dentro-da-transação-do-pedido)) |
 | Dependência nos dois sentidos | Uma direção pela facade, a volta por evento |
 
 ## Shared

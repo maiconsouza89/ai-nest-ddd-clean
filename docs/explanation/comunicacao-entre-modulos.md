@@ -38,7 +38,7 @@ Com os dados separados, vêm três proibições, e todas têm o mesmo motivo: ca
 
 - **Sem FK entre schemas.** O orders guarda só o id do usuário (`customerId`), sem chave estrangeira para o identity.
 - **Sem join entre módulos.** Quem precisa de um dado de outro módulo pede pela facade ou mantém uma cópia local, atualizada por eventos.
-- **Sem transação entre módulos.** Quando uma mudança num módulo precisa refletir em outro, ela sai como evento pela [outbox](../reference/glossario.md#outbox), gravada na mesma transação do agregado.
+- **Sem transação entre módulos.** Quando uma mudança num módulo precisa refletir em outro, ela sai como evento pela [outbox](../reference/glossario.md#outbox), gravada na mesma transação do agregado. A exceção é a reserva de estoque ao fechar o pedido, que entra na transação do orders porque os dois módulos usam a mesma conexão ([Agregados](agregados.md#síncrono-dentro-da-transação-do-pedido)).
 
 ### Uma direção síncrona, a volta por evento
 

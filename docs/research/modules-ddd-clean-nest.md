@@ -32,68 +32,7 @@ Movida. O porquê está em [Autenticação e ownership](../explanation/autentica
 
 ## Agregados e comunicação entre módulos
 
-OrderItem não é submódulo: é parte do agregado Order. Stock é outro módulo (`inventory`), com regras e ciclo de vida próprios.
-
-**Como decidir:** se muda junto com o pai e as regras dependem dele (total, limite de itens), fica no mesmo agregado. Se tem regras próprias e vive sozinho, vira outro módulo.
-
-**Regras de agregado (Vaughn Vernon):** proteja as invariantes dentro do agregado, mantenha agregados pequenos, referencie outros agregados só por ID e altere um agregado por transação. Entre agregados, use consistência eventual.
-
-### Order e OrderItem (mesmo agregado)
-
-```ts
-// o getter `items` devolve uma cópia readonly: só a raiz altera a lista interna
-get items(): readonly OrderItem[] {
-  return [...this._items];
-}
-
-addItem(productId: string, qty: number, unitPrice: Money) {
-  if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
-  const existing = this._items.find((i) => i.productId === productId);
-  if (existing) existing.increase(qty);
-  else this._items.push(new OrderItem(productId, qty, unitPrice));
-}
-
-get total() {
-  return this._items.reduce((sum, i) => sum.add(i.subtotal), Money.zero());
-}
-```
-
-- Não existe `OrderItemRepository`. O `OrderRepository` salva pedido e itens juntos, na mesma transação.
-- No TypeORM, `@OneToMany` com `cascade: true` na ORM entity. O mapper converte os dois.
-- O item guarda só o `productId` e uma cópia do preço no momento da compra.
-
-### Stock via port e gateway
-
-Orders declara o que precisa num port. O adapter na infra de orders chama a facade de `inventory`.
-
-```ts
-// orders/application/ports/stock-gateway.ts
-export abstract class StockGateway {
-  abstract reserve(orderId: string, items: { productId: string; qty: number }[]): Promise<void>;
-}
-
-// orders/infra/gateways/inventory-stock.gateway.ts
-// traduz o resultado do contrato do inventory para o erro de domínio do orders
-export class InventoryStockGateway implements StockGateway {
-  constructor(private readonly inventory: InventoryFacade) {}
-
-  async reserve(orderId: string, items: { productId: string; qty: number }[]) {
-    const result = await this.inventory.reserve({ referenceId: orderId, items });
-    if (!result.ok) throw new InsufficientStockError(result.productId);
-  }
-}
-```
-
-O `orderId` vai como `referenceId` da reserva. Se a chamada for repetida por retry ou timeout, o inventory reconhece a referência e não reserva de novo.
-
-### Síncrono ou por eventos
-
-| Abordagem | Como funciona | Prós | Contras |
-| --- | --- | --- | --- |
-| Síncrona | Caso de uso chama `stock.reserve()` e depois salva o pedido | Simples, resposta imediata | Se o save falhar, sobra reserva sem pedido; precisa compensação |
-| Por eventos (não implementada) | Pedido salvo num estado de espera publica `OrderPlaced`; inventory responde com um evento de reserva feita ou recusada; pedido confirma ou cancela | Robusto, módulos desacoplados | Consistência eventual, mais peças (outbox, handlers) |
-
-**Sugestão:** comece síncrono em sistemas pequenos e migre para eventos quando precisar de resiliência ou de extrair o módulo. Como orders depende só do port `StockGateway`, a troca não afeta domain nem casos de uso.
+Movida para [Agregados](../explanation/agregados.md): o que fica no agregado `Order`, o estoque pelo port `StockGateway` e a reserva síncrona dentro da transação do pedido.
 
 ## Dependências e contratos entre módulos
 
