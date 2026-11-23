@@ -69,7 +69,7 @@ Convenções:
 > - [x] Passo 2: `docs:check` no CI
 > - [x] Passo 3: templates `plop doc`
 > - [x] Passo 4: referência operacional
-> - [ ] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
+> - [x] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
 > - [ ] Passo 6: `README.md` e `docs/README.md`
 
 ### Passo 1: ADR 0006
@@ -223,6 +223,17 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 
 **Pronto quando:** `CLAUDE.md` com o `AGENTS.md` expandido fica abaixo de 200 linhas, nenhum fato do `CLAUDE.md` antigo se perdeu (confira item a item contra a tabela do passo 4), e o checklist da fase 1 passa.
 
+**Como ficou (2026-11-23):**
+
+- **Tamanho:** `AGENTS.md` com 53 linhas e `CLAUDE.md` com 22, ou 75 com o import expandido.
+- **`AGENTS.md`:** projeto (com a visão geral da arquitetura, que saiu do `CLAUDE.md`), verificação, sete armadilhas, versões, definição de pronto e a tabela de rotas. A definição de pronto ganhou "`npm run ci` passa", e a verificação diz quando rodar integração e e2e, que o `ci` não cobre. As armadilhas de imports e de `import type` ficaram numa linha cada, com o detalhe em `convencoes.md`.
+- **`CLAUDE.md`:** `@AGENTS.md`, depois só o Context7 e o fluxo de entrega. A linha "This file provides guidance…" saiu, por não mudar o comportamento.
+- **Rotas:** só apontam para páginas que existem. Camadas e DDD vão para o guia de pesquisa até as fases 2 e 3. "Escrever ou mover documentação" aponta para o ADR 0006 até o `docs/README.md` existir (passo 6).
+- **Nenhum fato perdido:** cada termo característico do `CLAUDE.md` anterior ao passo 4 (versões, portas, comandos, `remove-orphans`, `"mig:${m}:run"`, `Senha@12345`, oxc, `consistent-type-imports`, `ActorResolver`, `@Global`, `tracing.ts` e outros) foi procurado no `AGENTS.md`, no `CLAUDE.md` e em `docs/reference/`, e todos foram achados.
+- **Teste de roteamento:** a primeira rodada da pergunta do pay-order misturou integração e e2e. A seção de verificação do `AGENTS.md` passou a dizer que o `test:int` sobe Postgres e Redis próprios (Testcontainers) e que só o `test:e2e` usa o docker-compose. Resultado no checklist da fase 1.
+- **`/simplify` e `/code-review`:** pulados. O passo só mexe em Markdown.
+- **Checklist da fase 1:** os itens automáticos e de conteúdo passam (marcados abaixo). Os de uso real dependem do `README.md` do passo 6 e de uma sessão nova, e ficam para o fim da fase.
+
 ### Passo 6: `README.md` e `docs/README.md`
 
 **Por quê:** o repositório não tem porta de entrada.
@@ -231,6 +242,7 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 
 - **`README.md`:** o que é o projeto (um parágrafo, com a visão geral da arquitetura que o passo 4 deixou no `CLAUDE.md`), requisitos, quickstart com os passos numerados do setup (cada um com link para `docs/reference/comandos.md`) e um mapa da documentação.
 - **`docs/README.md`:** a bússola do Diátaxis (ação ou conhecimento, adquirir ou aplicar), um índice por quadrante com só as páginas que existem, a lista de ADRs e uma seção "Como escrever uma página" (`npm run plop doc`, `type:`, `docs:check`, apagar os comentários do template, nada de "hoje", "atualmente" ou "novo", e data só em registro).
+- **Rota do `AGENTS.md`:** "Escrever ou mover documentação" passa a apontar para o `docs/README.md`.
 
 **Pronto quando:** alguém sem contexto chega do `README.md` à app rodando seguindo só links, e o `docs/README.md` lista todas as páginas existentes.
 
@@ -405,29 +417,35 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 **Automático:**
 
-- [ ] `npm run ci` passa, com o `docs:check` incluído.
-- [ ] Teste negativo: quebrar um link interno, uma âncora, um `type:` e incluir um `@docs/` no `AGENTS.md`. Cada caso faz o `docs:check` falhar e é desfeito depois.
-- [ ] `npm run plop doc` gera os quatro tipos. Recém-gerados, eles falham só pela regra `scaffold`, e passam no `docs:check` depois de apagados os comentários.
+- [x] `npm run ci` passa, com o `docs:check` incluído. 2026-11-23: exit 0, 191 testes, arch sem violações.
+- [x] Teste negativo: quebrar um link interno, uma âncora, um `type:` e incluir um `@docs/` no `AGENTS.md`. Cada caso faz o `docs:check` falhar e é desfeito depois. 2026-11-23: link, âncora e `type:` no passo 2; `@docs/` e ponteiro inexistente no `AGENTS.md` no passo 5 (`agent-import` e `agent-pointer`).
+- [x] `npm run plop doc` gera os quatro tipos. Recém-gerados, eles falham só pela regra `scaffold`, e passam no `docs:check` depois de apagados os comentários. 2026-11-23: 21 avisos `scaffold` e nenhum outro (passo 3).
 
 **Conteúdo:**
 
-- [ ] Cada seção do `CLAUDE.md` antigo tem destino conferido na tabela do passo 4. Nenhum fato se perdeu.
-- [ ] O `CLAUDE.md` com o `AGENTS.md` expandido tem menos de 200 linhas, e o `AGENTS.md` sozinho tem até 100.
-- [ ] Os únicos imports com `@` nos arquivos de agente são `@AGENTS.md` no `CLAUDE.md`.
-- [ ] O `evolucao.md` aponta para `reference/versoes-e-excecoes.md`, e a tabela de exceções existe num lugar só.
-- [ ] Nenhum termo datado em páginas de quadrante: `grep -rniE "\b(hoje|atualmente|recentemente|novo)\b" docs/{tutorials,how-to,reference,explanation}` só encontra usos legítimos.
-- [ ] Cada "ADR 000N" citado no código (`grep -rhoE "ADR [0-9]{4}" src | sort -u`) tem o arquivo correspondente em `docs/adr/`.
+- [x] Cada seção do `CLAUDE.md` antigo tem destino conferido na tabela do passo 4. Nenhum fato se perdeu. 2026-11-23: ver o "Como ficou" do passo 5.
+- [x] O `CLAUDE.md` com o `AGENTS.md` expandido tem menos de 200 linhas, e o `AGENTS.md` sozinho tem até 100. 2026-11-23: 75 e 53.
+- [x] Os únicos imports com `@` nos arquivos de agente são `@AGENTS.md` no `CLAUDE.md`. 2026-11-23: o `docs:check` passa, e o `--conditions=@app/source` do `AGENTS.md` está entre crases.
+- [x] O `evolucao.md` aponta para `reference/versoes-e-excecoes.md`, e a tabela de exceções existe num lugar só. 2026-11-23 (passo 4).
+- [x] Nenhum termo datado em páginas de quadrante: `grep -rniE "\b(hoje|atualmente|recentemente|novo)\b" docs/{tutorials,how-to,reference,explanation}` só encontra usos legítimos. 2026-11-23: só "de novo", "um novo" e "par novo".
+- [x] Cada "ADR 000N" citado no código (`grep -rhoE "ADR [0-9]{4}" src | sort -u`) tem o arquivo correspondente em `docs/adr/`. 2026-11-23: 0002 e 0003, os dois existem.
 
 **Uso real:**
 
 - [ ] Setup do zero pelo `README.md` num banco vazio (sem `.env`, sem volumes): migrations, seeds, `start:dev`, `/health/live` e `/docs` funcionam seguindo só links.
-- [ ] Numa sessão nova do Claude Code, `/memory` (ou `/context`) mostra o `CLAUDE.md` e o `AGENTS.md` carregados.
-- [ ] Teste de roteamento numa sessão nova, sem dicas. O agente acha a resposta lendo a página certa de `docs/`, sem varrer o repositório com grep, para estas perguntas:
+- [x] Numa sessão nova do Claude Code, `/memory` (ou `/context`) mostra o `CLAUDE.md` e o `AGENTS.md` carregados. 2026-11-23: o `/memory` lista o `./CLAUDE.md` em "Project instructions" e o `AGENTS.md` como `@-imported` logo abaixo.
+- [x] Teste de roteamento numa sessão nova, sem dicas. O agente acha a resposta lendo a página certa de `docs/`, sem varrer o repositório com grep, para estas perguntas:
   - "Como rodo só o teste de integração do pay-order?"
   - "Por que o token não leva as roles?"
   - "Qual versão do TypeScript devo usar e por quê?"
+
+  2026-11-23:
+
+  - **pay-order:** respondido pelo `AGENTS.md`, sem abrir `comandos.md`. Na primeira rodada, o comando veio certo, mas os avisos do e2e (docker-compose no ar, `start:dev` aberto) foram aplicados à integração. A verificação do `AGENTS.md` passou a separar os dois: o `test:int` sobe containers próprios e só precisa do Docker. Numa sessão nova, a resposta veio certa;
+  - **roles:** leu `docs/reference/autenticacao.md` e seguiu para a ADR 0002 (com um `grep` só em `docs/adr` para achá-la). A resposta trouxe o motivo, o custo e as alternativas;
+  - **TypeScript:** foi direto a `docs/reference/versoes-e-excecoes.md`, conferiu o `package.json` e a latest no npm, e respondeu `~6.0` com os motivos e os gatilhos.
 - [ ] `/doctor prompt-audit` (se disponível na versão instalada) não aponta contradição nem arquivo inexistente.
-- [ ] `/simplify` e `/code-review` rodados sobre scripts, `plopfile.mjs` e `package.json`.
+- [x] `/simplify` e `/code-review` rodados sobre scripts, `plopfile.mjs` e `package.json`. 2026-11-23: no passo 2 (`package.json`, configs e `scripts/remark-docs-rules.mjs`) e no passo 3 (`plopfile.mjs`, templates e a regra `scaffold`). Os achados estão no "Como ficou" de cada passo.
 
 ### Fase 2
 
