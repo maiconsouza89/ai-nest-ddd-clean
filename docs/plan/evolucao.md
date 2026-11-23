@@ -14,16 +14,7 @@ Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest
 
 ### Regra de versões
 
-Sempre a **latest estável**. Quando a latest de um pacote quebra a latest de outro, use a maior versão compatível e registre o motivo e o gatilho para atualizar. Exceções vigentes (consultadas em 2026-11-21):
-
-| Pacote | Fica em | Latest | Motivo | Atualize quando |
-| --- | --- | --- | --- | --- |
-| `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2` e o `typescript-eslint` 8.73 (passo 4) aceita só `>=4.8.4 <6.1.0`. O `dependency-cruiser` 18.9 já aceita o TS `>=7.1` (o 7.0 não, conferido em 2026-11-23). | O `@nestjs/cli` e o `typescript-eslint` aceitarem o TS 7.1 ou superior. Para o TS 6.1, basta o `typescript-eslint` aceitar |
-| `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
-| `ioredis` | `^5.11` | 6.1.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830) |
-| `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
-
-Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09 (ver passo 18).
+A regra e a tabela de exceções, com o motivo e o gatilho de cada uma, estão em [Versões e exceções](../reference/versoes-e-excecoes.md). Os gatilhos também aparecem no passo 18.
 
 ## Mapa
 
@@ -74,7 +65,7 @@ npm i -D typescript@~6.0
 ```
 
 - O `uuid` 12 em diante é só ESM. Desde a fase 4 o projeto é ESM e carrega o `uuid` nativamente. Os testes (Vitest) também carregam o `uuid` sem flag.
-- O `ioredis` fica no 5.11 (ver a tabela de exceções). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
+- O `ioredis` fica no 5.11 (ver a [tabela de exceções](../reference/versoes-e-excecoes.md#exceções)). Quando o `typeorm` aceitar o 6, revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: o 6 usa RESP3 por padrão (`protocol: 2` mantém o formato do 5).
 
 **Pronto quando:** `npm outdated` lista só os pacotes da tabela de exceções, e `ci`, `test:int` e `test:e2e` passam.
 

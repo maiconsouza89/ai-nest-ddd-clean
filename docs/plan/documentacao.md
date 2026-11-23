@@ -68,7 +68,7 @@ Convenções:
 > - [x] Passo 1: ADR 0006
 > - [x] Passo 2: `docs:check` no CI
 > - [x] Passo 3: templates `plop doc`
-> - [ ] Passo 4: referência operacional
+> - [x] Passo 4: referência operacional
 > - [ ] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
 > - [ ] Passo 6: `README.md` e `docs/README.md`
 
@@ -188,6 +188,15 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 
 **Pronto quando:** cada fato da tabela existe em `docs/` com `type: reference`, e o `evolucao.md` aponta para `versoes-e-excecoes.md` em vez de manter a tabela.
 
+**Como ficou (2026-11-23):**
+
+- **Páginas:** `comandos.md`, `variaveis-de-ambiente.md`, `versoes-e-excecoes.md`, `convencoes.md` e `autenticacao.md`, em `docs/reference/`. Cada fato foi conferido contra o código (`package.json`, `env.validation.ts`, `test/setup-env.ts`, `app.module.ts`, `app.setup.ts`, os controllers e use cases do identity e os guards do shared), não só copiado do `CLAUDE.md`.
+- **Além do `CLAUDE.md` antigo:** as variáveis de ambiente estão todas, não só as quatro citadas, com padrão, valores aceitos e efeito; as regras de carga (`.env.local`, `.env`, produção só com o ambiente, variável renomeada barra a subida); o `/health/ready`; o loop de migrations e seeds do setup; o `plop doc`; os limites de rate limit, os corpos e os códigos de erro das rotas de autenticação; o 403 do `@Roles`; e o job diário que apaga refresh tokens vencidos.
+- **`evolucao.md`:** a tabela de exceções saiu. A seção "Regra de versões" e o passo 2 apontam para `versoes-e-excecoes.md`. O gatilho do `ioredis` levou junto o que revisar quando ele for para o 6.
+- **`CLAUDE.md` provisório:** as seções movidas viraram uma lista de ponteiros, e a regra do `docker compose down` ficou por extenso, por ser regra sem exceção. As regras "bibliotecas oficiais primeiro" e "informe a versão consultada" foram para `versoes-e-excecoes.md`, que vale para qualquer pessoa. O passo 5 reescreve o arquivo.
+- **Desvio:** a visão geral da arquitetura continua no `CLAUDE.md`. O destino é o `README.md`, que nasce no passo 6.
+- **`/simplify` e `/code-review`:** pulados. O passo só mexe em Markdown.
+
 ### Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
 
 **Por quê:** o arquivo raiz carrega em toda sessão. A doc do Claude Code recomenda menos de 200 linhas e só o que o agente não deduz lendo o código.
@@ -220,7 +229,7 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 
 **Faça:**
 
-- **`README.md`:** o que é o projeto (um parágrafo), requisitos, quickstart com os passos numerados do setup (cada um com link para `docs/reference/comandos.md`) e um mapa da documentação.
+- **`README.md`:** o que é o projeto (um parágrafo, com a visão geral da arquitetura que o passo 4 deixou no `CLAUDE.md`), requisitos, quickstart com os passos numerados do setup (cada um com link para `docs/reference/comandos.md`) e um mapa da documentação.
 - **`docs/README.md`:** a bússola do Diátaxis (ação ou conhecimento, adquirir ou aplicar), um índice por quadrante com só as páginas que existem, a lista de ADRs e uma seção "Como escrever uma página" (`npm run plop doc`, `type:`, `docs:check`, apagar os comentários do template, nada de "hoje", "atualmente" ou "novo", e data só em registro).
 
 **Pronto quando:** alguém sem contexto chega do `README.md` à app rodando seguindo só links, e o `docs/README.md` lista todas as páginas existentes.
