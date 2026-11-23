@@ -487,7 +487,7 @@ Com `synchronize: false` desde já, o schema só muda por migration (passo 15).
 
 **Faça:**
 
-- ORM entities em `infra/database/typeorm/entities/`, com `schema: 'orders'` (ver [Persistência com TypeORM](../research/modules-ddd-clean-nest.md#persistência-com-typeorm)):
+- ORM entities em `infra/database/typeorm/entities/`, com `schema: 'orders'` (ver [Persistência](../explanation/persistencia.md) e as [convenções do TypeORM](../reference/convencoes.md#typeorm)):
   - `OrderOrmEntity`: `id` (`uuid`, gerado pelo domínio, não pelo banco), `customerId`, `status`, `createdAt` e `updatedAt` (`@CreateDateColumn` e `@UpdateDateColumn`, que são detalhe técnico e não vão para o domínio), além de `items` com `cascade: true`.
   - `OrderItemOrmEntity`: chave composta (`orderId` e `productId`), `qty`, `unitPriceCents` como `bigint` e `currency`, além de `@ManyToOne` com `onDelete: 'CASCADE'` e `orphanedRowAction: 'delete'`.
 - `typeorm-order.mapper.ts`: `toDomain` usa `Order.restore` e converte o `bigint`, que chega como `string`, com `Number(...)`. `toPersistence` lê os getters.

@@ -19,13 +19,14 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 ## Explicação
 
 - [Arquitetura](explanation/arquitetura.md): monólito modular, regra de dependência, Nest só na infra e o papel de cada camada, com exemplos do orders.
+- [Persistência](explanation/persistencia.md): por que a entidade de domínio e a ORM entity são classes diferentes, o mapper e a transação do caso de uso.
 
 ## Referência
 
 - [Comandos](reference/comandos.md): setup do zero, verificação, testes, migrations, seeds, geradores e como baixar o ambiente.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
-- [Convenções](reference/convencoes.md): imports ESM, aliases `#...` e `import type`.
+- [Convenções](reference/convencoes.md): imports ESM, aliases `#...`, `import type` e as regras das ORM entities do TypeORM.
 - [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, e em qual pasta.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.

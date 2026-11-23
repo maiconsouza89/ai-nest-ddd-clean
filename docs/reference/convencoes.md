@@ -39,3 +39,35 @@ Como os aliases resolvem para `src/` ou `dist/`, e a condição `@app/source` qu
 ### `import type`
 
 **Não** transforme em `import type` uma classe injetada pelo construtor, e não ative a regra `consistent-type-imports`. Com o `import type`, a classe some da decorator metadata, e a injeção de dependência do Nest quebra em tempo de execução. O `tsc` não avisa ([ADR 0004](../adr/0004-lint-e-formatacao.md)).
+
+## TypeORM
+
+Cada agregado tem uma entidade de domínio e uma ORM entity, convertidas por um mapper. O porquê está em [Persistência](../explanation/persistencia.md).
+
+| Regra | Detalhe |
+| --- | --- |
+| A ORM entity não sai do repositório concreto | O repositório recebe e devolve a entidade de domínio. O mapper usa `restore` no `toDomain` |
+| Id gerado pelo domínio | `@PrimaryColumn('uuid')`, não `@PrimaryGeneratedColumn` |
+| `createdAt` e `updatedAt` só na ORM entity | `@CreateDateColumn` e `@UpdateDateColumn` são detalhe técnico e não vão para o domínio |
+| `bigint` e `numeric` são `string` | O driver `pg` não converte inteiros de 64 bits para `number`, porque haveria perda de precisão. Tipe a coluna como `string` e converta no mapper |
+| Filhos do agregado com `cascade` e `orphanedRowAction` | `cascade: true` no `@OneToMany` da raiz e `orphanedRowAction: 'delete'` no `@ManyToOne` do filho. Sem o `orphanedRowAction`, um item removido do array não é apagado no `save()` |
+| Filho com chave composta | `orderId` e `productId` como `@PrimaryColumn`: o `save()` atualiza o item existente em vez de apagar e inserir de novo |
+| `!` nas colunas | Com `strict`, as propriedades preenchidas pelo TypeORM levam `!` |
+| Relação nos dois sentidos sem ciclo de import | O lado `@ManyToOne` usa o alvo por nome (string) e `import type`. O `Relation<>` impede que o `emitDecoratorMetadata` grave uma referência à classe |
+
+```ts
+// order.orm-entity.ts
+@OneToMany(() => OrderItemOrmEntity, (item) => item.order, { cascade: true })
+items!: Relation<OrderItemOrmEntity[]>;
+
+// order-item.orm-entity.ts
+import type { Relation } from 'typeorm';
+import type { OrderOrmEntity } from './order.orm-entity.js';
+
+@ManyToOne('OrderOrmEntity', (order: OrderOrmEntity) => order.items, {
+  onDelete: 'CASCADE',
+  orphanedRowAction: 'delete',
+})
+@JoinColumn({ name: 'orderId' })
+order!: Relation<OrderOrmEntity>;
+```

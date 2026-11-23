@@ -16,58 +16,7 @@ Movida. As regras de cada camada estão em [Camadas](../reference/camadas.md), e
 
 ## Persistência com TypeORM
 
-A entidade do TypeORM é um modelo de persistência, separado da entidade de domínio. O mapper converte entre as duas.
-
-```ts
-@Injectable()
-export class TypeOrmOrderRepository implements OrderRepository {
-  constructor(private readonly dataSource: DataSource) {}
-
-  // usa a transação ativa, se houver (ver Transações)
-  private get repo() {
-    return currentManager(this.dataSource).getRepository(OrderOrmEntity);
-  }
-
-  async save(order: Order) {
-    await this.repo.save(OrderMapper.toPersistence(order));
-  }
-
-  async findById(id: string) {
-    const raw = await this.repo.findOne({ where: { id }, relations: { items: true } });
-    return raw ? OrderMapper.toDomain(raw) : null;
-  }
-}
-```
-
-O repositório pega o `EntityManager` da transação ativa. Se injetar o `Repository` direto com `@InjectRepository`, ele roda fora da transação do caso de uso.
-
-### Regras
-
-- Nunca devolva a ORM entity como se fosse a entidade de domínio. Se misturar, trocar de ORM deixa de ser simples.
-- O mapper fica junto da tecnologia (`infra/database/typeorm/`), porque conhece o formato de persistência dela.
-- `bigint` e `numeric` chegam como `string`. O driver `pg` não converte inteiros de 64 bits para `number` porque haveria perda de precisão. Converta no mapper.
-- Itens filhos do agregado precisam de `orphanedRowAction: 'delete'`. Sem isso, um item removido do array não é apagado no `save()`.
-
-```ts
-// order.orm-entity.ts
-@OneToMany(() => OrderItemOrmEntity, (i) => i.order, { cascade: true })
-items!: Relation<OrderItemOrmEntity[]>;
-
-// order-item.orm-entity.ts
-import type { Relation } from 'typeorm';
-import type { OrderOrmEntity } from './order.orm-entity.js'; // só tipo: sem ciclo de import em runtime
-
-@ManyToOne('OrderOrmEntity', (o: OrderOrmEntity) => o.items, {
-  onDelete: 'CASCADE',
-  orphanedRowAction: 'delete',
-})
-order!: Relation<OrderOrmEntity>;
-```
-
-- Com `strict`, propriedades preenchidas pelo TypeORM levam `!`.
-- As duas entidades se referenciam. Para evitar o ciclo de imports em tempo de execução, o lado `@ManyToOne` usa o alvo por nome (string) e `import type`. O `Relation<>` impede que o `emitDecoratorMetadata` grave uma referência à classe.
-
-**Trocar de ORM** (por exemplo, para Prisma) muda só a infra: o repositório concreto, o mapper, o modelo de banco e o `useClass` no módulo. Domain, casos de uso e controller continuam iguais.
+Movida. O porquê da entidade de domínio separada da ORM entity está em [Persistência](../explanation/persistencia.md), e as regras das ORM entities em [Convenções](../reference/convencoes.md#typeorm).
 
 ## Módulos independentes
 

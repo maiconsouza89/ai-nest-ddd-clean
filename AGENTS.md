@@ -47,7 +47,7 @@ Leia a página antes de agir no assunto.
 | Rodar, testar, migrar, semear, gerar módulo ou página, subir ou baixar o ambiente | `docs/reference/comandos.md` |
 | Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` |
 | Adicionar ou atualizar dependência | `docs/reference/versoes-e-excecoes.md` |
-| Escrever imports ou mover arquivos entre módulos | `docs/reference/convencoes.md` |
+| Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
 | Mexer em login, tokens, guards ou roles | `docs/reference/autenticacao.md` |
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
 | Decidir em qual camada e pasta fica uma classe | `docs/reference/camadas.md` |
