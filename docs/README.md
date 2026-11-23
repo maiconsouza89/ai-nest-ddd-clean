@@ -20,6 +20,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 
 - [Como gerar uma migration](how-to/gerar-uma-migration.md): depois de mudar uma ORM entity, do generate ao helper dos testes de integração.
 - [Como publicar um evento de integração](how-to/publicar-um-evento-de-integracao.md): do evento de domínio à outbox, o teste de contrato e o handler no módulo consumidor.
+- [Como paginar uma listagem](how-to/paginar-uma-listagem.md): do `PaginationQuery` à query com desempate estável, e o cursor para listas grandes.
 
 ## Explicação
 

@@ -56,6 +56,7 @@ Leia a página antes de agir no assunto.
 | Fazer um módulo usar outro, ou mudar um evento ou uma facade | `docs/explanation/comunicacao-entre-modulos.md` e `docs/reference/camadas.md` |
 | Gerar uma migration depois de mudar uma ORM entity | `docs/how-to/gerar-uma-migration.md` |
 | Publicar um evento de integração ou consumir um em outro módulo | `docs/how-to/publicar-um-evento-de-integracao.md` |
+| Criar ou mudar uma listagem paginada | `docs/how-to/paginar-uma-listagem.md` |
 | Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar módulo, entidade, caso de uso ou repositório novo | `docs/research/modules-ddd-clean-nest.md` |

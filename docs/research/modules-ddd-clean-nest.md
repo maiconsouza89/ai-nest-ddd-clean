@@ -44,70 +44,7 @@ Movida. O porquê da transação pelo contexto, da concorrência otimista, da ou
 
 ## Paginação
 
-Paginação é assunto de leitura: fica nas queries (CQRS leve), não nos repositórios do domínio.
-
-**Tipos puros em `shared/application`:**
-
-```ts
-export type PageRequest = { page: number; limit: number };
-export type Page<T> = { items: T[]; total: number; page: number; limit: number };
-```
-
-**DTO HTTP em `shared/infra/http`:**
-
-```ts
-export class PaginationQuery {
-  @Type(() => Number) @IsInt() @Min(1) page = 1;
-  @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
-}
-```
-
-Os valores padrão e o `@Type` só funcionam com `ValidationPipe({ transform: true })`.
-
-**Query na infra:**
-
-```ts
-async listByCustomer(customerId: string, { page, limit }: PageRequest): Promise<Page<OrderListItem>> {
-  const [total, rows] = await Promise.all([
-    orders.countBy({ customerId }),
-    orders
-      .createQueryBuilder('o')
-      .leftJoin('o.items', 'i')
-      .where('o.customerId = :customerId', { customerId })
-      .select('o.id', 'id')
-      .addSelect('COUNT(i.productId)', 'itemCount') // ...status, createdAt, total e moeda
-      .groupBy('o.id')
-      .orderBy('o.createdAt', 'DESC')
-      .addOrderBy('o.id', 'DESC') // desempate: sem ele, itens com o mesmo createdAt trocam de página
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .getRawMany<Row>(),
-  ]);
-  // COUNT e SUM chegam do driver como string
-  return { items: rows.map((r) => ({ ...r, itemCount: Number(r.itemCount) })), total, page, limit };
-}
-```
-
-A lista devolve totais por pedido, então a query agrega os itens com `GROUP BY` e lê com `getRawMany`. Com agregação, use `offset`/`limit`: o `skip`/`take` do TypeORM serve para paginar entidades com relações carregadas.
-
-| Tipo | Como | Quando usar |
-| --- | --- | --- |
-| Offset | `page` e `limit` | Telas com número de página, listas pequenas ou médias |
-| Cursor | `after=<id>` | Listas grandes e scroll infinito; não fica lento nem pula itens. UUID v7 ajuda por ser ordenado por tempo |
-
-**Por que cursor escala melhor:** com offset, o banco ainda percorre as linhas puladas, e inserções entre uma página e outra fazem itens repetirem ou sumirem. A busca por chave (keyset) evita os dois problemas.
-
-```ts
-// cursor = createdAt e id do último item da página anterior
-qb.where('(o.createdAt, o.id) < (:createdAt, :id)', cursor)
-  .orderBy('o.createdAt', 'DESC')
-  .addOrderBy('o.id', 'DESC') // desempate estável
-  .take(limit);
-```
-
-Com UUID v7, o próprio `id` já é ordenado por tempo e pode ser o cursor sozinho.
-
-Sempre limite o valor máximo de `limit`.
+Movida para [Como paginar uma listagem](../how-to/paginar-uma-listagem.md): o `PaginationQuery`, a query com `findAndCount` ou com `GROUP BY`, o desempate pelo `id` e o cursor para listas grandes.
 
 ## Modelagem do domínio
 

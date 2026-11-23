@@ -552,7 +552,7 @@ npm i -D @testcontainers/postgresql
 - `shared/application/page.ts` com `PageRequest` e `Page<T>`.
 - `shared/infra/http/pagination.query.ts` com `PaginationQuery` (`limit` máximo de 100).
 - `orders/application/queries/order.queries.ts`: classe abstrata com `listByCustomer(customerId, page)`.
-- `infra/database/typeorm/typeorm-order.queries.ts`: query builder devolvendo um DTO pronto, sem agregado (ver [Paginação](../research/modules-ddd-clean-nest.md#paginação)).
+- `infra/database/typeorm/typeorm-order.queries.ts`: query builder devolvendo um DTO pronto, sem agregado (ver [Como paginar uma listagem](../how-to/paginar-uma-listagem.md)).
 - `GET /v1/orders` passa `actor.id` para a query. O filtro de dono fica na query, nunca depois de carregar.
 
 Comece com offset. Troque para cursor quando a lista crescer ou virar scroll infinito.
