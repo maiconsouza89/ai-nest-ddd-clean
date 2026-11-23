@@ -36,6 +36,10 @@ Setup do zero, nesta ordem:
 - Regras de arquitetura: `npm run arch`
 - `npm run ci` = typecheck + lint + format:check + unitários + arch. **Não** roda integração nem e2e.
 
+### Baixar o ambiente
+
+- Use só `docker compose down -v --remove-orphans` na raiz deste repo (remove containers, rede e volumes `ddd-clean-nest_*`). Nunca use `docker volume prune`, `docker system prune` nem remova volumes, containers ou redes de outros projetos.
+
 ### Migrations
 
 - Rodar: `npm run mig:<módulo>:run`, para `orders`, `identity`, `catalog`, `inventory` e `outbox`. Não rodam sozinhas ao subir a app.
