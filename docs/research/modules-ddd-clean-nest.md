@@ -15,7 +15,7 @@ Cada módulo é organizado em camadas, com as regras de negócio no centro e o N
 - **Módulos independentes:** cada módulo tem schema, migrations e contratos próprios. Nada de FK, join ou transação entre módulos.
 - **Pragmatismo:** a estrutura completa vale para módulos com regra de negócio. Cadastros simples podem ser CRUD direto.
 
-**Versões de referência:** TypeORM 1.x, que exige Node.js 20 ou superior, com `@nestjs/typeorm` 11.0.1 ou superior. As versões 10 e 11.0.0 do `@nestjs/typeorm` quebram na inicialização com o TypeORM 1.0. Revisado em novembro de 2026 contra a documentação oficial (ver Referências).
+**Versões de referência:** NestJS 12 com `@nestjs/typeorm` 12, TypeORM 1.1 e Node.js 22.13 ou superior (`engines` do `package.json`). As versões 10 e 11.0.0 do `@nestjs/typeorm` quebram na inicialização com o TypeORM 1.x. Revisado em novembro de 2026 contra a documentação oficial (ver Referências).
 
 ## Estrutura de pastas
 
@@ -24,8 +24,10 @@ Um módulo completo tem quatro partes: domain, application, infra (organizada po
 ```
 src/
 ├── modules/
+│   ├── catalog/                        # CRUD simples, sem camadas (ver Pragmatismo)
 │   ├── identity/                       # usuários, senhas, emissão do JWT
 │   ├── inventory/
+│   ├── notifications/                  # só reage a eventos de outros módulos
 │   └── orders/
 │       ├── domain/
 │       │   ├── entities/
@@ -33,8 +35,8 @@ src/
 │       │   │   └── order-item.entity.ts
 │       │   ├── value-objects/
 │       │   │   └── order-status.vo.ts
-│       │   ├── services/
-│       │   │   └── discount-policy.ts
+│       │   ├── events/
+│       │   │   └── order-paid.event.ts   # evento de domínio
 │       │   ├── errors/
 │       │   │   └── order-already-paid.error.ts
 │       │   └── repositories/
@@ -46,7 +48,7 @@ src/
 │       │   │   └── order.queries.ts
 │       │   ├── ports/
 │       │   │   ├── price-catalog.ts
-│       │   │   └── stock.gateway.ts
+│       │   │   └── stock-gateway.ts
 │       │   └── dtos/
 │       │       └── create-order.input.ts
 │       ├── infra/
@@ -66,9 +68,8 @@ src/
 │       │   │   ├── dtos/create-order.request.ts
 │       │   │   └── filters/domain-error.filter.ts
 │       │   └── orders.module.ts
-│       └── contracts/
-│           ├── orders.facade.ts
-│           └── events/order-paid.event.ts
+│       └── contracts/                  # o orders só publica eventos; o catalog expõe uma facade
+│           └── events/order-paid.event.ts   # evento de integração (OrderPaidV1)
 └── shared/
     ├── domain/
     │   ├── aggregate-root.ts
@@ -78,6 +79,7 @@ src/
     │   ├── actor.ts
     │   ├── page.ts
     │   └── ports/
+    │       ├── actor-resolver.ts
     │       ├── clock.ts
     │       ├── id-generator.ts
     │       └── transaction-manager.ts
@@ -105,14 +107,16 @@ export class Order extends AggregateRoot {
   private constructor(
     readonly id: string,
     readonly customerId: string,
-    private items: OrderItem[],
-    private status: OrderStatus,
-    readonly version: number,
+    private _items: OrderItem[], // lidos de fora pelos getters `items` e `status`
+    private _status: OrderStatus,
+    readonly version: number, // versão lida do banco, para a concorrência otimista
   ) { super(); }
 
-  // criação: aplica as regras de um pedido novo
+  // criação: aplica as regras de um pedido novo e anota o fato
   static create(id: string, customerId: string) {
-    return new Order(id, customerId, [], OrderStatus.DRAFT, 0);
+    const order = new Order(id, customerId, [], OrderStatus.DRAFT, 0);
+    order.addDomainEvent(new OrderCreated(id, customerId));
+    return order;
   }
 
   // reconstrução a partir do banco: usada só pelo mapper
@@ -121,16 +125,19 @@ export class Order extends AggregateRoot {
   }
 
   place() {
-    if (this.status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
-    if (this.items.length === 0) throw new EmptyOrderError();
-    this.status = OrderStatus.PLACED;
+    if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
+    if (this._items.length === 0) throw new EmptyOrderError();
+    this._status = OrderStatus.PLACED;
+    this.addDomainEvent(new OrderPlaced(this.id, this.customerId));
   }
 
   pay() {
-    if (this.status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
-    if (this.status !== OrderStatus.PLACED) throw new OrderNotPayableError();
-    this.status = OrderStatus.PAID;
-    this.addDomainEvent(new OrderPaid(this.id));
+    if (this._status === OrderStatus.PAID) throw new OrderAlreadyPaidError();
+    if (this._status !== OrderStatus.PLACED) throw new OrderNotPayableError();
+    this._status = OrderStatus.PAID;
+    this.addDomainEvent(
+      new OrderPaid(this.id, this.customerId, this.total.cents, this.total.currency),
+    );
   }
 }
 ```
@@ -202,7 +209,12 @@ export class OrdersController {
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
-    { provide: PriceCatalog, useClass: CatalogPriceAdapter },
+    {
+      // o adapter não tem @Injectable(): entra por factory, como o caso de uso
+      provide: PriceCatalog,
+      useFactory: (catalog: CatalogFacade) => new CatalogPriceAdapter(catalog),
+      inject: [CatalogFacade],
+    },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: CreateOrderUseCase,
@@ -232,8 +244,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
   // usa a transação ativa, se houver (ver Transações)
   private get repo() {
-    const manager = txStore.getStore() ?? this.dataSource.manager;
-    return manager.getRepository(OrderOrmEntity);
+    return currentManager(this.dataSource).getRepository(OrderOrmEntity);
   }
 
   async save(order: Order) {
@@ -299,9 +310,16 @@ await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS orders`);
 Um DataSource por módulo, usado só pela CLI, com tabela de controle própria. Como ele conhece apenas as entidades do módulo, o `migration:generate` não mexe nas tabelas dos outros.
 
 ```ts
+import { config } from 'dotenv';
+import { validateEnv } from '#shared/infra/config/env.validation';
+
+// a CLI não passa pelo Nest: carrega e valida o .env por conta própria
+config({ path: ['.env.local', '.env'], quiet: true });
+const env = validateEnv(process.env);
+
 export default new DataSource({
   type: 'postgres',
-  url: process.env.DATABASE_URL,
+  url: env.DATABASE_URL,
   entities: [OrderOrmEntity, OrderItemOrmEntity],
   migrations: [import.meta.dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'orders_migrations',
@@ -318,7 +336,7 @@ O projeto é ESM (`"type": "module"`), então o CLI é o `typeorm-ts-node-esm`, 
 **Cuidados com migrations**
 
 - `synchronize: false` fora de testes locais. O schema muda só por migration.
-- A primeira migration do módulo é criada vazia com `migration:create`, só para o `CREATE SCHEMA`. As outras vêm do `migration:generate`.
+- A primeira migration do módulo só faz o `CREATE SCHEMA`. O gerador (`npm run plop module`) já a cria. Sem ele, crie-a vazia com `migration:create`. As outras vêm do `migration:generate`.
 - Revise toda migration gerada antes do commit. O generate compara entidades e banco, e pode propor alterações inesperadas.
 - Rode as migrations no pipeline de deploy, com `migrationsRun: false` na aplicação.
 
@@ -333,7 +351,7 @@ O projeto é ESM (`"type": "module"`), então o CLI é o `typeorm-ts-node-esm`, 
 
 - **Sem FK entre schemas.** Guarde só o ID do outro módulo (`customerId`).
 - **Sem join entre módulos.** Use a facade ou uma cópia local atualizada por eventos.
-- **Outros módulos só importam de `contracts/`.**
+- **Outros módulos só importam de `contracts/`.** A única exceção é o `*.module.ts`, que também importa o módulo Nest do outro para declarar a dependência em `imports` (ver Regras de arquitetura no CI e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
 - **Imports que cruzam fronteira usam alias.** `#shared/*` para o shared kernel, `#modules/<módulo>/contracts/*` para o contrato de outro módulo e `#test/*` nos specs. Dentro do mesmo módulo, o import continua relativo (`../domain/x.js`). O alias não substitui a regra acima: o `dependency-cruiser` a aplica também aos imports por alias ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
 - **Sem transação entre módulos.** Use eventos com outbox quando precisar de consistência.
 - Configurações comuns (conexão, `DataSource` global) ficam em `src/shared/infra/database/`.
@@ -348,8 +366,10 @@ O `shared` guarda só blocos técnicos que valem igual para todos os módulos. C
 | --- | --- |
 | `AggregateRoot`, `DomainError`, `Money`, `Page`, `Actor` | Conceitos de negócio de um módulo (`Customer`, `Product`) |
 | Ports: `Clock`, `IdGenerator`, `TransactionManager`, `Logger` | Regras específicas de um módulo |
-| Infra: guard de auth, exception filter, outbox, configuração do banco | Repositórios ou entidades de qualquer módulo |
-| Value objects com a mesma regra em todo lugar (`Email`, `Cpf`) | Tipos que só parecem iguais, mas têm regras diferentes em cada módulo |
+| Infra: guards de auth, outbox, filas, cache, configuração do banco | Repositórios ou entidades de qualquer módulo |
+| Value objects com a mesma regra em todo lugar (hoje, só o `Money`) | Tipos que só parecem iguais, mas têm regras diferentes em cada módulo |
+
+Um value object usado por um módulo só fica nele, mesmo que pareça genérico. O `Email`, por exemplo, está em `identity/domain`, e só sobe para o `shared` quando outro módulo precisar da mesma regra. O exception filter também fica em cada módulo: o `shared` tem a base `DomainError`, e cada módulo mapeia os próprios códigos de erro para status HTTP.
 
 Cada módulo tem a própria visão de um conceito. Para o catálogo, `Product` tem descrição e fotos. Para orders, basta `productId` e o preço da compra.
 
@@ -441,9 +461,9 @@ O exception filter traduz `NotOrderOwnerError` para 403.
 
 - **Roles simples** (só admin acessa a rota): `RolesGuard` na infra.
 - **Regras por recurso** (dono, mesma empresa, mesmo time): sempre no caso de uso ou no domínio.
-- **Listagens:** filtre na query (`findByCustomer(actor.id)`), nunca carregue tudo para filtrar depois.
+- **Listagens:** filtre na query (`orderQueries.listByCustomer(actor.id, page)`), nunca carregue tudo para filtrar depois.
 - **Esconder existência do recurso:** devolva 404 em vez de 403.
-- **Dados do dono** (nome, e-mail): facade de `identity/contracts` ou cópia local alimentada pelo evento `UserRegistered`.
+- **Dados do dono:** o e-mail vem da `UserDirectoryFacade` (`identity/contracts`, método `emailOf`). Para outros dados, amplie a facade ou mantenha uma cópia local alimentada por um evento. O `identity` ainda não publica eventos, e um `UserRegistered` entraria para isso.
 - **Multi-tenant:** o projeto ainda não tem tenant, e o `ActorResolver` não preenche o `tenantId`. Ao adotar, o `identity` guarda o tenant do usuário e o `ActorResolver` o devolve junto com as roles (nunca pelo token). O `tenantId` então vai em toda entidade e toda query.
 
 ## Agregados e comunicação entre módulos
@@ -457,16 +477,20 @@ OrderItem não é submódulo: é parte do agregado Order. Stock é outro módulo
 ### Order e OrderItem (mesmo agregado)
 
 ```ts
+// o getter `items` devolve uma cópia readonly: só a raiz altera a lista interna
+get items(): readonly OrderItem[] {
+  return [...this._items];
+}
+
 addItem(productId: string, qty: number, unitPrice: Money) {
-  if (this.status !== 'DRAFT') throw new OrderNotEditableError();
-  const existing = this.items.find(i => i.productId === productId);
-  existing
-    ? existing.increase(qty)
-    : this.items.push(new OrderItem(productId, qty, unitPrice));
+  if (this._status !== OrderStatus.DRAFT) throw new OrderNotEditableError();
+  const existing = this._items.find((i) => i.productId === productId);
+  if (existing) existing.increase(qty);
+  else this._items.push(new OrderItem(productId, qty, unitPrice));
 }
 
 get total() {
-  return this.items.reduce((sum, i) => sum.add(i.subtotal), Money.zero());
+  return this._items.reduce((sum, i) => sum.add(i.subtotal), Money.zero());
 }
 ```
 
@@ -479,7 +503,7 @@ get total() {
 Orders declara o que precisa num port. O adapter na infra de orders chama a facade de `inventory`.
 
 ```ts
-// orders/application/ports/stock.gateway.ts
+// orders/application/ports/stock-gateway.ts
 export abstract class StockGateway {
   abstract reserve(orderId: string, items: { productId: string; qty: number }[]): Promise<void>;
 }
@@ -503,7 +527,7 @@ O `orderId` vai como `referenceId` da reserva. Se a chamada for repetida por ret
 | Abordagem | Como funciona | Prós | Contras |
 | --- | --- | --- | --- |
 | Síncrona | Caso de uso chama `stock.reserve()` e depois salva o pedido | Simples, resposta imediata | Se o save falhar, sobra reserva sem pedido; precisa compensação |
-| Por eventos | Pedido salvo como `PENDING` publica `OrderPlaced`; inventory responde `StockReserved` ou `StockReservationFailed`; pedido confirma ou cancela | Robusto, módulos desacoplados | Consistência eventual, mais peças (outbox, handlers) |
+| Por eventos (não implementada) | Pedido salvo num estado de espera publica `OrderPlaced`; inventory responde com um evento de reserva feita ou recusada; pedido confirma ou cancela | Robusto, módulos desacoplados | Consistência eventual, mais peças (outbox, handlers) |
 
 **Sugestão:** comece síncrono em sistemas pequenos e migre para eventos quando precisar de resiliência ou de extrair o módulo. Como orders depende só do port `StockGateway`, a troca não afeta domain nem casos de uso.
 
@@ -521,13 +545,29 @@ Se orders chama inventory e inventory chama orders, o Nest exige `forwardRef`. I
 export class OrdersModule {}
 
 // inventory -> orders: por evento, sem importar OrdersModule
+// só o tipo do contrato: `import type` some na compilação
+import type { OrderCancelledV1 } from '#modules/orders/contracts/events/order-cancelled.event';
+
+@Injectable()
 export class OnOrderCancelledHandler {
-  constructor(private readonly release: ReleaseStockUseCase) {}
-  handle(e: OrderCancelled) { return this.release.execute(e.orderId); }
+  constructor(
+    private readonly consumer: IdempotentConsumer,
+    private readonly releaseStock: ReleaseStockUseCase,
+  ) {}
+
+  @IntegrationEventHandler({
+    events: ['orders.order-cancelled'],
+    consumer: 'inventory.release-on-order-cancelled',
+  })
+  handle(event: OrderCancelledV1) {
+    return this.consumer.handle('inventory.release-on-order-cancelled', event, (e) =>
+      this.releaseStock.execute({ referenceId: e.payload.orderId }),
+    );
+  }
 }
 ```
 
-Outras saídas: mover o conceito compartilhado para o módulo certo, ou criar um terceiro módulo que orquestra os dois (saga). No CI, ative a regra `no-circular` do `dependency-cruiser`.
+Outras saídas: mover o conceito compartilhado para o módulo certo, ou criar um terceiro módulo que orquestra os dois (saga). A regra `no-circular` do `dependency-cruiser` barra o ciclo no CI (`npm run arch`).
 
 **Como um módulo expõe a facade:** o contrato fica em `contracts/` como classe abstrata, e o módulo Nest exporta só ele.
 
@@ -567,7 +607,7 @@ export type OrderPaidV1 = {
   type: 'orders.order-paid';
   version: 1;
   occurredAt: string;   // ISO 8601
-  payload: { orderId: string; customerId: string; totalCents: number };
+  payload: { orderId: string; customerId: string; totalCents: number; currency: string };
 };
 ```
 
@@ -578,10 +618,10 @@ export type OrderPaidV1 = {
 
 ### Versionamento da API HTTP
 
-O Nest tem versionamento nativo. Pela URI, a versão entra no caminho (`/v1/orders`), depois do prefixo global.
+O Nest tem versionamento nativo. Pela URI, a versão entra no início do caminho (`/v1/orders`). O projeto não tem prefixo global. Se tivesse, a versão viria depois dele.
 
 ```ts
-// main.ts
+// app.setup.ts (configureApp, usado pelo bootstrap e pelos testes e2e)
 app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
 // infra/http/controllers
@@ -609,22 +649,28 @@ export abstract class TransactionManager {
   abstract run<T>(work: () => Promise<T>): Promise<T>;
 }
 
-// caso de uso
+// caso de uso: os eventos de domínio viram eventos de integração e vão para a outbox
 await this.tx.run(async () => {
   await this.orders.save(order);
-  await this.outbox.add(order.pullDomainEvents());
+  await publishOrderEvents(order, { outbox: this.outbox, ids: this.ids, clock: this.clock });
 });
 
-// infra
-export const txStore = new AsyncLocalStorage<EntityManager>();
+// shared/infra/database/transaction-context.ts: o txStore é privado do arquivo
+const txStore = new AsyncLocalStorage<EntityManager>();
+export const currentManager = (ds: DataSource) => txStore.getStore() ?? ds.manager;
+export const hasActiveTransaction = () => txStore.getStore() !== undefined;
+export const runWithManager = <T>(em: EntityManager, work: () => Promise<T>) =>
+  txStore.run(em, work);
 
-run(work) {
-  return this.dataSource.transaction(em => txStore.run(em, work));
+// TypeOrmTransactionManager: uma transação já aberta é reaproveitada
+run<T>(work: () => Promise<T>): Promise<T> {
+  if (hasActiveTransaction()) return work();
+  return this.dataSource.transaction((em) => runWithManager(em, work));
 }
 
 // no repositório
-private get manager() {
-  return txStore.getStore() ?? this.dataSource.manager;
+private get repo() {
+  return currentManager(this.dataSource).getRepository(OrderOrmEntity);
 }
 ```
 
@@ -634,34 +680,43 @@ private get manager() {
 
 ### Concorrência (optimistic locking)
 
-Evita que duas requisições leiam o mesmo estoque e as duas reservem. O update só acontece se a versão não mudou.
+Evita que duas requisições carreguem o mesmo pedido e as duas gravem por cima uma da outra (pagar e cancelar ao mesmo tempo, por exemplo). O update só acontece se a versão não mudou.
 
 ```ts
-const res = await manager.update(
-  StockOrmEntity,
-  { id: s.id, version: s.version },
-  { available: s.available, version: s.version + 1 },
-);
-if (res.affected === 0) throw new ConcurrencyError(); // recarrega e tenta de novo
+// typeorm-order.repository.ts
+async save(order: Order) {
+  const next = order.version + 1;
+  if (order.version > 0) {
+    // só avança se ninguém gravou desde que o pedido foi carregado
+    const res = await this.repo.update({ id: order.id, version: order.version }, { version: next });
+    if (res.affected === 0) throw new ConcurrencyError(); // o cliente recarrega e tenta de novo
+  }
+  await this.repo.save({ ...OrderMapper.toPersistence(order), version: next });
+}
 ```
 
 **Atenção:** o `@VersionColumn` do TypeORM incrementa a versão, mas o `save()` não bloqueia conflitos sozinho. Por isso o `WHERE version` manual.
 
-Use o mesmo `WHERE version` no repositório de qualquer agregado que possa ser editado em paralelo, como o `Order`. Por isso a entidade carrega `version`.
+Use o mesmo `WHERE version` no repositório de qualquer agregado que possa ser editado em paralelo. Por isso a entidade carrega `version`.
 
 **Limite conhecido:** o repositório do `Order` trata `version === 0` como "pedido novo" e pula a checagem nesse caso. Uma linha que já exista com `version = 0`, por exemplo vinda de uma migração de dados com default 0, fica sem proteção no primeiro save. Pedidos criados pelo `Order.create` não são afetados.
 
 **Para estoque, um update atômico condicional é mais simples:** o banco só debita se houver saldo, sem precisar ler antes.
 
 ```ts
-const res = await manager
-  .createQueryBuilder()
-  .update(StockOrmEntity)
-  .set({ available: () => 'available - :qty' })
-  .where('product_id = :productId AND available >= :qty', { productId, qty })
-  .execute();
+// typeorm-stock.repository.ts: as colunas são camelCase, então vão entre aspas no SQL
+async decrease(productId: string, qty: number) {
+  const res = await this.manager
+    .createQueryBuilder()
+    .update(StockItemOrmEntity)
+    .set({ available: () => '"available" - :qty' })
+    .where('"productId" = :productId AND "available" >= :qty', { productId, qty })
+    .execute();
+  return res.affected === 1;
+}
 
-if (res.affected === 0) throw new InsufficientStockError();
+// reserve-stock.use-case.ts: quem decide o erro é a application
+if (!(await this.stock.decrease(productId, qty))) throw new InsufficientStockError(productId);
 ```
 
 ### CQRS leve
@@ -720,33 +775,43 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 ```ts
 @Injectable()
 export class BullMqPublisher implements EventPublisher {
-  constructor(private readonly registry: SubscriptionRegistry) {}
+  constructor(private readonly subscriptions: EventSubscriptions /* , conexão, logger */) {}
 
   async publish(event: IntegrationEvent) {
-    for (const { consumer, queue } of this.registry.subscribersOf(event.type)) {
-      await queue.add(event.type, event, { jobId: `${event.eventId}__${consumer}` });
-    }
+    const results = await Promise.allSettled(
+      this.subscriptions.forEvent(event.type).map((consumer) =>
+        this.queueFor(consumer.name).add(event.type, event, {
+          ...QUEUE_JOB_OPTIONS,
+          jobId: `${event.eventId}__${consumer.name}`,
+        }),
+      ),
+    );
+    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failed) throw failed.reason;
   }
 }
 ```
 
-Se o `add` falhar no meio, o relay registra a falha e tenta de novo mais tarde. As filas que já receberam o job ignoram a repetição pelo `jobId`.
+O `allSettled` tenta todas as filas mesmo que uma falhe. Se alguma falhar, o relay registra a falha e tenta de novo mais tarde, e as filas que já receberam o job ignoram a repetição pelo `jobId`.
 
 ### Idempotência
 
 O outbox entrega “pelo menos uma vez”, então um evento pode chegar duplicado.
 
+O `IdempotentConsumer` (`shared/application`) concentra isso, e cada handler só passa o nome do consumidor e o efeito:
+
 ```ts
-// processed_events tem UNIQUE (event_id, consumer)
-await this.tx.run(async () => {
-  // INSERT ... ON CONFLICT DO NOTHING: só o primeiro consegue inserir
-  const first = await this.processed.tryMark(event.eventId, 'inventory');
-  if (!first) return; // já processado
-  await this.reserveStock.execute(event.payload);
-});
+// shared.processed_events tem PRIMARY KEY ("eventId", "consumer")
+handle<E extends IntegrationEvent>(consumer: string, event: E, work: (event: E) => Promise<void>) {
+  return this.tx.run(async () => {
+    // INSERT ... ON CONFLICT DO NOTHING: só o primeiro consegue inserir
+    if (!(await this.processed.tryMark(event.eventId, consumer))) return; // já processado
+    await work(event); // mesma transação: se o efeito falhar, a marca é desfeita
+  });
+}
 ```
 
-A constraint `UNIQUE` resolve a corrida entre duas entregas simultâneas. Checar com `exists` antes de processar não resolve.
+A chave primária resolve a corrida entre duas entregas simultâneas. Checar com `exists` antes de processar não resolve.
 
 No HTTP, o cliente envia o header `Idempotency-Key`, descrito em um draft da IETF que ainda não virou RFC. Guarde a chave com uma impressão digital do corpo, a resposta e um prazo de expiração. Mesma chave e mesmo corpo: devolva a resposta salva. Mesma chave com corpo diferente: rejeite.
 
@@ -776,16 +841,27 @@ Os valores padrão e o `@Type` só funcionam com `ValidationPipe({ transform: tr
 
 ```ts
 async listByCustomer(customerId: string, { page, limit }: PageRequest): Promise<Page<OrderListItem>> {
-  const [rows, total] = await this.repo.createQueryBuilder('o')
-    .where('o.customerId = :customerId', { customerId })
-    .orderBy('o.createdAt', 'DESC')
-    .addOrderBy('o.id', 'DESC') // desempate: sem ele, itens com o mesmo createdAt trocam de página
-    .skip((page - 1) * limit)
-    .take(limit)
-    .getManyAndCount();
-  return { items: rows.map(toListItem), total, page, limit };
+  const [total, rows] = await Promise.all([
+    orders.countBy({ customerId }),
+    orders
+      .createQueryBuilder('o')
+      .leftJoin('o.items', 'i')
+      .where('o.customerId = :customerId', { customerId })
+      .select('o.id', 'id')
+      .addSelect('COUNT(i.productId)', 'itemCount') // ...status, createdAt, total e moeda
+      .groupBy('o.id')
+      .orderBy('o.createdAt', 'DESC')
+      .addOrderBy('o.id', 'DESC') // desempate: sem ele, itens com o mesmo createdAt trocam de página
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getRawMany<Row>(),
+  ]);
+  // COUNT e SUM chegam do driver como string
+  return { items: rows.map((r) => ({ ...r, itemCount: Number(r.itemCount) })), total, page, limit };
 }
 ```
+
+A lista devolve totais por pedido, então a query agrega os itens com `GROUP BY` e lê com `getRawMany`. Com agregação, use `offset`/`limit`: o `skip`/`take` do TypeORM serve para paginar entidades com relações carregadas.
 
 | Tipo | Como | Quando usar |
 | --- | --- | --- |
@@ -861,7 +937,7 @@ A RFC 9562 (2024), que padronizou o v7, aponta a baixa localidade de índice do 
 | Exceptions | Simples, menos código | Erro não aparece no tipo de retorno |
 | Result/Either | Erro explícito no tipo | Código mais verboso |
 
-**Sugestão:** exceptions com uma classe base. O filter mapeia `code` para status HTTP numa tabela só.
+**Sugestão:** exceptions com uma classe base. O filter de cada módulo mapeia `code` para status HTTP numa tabela só (`STATUS` em `infra/http/filters/domain-error.filter.ts`).
 
 ```ts
 export abstract class DomainError extends Error {
@@ -899,7 +975,7 @@ O caso de uso carrega os dados e chama o serviço. Não abuse: se a regra cabe n
 ### Auditoria e soft delete
 
 - **`createdAt` e `updatedAt`:** detalhe técnico, ficam na ORM entity (`@CreateDateColumn`, `@UpdateDateColumn`). Só vão para o domínio se alguma regra depender deles.
-- **Quem fez (`createdBy`):** a infra preenche lendo o `Actor` do contexto (`AsyncLocalStorage`), num subscriber do TypeORM ou no repositório.
+- **Quem fez (`createdBy`, ainda não existe):** o caso de uso já recebe o `Actor` na entrada (o controller o tira de `req.user`) e pode repassá-lo ao repositório. Preencher num subscriber do TypeORM exigiria guardar o ator num contexto por requisição (`AsyncLocalStorage`, por exemplo com `nestjs-cls`), que o projeto ainda não tem. O único `AsyncLocalStorage` hoje é o da transação.
 - **Exclusão com significado de negócio** (cancelar, arquivar): modele como estado no domínio (`order.cancel()`), não como `deletedAt`.
 - **Soft delete técnico:** `@DeleteDateColumn` e `softDelete()` no repositório. O TypeORM já ignora registros excluídos nas consultas.
 - **Histórico completo de mudanças:** tabela de auditoria alimentada pelos eventos de domínio.
@@ -910,7 +986,7 @@ Tudo aqui é porta de entrada ou adaptador. Nenhum deles contém regra de negóc
 
 ### Configuração
 
-O `@nestjs/config` carrega as variáveis de ambiente, valida na subida e expõe configurações tipadas por módulo.
+O `@nestjs/config` carrega as variáveis de ambiente, valida na subida e as expõe tipadas pelo `ConfigService`.
 
 **1. Registro global, na raiz (`app.module.ts`)**
 
@@ -928,11 +1004,13 @@ ConfigModule.forRoot({
 
 ```ts
 // com strict: `!` nas obrigatórias, valor padrão nas opcionais
-class EnvironmentVariables {
-  @IsEnum(['development', 'test', 'production']) NODE_ENV!: string;
-  @IsInt() @Min(1) PORT: number = 3000;
+export class EnvironmentVariables {
+  @IsEnum(['development', 'test', 'production']) NODE_ENV: string = 'development';
+  @IsInt() @Min(1) @Max(65535) PORT: number = 3000;
   @IsString() @IsNotEmpty() DATABASE_URL!: string;
-  @IsString() @IsNotEmpty() JWT_SECRET!: string;
+  @IsString() @MinLength(32) JWT_SECRET!: string;
+  @IsInt() @Min(1) JWT_ACCESS_TTL_SECONDS: number = 900;
+  // ... as demais variáveis do .env.example
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -943,28 +1021,28 @@ export function validateEnv(config: Record<string, unknown>) {
 }
 ```
 
-**3. Configuração por módulo:** cada módulo declara a sua com `registerAs` e registra com `ConfigModule.forFeature`. A application recebe valores simples pelo construtor, sem conhecer o `ConfigService`.
+**3. Configuração nos módulos:** todas as variáveis ficam na `EnvironmentVariables`. O módulo Nest lê o que precisa no `useFactory` e passa valores simples ao caso de uso, que não conhece o `ConfigService`.
+
+```ts
+// orders.module.ts
+{
+  provide: ExpirePendingOrdersUseCase,
+  useFactory: (/* repo, outbox, ... */ config: ConfigService<EnvironmentVariables, true>) =>
+    new ExpirePendingOrdersUseCase(/* ... */ {
+      maxIdleMs: config.getOrThrow('ORDER_EXPIRATION_MINUTES', { infer: true }) * 60_000,
+      batchSize: EXPIRATION_BATCH_SIZE,
+    }),
+  inject: [/* ... */ ConfigService],
+}
+```
+
+`ConfigService<EnvironmentVariables, true>` com `{ infer: true }` tipa a chave e o valor: uma chave que não existe na classe não compila. Se a configuração de um módulo crescer, o `@nestjs/config` oferece `registerAs` com `ConfigModule.forFeature` para separá-la por módulo. O projeto ainda não precisou.
 
 **Cuidados**
 
 - Versione um `.env.example` com todas as chaves e sem valores reais. O `.env` fica no `.gitignore`.
-- O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv`.
-
-```ts
-export const ordersConfig = registerAs('orders', () => ({
-  maxItems: Number(process.env.ORDERS_MAX_ITEMS ?? 50),
-}));
-
-// no módulo: imports: [ConfigModule.forFeature(ordersConfig)]
-{
-  provide: AddOrderItemUseCase,
-  useFactory: (repo: OrderRepository, cfg: ConfigType<typeof ordersConfig>) =>
-    new AddOrderItemUseCase(repo, { maxItems: cfg.maxItems }),
-  inject: [OrderRepository, ordersConfig.KEY],
-}
-```
-
-Injetar `ordersConfig.KEY` com `ConfigType` mantém a tipagem e evita chaves em string como `config.get('orders.maxItems')`.
+- O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv` (ver Migrations por módulo).
+- Uma variável renomeada entra na tabela `RENAMED` do `validateEnv`. Se o ambiente ainda define o nome antigo, a subida falha com a mensagem do novo nome, em vez de ignorar o valor sem avisar.
 
 ### Jobs, cron e workers
 
@@ -1079,7 +1157,7 @@ Ports na application (`StorageGateway`, `EmailSender`, `PaymentGateway`) e adapt
 ### Seeds
 
 - **Dados obrigatórios** para o sistema funcionar (categorias padrão, tipos fixos): vão em migration.
-- **Dados de desenvolvimento e teste:** seeds por módulo em `infra/database/typeorm/seeds`, com script próprio (`seed:<módulo>`) e com insert que ignora o que já existe (`ON CONFLICT DO NOTHING`). Assim o seed pode rodar mais de uma vez sem sobrescrever dados editados.
+- **Dados de desenvolvimento e teste:** seeds por módulo em `infra/database/typeorm/seeds` (no catalog, que não tem camadas, em `database/seeds`), com script próprio (`seed:<módulo>`) e com insert que ignora o que já existe (`ON CONFLICT DO NOTHING`). Assim o seed pode rodar mais de uma vez sem sobrescrever dados editados.
 
 ## Qualidade
 
@@ -1124,7 +1202,7 @@ O Prettier fica com `singleQuote` e `printWidth: 100`, e a versão é fixada sem
 
 Com `dependency-cruiser`, rodando `depcruise src` no pipeline. Se alguém quebrar a regra, o build falha.
 
-Substitua as regras padrão que o `depcruise --init` gera (`no-orphans`, `not-to-dev-dep` e outras) por estas. Mantenha `tsPreCompilationDeps` ligado: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido.
+Substitua as regras padrão que o `depcruise --init` gera (`no-orphans`, `not-to-dev-dep` e outras) por estas. Mantenha `tsPreCompilationDeps: 'specify'`: sem ele, um `import type` de `infra` dentro de `domain` passa despercebido, e com `'specify'` o import só de tipo ganha o rótulo `type-only`, que a `no-circular` usa. Com os aliases `#...`, o `enhancedResolveOptions.conditionNames` precisa incluir `@app/source`. Sem ele, os aliases resolvem para o `dist/`, e as regras deixam de enxergar esses imports sem avisar ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
 
 ```js
 forbidden: [
@@ -1132,7 +1210,7 @@ forbidden: [
     name: 'no-circular',
     severity: 'error',
     from: {},
-    // import type some na compilação e não forma ciclo real
+    // imports só de tipo (import type) somem na compilação e não formam ciclo real
     to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
   },
   {
@@ -1160,6 +1238,25 @@ forbidden: [
     to: { path: '/(domain|infra)/' },
   },
   {
+    // ADR 0005: sair do módulo (ou do shared) é sempre por alias, nunca por `../`
+    name: 'fronteira-via-alias',
+    severity: 'error',
+    from: { path: '^src/(modules/[^/]+|shared)/' },
+    to: {
+      path: '^src/',
+      pathNot: '^src/$1/',
+      // o import por alias também carrega o tipo `local`, então ele precisa ser excluído aqui
+      dependencyTypesNot: ['aliased-subpath-import'],
+    },
+  },
+  {
+    // dentro da mesma fronteira o import continua relativo (ADR 0005)
+    name: 'alias-so-entre-fronteiras',
+    severity: 'error',
+    from: { path: '^src/(modules/[^/]+|shared)/' },
+    to: { path: '^src/$1/', dependencyTypes: ['aliased-subpath-import'] },
+  },
+  {
     name: 'modulos-so-via-contracts',
     severity: 'error',
     from: { path: '^src/modules/([^/]+)/', pathNot: '\\.module\\.ts$' },
@@ -1169,7 +1266,8 @@ forbidden: [
     },
   },
   {
-    // exceção: o arquivo do módulo Nest só importa, de outro módulo, o contracts/ ou o módulo Nest dele
+    // O arquivo do módulo Nest é a única exceção (ADR 0003): só pode importar, de outro módulo,
+    // o contracts/ ou o módulo Nest dele.
     name: 'modulo-nest-so-importa-modulo-nest',
     severity: 'error',
     from: { path: '^src/modules/([^/]+)/.+\\.module\\.ts$' },
@@ -1196,7 +1294,7 @@ As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem 
   - No ESM, o `require` não é interceptado. O `tracing.ts` registra o hook `@opentelemetry/instrumentation/hook.mjs` com `module.register` antes de iniciar o SDK. Sem ele, o que o código importa direto (como o `ioredis`) e o `express` ficam sem spans, e nada falha nem avisa. Um `import` estático do app no `main.ts` seria resolvido antes do hook e teria o mesmo efeito. Uma regra de lint (`no-restricted-imports` em `src/main.ts`) barra esse import estático.
   - No Node 26, o `module.register` imprime `DEP0205` na subida. É o caminho que a doc do OpenTelemetry indica hoje; a alternativa é o `register-hooks.mjs` do `import-in-the-middle`, que usa `module.registerHooks`.
   - No Nest 12, não há spans da camada Nest (controllers e handlers): o `@opentelemetry/instrumentation-nestjs-core` só suporta o Nest até a versão 11. Os spans de http, express, pg, ioredis e pino continuam, e isso basta para seguir uma requisição.
-- **Logs ligados ao trace:** o id do trace vai em todo log e é copiado para os metadados de cada evento da outbox. Assim dá para seguir uma requisição por todos os módulos. A instrumentação do pino grava os campos `trace_id` e `span_id`, e não `traceId`. Para mudar o nome, use a opção `logKeys`.
+- **Logs ligados ao trace:** o id do trace vai em todo log. A outbox copia o `traceparent` (que carrega esse id) para os metadados de cada evento, e o consumidor continua o mesmo trace (`runInEventTrace`). Assim dá para seguir uma requisição por todos os módulos. A instrumentação do pino grava os campos `trace_id` e `span_id`, e não `traceId`. Para mudar o nome, use a opção `logKeys`.
 - **Logs estruturados:** JSON com `nestjs-pino`.
 - **Na application:** se precisar logar, use um port `Logger`, sem importar o Nest.
 
@@ -1204,9 +1302,9 @@ As regras de camada aplicam a regra de dependência dentro de cada módulo. Sem 
 
 ### Swagger
 
-Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por módulo (`@ApiTags('orders')`). O plugin da CLI do Nest infere boa parte dos tipos e reduz decorators.
+Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por recurso (`@ApiTags('orders')`, `@ApiTags('auth')`). O plugin da CLI do Nest infere boa parte dos tipos e reduz decorators.
 
-Por padrão, o plugin só lê arquivos `.dto.ts` e `.entity.ts`. Como aqui os DTOs HTTP se chamam `*.request.ts` e `*.query.ts`, configure o `dtoFileNameSuffix` no `nest-cli.json`. Sem isso, essas classes ficam sem schema. O plugin roda só no `nest build`/`nest start`, e não nos testes.
+Por padrão, o plugin só lê arquivos `.dto.ts` e `.entity.ts`. Como aqui os DTOs HTTP se chamam `*.request.ts`, `*.requests.ts` e `*.query.ts`, configure o `dtoFileNameSuffix` no `nest-cli.json`. Sem isso, essas classes ficam sem schema. O plugin roda só no `nest build`/`nest start`, e não nos testes.
 
 ```json
 "plugins": [{ "name": "@nestjs/swagger", "options": { "dtoFileNameSuffix": [".request.ts", ".requests.ts", ".query.ts"] } }]
@@ -1219,7 +1317,7 @@ Por padrão, o plugin só lê arquivos `.dto.ts` e `.entity.ts`. Como aqui os DT
 | Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco com `pingCheck` e Redis com `PING`). Indicadores próprios usam o `HealthIndicatorService`, porque o Nest 12 removeu a API antiga (`HealthIndicator` e `HealthCheckError`). Marque as rotas de health com `@SkipThrottle()`, senão as sondas do orquestrador contam no rate limit |
 | Desligamento gracioso | `app.enableShutdownHooks()` | Termina requisições e jobs em andamento e fecha conexões antes de o processo sair |
 | Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis), com incremento e expiração atômicos. O `@nest-lab/throttler-storage-redis` 1.2.0 declara suporte só até o Nest 11 (novembro de 2026); no Nest 12, um `ThrottlerStorage` próprio é pequeno. Atrás de proxy, configure `trust proxy` |
-| Headers de segurança | `helmet` | `app.use(helmet())` no `main.ts` |
+| Headers de segurança | `helmet` | `app.use(helmet())` no `configureApp` (`app.setup.ts`) |
 | CORS | `app.enableCors()` | Só origens conhecidas |
 | Entrada HTTP | `ValidationPipe` global | `whitelist`, `forbidNonWhitelisted` e `transform` ativos |
 
@@ -1242,22 +1340,32 @@ Se o módulo só valida campos (categorias, configurações, cadastros simples),
 
 ### Gerador de módulos
 
-Com Plop, `npx plop module <nome>` cria toda a estrutura padrão com os nomes certos. O `plopfile.mjs` é ESM, e os templates ficam em `plop-templates/module/`. Eles já geram código ESM (imports com `.js`, `import.meta.dirname` e scripts `typeorm-ts-node-esm`).
+Com Plop, `npx plop module <nome>` cria toda a estrutura padrão com os nomes certos. O `plopfile.mjs` é ESM, e os templates ficam em `plop-templates/module/`. Os templates geram código ESM (imports relativos com `.js`, aliases `#shared/*` e `import.meta.dirname`), e o plopfile cria os scripts `mig:<nome>:*` com `typeorm-ts-node-esm` e a condição `@app/source`.
 
 ```js
-// plopfile.mjs
+// plopfile.mjs (resumido)
+// [template, destino relativo à pasta do módulo]; os templates são planos, um por arquivo gerado
+const FILES = [
+  ['entity.hbs', 'domain/entities/{{kebabCase name}}.entity.ts'],
+  ['module.hbs', 'infra/{{kebabCase name}}.module.ts'],
+  ['migration-schema.hbs', 'infra/database/typeorm/migrations/{{timestamp}}-create-{{kebabCase name}}-schema.ts'],
+  // ...
+];
+
 export default function (plop) {
   plop.setGenerator('module', {
-    prompts: [{ type: 'input', name: 'name', message: 'Nome do módulo, no singular' }],
-    actions: [
-      {
-        type: 'addMany',
-        destination: 'src/modules/{{kebabCase name}}',
-        base: 'plop-templates/module',
-        templateFiles: 'plop-templates/module/**',
-      },
-      // + `modify` para registrar o módulo no app.module.ts e criar os scripts de migration
-    ],
+    prompts: [{ type: 'input', name: 'name', validate: (v) => /* kebab-case */ true }],
+    actions: (data) => {
+      const kebab = plop.getHelper('kebabCase')(data.name);
+      const dir = `src/modules/${kebab}`;
+      if (existsSync(dir)) throw new Error(`${dir} já existe`);
+      data.timestamp = Date.now(); // o da migration do schema vem antes do da tabela
+      return [
+        ...FILES.map(([t, dest]) => ({ type: 'add', path: `${dir}/${dest}`, templateFile: `plop-templates/module/${t}` })),
+        // + dois `modify` que registram o módulo no app.module.ts, uma checagem de que o registro
+        //   casou (o `modify` não avisa) e uma função que grava os scripts mig:<nome> no package.json
+      ];
+    },
   });
 }
 ```
@@ -1283,7 +1391,7 @@ export default function (plop) {
 
 **Persistência**
 
-- [ ] `@nestjs/typeorm` 11.0.1 ou superior com TypeORM 1.x
+- [ ] `@nestjs/typeorm` 12 (Nest 12) com TypeORM 1.x
 - [ ] ORM entities separadas, com mapper e `orphanedRowAction: 'delete'` nos filhos
 - [ ] Repositórios usando o `EntityManager` da transação ativa
 - [ ] Schema próprio, DataSource da CLI, migrations revisadas e `synchronize: false`

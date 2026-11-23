@@ -38,7 +38,7 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ✅ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | 🟡 |
 
-**Progresso geral:** 7 de 8 fases concluídas · 16 de 18 passos concluídos · **Fase atual:** 8
+**Progresso geral:** 7 de 8 fases concluídas · 17 de 18 passos concluídos · **Fase atual:** 8
 
 ---
 
@@ -502,7 +502,7 @@ export abstract class ActorResolver {
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 16: `CLAUDE.md`
-> - [ ] Passo 17: alinhar o guia de referência
+> - [x] Passo 17: alinhar o guia de referência
 > - [ ] Passo 18: evoluções sob demanda
 
 ### Passo 16: `CLAUDE.md`
@@ -542,6 +542,23 @@ export abstract class ActorResolver {
 **Faça:** releia os trechos do guia citados pelo roteiro original e pelos passos deste plano. Confira também o que nenhuma fase cobriu, como menções a Postgres 17, Jest ou CommonJS fora das seções já atualizadas.
 
 **Pronto quando:** cada trecho de código do guia compila sob o `tsconfig.json` atual e bate com o código, e nenhum trecho menciona `ts-jest`, `typeorm-ts-node-commonjs` ou `@Global` em módulo de negócio.
+
+**Como ficou:** os termos proibidos já não apareciam. A conferência foi trecho a trecho contra o código, e não por compilação: os trechos são recortes (métodos soltos, `/* ... */`), e compilá-los exigiria completar cada um. Foram corrigidos cerca de 40 pontos que as fases anteriores não alcançaram, a maioria anterior à revisão de 2026-11-21:
+
+- **Árvore de pastas:** saíram o `domain/services` e a `orders.facade.ts`, que não existem. Entraram `catalog/`, `notifications/`, `domain/events/` e o `actor-resolver.ts`.
+- **Snippets reescritos a partir do código:**
+  - o `txStore` privado, com `currentManager` e `runWithManager`;
+  - o `PriceCatalog` por `useFactory`;
+  - o data source com `validateEnv`;
+  - o handler do inventory com `IdempotentConsumer` e `@IntegrationEventHandler`;
+  - o `BullMqPublisher` com `EventSubscriptions` e `allSettled`;
+  - o optimistic locking, que agora é o do `Order` (o estoque não tem `version`);
+  - o débito atômico com `StockItemOrmEntity`;
+  - a listagem com `getRawMany`;
+  - o plopfile com a lista `FILES`;
+  - as duas regras de alias do dependency-cruiser.
+- **Configuração:** o guia ensinava `registerAs`/`ConfigModule.forFeature`, que o projeto não usa. Passou a mostrar o `ConfigService<EnvironmentVariables, true>` no `useFactory` e a tabela `RENAMED`.
+- **Fora do guia:** o `.env.example` e o `docker-compose.yml` perderam as notas "fase 12" e o `traceId` (o campo é `trace_id`).
 
 ### Passo 18: evoluções sob demanda
 

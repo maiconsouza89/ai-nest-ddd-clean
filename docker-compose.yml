@@ -16,7 +16,7 @@ services:
       timeout: 3s
       retries: 10
 
-  # --noeviction: o BullMQ (fase 12) exige; todo dado de cache aqui precisa ter TTL
+  # --noeviction: o BullMQ exige; todo dado de cache aqui precisa ter TTL
   redis:
     image: redis:8
     command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
