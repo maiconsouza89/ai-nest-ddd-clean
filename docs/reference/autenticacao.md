@@ -4,7 +4,7 @@ type: reference
 
 # Autenticação
 
-O porquê do desenho (o token só identifica o usuário, e o ator é carregado a cada requisição) está na [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md).
+O porquê do desenho está em [Autenticação e ownership](../explanation/autenticacao.md): o token só identifica o usuário, o ator é carregado a cada requisição ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)), a sessão vive num refresh token rotativo e o ownership fica no caso de uso.
 
 ## Rotas
 

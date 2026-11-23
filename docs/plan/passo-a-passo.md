@@ -256,7 +256,7 @@ Testes: cria o pedido com preços do catálogo, lança `ProductNotFoundError` pa
 **Faça:**
 
 - `shared/application/actor.ts`: `type Actor = { id: string; roles: string[] }`.
-- Os casos de uso recebem `{ orderId, actor }`, buscam o pedido, verificam a posse e chamam o método do domínio (ver [Autenticação e ownership](../research/modules-ddd-clean-nest.md#autenticação-e-ownership)).
+- Os casos de uso recebem `{ orderId, actor }`, buscam o pedido, verificam a posse e chamam o método do domínio (ver [Autenticação e ownership](../explanation/autenticacao.md#ownership-no-caso-de-uso)).
 - Erros novos: `OrderNotFoundError` e `NotOrderOwnerError`.
 
 Testes: o dono fecha e paga, outro usuário recebe `NotOrderOwnerError` e um admin consegue.

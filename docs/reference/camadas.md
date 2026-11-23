@@ -85,7 +85,7 @@ src/
 | Caso de uso | `application/use-cases/` | Uma classe com `execute`. Carrega pelo repositório, chama o domínio e salva. Grava o agregado e a outbox dentro de `TransactionManager.run` |
 | Validação que depende de dados | caso de uso | E-mail único, estoque disponível: consulta o repositório ou um port. Unicidade também tem `UNIQUE` no banco |
 | Ownership | caso de uso ou entidade | Recebe o `Actor` na entrada e decide se ele pode agir sobre o recurso. Role simples por rota é guard na infra |
-| Query | `application/queries/` | Leitura que devolve um DTO pronto, sem montar agregado. A paginação fica aqui |
+| Query | `application/queries/` | Leitura que devolve um DTO pronto, sem montar agregado. A paginação e o filtro pelo ator (`listByCustomer(actor.id, page)`) ficam aqui, e não num filtro depois de carregar tudo |
 | Port | `application/ports/` | O que a application precisa de fora (preço, estoque, e-mail, pagamento, logger). A implementação é um adapter na infra |
 | DTO de entrada | `application/dtos/` | Tipo simples, montado pelo controller a partir do DTO HTTP |
 | Evento de integração | `application/events/` | Converte o evento de domínio no evento de `contracts/events/` e o grava na outbox, na mesma transação do agregado |
