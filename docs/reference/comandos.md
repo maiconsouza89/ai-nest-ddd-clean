@@ -98,7 +98,7 @@ Num loop do zsh, escreva `"mig:${m}:run"`, com chaves e aspas. Sem elas, `mig:$m
 
 ## Seeds
 
-Só para desenvolvimento.
+Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa migration. Para criar o seed de um módulo, ver [Como criar um seed](../how-to/criar-um-seed.md).
 
 - `npm run seed:<módulo>`, para `identity`, `catalog` e `inventory`. Rode as migrations antes.
 - Só rodam com `NODE_ENV=development` ou `test`. Qualquer outro valor, ou nenhum, recusa.

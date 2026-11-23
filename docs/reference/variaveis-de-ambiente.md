@@ -4,7 +4,7 @@ type: reference
 
 # Variáveis de ambiente
 
-O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-o para `.env` no [setup](comandos.md#setup-do-zero).
+O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-o para `.env` no [setup](comandos.md#setup-do-zero). Para criar uma variável, ver [Como adicionar uma variável de ambiente](../how-to/adicionar-uma-variavel-de-ambiente.md).
 
 ## Carga
 

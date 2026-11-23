@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação e Modelagem do domínio)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio e Infra)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -469,6 +469,23 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
   O link do passo 2 do `passo-a-passo.md` aponta para a página nova, e o passo deixou de mandar copiar o `Money` do guia. Rota nova no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
 
+- **Infra: configuração, jobs, cache e serviços externos (2026-11-23):** a seção virou seis páginas, e não "how-tos por tarefa e `variaveis-de-ambiente.md`" apenas, porque três subseções eram quase só porquê:
+  - `how-to/adicionar-uma-variavel-de-ambiente.md`: a declaração na `EnvironmentVariables`, o interruptor como texto (`'true'`/`'false'`, porque o `enableImplicitConversion` transformaria `'false'` em `true`), o `useFactory` com `ConfigService<EnvironmentVariables, true>`, o `RENAMED`, o `test/setup-env.ts`, o spec e a tabela da referência. As regras de carga já estavam em `variaveis-de-ambiente.md` (fase 1), e a regra "o caso de uso recebe valores prontos" em `camadas.md`;
+  - `how-to/agendar-um-job.md`: o processor sobre o `ScheduledJobProcessor`, a fila por job, o nome do agendador e o teste com duas instâncias, a partir do `expire-pending-orders.processor.int-spec.ts`;
+  - `how-to/cachear-uma-leitura.md`: o decorator da query, a chave com geração, o TTL da geração em dobro, o `useExisting` no módulo, o handler de invalidação e os casos de teste do `cached-order.queries.spec.ts`;
+  - `how-to/criar-um-seed.md`: dados obrigatórios vão em migration, e o seed usa ids fixos, `orIgnore()`, o `runSeed` e o script com `@app/source`. O `comandos.md` passou a apontar para ele;
+  - `explanation/redis.md`: por que um Redis com várias instâncias, uma instância só para filas e cache em desenvolvimento (`noeviction` e AOF no `docker-compose.yml`), os dois clientes e as três conexões, uma tabela do que acontece com cada uso com o Redis fora do ar, o cache por geração e os jobs pelo agendador do BullMQ. O título não cita cache e jobs porque a página trata de tudo que depende do Redis;
+  - `explanation/servicos-externos.md`: port e adapter, a tradução para `PaymentUnavailableError` (503), a resiliência no decorator `ResilientPaymentGateway`, o timeout que não cancela a chamada, o retry só com chave de idempotência e o circuit breaker como caminho futuro.
+
+  Conferido no Context7: BullMQ (`/taskforcesh/bullmq`, v6: repeatable jobs removidos, `upsertJobScheduler` com `attempts` no template, `setGlobalConcurrency`, `maxRetriesPerRequest: null` e o backend em Postgres) e Keyv (`/jaredwray/keyv`: `throwOnErrors` com padrão `false`, `throwOnConnectError` com padrão `true` e o listener de `error`). Conferido contra o código, o guia errava ou omitia em cinco pontos:
+  - **Cache:** o exemplo do guia lia e gravava sem `try/catch`. O código trata cada chamada, não usa o cache quando a leitura da geração falha, converte a data de volta para `Date` e dá à geração o dobro do TTL das páginas;
+  - **Redis fora do ar:** o guia tratava só do cache. Cada uso falha de um jeito (rate limit com 503, agendador barrando a subida, relay com backoff até o `deadAt`), e a página registra o porquê de cada um;
+  - **Conexões:** o guia falava em dois clientes. São três conexões: `producer` e `worker` do `ioredis` e a do cache, com o cliente `redis`;
+  - **Jobs:** o guia não dizia que o job falho não se repete até o próximo disparo, nem que um agendador renomeado fica no Redis;
+  - **E-mail:** o guia mandava retry com backoff em operações idempotentes, sem dizer onde. O e-mail não tem retry no adapter, porque a fila do consumidor já repete.
+
+  Fora do escopo: os comentários do `LoggingEmailSender` e do port `EmailSender` dizem que "a outbox" repete o envio, mas quem repete é a fila do consumidor (10 tentativas). Os links dos passos de configuração e do Redis do `passo-a-passo.md` apontam para as páginas novas. Seis rotas novas ou ampliadas no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
+
 ### Passo 13: how-tos e skills-ponteiro
 
 **Por quê:** num how-to, o humano lê o passo a passo. Numa skill, a descrição fica sempre visível para o Claude, e o corpo só carrega quando a skill é usada.
@@ -552,7 +569,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

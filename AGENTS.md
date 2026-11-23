@@ -45,7 +45,7 @@ Leia a página antes de agir no assunto.
 | Vai fazer | Leia |
 | --- | --- |
 | Rodar, testar, migrar, semear, gerar módulo ou página, subir ou baixar o ambiente | `docs/reference/comandos.md` |
-| Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` |
+| Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` e `docs/how-to/adicionar-uma-variavel-de-ambiente.md` |
 | Adicionar ou atualizar dependência | `docs/reference/versoes-e-excecoes.md` |
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
 | Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md` e `docs/explanation/autenticacao.md` |
@@ -57,6 +57,11 @@ Leia a página antes de agir no assunto.
 | Gerar uma migration depois de mudar uma ORM entity | `docs/how-to/gerar-uma-migration.md` |
 | Publicar um evento de integração ou consumir um em outro módulo | `docs/how-to/publicar-um-evento-de-integracao.md` |
 | Criar ou mudar uma listagem paginada | `docs/how-to/paginar-uma-listagem.md` |
+| Cachear uma leitura ou mudar um cache | `docs/how-to/cachear-uma-leitura.md` |
+| Criar ou mudar um job agendado | `docs/how-to/agendar-um-job.md` |
+| Criar ou mudar um seed | `docs/how-to/criar-um-seed.md` |
+| Mexer na conexão com o Redis, no cache ou no rate limit, ou entender o que acontece com o Redis fora do ar | `docs/explanation/redis.md` |
+| Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` |
 | Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |

@@ -443,7 +443,7 @@ Poucos testes e2e bastam, só para os fluxos críticos.
 npm i @nestjs/config
 ```
 
-- `ConfigModule.forRoot` no `AppModule` e `validateEnv` em `shared/infra/config/env.validation.ts`, os dois do guia de referência ([Infra: configuração, jobs, cache e serviços externos](../research/modules-ddd-clean-nest.md#infra-configuração-jobs-cache-e-serviços-externos)).
+- `ConfigModule.forRoot` no `AppModule` e `validateEnv` em `shared/infra/config/env.validation.ts`, no formato do projeto pronto (`src/app.module.ts` e `env.validation.ts`). O comportamento da carga está em [Variáveis de ambiente](../reference/variaveis-de-ambiente.md#carga), e o passo a passo de uma variável em [Como adicionar uma variável de ambiente](../how-to/adicionar-uma-variavel-de-ambiente.md).
 - Valide só o que já existe: `NODE_ENV`, `PORT` e `DATABASE_URL`. O `JWT_SECRET` entra no passo 18.
 - Versione um `.env.example` sem valores reais.
 
@@ -886,7 +886,7 @@ Versões consultadas em 2026-11-21: `@nestjs/cache-manager` 12.0.5, `cache-manag
 
 #### Base do Redis
 
-- Serviço `redis` no `docker-compose.yml` (imagem oficial `redis:8`, `127.0.0.1:6379`, volume e healthcheck com `redis-cli ping`), iniciado com `--appendonly yes --maxmemory-policy noeviction`. O BullMQ só funciona com `noeviction` (ver [Redis](../research/modules-ddd-clean-nest.md#redis)), então o mesmo Redis já nasce pronto para a fase 12.
+- Serviço `redis` no `docker-compose.yml` (imagem oficial `redis:8`, `127.0.0.1:6379`, volume e healthcheck com `redis-cli ping`), iniciado com `--appendonly yes --maxmemory-policy noeviction`. O BullMQ só funciona com `noeviction` (ver [Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)), então o mesmo Redis já nasce pronto para a fase 12.
 - `REDIS_URL` no `validateEnv` e no `.env.example`.
 - `/health/ready` passa a checar o Redis com um `PING` (indicador próprio com o `HealthIndicatorService` do terminus). O `live` continua sem dependências.
 - Os testes de integração que precisarem sobem um Redis descartável com `@testcontainers/redis`, como já fazem com o Postgres. O e2e passa a exigir o Redis do compose. `npm run ci` continua sem Redis.

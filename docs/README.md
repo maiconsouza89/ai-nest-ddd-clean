@@ -21,6 +21,10 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como gerar uma migration](how-to/gerar-uma-migration.md): depois de mudar uma ORM entity, do generate ao helper dos testes de integração.
 - [Como publicar um evento de integração](how-to/publicar-um-evento-de-integracao.md): do evento de domínio à outbox, o teste de contrato e o handler no módulo consumidor.
 - [Como paginar uma listagem](how-to/paginar-uma-listagem.md): do `PaginationQuery` à query com desempate estável, e o cursor para listas grandes.
+- [Como cachear uma leitura](how-to/cachear-uma-leitura.md): o decorator da query com chave por geração, a ligação no módulo, o handler de invalidação e os testes.
+- [Como agendar um job](how-to/agendar-um-job.md): o processor sobre o `ScheduledJobProcessor`, a fila própria e o teste com duas instâncias.
+- [Como adicionar uma variável de ambiente](how-to/adicionar-uma-variavel-de-ambiente.md): da validação ao `useFactory` do módulo, com o `.env.example`, o `RENAMED` e os testes.
+- [Como criar um seed](how-to/criar-um-seed.md): dados de desenvolvimento com ids fixos e `orIgnore`, o `runSeed` e o script.
 
 ## Explicação
 
@@ -30,6 +34,8 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Agregados](explanation/agregados.md): por que o item fica no `Order` e o estoque no inventory, o port `StockGateway` e a reserva síncrona dentro da transação do pedido.
 - [Consistência e eventos](explanation/consistencia-e-eventos.md): a transação pelo contexto, a concorrência otimista e a pessimista, a outbox, a fila por consumidor, o consumidor idempotente e a `Idempotency-Key`.
 - [Modelagem do domínio](explanation/modelagem-do-dominio.md): dinheiro em centavos, id e hora por ports, erros com `code`, a mesma regra validada em mais de um lugar, domain service, exclusão como estado e auditoria.
+- [Redis](explanation/redis.md): por que um Redis, filas e cache na mesma instância, o que acontece quando ele cai, o cache invalidado por geração e os jobs pelo agendador do BullMQ.
+- [Serviços externos](explanation/servicos-externos.md): port e adapter para cada fornecedor, a tradução de erros, timeout em toda chamada, retry só no que é idempotente e o circuit breaker que ainda não existe.
 - [Shared kernel](explanation/shared-kernel.md): por que o `shared` guarda só blocos técnicos e por que, na dúvida, o tipo fica duplicado.
 - [Autenticação e ownership](explanation/autenticacao.md): autenticação na infra e ownership no caso de uso, o ator carregado a cada requisição, o refresh token rotativo e a corrida da renovação.
 
