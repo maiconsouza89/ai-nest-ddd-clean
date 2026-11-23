@@ -17,6 +17,55 @@ O que fica em cada camada de um módulo e em qual pasta. Os imports entre camada
 
 Exceção: um módulo CRUD sem regra de negócio dispensa as camadas, como o [catalog](modules/catalog.md#estrutura). As regras de fronteira entre módulos continuam valendo para ele.
 
+## Estrutura de pastas
+
+O orders tem todas as camadas. A infra é organizada por tipo e depois por tecnologia. Um arquivo de exemplo por pasta:
+
+```text
+src/
+├── modules/
+│   ├── catalog/                         # CRUD, sem camadas
+│   ├── identity/
+│   ├── inventory/
+│   ├── notifications/                   # sem domain/: só reage a eventos
+│   └── orders/
+│       ├── domain/
+│       │   ├── entities/                order.entity.ts, order-item.entity.ts
+│       │   ├── value-objects/           order-status.vo.ts
+│       │   ├── events/                  order-paid.event.ts (evento de domínio)
+│       │   ├── errors/                  order-already-paid.error.ts
+│       │   └── repositories/            order.repository.ts
+│       ├── application/
+│       │   ├── use-cases/               create-order.use-case.ts
+│       │   ├── queries/                 order.queries.ts
+│       │   ├── ports/                   price-catalog.ts, stock-gateway.ts
+│       │   ├── dtos/                    create-order.input.ts
+│       │   └── events/                  to-integration-event.ts
+│       ├── infra/
+│       │   ├── database/
+│       │   │   ├── typeorm/             typeorm-order.repository.ts, typeorm-order.mapper.ts,
+│       │   │   │   │                    orders.data-source.ts
+│       │   │   │   ├── entities/        order.orm-entity.ts
+│       │   │   │   └── migrations/
+│       │   │   └── in-memory/           in-memory-order.repository.ts
+│       │   ├── gateways/                catalog-price.adapter.ts, inventory-stock.gateway.ts
+│       │   ├── http/
+│       │   │   ├── controllers/         orders.controller.ts
+│       │   │   ├── dtos/                create-order.request.ts
+│       │   │   └── filters/             domain-error.filter.ts
+│       │   ├── cache/                   cached-order.queries.ts
+│       │   ├── events/                  invalidate-order-list-cache.handler.ts
+│       │   ├── jobs/                    expire-pending-orders.processor.ts
+│       │   └── orders.module.ts
+│       └── contracts/
+│           └── events/                  order-paid.event.ts (OrderPaidV1), order-paid.v1.example.ts
+└── shared/
+    ├── domain/                          aggregate-root.ts, domain-error.ts, money.vo.ts
+    ├── application/                     actor.ts, page.ts
+    │   └── ports/                       clock.ts, id-generator.ts, transaction-manager.ts
+    └── infra/                           auth/, database/, outbox/, messaging/, cache/, config/, ...
+```
+
 ## Domain
 
 | Peça | Pasta | Convenção |

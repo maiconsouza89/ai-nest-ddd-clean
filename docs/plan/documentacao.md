@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral e Camadas)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas e Camadas)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -395,7 +395,7 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 | Seção do guia | Destino |
 | --- | --- |
 | Visão geral | `explanation/arquitetura.md` |
-| Estrutura de pastas | `reference/estrutura-de-pastas.md` |
+| Estrutura de pastas | `reference/camadas.md`, seção "Estrutura de pastas" (era `reference/estrutura-de-pastas.md`) |
 | Camadas | `reference/camadas.md` (regras) e `explanation/arquitetura.md` (porquê) |
 | Persistência com TypeORM | `explanation/persistencia.md` e `how-to/gerar-migration.md` |
 | Módulos independentes; dependências e contratos | `explanation/comunicacao-entre-modulos.md` |
@@ -424,6 +424,7 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 **Como ficou (parcial):**
 
 - **Visão geral e Camadas (2026-11-23):** as duas foram para `docs/explanation/arquitetura.md`, a primeira página do quadrante de explicação. As regras de camada já estavam em `reference/camadas.md` desde o passo 11, então a página ficou só com o porquê: o que torna o sistema um monólito modular, a regra de dependência, o Nest só na infra (`abstract class` como token, `useFactory` no módulo), o papel da entidade, do caso de uso e do controller, e as alternativas descartadas (microsserviços desde o início, `@Injectable()` no caso de uso, `interface` como contrato, uma entidade só para domínio e ORM). Os trechos de código foram conferidos contra o orders e atualizados: o `CreateOrderUseCase` ganhou outbox, clock e transação, o módulo ganhou os imports do inventory e do messaging, e o controller, o `@UseFilters`. No guia, as duas seções viraram ponteiro, com o título mantido para não quebrar âncoras. O link do `passo-a-passo.md` para `#camadas` aponta para as páginas novas. A linha "Versões de referência" saiu: as versões estão no `package.json`, e a incompatibilidade do `@nestjs/typeorm` 10 e 11.0.0 com o TypeORM 1.x foi para "Combinações que quebram" em `versoes-e-excecoes.md`. Rota nova no `AGENTS.md`, entrada nova no índice do `docs/README.md` e no mapa do `README.md`. Passo só de texto: `/simplify` e `/code-review` pulados.
+- **Estrutura de pastas (2026-11-23):** virou a seção "Estrutura de pastas" de `reference/camadas.md`, e não uma página própria. A tabela da seção repetia o mapa de `camadas.md` (responsabilidade de cada pasta) e o que o `npm run arch` já barra ("pode importar Nest/TypeORM?"), e uma regra fica como check ou como texto, nunca nos dois (passo 11). Sobrou a árvore, conferida contra `src/`: ganhou `application/events/`, `infra/database/in-memory/`, `infra/cache/`, `infra/events/`, `infra/jobs/`, os `*.example.ts` do `contracts/events/` e as pastas do `shared/infra` que faltavam, e mostra que o notifications não tem `domain/`. No guia, a seção virou ponteiro. Passo só de texto: `/simplify` e `/code-review` pulados.
 
 ### Passo 13: how-tos e skills-ponteiro
 
@@ -508,7 +509,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.
