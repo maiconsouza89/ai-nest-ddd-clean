@@ -5,7 +5,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
-import { registerAndLogin, uniqueEmail } from './helpers/auth.js';
+import { deleteUser, registerAndLogin, setRoles, uniqueEmail } from './helpers/auth.js';
 
 describe('Auth (e2e)', () => {
   let app: TestApp;
@@ -19,7 +19,7 @@ describe('Auth (e2e)', () => {
 
   afterAll(() => app.close());
 
-  it('cadastra e faz login, devolvendo um JWT assinado com sub e roles', async () => {
+  it('cadastra e faz login, devolvendo um JWT assinado só com o sub', async () => {
     const email = uniqueEmail();
     const reg = await request(server())
       .post('/v1/auth/register')
@@ -33,7 +33,7 @@ describe('Auth (e2e)', () => {
 
     const claims = await app.get(JwtService).verifyAsync(login.body.accessToken);
     expect(claims.sub).toBe(reg.body.id);
-    expect(claims.roles).toEqual([]);
+    expect(claims).not.toHaveProperty('roles'); // as roles vêm do banco a cada requisição
     expect(claims.exp).toBeGreaterThan(claims.iat);
   });
 
@@ -126,7 +126,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('rejeita token assinado com outro segredo', async () => {
-      const token = await forge('x'.repeat(40), { sub: 'u1', roles: [] }, { expiresIn: 60 });
+      const token = await forge('x'.repeat(40), { sub: 'u1' }, { expiresIn: 60 });
       await call(token).expect(401);
     });
 
@@ -137,19 +137,38 @@ describe('Auth (e2e)', () => {
     });
 
     it('rejeita token assinado com outro algoritmo, mesmo com o segredo certo', async () => {
-      const token = await forge(
-        secret(),
-        { sub: 'u1', roles: [] },
-        { algorithm: 'HS512', expiresIn: 60 },
-      );
+      const token = await forge(secret(), { sub: 'u1' }, { algorithm: 'HS512', expiresIn: 60 });
       await call(token).expect(401);
     });
 
-    it('rejeita token válido sem sub ou com roles malformado', async () => {
-      await call(await forge(secret(), { roles: [] }, { expiresIn: 60 })).expect(401);
-      await call(await forge(secret(), { sub: 'u1', roles: 'admin' }, { expiresIn: 60 })).expect(
+    it('rejeita token válido sem sub ou com sub que não é texto', async () => {
+      await call(await forge(secret(), {}, { expiresIn: 60 })).expect(401);
+      await call(await forge(secret(), { sub: 42 }, { expiresIn: 60 })).expect(401);
+    });
+
+    it('rejeita o token de um usuário apagado depois do login', async () => {
+      const user = await registerAndLogin(app);
+      await call(user.token).expect(200);
+      await deleteUser(app, user.id);
+      await call(user.token).expect(401);
+    });
+
+    it('rejeita sub que nunca existiu, mesmo com assinatura válida', async () => {
+      await call(await forge(secret(), { sub: crypto.randomUUID() }, { expiresIn: 60 })).expect(
         401,
       );
+      await call(await forge(secret(), { sub: 'nao-e-uuid' }, { expiresIn: 60 })).expect(401);
+    });
+
+    it('aplica a mudança de role na requisição seguinte, com o mesmo token', async () => {
+      const user = await registerAndLogin(app);
+      const createProduct = () =>
+        request(server()).post('/v1/products').set(user.auth).send({ name: 'X', priceCents: 100 });
+
+      await setRoles(app, user.id, ['admin']);
+      await createProduct().expect(201);
+      await setRoles(app, user.id, []);
+      await createProduct().expect(403);
     });
 
     it('as rotas de auth continuam públicas', async () => {

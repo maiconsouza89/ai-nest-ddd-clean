@@ -367,11 +367,23 @@ Autenticação (quem é você) fica na infra. Ownership (você pode mexer neste 
 
 ### 1. Autenticação na infra
 
-O módulo `identity` é dono dos usuários e emite o JWT. Um guard global em `shared/infra/auth` valida o token e coloca o usuário no request. Os outros módulos nunca consultam a tabela de usuários.
+O módulo `identity` é dono dos usuários e emite o JWT. O token leva só o `sub`: nada que possa mudar vai nas claims. Um guard global em `shared/infra/auth` valida o token e, a cada requisição, monta o `Actor` com as roles atuais por meio do port `ActorResolver`. Role removida ou conta apagada valem na requisição seguinte, e não quando o token expirar ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)).
+
+O port fica no `shared`, e o `identity` o implementa com uma leitura por PK. O `shared` não importa o `identity`: quem liga os dois é o `AppModule`, a raiz de composição. Os outros módulos continuam sem consultar a tabela de usuários.
 
 ```ts
 // shared/application/actor.ts (tipo puro)
 export type Actor = { id: string; roles: string[]; tenantId?: string };
+
+// shared/application/ports/actor-resolver.ts
+export abstract class ActorResolver {
+  /** O ator atual do usuário, ou null se ele não existir mais (o guard responde 401). */
+  abstract resolve(userId: string): Promise<Actor | null>;
+}
+
+// app.module.ts: o IdentityAuthModule exporta só o ActorResolver (o IdentityModule continua
+// exportando só a facade, ADR 0003); o AuthModule registra os guards
+imports: [JwtConfigModule, AuthModule.forRoot({ imports: [IdentityAuthModule] }), ...]
 
 // shared/infra/auth/current-user.decorator.ts
 export const CurrentUser = createParamDecorator(
@@ -419,7 +431,7 @@ O exception filter traduz `NotOrderOwnerError` para 403.
 - **Listagens:** filtre na query (`findByCustomer(actor.id)`), nunca carregue tudo para filtrar depois.
 - **Esconder existência do recurso:** devolva 404 em vez de 403.
 - **Dados do dono** (nome, e-mail): facade de `identity/contracts` ou cópia local alimentada pelo evento `UserRegistered`.
-- **Multi-tenant:** `tenantId` vem no token e vai em toda entidade e toda query.
+- **Multi-tenant:** o projeto ainda não tem tenant, e o `ActorResolver` não preenche o `tenantId`. Ao adotar, o `identity` guarda o tenant do usuário e o `ActorResolver` o devolve junto com as roles (nunca pelo token). O `tenantId` então vai em toda entidade e toda query.
 
 ## Agregados e comunicação entre módulos
 

@@ -1,29 +1,25 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtModule } from '@nestjs/jwt';
-import { EnvironmentVariables } from '../config/env.validation.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { RolesGuard } from './roles.guard.js';
 
-// Um só JwtModule para assinar (identity) e verificar (guard), com o mesmo segredo.
-@Global()
-@Module({
-  imports: [
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService<EnvironmentVariables, true>) => ({
-        secret: cfg.getOrThrow('JWT_SECRET'),
-        signOptions: { algorithm: 'HS256', expiresIn: cfg.getOrThrow('JWT_EXPIRES_IN_SECONDS') },
-        verifyOptions: { algorithms: ['HS256'] }, // nunca aceita o algoritmo que o token declarar
-      }),
-    }),
-  ],
-  providers: [
-    // a ordem importa: autentica primeiro, depois checa os papéis
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
-  ],
-  exports: [JwtModule],
-})
-export class AuthModule {}
+type AuthModuleOptions = {
+  /** Módulos que fornecem o `ActorResolver`. Quem os passa é o AppModule, a raiz de composição. */
+  imports: NonNullable<ModuleMetadata['imports']>;
+};
+
+// O shared não importa o identity: o ActorResolver chega pelos `imports` (ADR 0002).
+@Module({})
+export class AuthModule {
+  static forRoot({ imports }: AuthModuleOptions): DynamicModule {
+    return {
+      module: AuthModule,
+      imports,
+      providers: [
+        // a ordem importa: autentica primeiro, depois checa os papéis
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
+      ],
+    };
+  }
+}

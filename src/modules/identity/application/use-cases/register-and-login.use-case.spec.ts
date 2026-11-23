@@ -64,7 +64,7 @@ describe('RegisterUserUseCase', () => {
 });
 
 describe('LoginUseCase', () => {
-  it('devolve um token com sub e sem papéis para um usuário comum', async () => {
+  it('devolve um token só com o sub', async () => {
     const { register, login, tokens } = setup();
     const { id } = await register.execute({
       name: 'Ana',
@@ -75,7 +75,7 @@ describe('LoginUseCase', () => {
     const { accessToken } = await login.execute({ email: 'A@x.com', password: 'secret-123' });
 
     expect(accessToken).toBe(`token-for-${id}`);
-    expect(tokens.issued).toEqual([{ sub: id, roles: [] }]);
+    expect(tokens.issued).toEqual([{ sub: id }]);
   });
 
   it('rejeita senha errada', async () => {

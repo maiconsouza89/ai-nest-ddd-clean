@@ -1,21 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { httpContext } from '#test/helpers/http-context';
 import { Actor } from '../../application/actor.js';
 import { RolesGuard } from './roles.guard.js';
 
 function contextFor(user: Actor | undefined, roles: string[] | undefined) {
-  const handler = () => undefined;
   const reflector = new Reflector();
   vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(roles);
-  return {
-    guard: new RolesGuard(reflector),
-    ctx: {
-      getHandler: () => handler,
-      getClass: () => class {},
-      switchToHttp: () => ({ getRequest: () => ({ user }) }),
-    } as never,
-  };
+  return { guard: new RolesGuard(reflector), ctx: httpContext({ user }) };
 }
 
 describe('RolesGuard', () => {

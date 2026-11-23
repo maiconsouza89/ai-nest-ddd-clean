@@ -34,11 +34,11 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 3. Vitest | Jest sai, Vitest entra | `vitest` | ✅ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ✅ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
-| 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ⬜ |
+| 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | 🟡 |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 5 de 8 fases concluídas · 11 de 18 passos concluídos · **Fase atual:** 6
+**Progresso geral:** 5 de 8 fases concluídas · 12 de 18 passos concluídos · **Fase atual:** 6
 
 ---
 
@@ -389,9 +389,9 @@ Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modul
 
 ## Fase 6: autenticação
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-22 · **Conclusão:** —
 >
-> - [ ] Passo 12: `ActorResolver` e ator carregado por requisição
+> - [x] Passo 12: `ActorResolver` e ator carregado por requisição
 > - [ ] Passo 13: access token de 15 minutos
 > - [ ] Passo 14: refresh token rotativo e logout
 
@@ -420,6 +420,8 @@ export abstract class ActorResolver {
 - `JwtAuthGuard`: verifica o token, lê o `sub`, chama `resolver.resolve(sub)`, responde 401 se vier `null` e grava o `Actor` em `req.user`. Ele não lê mais `roles` das claims. Atualize o comentário do guard, que hoje diz que ele não consulta a tabela de usuários.
 - `LoginUseCase`: o token leva só o `sub`. O `RolesGuard`, o `order-access.ts` e os casos de uso não mudam, porque continuam consumindo o `Actor`.
 - Sem cache por enquanto: a busca é uma leitura por PK. Cache só entra se uma medição pedir (passo 18).
+
+**Como ficou:** o adapter se chama `TypeOrmActorResolver` (`identity/infra/typeorm-actor-resolver.ts`), no padrão do `TypeOrmUserDirectoryFacade`, e o módulo do `JwtModule` é o `JwtConfigModule` (`shared/infra/auth/jwt-config.module.ts`). Diferente do que este passo pedia, o `IdentityModule` **não** exporta o `ActorResolver`: isso daria acesso a ele a quem importa o módulo pela facade, o que contraria a ADR 0003. O `ActorResolver` fica num `IdentityAuthModule` próprio, que só o `AppModule` importa (`AuthModule.forRoot({ imports: [IdentityAuthModule] })`). O `tenantId` continua no tipo `Actor`, mas nada o preenche até o projeto ter tenant. No passo 13, considere tirar o `expiresIn` do `JwtConfigModule` e passá-lo no `signAsync` do identity, que é quem precisa devolvê-lo no login. O guard só converte em 401 as falhas do token: se o `ActorResolver` falhar (banco fora do ar), o erro sobe como 500. O helper de e2e `registerAdmin` não faz mais um segundo login, porque a role passa a valer no token já emitido. A seção "Autenticação e ownership" do guia já descreve o `ActorResolver`. O refresh token entra nela no passo 14.
 
 **Pronto quando:**
 

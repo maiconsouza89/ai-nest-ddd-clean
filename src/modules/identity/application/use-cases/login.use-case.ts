@@ -27,7 +27,7 @@ export class LoginUseCase {
     // mesma resposta para e-mail desconhecido e senha errada
     if (!user || !passwordOk) throw new InvalidCredentialsError();
 
-    const accessToken = await this.tokens.issue({ sub: user.id, roles: [...user.roles] });
+    const accessToken = await this.tokens.issue({ sub: user.id });
     return { accessToken };
   }
 

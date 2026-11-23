@@ -42,6 +42,6 @@ import { TypeOrmUserDirectoryFacade } from './typeorm-user-directory.facade.js';
       inject: [UserRepository, PasswordHasher, TokenIssuer],
     },
   ],
-  exports: [UserDirectoryFacade], // nada além da facade sai do módulo
+  exports: [UserDirectoryFacade], // nada além da facade sai do módulo (ADR 0003)
 })
 export class IdentityModule {}

@@ -2,17 +2,20 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Actor } from '../../application/actor.js';
+import { ActorResolver } from '../../application/ports/actor-resolver.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 
 type AuthRequest = { headers: Record<string, string | undefined>; user?: Actor };
 
-// Guard global: toda rota nasce protegida. Valida só a assinatura e as claims do token,
-// sem consultar a tabela de usuários (o identity é o único dono desses dados).
+// Guard global: toda rota nasce protegida. O token só identifica o usuário (`sub`); o ator, com
+// as roles atuais, vem do ActorResolver a cada requisição. Role removida ou conta apagada valem
+// na requisição seguinte, e não quando o token expirar (ADR 0002).
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly actors: ActorResolver,
   ) {}
 
   async canActivate(ctx: ExecutionContext) {
@@ -23,31 +26,28 @@ export class JwtAuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const req = ctx.switchToHttp().getRequest<AuthRequest>();
-    const token = this.extractBearerToken(req);
-    if (!token) throw new UnauthorizedException();
-
-    try {
-      // algoritmo e segredo vêm da configuração do JwtModule (AuthModule)
-      req.user = this.toActor(await this.jwt.verifyAsync(token));
-    } catch {
-      throw new UnauthorizedException(); // assinatura, expiração e claims inválidas: mesma resposta
-    }
+    // fora do try do token: uma falha do resolver (banco fora do ar) é erro do servidor, e não 401
+    const actor = await this.actors.resolve(await this.verifiedUserId(req));
+    if (!actor) throw new UnauthorizedException(); // o usuário deixou de existir depois do login
+    req.user = actor;
     return true;
+  }
+
+  // Sem token, assinatura ou expiração inválidas e sem `sub`: mesma resposta.
+  private async verifiedUserId(req: AuthRequest) {
+    const token = this.extractBearerToken(req);
+    try {
+      // algoritmo e segredo vêm da configuração do JwtModule (JwtConfigModule)
+      const { sub } = token ? await this.jwt.verifyAsync<{ sub?: unknown }>(token) : {};
+      if (typeof sub === 'string') return sub;
+    } catch {
+      // cai no 401 abaixo
+    }
+    throw new UnauthorizedException();
   }
 
   private extractBearerToken(req: AuthRequest) {
     const [scheme, token] = (req.headers.authorization ?? '').split(' ');
     return scheme?.toLowerCase() === 'bearer' && token ? token : undefined;
-  }
-
-  private toActor(claims: Record<string, unknown>): Actor {
-    const { sub, roles, tenantId } = claims;
-    const validRoles = Array.isArray(roles) && roles.every((r) => typeof r === 'string');
-    if (typeof sub !== 'string' || !validRoles) throw new Error('invalid claims');
-    return {
-      id: sub,
-      roles,
-      ...(typeof tenantId === 'string' ? { tenantId } : {}),
-    };
   }
 }

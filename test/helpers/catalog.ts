@@ -1,7 +1,6 @@
 import type { TestApp } from './test-app.js';
-import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { registerAndLogin } from './auth.js';
+import { registerAndLogin, setRoles } from './auth.js';
 
 /** Insere um produto no catalog, com estoque no inventory, direto no banco. Devolve o id. */
 export async function seedProduct(app: TestApp, priceCents = 1000, stock = 100, name = 'Produto') {
@@ -22,15 +21,9 @@ export async function seedProduct(app: TestApp, priceCents = 1000, stock = 100, 
   return id;
 }
 
-/** Cadastra um usuário admin e devolve o header Authorization (o papel vai no token, então loga de novo). */
+/** Cadastra um usuário admin e devolve o header Authorization. */
 export async function registerAdmin(app: TestApp) {
   const user = await registerAndLogin(app);
-  await app
-    .get(DataSource)
-    .query(`UPDATE identity.users SET roles = ARRAY['admin'] WHERE id = $1`, [user.id]);
-  const login = await request(app.getHttpServer())
-    .post('/v1/auth/login')
-    .send({ email: user.email, password: user.password })
-    .expect(200);
-  return { Authorization: `Bearer ${login.body.accessToken}` };
+  await setRoles(app, user.id, ['admin']); // vale já no token emitido: o guard lê as roles do banco
+  return user.auth;
 }
