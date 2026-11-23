@@ -51,5 +51,5 @@ Leia a página antes de agir no assunto.
 | Mexer em login, tokens, guards ou roles | `docs/reference/autenticacao.md` |
 | Criar ou mudar entidade, caso de uso, repositório, evento ou módulo | `docs/research/modules-ddd-clean-nest.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
-| Escrever ou mover documentação | `docs/adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md` |
+| Escrever ou mover documentação | `docs/README.md` |
 | Continuar um plano em andamento | `docs/plan/` |

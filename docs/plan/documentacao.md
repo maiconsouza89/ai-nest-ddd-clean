@@ -55,7 +55,7 @@ Convenções:
 
 | Fase | O que entrega | Status |
 | --- | --- | --- |
-| 1. Fundação | ADR 0006, `docs:check`, templates, referência operacional, `AGENTS.md`, `CLAUDE.md` enxuto, READMEs | 🟡 |
+| 1. Fundação | ADR 0006, `docs:check`, templates, referência operacional, `AGENTS.md`, `CLAUDE.md` enxuto, READMEs | ✅ |
 | 2. Módulos e glossário | `docs/reference/modules/*.md`, `glossario.md`, regra-ponteiro, plop gera doc de módulo | ⬜ |
 | 3. Sob demanda | Camadas (check primeiro), divisão do guia de pesquisa, how-tos e skills, tutoriais | ⬜ |
 
@@ -63,14 +63,14 @@ Convenções:
 
 ## Fase 1: fundação
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-23 · **Conclusão:** 2026-11-23
 >
 > - [x] Passo 1: ADR 0006
 > - [x] Passo 2: `docs:check` no CI
 > - [x] Passo 3: templates `plop doc`
 > - [x] Passo 4: referência operacional
 > - [x] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
-> - [ ] Passo 6: `README.md` e `docs/README.md`
+> - [x] Passo 6: `README.md` e `docs/README.md`
 
 ### Passo 1: ADR 0006
 
@@ -245,6 +245,15 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 - **Rota do `AGENTS.md`:** "Escrever ou mover documentação" passa a apontar para o `docs/README.md`.
 
 **Pronto quando:** alguém sem contexto chega do `README.md` à app rodando seguindo só links, e o `docs/README.md` lista todas as páginas existentes.
+
+**Como ficou (2026-11-23):**
+
+- **`README.md`:** o projeto em um parágrafo (módulos, `shared`, contratos e eventos pela outbox, composição), a stack, requisitos, um quickstart de seis passos com link para `comandos.md` em cada um, "Antes de abrir um PR" (o `ci` e a definição de pronto) e o mapa da documentação.
+- **`docs/README.md`:** a bússola do Diátaxis em tabela, uma linha por tipo, o índice da referência (os outros quadrantes ainda não têm página), os seis ADRs, o que fica fora dos quadrantes (guia de pesquisa e planos) e "Como escrever uma página" em seis passos, com a regra de pôr a página no índice e, se um agente precisa achá-la, na tabela de rotas do `AGENTS.md`. O ADR fica de fora do gerador, com o formato a copiar.
+- **`AGENTS.md`:** a rota "Escrever ou mover documentação" aponta para o `docs/README.md`.
+- **Setup do zero:** feito num git worktree, com outro nome de projeto do compose, logo com volumes novos, e sem `.env`, seguindo só o quickstart. `npm install`, `cp .env.example .env`, `docker compose up -d postgres redis` (os dois `healthy`), os loops do `README.md` no zsh (todas as migrations dos cinco módulos e os três seeds, exit 0) e `npm run start:dev`, no ar em 9 s. `/health/live` e `/health/ready` deram 200, `/docs` deu 200, e o login do `admin@example.com` devolveu `accessToken`, `expiresIn=900` e `refreshToken`. No log, só o DEP0205 já registrado no passo 18 do `evolucao.md`. O projeto de teste foi removido com `docker compose down -v --remove-orphans` e o worktree apagado.
+- **Achado do setup:** o npm 11.20 avisa que seis pacotes têm scripts de instalação não aprovados (`argon2`, `ssh2` e outros). O setup funciona sem aprová-los, e isso ficou escrito em `comandos.md` e no quickstart, para quem chega não travar no aviso.
+- **`/simplify` e `/code-review`:** pulados. O passo só mexe em Markdown.
 
 ---
 
@@ -432,7 +441,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 **Uso real:**
 
-- [ ] Setup do zero pelo `README.md` num banco vazio (sem `.env`, sem volumes): migrations, seeds, `start:dev`, `/health/live` e `/docs` funcionam seguindo só links.
+- [x] Setup do zero pelo `README.md` num banco vazio (sem `.env`, sem volumes): migrations, seeds, `start:dev`, `/health/live` e `/docs` funcionam seguindo só links. 2026-11-23: ver o "Como ficou" do passo 6.
 - [x] Numa sessão nova do Claude Code, `/memory` (ou `/context`) mostra o `CLAUDE.md` e o `AGENTS.md` carregados. 2026-11-23: o `/memory` lista o `./CLAUDE.md` em "Project instructions" e o `AGENTS.md` como `@-imported` logo abaixo.
 - [x] Teste de roteamento numa sessão nova, sem dicas. O agente acha a resposta lendo a página certa de `docs/`, sem varrer o repositório com grep, para estas perguntas:
   - "Como rodo só o teste de integração do pay-order?"
@@ -444,7 +453,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
   - **pay-order:** respondido pelo `AGENTS.md`, sem abrir `comandos.md`. Na primeira rodada, o comando veio certo, mas os avisos do e2e (docker-compose no ar, `start:dev` aberto) foram aplicados à integração. A verificação do `AGENTS.md` passou a separar os dois: o `test:int` sobe containers próprios e só precisa do Docker. Numa sessão nova, a resposta veio certa;
   - **roles:** leu `docs/reference/autenticacao.md` e seguiu para a ADR 0002 (com um `grep` só em `docs/adr` para achá-la). A resposta trouxe o motivo, o custo e as alternativas;
   - **TypeScript:** foi direto a `docs/reference/versoes-e-excecoes.md`, conferiu o `package.json` e a latest no npm, e respondeu `~6.0` com os motivos e os gatilhos.
-- [ ] `/doctor prompt-audit` (se disponível na versão instalada) não aponta contradição nem arquivo inexistente.
+- [x] `/doctor prompt-audit` (se disponível na versão instalada) não aponta contradição nem arquivo inexistente. 2026-11-23: "nothing to change", com diff vazio. Leu o `CLAUDE.md` e o `AGENTS.md` importado, e todo caminho, script e comando citado no `AGENTS.md` existe. Não há contradição entre os dois, e cada proibição traz o motivo. Ressalvas do próprio audit: rodou com o Sonnet 5.5 e não auditou o conteúdo dos plugins instalados.
 - [x] `/simplify` e `/code-review` rodados sobre scripts, `plopfile.mjs` e `package.json`. 2026-11-23: no passo 2 (`package.json`, configs e `scripts/remark-docs-rules.mjs`) e no passo 3 (`plopfile.mjs`, templates e a regra `scaffold`). Os achados estão no "Como ficou" de cada passo.
 
 ### Fase 2

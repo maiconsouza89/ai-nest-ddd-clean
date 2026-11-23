@@ -15,7 +15,7 @@ Todos os comandos rodam na raiz do repositório.
 
 Nesta ordem:
 
-1. `npm install`
+1. `npm install`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
 2. `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](variaveis-de-ambiente.md).
 3. `docker compose up -d postgres redis`. Sobe o Postgres 19 em `127.0.0.1:5432` e o Redis 8 em `127.0.0.1:6379`.
 4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
