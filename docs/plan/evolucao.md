@@ -36,9 +36,9 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ✅ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ✅ |
-| 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
+| 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | 🟡 |
 
-**Progresso geral:** 7 de 8 fases concluídas · 15 de 18 passos concluídos · **Fase atual:** 8
+**Progresso geral:** 7 de 8 fases concluídas · 16 de 18 passos concluídos · **Fase atual:** 8
 
 ---
 
@@ -499,9 +499,9 @@ export abstract class ActorResolver {
 
 ## Fase 8: documentação
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
-> - [ ] Passo 16: `CLAUDE.md`
+> - [x] Passo 16: `CLAUDE.md`
 > - [ ] Passo 17: alinhar o guia de referência
 > - [ ] Passo 18: evoluções sob demanda
 
@@ -520,6 +520,8 @@ export abstract class ActorResolver {
 - A regra de versões, apontando para a tabela deste plano.
 
 **Pronto quando:** seguir o `CLAUDE.md` do zero (compose, `.env`, migrations, seeds, `start:dev` e os três tipos de teste) funciona sem nenhum passo além dos que estão escritos nele.
+
+**Como ficou:** o `CLAUDE.md` ganhou um setup numerado, os comandos `lint` e `format`, uma seção "Imports (ESM)" (`.js` nos relativos, aliases `#...` entre fronteiras, `import.meta.dirname`, nada de `import type` em classe injetada), uma seção "Autenticação" (rotas, `ActorResolver`, refresh rotativo) e a regra de versões, que aponta para a tabela deste plano. Os itens do Postgres 19 e do Vitest já estavam lá desde as fases 3 e 7. Conferido em 2026-11-23 num banco vazio: as migrations dos cinco módulos e os três seeds rodaram, a app subiu (`/health/live`, `/docs`), e login → refresh → logout → refresh devolveu 401. `ci`, `test:int` e `test:e2e` passaram. Cuidado ao conferir: uma segunda instância da app no mesmo Redis consome as filas do BullMQ e faz o e2e falhar. Encerre outros `start:dev` antes de rodá-lo.
 
 ### Passo 17: conferência final do guia de referência
 

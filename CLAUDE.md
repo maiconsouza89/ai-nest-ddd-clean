@@ -12,13 +12,27 @@ Antes de adicionar, atualizar ou usar qualquer biblioteca, framework ou SDK, **u
 - Ao propor uma nova dependência, informe a versão consultada e por que ela é a recomendada.
 - Se o Context7 não tiver a biblioteca, use a documentação oficial (web) como alternativa e deixe isso claro.
 
+### Regra de versões
+
+Use sempre a **latest estável**. Se a latest de um pacote quebrar outro, use a maior versão compatível e registre o motivo e o gatilho para atualizar na tabela de exceções de `docs/plan/evolucao.md` (seção "Regra de versões"). Hoje estão lá `typescript ~6.0`, `keyv`/`@keyv/redis` 5 e `ioredis` 5. Não atualize esses pacotes sem conferir o gatilho registrado.
+
 ## Comandos
 
-Setup: `docker compose up -d postgres redis` (Postgres 19 em `127.0.0.1:5432` e Redis 8 em `127.0.0.1:6379`). O `.env` precisa existir (copie de `.env.example`, que inclui `REDIS_URL`).
+Requisitos: Node 22.13 ou superior (`engines`; o `.nvmrc` recomenda o 24) e Docker.
+
+Setup do zero, nesta ordem:
+
+1. `npm install`
+2. `cp .env.example .env`
+3. `docker compose up -d postgres redis` (Postgres 19 em `127.0.0.1:5432` e Redis 8 em `127.0.0.1:6379`)
+4. As migrations de todos os módulos e os seeds (ver abaixo)
+5. `npm run start:dev`. A API fica em `http://localhost:3000/v1/...`, o Swagger em `/docs` (fora de `production`) e o health em `/health/live`.
 
 - Dev: `npm run start:dev`
 - Build: `npm run build`, depois `node dist/main.js` (não há script `start`)
 - Typecheck: `npm run typecheck`
+- Lint: `npm run lint` (ESLint com regras que usam tipos, `--max-warnings 0`)
+- Formatação: `npm run format` aplica o Prettier, `npm run format:check` só confere
 - Regras de arquitetura: `npm run arch`
 - `npm run ci` = typecheck + lint + format:check + unitários + arch. **Não** roda integração nem e2e.
 
@@ -26,6 +40,7 @@ Setup: `docker compose up -d postgres redis` (Postgres 19 em `127.0.0.1:5432` e 
 
 - Rodar: `npm run mig:<módulo>:run`, para `orders`, `identity`, `catalog`, `inventory` e `outbox`. Não rodam sozinhas ao subir a app.
 - Gerar: `npm run mig:<módulo>:gen` (precisa do banco no ar, pois compara com as entidades).
+- Os scripts usam `typeorm-ts-node-esm` com `NODE_OPTIONS=--conditions=@app/source`. Sem essa condição, os aliases `#...` carregam o `dist/`, que pode estar desatualizado, e não dá erro (ADR 0005).
 
 ### Seeds (só desenvolvimento)
 
@@ -36,7 +51,7 @@ Setup: `docker compose up -d postgres redis` (Postgres 19 em `127.0.0.1:5432` e 
 
 - `npm test`: unitários (`*.spec.ts`), sem banco. `npm run test:watch` roda o mesmo em modo watch.
 - `npm run test:int`: integração (`*.int-spec.ts`), sobe Postgres e Redis descartáveis via Testcontainers, então exige Docker. Leva cerca de 75s.
-- `npm run test:e2e`: e2e (`test/*.e2e-spec.ts`), sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` (padrão: os mesmos do docker-compose, então os dois precisam estar no ar). **Grava dados nesse banco.**
+- `npm run test:e2e`: e2e (`test/*.e2e-spec.ts`), sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` (padrão: os mesmos do docker-compose, então os dois precisam estar no ar). **Grava dados nesse banco.** Encerre qualquer `start:dev` antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba testes.
 
 Um arquivo:
 
@@ -57,7 +72,20 @@ Monólito modular com NestJS, seguindo DDD e Clean Architecture.
 - `src/shared/`: kernel compartilhado e infraestrutura transversal.
 - `src/app.module.ts`: composição dos módulos. `src/main.ts`: entrada, carrega o `tracing.ts` e depois o `bootstrap.ts`.
 
-Os módulos se comunicam pelos seus contratos públicos e por eventos de integração.
+Os módulos se comunicam pelos seus contratos públicos e por eventos de integração. Um módulo declara de quem depende em `imports`. `@Global` só vale para a infraestrutura do `shared` (ADR 0003).
+
+### Imports (ESM)
+
+O projeto é ESM (`"type": "module"`, ADR 0001):
+
+- Um import relativo leva `.js`, mesmo apontando para um `.ts` (`./money.vo.js`).
+- Um import que cruza uma fronteira (`src/shared`, cada `src/modules/<módulo>` e `test`) usa os aliases `#shared/*`, `#modules/*` e `#test/*`, sem extensão. Dentro da mesma fronteira, o import continua relativo (ADR 0005). O `npm run arch` barra as duas violações.
+- Use `import.meta.dirname` no lugar de `__dirname`, e `await import()` no lugar de `require()`.
+- **Não** ative o `consistent-type-imports` nem troque por `import type` uma classe injetada pelo construtor: a injeção de dependência do Nest quebra em tempo de execução, e o `tsc` não avisa (ADR 0004).
+
+### Autenticação
+
+As rotas são `POST /v1/auth/register`, `login`, `refresh` e `logout`, todas públicas e com throttle. O login devolve `{ accessToken, expiresIn, refreshToken }`, e o access token dura 15 minutos (`JWT_ACCESS_TTL_SECONDS`). O token leva só o `sub`. O `JwtAuthGuard` carrega o ator (id e roles) do banco a cada requisição, pelo port `ActorResolver` (ADR 0002). O refresh token é opaco, rotativo e de uso único. Reusar um token já trocado revoga a sessão inteira. O logout responde 204 sempre.
 
 Regras de camadas, convenções e decisões de design estão em `docs/`, principalmente `docs/research/modules-ddd-clean-nest.md`.
 
