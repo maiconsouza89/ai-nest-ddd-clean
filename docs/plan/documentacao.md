@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação e Agregados)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados e Transações, concorrência e eventos)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -402,7 +402,7 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 | Shared kernel | `explanation/shared-kernel.md` (a tabela do que vai para o `shared` já estava em `reference/camadas.md`) |
 | Autenticação e ownership | `explanation/autenticacao.md` (o `reference/autenticacao.md` já existe) |
 | Agregados e comunicação entre módulos | `explanation/agregados.md` |
-| Transações, concorrência e eventos | `explanation/consistencia-e-eventos.md` e `how-to/publicar-evento-de-integracao.md` |
+| Transações, concorrência e eventos | `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md` |
 | Paginação | `how-to/paginar-listagem.md` |
 | Modelagem do domínio | `explanation/modelagem-do-dominio.md` |
 | Infra: configuração, jobs, cache, serviços externos | how-tos por tarefa e `reference/variaveis-de-ambiente.md` |
@@ -441,6 +441,18 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
   - **"Limite de itens":** o guia o dava como exemplo de regra do agregado, e o `Order` não tem limite. O exemplo virou a regra de não editar depois de fechar.
 
   O link do passo 23 do `passo-a-passo.md` aponta para a página nova. Rota nova no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
+
+- **Transações, concorrência e eventos (2026-11-23):** a seção virou dois destinos:
+  - `explanation/consistencia-e-eventos.md`: a transação pelo `AsyncLocalStorage` e o reaproveitamento da transação aberta, a concorrência otimista no `save` (guardada para esta página desde a seção de persistência), a trava pessimista do pagamento, o update condicional do estoque, a outbox com o relay, a fila por consumidor, o `IdempotentConsumer`, a `Idempotency-Key` e o CQRS leve. O CQRS leve ficou aqui, e não na página de paginação, porque o porquê dele é o mesmo da consistência: a leitura não muda estado e dispensa invariantes, versão e eventos. Alternativas: `EntityManager` por parâmetro, `@nestjs-cls/transactional` (nomes dos pacotes conferidos no Context7), só o `@VersionColumn`, trava pessimista em tudo, publicar depois do commit, enfileirar no caso de uso, barramento em memória, entrega exatamente uma vez e CQRS completo;
+  - `how-to/publicar-um-evento-de-integracao.md`, com o "um" no nome, como o `gerar-uma-migration.md`. Cobre os dois lados: publicar e consumir em outro módulo, porque um evento sem consumidor não tem efeito.
+
+  Conferido contra o código, o guia errava ou omitia em quatro pontos:
+  - **Pagamento:** o guia tratava só da trava otimista. O `PayOrderUseCase` também trava a linha do pedido (`findByIdForUpdate`), porque a cobrança no fornecedor acontece antes do `save` e não se desfaz;
+  - **`Idempotency-Key`:** o guia mandava guardar a impressão digital do corpo e a resposta. O código guarda a chave por ator, com a impressão digital `pay:<orderId>` e um prazo, e não guarda a resposta, porque o pagamento sempre responde 204 sem corpo. O mesmo `pay:<orderId>` vai ao fornecedor como chave da cobrança;
+  - **Evento morto:** o guia não dizia o que acontece com os eventos seguintes do mesmo agregado. A busca do relay ignora as linhas com `deadAt`, então eles saem sem o evento morto;
+  - **Efeito fora do banco:** o guia apresentava o `IdempotentConsumer` como garantia de efeito único. Ela vale para o que o efeito grava no Postgres, e o e-mail do notifications pode se repetir.
+
+  O how-to foi seguido à mão num worktree descartável: um módulo gerado pelo `plop module teste` passou a publicar `teste.teste-created`, com um consumidor no notifications. Typecheck, `arch` e os testes novos passaram. Num Postgres e num Redis do projeto do compose `ddd-howto-evt` (removido com `down -v`), o `POST /v1/teste` gravou a linha na outbox, publicada em menos de um segundo, e os logs `delivering event`, `processing event` e o efeito do handler saíram. Um achado entrou no how-to: o spec que o gerador cria para o caso de uso precisa dos fakes novos (`FakeOutbox`, `FixedClock`, `FakeTransactionManager`). Fora do escopo: o `typeorm-<módulo>.repository.ts` gerado pelo `plop module` falha no `npm run lint` (`no-misused-spread` no `save`), já antes de qualquer mudança. O link do passo 20 do `passo-a-passo.md` aponta para a página nova. A rota "evento novo" do `AGENTS.md` saiu da linha do guia de pesquisa e virou duas rotas novas. Índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
 
 ### Passo 13: how-tos e skills-ponteiro
 
@@ -525,7 +537,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

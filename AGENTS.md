@@ -55,8 +55,10 @@ Leia a página antes de agir no assunto.
 | Decidir se um objeto entra num agregado ou vira outro módulo | `docs/explanation/agregados.md` |
 | Fazer um módulo usar outro, ou mudar um evento ou uma facade | `docs/explanation/comunicacao-entre-modulos.md` e `docs/reference/camadas.md` |
 | Gerar uma migration depois de mudar uma ORM entity | `docs/how-to/gerar-uma-migration.md` |
+| Publicar um evento de integração ou consumir um em outro módulo | `docs/how-to/publicar-um-evento-de-integracao.md` |
+| Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
-| Criar módulo, entidade, caso de uso, repositório ou evento novo | `docs/research/modules-ddd-clean-nest.md` |
+| Criar módulo, entidade, caso de uso ou repositório novo | `docs/research/modules-ddd-clean-nest.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
 | Escrever ou mover documentação | `docs/README.md` |
 | Continuar um plano em andamento | `docs/plan/` |

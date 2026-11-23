@@ -19,6 +19,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 ## How-to
 
 - [Como gerar uma migration](how-to/gerar-uma-migration.md): depois de mudar uma ORM entity, do generate ao helper dos testes de integração.
+- [Como publicar um evento de integração](how-to/publicar-um-evento-de-integracao.md): do evento de domínio à outbox, o teste de contrato e o handler no módulo consumidor.
 
 ## Explicação
 
@@ -26,6 +27,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Persistência](explanation/persistencia.md): por que a entidade de domínio e a ORM entity são classes diferentes, o mapper e a transação do caso de uso.
 - [Comunicação entre módulos](explanation/comunicacao-entre-modulos.md): dados próprios por módulo, dependência numa direção só, facade que devolve resultado e contratos com versão.
 - [Agregados](explanation/agregados.md): por que o item fica no `Order` e o estoque no inventory, o port `StockGateway` e a reserva síncrona dentro da transação do pedido.
+- [Consistência e eventos](explanation/consistencia-e-eventos.md): a transação pelo contexto, a concorrência otimista e a pessimista, a outbox, a fila por consumidor, o consumidor idempotente e a `Idempotency-Key`.
 - [Shared kernel](explanation/shared-kernel.md): por que o `shared` guarda só blocos técnicos e por que, na dúvida, o tipo fica duplicado.
 - [Autenticação e ownership](explanation/autenticacao.md): autenticação na infra e ownership no caso de uso, o ator carregado a cada requisição, o refresh token rotativo e a corrida da renovação.
 

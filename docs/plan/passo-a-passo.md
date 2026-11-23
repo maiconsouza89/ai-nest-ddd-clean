@@ -617,7 +617,7 @@ Como alternativa, a documentação atual do Nest apresenta o `@nestjs/authentica
 
 **Faça:**
 
-- Port `shared/application/ports/transaction-manager.ts` e a implementação `shared/infra/database/typeorm-transaction-manager.ts` com `AsyncLocalStorage` (ver [Transações, concorrência e eventos](../research/modules-ddd-clean-nest.md#transações-concorrência-e-eventos)).
+- Port `shared/application/ports/transaction-manager.ts` e a implementação `shared/infra/database/typeorm-transaction-manager.ts` com `AsyncLocalStorage` (ver [Consistência e eventos](../explanation/consistencia-e-eventos.md#a-transação-vai-pelo-contexto-e-não-pelos-parâmetros)).
 - Se já houver uma transação ativa, reaproveite em vez de abrir outra:
 
 ```ts
