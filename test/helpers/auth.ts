@@ -21,6 +21,7 @@ export async function registerAndLogin(app: TestApp) {
     email,
     id: reg.body.id as string,
     token: login.body.accessToken as string,
+    refreshToken: login.body.refreshToken as string,
     auth: { Authorization: `Bearer ${login.body.accessToken}` },
   };
 }

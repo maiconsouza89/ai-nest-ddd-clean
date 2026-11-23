@@ -183,4 +183,53 @@ describe('Auth (e2e)', () => {
         .expect(401); // credenciais inválidas, não "sem token"
     });
   });
+
+  describe('refresh token e logout', () => {
+    const post = (path: string, body: object) =>
+      request(server()).post(`/v1/auth/${path}`).send(body);
+
+    it('login → refresh → chamada autenticada → logout → refresh recusado', async () => {
+      const user = await registerAndLogin(app);
+
+      const renewed = await post('refresh', { refreshToken: user.refreshToken }).expect(200);
+      expect(renewed.body).toEqual({
+        accessToken: expect.any(String),
+        expiresIn: expect.any(Number),
+        refreshToken: expect.any(String),
+      });
+      expect(renewed.body.refreshToken).not.toBe(user.refreshToken);
+
+      await request(server())
+        .get('/v1/orders')
+        .set({ Authorization: `Bearer ${renewed.body.accessToken}` })
+        .expect(200);
+
+      await post('logout', { refreshToken: renewed.body.refreshToken }).expect(204);
+      const after = await post('refresh', { refreshToken: renewed.body.refreshToken }).expect(401);
+      expect(after.body.code).toBe('INVALID_REFRESH_TOKEN');
+    });
+
+    it('reusar um refresh token já trocado derruba a sessão inteira', async () => {
+      const user = await registerAndLogin(app);
+      const renewed = await post('refresh', { refreshToken: user.refreshToken }).expect(200);
+
+      await post('refresh', { refreshToken: user.refreshToken }).expect(401);
+      await post('refresh', { refreshToken: renewed.body.refreshToken }).expect(401);
+    });
+
+    it('logout responde 204 mesmo com token desconhecido', async () => {
+      await post('logout', { refreshToken: 'desconhecido' }).expect(204);
+    });
+
+    it('valida o corpo', async () => {
+      await post('refresh', {}).expect(400);
+      await post('logout', { refreshToken: 'x'.repeat(129) }).expect(400);
+    });
+
+    it('conta apagada não renova mais', async () => {
+      const user = await registerAndLogin(app);
+      await deleteUser(app, user.id);
+      await post('refresh', { refreshToken: user.refreshToken }).expect(401);
+    });
+  });
 });

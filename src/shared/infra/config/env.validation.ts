@@ -37,6 +37,16 @@ export class EnvironmentVariables {
   @Min(1)
   JWT_ACCESS_TTL_SECONDS: number = 900;
 
+  // validade de cada refresh token; cada renovação emite um novo
+  @IsInt()
+  @Min(1)
+  REFRESH_TOKEN_TTL_SECONDS: number = 30 * 24 * 60 * 60;
+
+  // prazo absoluto da sessão, contado do login: depois dele, só com a senha de novo
+  @IsInt()
+  @Min(1)
+  REFRESH_FAMILY_MAX_AGE_SECONDS: number = 90 * 24 * 60 * 60;
+
   // texto, e não boolean: o `enableImplicitConversion` transformaria 'false' em true
   @IsIn(['true', 'false'])
   OUTBOX_WORKER_ENABLED: string = 'true';

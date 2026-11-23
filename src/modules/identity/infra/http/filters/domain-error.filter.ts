@@ -5,6 +5,7 @@ import { DomainError } from '#shared/domain/domain-error';
 const STATUS: Record<string, number> = {
   EMAIL_ALREADY_IN_USE: 409,
   INVALID_CREDENTIALS: 401,
+  INVALID_REFRESH_TOKEN: 401,
   INVALID_EMAIL: 422,
   INVALID_NAME: 422,
 };

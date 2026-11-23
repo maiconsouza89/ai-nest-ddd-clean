@@ -4,7 +4,7 @@ import { UserRepository } from '../../domain/repositories/user.repository.js';
 import { Email } from '../../domain/value-objects/email.vo.js';
 import { LoginInput } from '../dtos/identity.inputs.js';
 import { PasswordHasher } from '../ports/password-hasher.js';
-import { TokenIssuer } from '../ports/token-issuer.js';
+import { SessionIssuer } from '../session-issuer.js';
 
 export class LoginUseCase {
   // hash descartável, gerado uma vez: igualaliza o tempo quando o e-mail não existe
@@ -13,7 +13,7 @@ export class LoginUseCase {
   constructor(
     private readonly users: UserRepository,
     private readonly hasher: PasswordHasher,
-    private readonly tokens: TokenIssuer,
+    private readonly sessions: SessionIssuer,
   ) {}
 
   async execute(input: LoginInput) {
@@ -27,7 +27,7 @@ export class LoginUseCase {
     // mesma resposta para e-mail desconhecido e senha errada
     if (!user || !passwordOk) throw new InvalidCredentialsError();
 
-    return this.tokens.issue({ sub: user.id });
+    return this.sessions.start(user.id);
   }
 
   private getDecoyHash() {

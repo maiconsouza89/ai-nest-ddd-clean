@@ -16,6 +16,14 @@ export class RegisterRequest {
   password!: string;
 }
 
+export class RefreshTokenRequest {
+  // 32 bytes em base64url dão 43 caracteres; o limite só barra lixo grande antes do hash
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(128)
+  refreshToken!: string;
+}
+
 export class LoginRequest {
   @IsEmail()
   email!: string;

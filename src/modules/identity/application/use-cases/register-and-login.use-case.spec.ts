@@ -1,15 +1,29 @@
 import { describe, it, expect, vi } from 'vitest';
+import { FakeOpaqueTokenGenerator } from '#test/fakes/fake-opaque-token-generator';
 import { FakePasswordHasher } from '#test/fakes/fake-password-hasher';
 import { FakeTokenIssuer } from '#test/fakes/fake-token-issuer';
+import { FixedClock } from '#test/fakes/fixed-clock';
 import { FakeTransactionManager } from '#test/fakes/fake-transaction-manager';
 import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator';
 import { EmailAlreadyInUseError } from '../../domain/errors/email-already-in-use.error.js';
 import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error.js';
 import { InvalidNameError } from '../../domain/errors/invalid-name.error.js';
 import { InvalidEmailError } from '../../domain/errors/invalid-email.error.js';
+import { InMemoryRefreshTokenRepository } from '../../infra/database/in-memory/in-memory-refresh-token.repository.js';
 import { InMemoryUserRepository } from '../../infra/database/in-memory/in-memory-user.repository.js';
+import { SessionIssuer } from '../session-issuer.js';
 import { LoginUseCase } from './login.use-case.js';
 import { RegisterUserUseCase } from './register-user.use-case.js';
+
+const sessionIssuer = (tokens = new FakeTokenIssuer()) =>
+  new SessionIssuer(
+    tokens,
+    new InMemoryRefreshTokenRepository(),
+    new FakeOpaqueTokenGenerator(),
+    new SequentialIdGenerator('rt'),
+    new FixedClock(),
+    { ttlMs: 60_000, familyMaxAgeMs: 120_000 },
+  );
 
 function setup() {
   const users = new InMemoryUserRepository();
@@ -20,7 +34,7 @@ function setup() {
     tokens,
     tx,
     register: new RegisterUserUseCase(users, hasher, new SequentialIdGenerator('user'), tx),
-    login: new LoginUseCase(users, hasher, tokens),
+    login: new LoginUseCase(users, hasher, sessionIssuer(tokens)),
   };
 }
 
@@ -64,7 +78,7 @@ describe('RegisterUserUseCase', () => {
 });
 
 describe('LoginUseCase', () => {
-  it('devolve um token só com o sub', async () => {
+  it('abre a sessão: access token só com o sub e refresh token', async () => {
     const { register, login, tokens } = setup();
     const { id } = await register.execute({
       name: 'Ana',
@@ -74,7 +88,11 @@ describe('LoginUseCase', () => {
 
     const result = await login.execute({ email: 'A@x.com', password: 'secret-123' });
 
-    expect(result).toEqual({ accessToken: `token-for-${id}`, expiresIn: tokens.expiresIn });
+    expect(result).toEqual({
+      accessToken: `token-for-${id}`,
+      expiresIn: tokens.expiresIn,
+      refreshToken: 'rt-1',
+    });
     expect(tokens.issued).toEqual([{ sub: id }]);
   });
 
@@ -90,7 +108,7 @@ describe('LoginUseCase', () => {
     const users = new InMemoryUserRepository();
     const hasher = new FakePasswordHasher();
     const verify = vi.spyOn(hasher, 'verify');
-    const login = new LoginUseCase(users, hasher, new FakeTokenIssuer());
+    const login = new LoginUseCase(users, hasher, sessionIssuer());
 
     await expect(login.execute({ email: 'ghost@x.com', password: 'secret-123' })).rejects.toThrow(
       InvalidCredentialsError,

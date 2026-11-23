@@ -369,7 +369,18 @@ Autenticação (quem é você) fica na infra. Ownership (você pode mexer neste 
 
 O módulo `identity` é dono dos usuários e emite o JWT. O token leva só o `sub`: nada que possa mudar vai nas claims. Um guard global em `shared/infra/auth` valida o token e, a cada requisição, monta o `Actor` com as roles atuais por meio do port `ActorResolver`. Role removida ou conta apagada valem na requisição seguinte, e não quando o token expirar ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)).
 
-O access token vale 15 minutos (`JWT_ACCESS_TTL_SECONDS`, padrão 900), e o login devolve `{ accessToken, expiresIn }`, com `expiresIn` em segundos. Quem define a validade é o `TokenIssuer` do `identity`, que assina e informa o prazo, e não o `JwtConfigModule`: esse módulo do `shared` só fixa o segredo e o algoritmo, que valem tanto para assinar quanto para verificar.
+O access token vale 15 minutos (`JWT_ACCESS_TTL_SECONDS`, padrão 900), e o login devolve `{ accessToken, expiresIn, refreshToken }`, com `expiresIn` em segundos. Quem define a validade é o `TokenIssuer` do `identity`, que assina e informa o prazo, e não o `JwtConfigModule`: esse módulo do `shared` só fixa o segredo e o algoritmo, que valem tanto para assinar quanto para verificar. Como ele não define validade padrão, o guard recusa token sem `exp`.
+
+**Refresh token rotativo:** o access token curto não pode ser revogado antes de vencer, então a sessão vive no refresh token, que pode.
+
+- É opaco: 32 bytes aleatórios em base64url. O banco (`identity.refresh_tokens`) guarda só o SHA-256 dele. Com essa entropia, um hash rápido basta, e a busca é por índice único.
+- O login abre uma família. `POST /v1/auth/refresh` troca o token por um par novo na mesma família. Cada token vence em `REFRESH_TOKEN_TTL_SECONDS` (30 dias), e a família tem um prazo absoluto contado do login, `REFRESH_FAMILY_MAX_AGE_SECONDS` (90 dias), que a renovação não estende.
+- Cada token vale uma vez. Um token já usado que reaparece é reuso (`RefreshToken.wasUsed`). Para a corrida, o uso é marcado com `UPDATE ... SET "usedAt" = now WHERE id = $1 AND "usedAt" IS NULL`. Se o update não afetar nenhuma linha, o token já foi trocado antes: duas partes têm o mesmo token, e a família inteira é revogada. O caso de uso devolve o resultado da transação e só lança o 401 depois dela, para a revogação ser confirmada.
+- Marcar o uso e gravar o sucessor acontecem na mesma transação. Uma renovação concorrente com o mesmo token espera a linha ser liberada, falha no update e revoga a família já com o sucessor dentro. Consequência: um cliente que dispara duas renovações em paralelo com o mesmo token, ou que repete a renovação porque perdeu a resposta, perde a sessão. É o preço de não ter janela de tolerância.
+- Uma revogação (logout ou reuso) concorrente com uma renovação em andamento também pega o sucessor. O `revokeFamily` primeiro trava as linhas da família com `SELECT ... FOR UPDATE`, que espera a renovação terminar, e só depois faz o `UPDATE`, que já enxerga o sucessor. O `markUsed` só marca token não revogado e não vencido, então uma renovação que leu o token antes do logout não emite sucessor.
+- `POST /v1/auth/logout` revoga a família do token e responde 204 sempre, mesmo para token desconhecido. As outras sessões do usuário continuam.
+- Apagar o usuário apaga as sessões dele (`ON DELETE CASCADE`). Um job diário (`jobs.identity`) apaga os tokens vencidos, em lotes. Cada renovação grava uma linha, então a limpeza segue o prazo de cada token, e não o da família.
+- Login e refresh usam o mesmo `SessionIssuer` (`identity/application`), que emite o par e grava o hash.
 
 O port fica no `shared`, e o `identity` o implementa com uma leitura por PK. O `shared` não importa o `identity`: quem liga os dois é o `AppModule`, a raiz de composição. Os outros módulos continuam sem consultar a tabela de usuários.
 
@@ -984,6 +995,7 @@ await queue.setGlobalConcurrency(1); // uma execução por vez, mesmo com vária
 new Worker('jobs.orders', () => expire.execute(), { connection });
 ```
 
+- No projeto, esse ciclo (agendador, worker, `JOBS_ENABLED`, timeout na subida e parada) fica numa base só, `ScheduledJobProcessor` (`shared/infra/jobs`). Cada processor declara a própria fila e o agendador, e implementa `run()` chamando o caso de uso. A fila é só dele: o Worker roda `run()` para qualquer job da fila, então dois jobs não podem dividir uma. Hoje são dois, um por módulo: a expiração de pedidos (`jobs.orders`) e a limpeza de refresh tokens (`jobs.identity`).
 - O projeto usa `Queue` e `Worker` do `bullmq` direto, sem o `@nestjs/bullmq`. O `@Processor`/`WorkerHost` do `@nestjs/bullmq` é uma alternativa para filas declaradas de forma estática.
 - Um job do scheduler só é repetido em caso de falha se o template tiver `attempts`. Sem isso, a próxima execução fica para o próximo disparo.
 

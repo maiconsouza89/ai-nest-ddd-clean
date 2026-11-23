@@ -34,11 +34,11 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 3. Vitest | Jest sai, Vitest entra | `vitest` | ✅ |
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ✅ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
-| 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | 🟡 |
+| 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ✅ |
 | 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 5 de 8 fases concluídas · 13 de 18 passos concluídos · **Fase atual:** 6
+**Progresso geral:** 6 de 8 fases concluídas · 14 de 18 passos concluídos · **Fase atual:** 7
 
 ---
 
@@ -389,11 +389,11 @@ Contexto e alternativas no [ADR 0003](../adr/0003-imports-explicitos-entre-modul
 
 ## Fase 6: autenticação
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-22 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-22 · **Conclusão:** 2026-11-23
 >
 > - [x] Passo 12: `ActorResolver` e ator carregado por requisição
 > - [x] Passo 13: access token de 15 minutos
-> - [ ] Passo 14: refresh token rotativo e logout
+> - [x] Passo 14: refresh token rotativo e logout
 
 Contexto e alternativas no [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md). A base continua sendo o `@nestjs/jwt` (oficial e estável) com o guard próprio.
 
@@ -464,6 +464,16 @@ export abstract class ActorResolver {
 - Teste de integração: duas renovações simultâneas com o mesmo token resultam em uma só bem-sucedida.
 - E2e: login → refresh → chamada autenticada → logout → refresh devolve 401.
 - No guia, a seção "Autenticação e ownership" descreve o `ActorResolver`, o token só com `sub` e o refresh token rotativo, no lugar de "os outros módulos nunca consultam a tabela de usuários" com roles no token.
+
+**Como ficou:**
+
+- As colunas seguem a convenção do projeto, em camelCase (`familyId`, `tokenHash`, `usedAt`...), e não em snake_case como este passo listava. A tabela também ganhou uma FK para `identity.users` com `ON DELETE CASCADE`, para que uma conta apagada leve as sessões junto, e um índice em `expiresAt` para a limpeza.
+- O `SessionIssuer` (`identity/application/session-issuer.ts`) emite o par de tokens para o login (`start`, abre a família) e para o refresh (`rotate`, sucessor na mesma família). A geração e o hash do valor ficam atrás do port `OpaqueTokenGenerator`, com o `CryptoOpaqueTokenGenerator` na infra. O domínio (`RefreshToken`) calcula os prazos e diz se o token ainda serve. O uso único fica no `markUsed` condicional do repositório, porque é o banco que decide a corrida.
+- Duas renovações simultâneas com o mesmo token: uma vence, e a outra revoga a família, inclusive o sucessor da primeira. Isso acontece porque marcar o uso e gravar o sucessor ficam na mesma transação, e a segunda espera a linha ser liberada. Não há janela de tolerância. Se clientes legítimos renovarem em paralelo, avalie uma (passo 18).
+- A limpeza apaga os tokens vencidos (`expiresAt`), em lotes de 1000, e não só as famílias vencidas: cada renovação grava uma linha, e um token vencido já é recusado. Um cliente que renova a cada 15 minutos acumularia 96 linhas por dia durante os 90 dias da família.
+- Achados do `/code-review`, corrigidos com teste de integração: (1) uma renovação que leu o token antes de um logout ainda emitia sucessor, porque o `markUsed` só olhava o `usedAt`; agora ele exige também `revokedAt` nulo e `expiresAt` futuro. (2) Sob READ COMMITTED, o `UPDATE` da revogação não via o sucessor que uma renovação concorrente tinha gravado e não confirmado. Agora o `revokeFamily` trava a família com `SELECT ... FOR UPDATE` antes do `UPDATE`, e o logout roda numa transação.
+- O ciclo de vida dos jobs agendados virou uma base, `ScheduledJobProcessor` (`shared/infra/jobs`). O `ExpirePendingOrdersProcessor` e o novo `PurgeExpiredRefreshTokensProcessor` (fila `jobs.identity`, diário às 3h) só declaram o agendador e chamam o caso de uso.
+- O `IdentityModule` passou a importar o `MessagingModule`, pela `BullMqConnection` do job.
 
 ---
 
@@ -543,4 +553,5 @@ Adote estes itens só quando a condição for atendida:
 | Uma medição mostrar custo no `ActorResolver` | Cache curto no Redis com invalidação por evento quando as roles mudarem |
 | O `instrumentation-nestjs-core` suportar o Nest 12 | Reativar os spans de controller |
 | Permissões crescerem além de roles | CASL (`@casl/ability`, com receita na doc do Nest) |
+| Clientes legítimos perderem a sessão por renovar em paralelo com o mesmo refresh token, ou por repetir a renovação depois de perder a resposta | Janela de tolerância curta no reuso: devolver o sucessor já emitido em vez de revogar a família |
 | O lint estiver limpo há algumas fases | Avaliar regras do `strictTypeChecked` uma a uma, e reavaliar as regras desligadas no passo 4 (`no-unsafe-*` nos testes e `require-await`, ver ADR 0004) |
