@@ -1,0 +1,109 @@
+---
+type: reference
+---
+
+# Operação
+
+O que a app liga na subida e no desligamento: a configuração HTTP, o Swagger, o health check, o rate limit, os logs de acesso e a ordem de desligamento. As variáveis que mudam cada item estão em [Variáveis de ambiente](variaveis-de-ambiente.md), e os endereços com a app no ar em [Comandos](comandos.md#setup-do-zero).
+
+## Configuração HTTP
+
+O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e2e.
+
+| Item | Configuração | Efeito |
+| --- | --- | --- |
+| `trust proxy` | `TRUST_PROXY` | Quantos proxies na frente da API são confiáveis. Define o IP que o rate limit conta. Com `0` e `NODE_ENV=production`, a subida avisa no log |
+| Headers de segurança | `helmet()`, com as opções padrão | Em toda resposta |
+| CORS | `enableCors({ origin })`, com as origens de `CORS_ORIGINS` | Vazio não liga o CORS |
+| Versão na URL | `VersioningType.URI`, `defaultVersion: '1'` | Rotas em `/v1/...` ([Convenções](convencoes.md#versionamento-da-api-http)) |
+| Validação da entrada | `ValidationPipe` global com `whitelist`, `forbidNonWhitelisted` e `transform` | Campo fora do DTO responde 400. Query e parâmetros chegam convertidos para o tipo do DTO |
+| Desligamento | `enableShutdownHooks()` | Ver [Desligamento](#desligamento) |
+
+## Swagger
+
+| Item | Valor |
+| --- | --- |
+| Interface | `/docs`. O documento em `/docs-json` e `/docs-yaml` |
+| Quando existe | Fora de `NODE_ENV=production` (`src/bootstrap.ts`) |
+| Montagem | `setupSwagger` (`src/shared/infra/http/swagger.setup.ts`), com `addBearerAuth()` |
+| Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
+| Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
+| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, e as rotas caem na tag certa |
+
+O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs e as respostas das rotas.
+
+| Opção | Valor | Efeito |
+| --- | --- | --- |
+| `dtoFileNameSuffix` | `.request.ts`, `.requests.ts`, `.query.ts` | Arquivos lidos como DTO. O padrão do plugin é `.dto.ts` e `.entity.ts`, que o projeto não usa |
+| `classValidatorShim` | `true` | Os decorators do `class-validator` viram regras no schema (`minLength`, `maximum`) |
+| `introspectComments` | `true` | O comentário `/** */` da rota vira o resumo, e o da propriedade, a descrição |
+
+O plugin roda no `nest build` e no `nest start`. Os testes do Vitest compilam com o oxc, sem o plugin, então o documento dos testes não tem os schemas gerados.
+
+## Health
+
+`HealthController` (`src/shared/infra/health/`), com o `@nestjs/terminus`.
+
+| Rota | Confere | Responde |
+| --- | --- | --- |
+| `GET /health/live` | Nada: o processo responde | 200 |
+| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s | 200 com todos `up`, 503 com algum `down` |
+
+As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL`), fora do rate limit (`@SkipThrottle()`), sem log de acesso e sem span.
+
+## Rate limit
+
+`@nestjs/throttler`, com o `ThrottlerGuard` global (`APP_GUARD` no `AppModule`).
+
+| Item | Valor |
+| --- | --- |
+| Limite padrão | 100 requisições por minuto, por IP. O IP vem do `trust proxy` |
+| Limites próprios | Rotas de autenticação, com `@Throttle` ([Autenticação](autenticacao.md#rotas)) |
+| Bloqueio | Passado o limite, a chave fica bloqueada pelo mesmo prazo da janela (o `blockDuration` padrão é o `ttl`) |
+| Resposta bloqueada | 429, com `Retry-After` |
+| Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida |
+| Contadores | No Redis, pelo `RedisThrottlerStorage` (`src/shared/infra/http/`): janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
+| Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)) |
+| Desligar | `THROTTLE_ENABLED=false` |
+| Teste | `redis-throttler-storage.int-spec.ts` |
+
+## Logs de acesso
+
+`nestjs-pino`, configurado no `ObservabilityModule` (`src/shared/infra/observability/`). Uma linha por requisição.
+
+| Item | Valor |
+| --- | --- |
+| Nível | `LOG_LEVEL` |
+| Formato | JSON. Em `NODE_ENV=development`, `pino-pretty` em uma linha, sem `pid`, `hostname`, `req` e `res` |
+| Mensagem | `GET /v1/orders 200 12ms` no sucesso, `GET /v1/orders 500 failed` no erro |
+| `req` | `id`, `method` e `url` |
+| `res` | `statusCode` |
+| Trace | `trace_id` e `span_id` da requisição ([Observabilidade](../explanation/observabilidade.md)) |
+| Fora do log | As rotas `/health` e `/health/*` |
+| `redact` | `req.headers.authorization` e `req.headers.cookie`. O serializer de `req` já não leva headers. O `redact` cobre um serializer que passe a levar |
+
+### `x-request-id`
+
+| Caso | Id da requisição |
+| --- | --- |
+| Header `x-request-id` com 1 a 128 caracteres de `[A-Za-z0-9_-]` | O valor do header |
+| Sem header, ou fora desse formato | Um UUID aleatório |
+
+O id vai para o `req.id` do log e volta na resposta, no header `x-request-id`.
+
+## Desligamento
+
+Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, `SIGINT` e os outros de `ShutdownSignal`) e roda os hooks nesta ordem. No fim, reenvia o sinal ao próprio processo.
+
+| Fase | Quem | O que faz |
+| --- | --- | --- |
+| 1. `onModuleDestroy` | Workers das filas de eventos, `ScheduledJobProcessor` e `OutboxWorker` | Param de pegar trabalho e esperam o job ou o lote em andamento, com as conexões ainda abertas |
+| 2. `beforeApplicationShutdown` | `BullMqPublisher` | Fecha as filas em que enfileira |
+| | `RedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
+| 3. Servidor HTTP | Nest | Para de aceitar conexões e espera as requisições em andamento |
+| 4. `onApplicationShutdown` | `BullMqConnection` | Desconecta o `producer` e o `worker` |
+| | Cache | Desconecta o cliente do cache |
+| | TypeORM | Fecha o `DataSource` |
+| | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans pendentes |
+
+Até a fase 3, o servidor aceita requisições e o `/health/ready` responde 200. Não há atraso de desligamento: o `gracefulShutdownTimeoutMs` do Terminus fica no padrão, `0`.

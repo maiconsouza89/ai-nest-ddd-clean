@@ -107,6 +107,15 @@ Eventos e facades em `contracts/` são a API pública do módulo, e os eventos l
 
 O payload só tem primitivos pelo mesmo motivo: uma entidade de domínio no evento faria qualquer mudança interna do módulo virar mudança de contrato.
 
+### Extrair um módulo para um serviço
+
+As fronteiras também servem para que um módulo possa sair do processo sem mexer no domain nem nos casos de uso. A extração muda a infra em quatro pontos, e dois deles custam mais do que parece:
+
+- **Dados:** como cada módulo já tem schema e migrations próprios, o schema vai para um banco separado sem desfazer FK nem join. O que se perde é a transação compartilhada. Se o inventory sair, fechar o pedido deixa de reservar o estoque na mesma transação, e o `Order` passa a precisar de um estado de espera e de eventos de volta ([Agregados](agregados.md#síncrono-dentro-da-transação-do-pedido)).
+- **Facade:** quem chama outro módulo já passa por um port próprio: `StockGateway` e `PriceCatalog` no orders, `RecipientDirectory` no notifications. Só o adapter troca a chamada em memória por um cliente HTTP ou gRPC. Com a rede no meio, o adapter passa a tratar timeout e erro de conexão como qualquer fornecedor ([Serviços externos](servicos-externos.md)).
+- **Eventos:** a outbox e as filas do BullMQ já passam pelo Redis, não pela memória. O que fica preso ao processo é a lista de consumidores: o `EventSubscriptions` descobre quem assina cada evento varrendo os `@IntegrationEventHandler` da própria app, e o relay enfileira só para eles. Um consumidor que vai para outro serviço some dessa varredura, e a fila dele para de receber eventos sem erro. A extração pede uma lista de assinaturas fora do código ou um broker com tópicos, em que cada serviço assina o que consome.
+- **Autenticação:** o serviço novo valida o JWT sozinho, com o mesmo segredo ou com uma chave pública. Mas o token só leva o `sub`, e o ator vem do `ActorResolver`, que lê o usuário no schema do identity a cada requisição ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)). O serviço novo precisa de outro `ActorResolver`, que pergunte ao identity. Pôr as roles no token evita a chamada, mas traz de volta a opção que o ADR descartou: uma role removida só deixa de valer quando o token vence.
+
 ## Alternativas e trade-offs
 
 - **FK e joins entre schemas:** o banco garantiria a integridade, e uma listagem com dados de dois módulos sairia numa query. Em troca, mudar a tabela de um módulo quebraria o outro, e extrair um módulo exigiria desfazer as FKs. O projeto aceita perder joins e transações entre módulos e lidar com consistência eventual. Ganha isolamento e a possibilidade de extrair um módulo depois.

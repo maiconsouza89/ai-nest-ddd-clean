@@ -60,37 +60,7 @@ Movida. Que teste cobre cada camada, e com o quê, está em [Testes](../referenc
 
 ## Operação
 
-### Swagger
-
-Decorators do `@nestjs/swagger` só nos DTOs HTTP e controllers. Uma tag por recurso (`@ApiTags('orders')`, `@ApiTags('auth')`). O plugin da CLI do Nest infere boa parte dos tipos e reduz decorators.
-
-Por padrão, o plugin só lê arquivos `.dto.ts` e `.entity.ts`. Como aqui os DTOs HTTP se chamam `*.request.ts`, `*.requests.ts` e `*.query.ts`, configure o `dtoFileNameSuffix` no `nest-cli.json`. Sem isso, essas classes ficam sem schema. O plugin roda só no `nest build`/`nest start`, e não nos testes.
-
-```json
-"plugins": [{ "name": "@nestjs/swagger", "options": { "dtoFileNameSuffix": [".request.ts", ".requests.ts", ".query.ts"] } }]
-```
-
-### Health, rate limit e segurança básica
-
-| Item | Ferramenta | Observação |
-| --- | --- | --- |
-| Health check | `@nestjs/terminus` | Separe liveness (processo vivo) de readiness (banco com `pingCheck` e Redis com `PING`). Indicadores próprios usam o `HealthIndicatorService`, porque o Nest 12 removeu a API antiga (`HealthIndicator` e `HealthCheckError`). Marque as rotas de health com `@SkipThrottle()`, senão as sondas do orquestrador contam no rate limit |
-| Desligamento gracioso | `app.enableShutdownHooks()` | Termina requisições e jobs em andamento e fecha conexões antes de o processo sair |
-| Rate limit | `@nestjs/throttler` | Guard global via `APP_GUARD`, limite mais rígido em login. O storage padrão é em memória: com várias instâncias, use storage compartilhado (Redis), com incremento e expiração atômicos. O `@nest-lab/throttler-storage-redis` 1.2.0 declara suporte só até o Nest 11 (novembro de 2026); no Nest 12, um `ThrottlerStorage` próprio é pequeno. Atrás de proxy, configure `trust proxy` |
-| Headers de segurança | `helmet` | `app.use(helmet())` no `configureApp` (`app.setup.ts`) |
-| CORS | `app.enableCors()` | Só origens conhecidas |
-| Entrada HTTP | `ValidationPipe` global | `whitelist`, `forbidNonWhitelisted` e `transform` ativos |
-
-### Extrair um módulo para microsserviço
-
-Como o módulo já é isolado, a extração muda só a infra:
-
-1. O módulo ganha deploy próprio, e o schema dele vai para um banco separado.
-2. Nos módulos que usam a facade, o adapter troca a chamada em memória por um cliente HTTP ou gRPC, implementando o mesmo port.
-3. Os eventos passam do barramento em memória para um broker. Com outbox, só muda o publicador.
-4. O serviço novo valida o JWT sozinho, com chave compartilhada ou JWKS.
-
-Domain e application não mudam. É o retorno de todo o isolamento feito antes.
+Movida. A configuração HTTP, o Swagger, o health check, o rate limit, os logs de acesso e a ordem de desligamento estão em [Operação](../reference/operacao.md). O que muda ao extrair um módulo para um serviço está em [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#extrair-um-módulo-para-um-serviço).
 
 ## Pragmatismo e checklist
 

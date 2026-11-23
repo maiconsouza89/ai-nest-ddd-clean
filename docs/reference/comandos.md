@@ -36,7 +36,7 @@ Com a app no ar:
 | `http://localhost:3000/health/live` | O processo está vivo. Não consulta dependências |
 | `http://localhost:3000/health/ready` | O banco e o Redis respondem |
 
-O health não tem versão na URL, não pede token e fica fora do rate limit.
+O health não tem versão na URL, não pede token e fica fora do rate limit. O que cada endereço confere e responde está em [Operação](operacao.md).
 
 ## Desenvolvimento e build
 

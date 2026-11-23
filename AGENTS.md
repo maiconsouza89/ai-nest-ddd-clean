@@ -66,6 +66,7 @@ Leia a página antes de agir no assunto.
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Escrever ou mudar um teste | `docs/reference/testes.md` |
 | Mexer no tracing, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
+| Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar módulo, entidade, caso de uso ou repositório novo | `docs/research/modules-ddd-clean-nest.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |

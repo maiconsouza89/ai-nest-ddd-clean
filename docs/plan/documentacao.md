@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio, Infra e Qualidade)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio, Infra, Qualidade e Operação)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -407,7 +407,7 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 | Modelagem do domínio | `explanation/modelagem-do-dominio.md` |
 | Infra: configuração, jobs, cache, serviços externos | how-tos por tarefa e `reference/variaveis-de-ambiente.md` |
 | Qualidade | `reference/testes.md` e `explanation/observabilidade.md` (era `reference/qualidade.md`) |
-| Operação | `reference/operacao.md` (health, logs, tracing) |
+| Operação | `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md` ("Extrair um módulo para um serviço") |
 | Pragmatismo e checklist | `explanation/pragmatismo.md` e `how-to/revisar-um-modulo.md` |
 | Referências | Seção "Leituras" no `docs/README.md` |
 
@@ -500,6 +500,19 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
   Ficam para a seção Operação os fatos de log que são referência: o `x-request-id`, os campos do log de acesso e o `redact`. O link do passo 7 do `passo-a-passo.md` aponta para o `.dependency-cruiser.js`. Duas rotas novas no `AGENTS.md`, índice e mapa atualizados. `/simplify` (quatro revisores): saíram as repetições de `comandos.md`, do ADR 0004 e do `eslint.config.mjs` na página de testes, o catálogo arquivo por arquivo de `test/helpers/`, as versões e o histórico na explicação, o número da versão do Prettier e o `severity` repetido. `/code-review`: o `map` passou a aceitar uma `severity` declarada na regra, o passo 7 do `passo-a-passo.md` manda copiar a lista junto com o `map`, e a coluna "Arquivo" dos testes de Postgres deixou de prender todos em `infra/database/typeorm/` (o catalog e a outbox têm os seus em outro lugar). Ficou de fora um spec que confira se cada migration está na lista do helper de integração e um teste dos spans do `ioredis` e do `express`: são checks novos, maiores que este passo, e ficam registrados aqui como candidatos.
 
+- **Operação (2026-11-23):** a seção virou dois destinos:
+  - `reference/operacao.md`: a configuração HTTP do `configureApp`, o Swagger (endereços, tags e as opções do plugin), as duas rotas de health, o rate limit (limites, bloqueio, headers, contadores no Redis e o 503 com ele fora do ar), os logs de acesso com o `x-request-id` e o `redact` (deixados para cá pela seção Qualidade), e a ordem de desligamento, fase a fase, com quem age em cada uma. As variáveis e os endereços não se repetem: a página aponta para `variaveis-de-ambiente.md` e `comandos.md`, e o `comandos.md` aponta de volta;
+  - "Extrair um módulo para um serviço", seção nova de `explanation/comunicacao-entre-modulos.md`, e não da página de referência, porque explica um porquê. O link do `arquitetura.md` aponta para ela.
+
+  Conferido no Context7: `@nestjs/swagger` (padrão do `dtoFileNameSuffix`, e o plugin fora do ts-jest), `@nestjs/terminus` (`HealthIndicatorService`, e o `gracefulShutdownTimeoutMs` com padrão `0`) e `@nestjs/throttler` (headers da resposta e a interface `ThrottlerStorage`). Conferido nos fontes de `node_modules`: a ordem de desligamento do Nest (hooks, depois o servidor HTTP, depois `onApplicationShutdown`), o `blockDuration` com padrão igual ao `ttl`, o `/docs-json` e o `/docs-yaml`, e o `dist/` com os metadados do plugin, que roda no build ESM. O guia errava ou omitia em cinco pontos:
+  - **Eventos:** o guia falava em "barramento em memória". A outbox e as filas já passam pelo Redis. O que fica preso ao processo é a lista de consumidores, montada pela varredura dos `@IntegrationEventHandler`: um consumidor extraído some dela, e a fila dele para de receber eventos sem erro;
+  - **JWT:** o guia dizia que o serviço extraído valida o JWT sozinho. O token só leva o `sub`, e o ator vem do `ActorResolver` do identity (ADR 0002), então o serviço precisa de outro resolver;
+  - **Dados:** o guia não citava a transação compartilhada da reserva de estoque, que some se o inventory sair;
+  - **Desligamento:** o guia dizia que o desligamento termina requisições e jobs. Os workers param antes do servidor HTTP, que continua aceitando requisições até a fase 3, e o `/health/ready` não passa a 503 nesse meio tempo;
+  - **Rate limit:** o guia não dizia o que acontece com o Redis fora do ar (503) nem o bloqueio depois do limite.
+
+  Fora do escopo: no desligamento, o `/health/ready` continua 200 até o servidor fechar. Um `gracefulShutdownTimeoutMs` no `TerminusModule`, um pouco maior que o intervalo da sonda, tiraria a instância do tráfego antes. Fica como candidato para quando houver um orquestrador. A página não foi conferida com a app no ar: nenhuma instância respondia na porta 3000, e os containers do compose estavam parados. `/simplify` e `/code-review`: pulados, o passo só mexe em Markdown. Rota nova no `AGENTS.md`, índice e mapa atualizados.
+
 ### Passo 13: how-tos e skills-ponteiro
 
 **Por quê:** num how-to, o humano lê o passo a passo. Numa skill, a descrição fica sempre visível para o Claude, e o corpo só carrega quando a skill é usada.
@@ -583,7 +596,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`; Operação, em `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

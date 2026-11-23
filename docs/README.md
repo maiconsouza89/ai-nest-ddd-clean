@@ -30,7 +30,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 
 - [Arquitetura](explanation/arquitetura.md): monólito modular, regra de dependência, Nest só na infra e o papel de cada camada, com exemplos do orders.
 - [Persistência](explanation/persistencia.md): por que a entidade de domínio e a ORM entity são classes diferentes, o mapper e a transação do caso de uso.
-- [Comunicação entre módulos](explanation/comunicacao-entre-modulos.md): dados próprios por módulo, dependência numa direção só, facade que devolve resultado e contratos com versão.
+- [Comunicação entre módulos](explanation/comunicacao-entre-modulos.md): dados próprios por módulo, dependência numa direção só, facade que devolve resultado, contratos com versão e o que muda ao extrair um módulo para um serviço.
 - [Agregados](explanation/agregados.md): por que o item fica no `Order` e o estoque no inventory, o port `StockGateway` e a reserva síncrona dentro da transação do pedido.
 - [Consistência e eventos](explanation/consistencia-e-eventos.md): a transação pelo contexto, a concorrência otimista e a pessimista, a outbox, a fila por consumidor, o consumidor idempotente e a `Idempotency-Key`.
 - [Modelagem do domínio](explanation/modelagem-do-dominio.md): dinheiro em centavos, id e hora por ports, erros com `code`, a mesma regra validada em mais de um lugar, domain service, exclusão como estado e auditoria.
@@ -47,6 +47,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...`, `import type`, versão da API HTTP e as regras das ORM entities do TypeORM.
 - [Testes](reference/testes.md): o tipo de teste de cada camada, onde fica, com que fakes e containers, e o teste de contrato dos eventos.
+- [Operação](reference/operacao.md): configuração HTTP, Swagger, health check, rate limit, logs de acesso e a ordem de desligamento.
 - [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, em qual pasta, e as regras entre módulos.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.
