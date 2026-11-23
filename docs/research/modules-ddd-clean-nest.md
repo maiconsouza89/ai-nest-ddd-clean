@@ -24,26 +24,7 @@ Movida. O porquê está em [Comunicação entre módulos](../explanation/comunic
 
 ## Itens comuns entre módulos (shared kernel)
 
-O `shared` guarda só blocos técnicos que valem igual para todos os módulos. Conceitos de negócio ficam no módulo dono.
-
-| Vai para `shared` | Não vai para `shared` |
-| --- | --- |
-| `AggregateRoot`, `DomainError`, `Money`, `Page`, `Actor` | Conceitos de negócio de um módulo (`Customer`, `Product`) |
-| Ports: `Clock`, `IdGenerator`, `TransactionManager`, `Logger` | Regras específicas de um módulo |
-| Infra: guards de auth, outbox, filas, cache, configuração do banco | Repositórios ou entidades de qualquer módulo |
-| Value objects com a mesma regra em todo lugar (hoje, só o `Money`) | Tipos que só parecem iguais, mas têm regras diferentes em cada módulo |
-
-Um value object usado por um módulo só fica nele, mesmo que pareça genérico. O `Email`, por exemplo, está em `identity/domain`, e só sobe para o `shared` quando outro módulo precisar da mesma regra. O exception filter também fica em cada módulo: o `shared` tem a base `DomainError`, e cada módulo mapeia os próprios códigos de erro para status HTTP.
-
-Cada módulo tem a própria visão de um conceito. Para o catálogo, `Product` tem descrição e fotos. Para orders, basta `productId` e o preço da compra.
-
-### Regras do shared
-
-- Mantenha pequeno e estável. Qualquer mudança afeta todos os módulos.
-- Siga as mesmas camadas (`shared/domain`, `shared/application`, `shared/infra`).
-- O shared nunca importa nada de `modules/`.
-- Na dúvida, duplique. Duplicar um tipo simples custa menos que acoplar módulos.
-- Dado usado por vários módulos (como o nome do produto) tem um único dono. Os outros consultam pela facade ou mantêm uma cópia local atualizada por eventos.
+Movida. O que vai para o `shared` está em [Camadas](../reference/camadas.md#shared), e o porquê em [Shared kernel](../explanation/shared-kernel.md).
 
 ## Autenticação e ownership
 

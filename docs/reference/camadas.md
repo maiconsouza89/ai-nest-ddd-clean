@@ -137,4 +137,4 @@ O `src/shared/` segue as mesmas camadas e guarda só blocos técnicos com a mesm
 | Ports técnicos: `Clock`, `IdGenerator`, `TransactionManager`, `Logger` | Value object usado por um módulo só, mesmo que pareça genérico (o `Email` do identity) |
 | Infra comum: auth, outbox, filas, cache, banco, configuração | Repositórios, entidades e o filter de erros de cada módulo |
 
-Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`.
+Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`. O porquê está em [Shared kernel](../explanation/shared-kernel.md).
