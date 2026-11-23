@@ -509,7 +509,7 @@ npm i dotenv
 npm i -D ts-node
 ```
 
-- `orders.data-source.ts` (ver [Módulos independentes](../research/modules-ddd-clean-nest.md#módulos-independentes)) com as entidades do módulo e `migrationsTableName: 'orders_migrations'`. Ele carrega o `.env` com `dotenv` e reaproveita o `validateEnv`.
+- `orders.data-source.ts` (ver [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios)) com as entidades do módulo e `migrationsTableName: 'orders_migrations'`. Ele carrega o `.env` com `dotenv` e reaproveita o `validateEnv`.
 - Primeira migration, criada vazia com `migration:create`, só com `CREATE SCHEMA IF NOT EXISTS orders`. Rode-a.
 - Em seguida, `npm run mig:orders:gen` gera as tabelas. **Revise o SQL** antes do commit.
 - Scripts `mig:orders:gen` e `mig:orders:run`, copiados do guia de referência.
@@ -807,7 +807,7 @@ Verificar com `exists` antes de processar não resolve a corrida entre duas entr
 
 **Faça:**
 
-- Siga as regras de versão do guia de referência ([Dependências e contratos entre módulos](../research/modules-ddd-clean-nest.md#dependências-e-contratos-entre-módulos)): mudança aditiva mantém a versão, e mudança que quebra publica v1 e v2 juntas.
+- Siga as regras de versão dos contratos ([Camadas](../reference/camadas.md#contracts)): mudança aditiva mantém a versão, e mudança que quebra publica v1 e v2 juntas.
 - Guarde exemplos versionados de cada evento em `contracts/events/` (`*.v1.example.ts`, tipados com o contrato) e teste os dois lados: quem publica gera um payload compatível, e quem consome entende o exemplo. As facades têm teste do formato do resultado.
 
 **Pronto quando:** remover um campo do `OrderPaidV1` quebra um teste.

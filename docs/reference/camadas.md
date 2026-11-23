@@ -112,7 +112,20 @@ src/
 | Peça | Pasta | Convenção |
 | --- | --- | --- |
 | [Facade](glossario.md#facade) | `contracts/<nome>.facade.ts` | Devolve um resultado (`{ ok: false, reason }`) em vez de lançar o erro do domínio. Um método novo entra sem mudar a assinatura dos existentes |
-| [Evento de integração](glossario.md#evento-de-integração) | `contracts/events/<nome>.event.ts` | Tipo `<Nome>V<n>` |
+| [Evento de integração](glossario.md#evento-de-integração) | `contracts/events/<nome>.event.ts` | Tipo `<Nome>V<n>`, com `version: <n>` e payload só com primitivos. Um campo opcional novo fica na mesma versão. Renomear, remover ou mudar o tipo de um campo publica a `V<n+1>` junto com a anterior, até todos os consumidores migrarem |
+
+## Entre módulos
+
+Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/`, sem ciclo). O resto:
+
+| Situação | Convenção |
+| --- | --- |
+| Schema | Um por módulo: `@Entity({ name, schema: '<módulo>' })`. A primeira migration só faz o `CREATE SCHEMA` |
+| Migrations | DataSource da CLI por módulo (`<módulo>.data-source.ts`), só com as entidades do módulo e `migrationsTableName: '<módulo>_migrations'` |
+| Referência a dado de outro módulo | Só o id (`customerId`), sem FK |
+| Leitura de dado de outro módulo | Pela facade, ou por uma cópia local atualizada por eventos. Sem join |
+| Mudança que precisa refletir em outro módulo | Evento de integração pela outbox. Sem transação entre módulos |
+| Dependência nos dois sentidos | Uma direção pela facade, a volta por evento |
 
 ## Shared
 

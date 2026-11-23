@@ -154,7 +154,7 @@ No caminho de volta, o domain lança erros próprios, com um `code`. Um exceptio
 
 ### Cada módulo é dono dos seus dados
 
-Cada módulo tem schema, migrations e contratos próprios. Nada de FK, join ou transação entre módulos. É o que permite mudar o banco de um módulo, ou extraí-lo, sem quebrar os outros. Os detalhes estão no guia de pesquisa, em [Módulos independentes](../research/modules-ddd-clean-nest.md#módulos-independentes) e [Dependências e contratos entre módulos](../research/modules-ddd-clean-nest.md#dependências-e-contratos-entre-módulos).
+Cada módulo tem schema, migrations e contratos próprios. Nada de FK, join ou transação entre módulos. É o que permite mudar o banco de um módulo, ou extraí-lo, sem quebrar os outros. Os detalhes estão em [Comunicação entre módulos](comunicacao-entre-modulos.md).
 
 ### Nem todo módulo precisa das camadas
 

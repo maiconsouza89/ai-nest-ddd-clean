@@ -20,73 +20,7 @@ Movida. O porquê da entidade de domínio separada da ORM entity está em [Persi
 
 ## Módulos independentes
 
-Cada módulo tem seu próprio schema no Postgres, suas migrations e seus contratos. Nenhum outro módulo acessa esses dados diretamente.
-
-### Schema por módulo
-
-```ts
-@Entity({ name: 'orders', schema: 'orders' })
-export class OrderOrmEntity { ... }
-```
-
-A primeira migration do módulo cria o schema:
-
-```ts
-await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS orders`);
-```
-
-### Migrations por módulo
-
-Um DataSource por módulo, usado só pela CLI, com tabela de controle própria. Como ele conhece apenas as entidades do módulo, o `migration:generate` não mexe nas tabelas dos outros.
-
-```ts
-import { config } from 'dotenv';
-import { validateEnv } from '#shared/infra/config/env.validation';
-
-// a CLI não passa pelo Nest: carrega e valida o .env por conta própria
-config({ path: ['.env.local', '.env'], quiet: true });
-const env = validateEnv(process.env);
-
-export default new DataSource({
-  type: 'postgres',
-  url: env.DATABASE_URL,
-  entities: [OrderOrmEntity, OrderItemOrmEntity],
-  migrations: [import.meta.dirname + '/migrations/*.{ts,js}'],
-  migrationsTableName: 'orders_migrations',
-});
-```
-
-O projeto é ESM (`"type": "module"`), então o CLI é o `typeorm-ts-node-esm`, o `__dirname` vira `import.meta.dirname` e todo import relativo termina em `.js`. O data source importa o shared por alias (`#shared/*`), e o `ts-node` só o resolve com a condição `@app/source`, por isso o `NODE_OPTIONS` na frente do script. Detalhes, inclusive dos seeds, no [ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md).
-
-```json
-"mig:orders:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
-"mig:orders:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts"
-```
-
-#### Cuidados com migrations
-
-- `synchronize: false` fora de testes locais. O schema muda só por migration.
-- A primeira migration do módulo só faz o `CREATE SCHEMA`. O gerador (`npm run plop module`) já a cria. Sem ele, crie-a vazia com `migration:create`. As outras vêm do `migration:generate`.
-- Revise toda migration gerada antes do commit. O generate compara entidades e banco, e pode propor alterações inesperadas.
-- Rode as migrations no pipeline de deploy, com `migrationsRun: false` na aplicação.
-
-### Conexão no Nest
-
-| Opção | Como | Quando usar |
-| --- | --- | --- |
-| Conexão única | `autoLoadEntities: true` e cada módulo usa `forFeature` | Padrão, mais simples |
-| Conexão por módulo | `forRootAsync({ name: 'orders' })`, `forFeature([...], 'orders')`, `@InjectRepository(Entity, 'orders')` | Isolamento máximo, permite usuário de banco por módulo |
-
-### Regras de independência
-
-- **Sem FK entre schemas.** Guarde só o ID do outro módulo (`customerId`).
-- **Sem join entre módulos.** Use a facade ou uma cópia local atualizada por eventos.
-- **Outros módulos só importam de `contracts/`.** A única exceção é o `*.module.ts`, que também importa o módulo Nest do outro para declarar a dependência em `imports` (ver Regras de arquitetura no CI e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)).
-- **Imports que cruzam fronteira usam alias.** `#shared/*` para o shared kernel, `#modules/<módulo>/contracts/*` para o contrato de outro módulo e `#test/*` nos specs. Dentro do mesmo módulo, o import continua relativo (`../domain/x.js`). O alias não substitui a regra acima: o `dependency-cruiser` a aplica também aos imports por alias ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
-- **Sem transação entre módulos.** Use eventos com outbox quando precisar de consistência.
-- Configurações comuns (conexão, `DataSource` global) ficam em `src/shared/infra/database/`.
-
-**Trade-off:** ganha isolamento e facilidade para extrair um módulo como microsserviço. Perde joins e transações entre módulos e passa a lidar com consistência eventual.
+Movida. O porquê está em [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios), as regras em [Camadas](../reference/camadas.md#entre-módulos), e o passo a passo de uma migration em [Como gerar uma migration](../how-to/gerar-uma-migration.md).
 
 ## Itens comuns entre módulos (shared kernel)
 
@@ -263,109 +197,7 @@ O `orderId` vai como `referenceId` da reserva. Se a chamada for repetida por ret
 
 ## Dependências e contratos entre módulos
 
-### Dependência circular
-
-Se orders chama inventory e inventory chama orders, o Nest exige `forwardRef`. Isso é sinal de fronteira errada, não um problema técnico a contornar.
-
-**Regra:** o grafo de imports entre módulos deve ser acíclico. Uma direção pode ser síncrona (facade); a volta é sempre por evento.
-
-```ts
-// orders -> inventory: síncrono, via facade
-@Module({ imports: [InventoryModule], ... })
-export class OrdersModule {}
-
-// inventory -> orders: por evento, sem importar OrdersModule
-// só o tipo do contrato: `import type` some na compilação
-import type { OrderCancelledV1 } from '#modules/orders/contracts/events/order-cancelled.event';
-
-@Injectable()
-export class OnOrderCancelledHandler {
-  constructor(
-    private readonly consumer: IdempotentConsumer,
-    private readonly releaseStock: ReleaseStockUseCase,
-  ) {}
-
-  @IntegrationEventHandler({
-    events: ['orders.order-cancelled'],
-    consumer: 'inventory.release-on-order-cancelled',
-  })
-  handle(event: OrderCancelledV1) {
-    return this.consumer.handle('inventory.release-on-order-cancelled', event, (e) =>
-      this.releaseStock.execute({ referenceId: e.payload.orderId }),
-    );
-  }
-}
-```
-
-Outras saídas: mover o conceito compartilhado para o módulo certo, ou criar um terceiro módulo que orquestra os dois (saga). A regra `no-circular` do `dependency-cruiser` barra o ciclo no CI (`npm run arch`).
-
-**Como um módulo expõe a facade:** o contrato fica em `contracts/` como classe abstrata, e o módulo Nest exporta só ele.
-
-```ts
-// inventory/contracts/inventory.facade.ts (TypeScript puro, só primitivos)
-export type ReserveStockResult =
-  | { ok: true }
-  | { ok: false; reason: 'INSUFFICIENT_STOCK'; productId: string };
-
-export abstract class InventoryFacade {
-  // devolve um resultado: o contrato não pode importar o InsufficientStockError do domain
-  abstract reserve(cmd: ReserveStockCommand): Promise<ReserveStockResult>;
-}
-
-// inventory/infra/inventory.module.ts
-@Module({
-  providers: [
-    /* repositórios e casos de uso do inventory */
-    {
-      provide: InventoryFacade,
-      useFactory: (reserve: ReserveStockUseCase) => new InventoryFacadeImpl(reserve),
-      inject: [ReserveStockUseCase],
-    },
-  ],
-  exports: [InventoryFacade], // nada além da facade sai do módulo
-})
-export class InventoryModule {}
-```
-
-### Versionamento de eventos e facades
-
-Eventos e facades em `contracts/` são a API pública do módulo. Trate como tal.
-
-```ts
-export type OrderPaidV1 = {
-  eventId: string;      // único por evento, base da idempotência
-  type: 'orders.order-paid';
-  version: 1;
-  occurredAt: string;   // ISO 8601
-  payload: { orderId: string; customerId: string; totalCents: number; currency: string };
-};
-```
-
-- **Payload só com primitivos.** Nunca exponha a entidade de domínio no evento.
-- **Mudança aditiva** (campo novo opcional): mesma versão.
-- **Mudança que quebra** (renomear, remover, mudar tipo): publique a v2 junto com a v1 até todos os consumidores migrarem, depois remova a v1.
-- **Facades:** adicione métodos novos em vez de mudar assinaturas existentes.
-
-### Versionamento da API HTTP
-
-O Nest tem versionamento nativo. Pela URI, a versão entra no início do caminho (`/v1/orders`). O projeto não tem prefixo global. Se tivesse, a versão viria depois dele.
-
-```ts
-// app.setup.ts (configureApp, usado pelo bootstrap e pelos testes e2e)
-app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-
-// infra/http/controllers
-@Controller({ path: 'orders', version: '1' })
-export class OrdersV1Controller { /* ... */ }
-
-@Controller({ path: 'orders', version: '2' })
-export class OrdersV2Controller { /* ... */ }
-```
-
-- **A versão é assunto da infra.** V1 e v2 têm controllers e DTOs próprios, mas chamam os mesmos casos de uso.
-- **Mudança aditiva** (campo novo opcional na resposta): mesma versão.
-- **Mudança que quebra:** nova versão, mantendo a anterior até os clientes migrarem. Avise o fim da antiga com antecedência, com os headers `Deprecation` (RFC 9745) e `Sunset` (RFC 8594) nas respostas dela.
-- **Rotas técnicas** como `/health` usam `VERSION_NEUTRAL` e ficam sem versão.
+Movida. O porquê da dependência numa direção só, da facade que devolve resultado e da versão dos contratos está em [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md). As regras dos contratos estão em [Camadas](../reference/camadas.md#contracts), e as da versão da API HTTP, em [Convenções](../reference/convencoes.md#versionamento-da-api-http).
 
 ## Transações, concorrência e eventos
 
@@ -773,7 +605,7 @@ export function validateEnv(config: Record<string, unknown>) {
 #### Cuidados
 
 - Versione um `.env.example` com todas as chaves e sem valores reais. O `.env` fica no `.gitignore`.
-- O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv` (ver Migrations por módulo).
+- O DataSource da CLI de migrations não passa pelo Nest: ele lê `process.env` direto. Carregue com `dotenv` e reaproveite o mesmo `validateEnv` (ver [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios)).
 - Uma variável renomeada entra na tabela `RENAMED` do `validateEnv`. Se o ambiente ainda define o nome antigo, a subida falha com a mensagem do novo nome, em vez de ignorar o valor sem avisar.
 
 ### Jobs, cron e workers

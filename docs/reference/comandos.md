@@ -85,7 +85,7 @@ A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transf
 
 ## Migrations
 
-Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app.
+Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app (`synchronize: false` e `migrationsRun: false`): rode-as antes, no setup local e no pipeline de deploy. Passo a passo para criar uma: [Como gerar uma migration](../how-to/gerar-uma-migration.md).
 
 | Comando | O que faz |
 | --- | --- |
