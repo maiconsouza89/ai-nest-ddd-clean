@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:19
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -8,7 +8,8 @@ services:
     ports:
       - '127.0.0.1:5432:5432'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # A partir do 18 a imagem usa PGDATA=/var/lib/postgresql/<major>/docker
+      - pgdata19:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d app']
       interval: 5s
@@ -30,5 +31,5 @@ services:
       retries: 10
 
 volumes:
-  pgdata:
+  pgdata19:
   redisdata:

@@ -14,7 +14,7 @@ Antes de adicionar, atualizar ou usar qualquer biblioteca, framework ou SDK, **u
 
 ## Comandos
 
-Setup: `docker compose up -d postgres redis` (Postgres 17 em `127.0.0.1:5432` e Redis 8 em `127.0.0.1:6379`). O `.env` precisa existir (copie de `.env.example`, que inclui `REDIS_URL`).
+Setup: `docker compose up -d postgres redis` (Postgres 19 em `127.0.0.1:5432` e Redis 8 em `127.0.0.1:6379`). O `.env` precisa existir (copie de `.env.example`, que inclui `REDIS_URL`).
 
 - Dev: `npm run start:dev`
 - Build: `npm run build`, depois `node dist/main.js` (não há script `start`)

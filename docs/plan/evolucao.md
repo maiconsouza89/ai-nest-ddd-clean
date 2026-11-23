@@ -35,10 +35,10 @@ Pacotes pré-1.0 sem histórico ficam de fora. Exemplo: `@nestjs/authentication`
 | 4. ESM | `"type": "module"` e CLIs em ESM | nenhuma | ✅ |
 | 5. Módulos | `imports` explícito no lugar do `@Global` | nenhuma | ✅ |
 | 6. Autenticação | Ator por requisição, access token curto e refresh token rotativo | nenhuma | ✅ |
-| 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ⬜ |
+| 7. Postgres 19 | Banco na versão estável mais recente | imagem `postgres:19` | ✅ |
 | 8. Documentação | Guia, `CLAUDE.md` e evoluções pendentes | nenhuma | ⬜ |
 
-**Progresso geral:** 6 de 8 fases concluídas · 14 de 18 passos concluídos · **Fase atual:** 7
+**Progresso geral:** 7 de 8 fases concluídas · 15 de 18 passos concluídos · **Fase atual:** 8
 
 ---
 
@@ -479,9 +479,9 @@ export abstract class ActorResolver {
 
 ## Fase 7: Postgres 19
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-23 · **Conclusão:** 2026-11-23
 >
-> - [ ] Passo 15: Postgres 19 no compose e nos testes
+> - [x] Passo 15: Postgres 19 no compose e nos testes
 
 ### Passo 15: Postgres 19 no compose e nos testes
 

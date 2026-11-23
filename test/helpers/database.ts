@@ -9,7 +9,7 @@ type ModuleDatabase = {
 
 // Sobe um Postgres descartável e aplica as migrations reais de um módulo.
 export async function startDatabase({ entities, migrations, migrationsTableName }: ModuleDatabase) {
-  const container = await new PostgreSqlContainer('postgres:17').start();
+  const container = await new PostgreSqlContainer('postgres:19').start();
   const ds = new DataSource({
     type: 'postgres',
     url: container.getConnectionUri(),
