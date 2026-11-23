@@ -356,7 +356,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, e Paginação)
+> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação e Modelagem do domínio)
 > - [ ] Passo 13: how-tos e skills-ponteiro
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
@@ -461,6 +461,14 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
   O `npm run test:int -- typeorm-order.queries` citado no "Como verificar" passou (4 testes). O 400 do `limit` acima de 100 já é coberto pelo `orders.e2e-spec.ts` (`limit=500`). A listagem não foi conferida com a app no ar. O link do passo 17 do `passo-a-passo.md` aponta para o how-to. Rota nova no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
 
+- **Modelagem do domínio (2026-11-23):** virou `explanation/modelagem-do-dominio.md`. A tabela "Onde validar" não foi para uma página nova: as três linhas já estavam em `reference/camadas.md` (invariante no domínio, validação que depende de dados no caso de uso, formato no DTO HTTP), e a explicação liga para lá. A explicação acrescenta o porquê de a mesma regra aparecer em dois lugares, com dois exemplos do código: a quantidade do item, conferida no `CreateOrderRequest` e no `OrderItem`, e o e-mail único, conferido no `RegisterUserUseCase` e garantido pelo `UNIQUE`, que o repositório traduz para o mesmo erro. O soft delete foi conferido no Context7 (TypeORM: o `deletedAt IS NULL` entra nas consultas do repositório e do query builder, e o `withDeleted` o tira), assim como o `nestjs-cls` (o ator num contexto por requisição). O projeto usa o `uuid` 14.0.3, a latest (atualizado no passo 1 do `evolucao.md`). Como o Context7 só tem a documentação do `uuid` até a v13, o `v7` da 14 foi conferido no pacote instalado: o `import { v7 } from 'uuid'` gera um id de versão 7. Conferido contra o código:
+  - **O que não existe:** o `Money.allocate`, os domain services (`domain/services/`, `DiscountPolicy`), o soft delete e o `createdBy`. A página os trata como caminho para quando a necessidade aparecer, e o exemplo do `DiscountPolicy` diz que não existe no projeto;
+  - **Os filters:** só o orders e o identity têm filter de erros, ligado por `@UseFilters` no controller, e um `code` fora da tabela responde 422. O guia não dizia o padrão;
+  - **O `updatedAt`:** a expiração de pedidos parados depende dele, mas a coluna não vai para o `Order`. O caso de uso calcula o limite pelo `Clock` e o repositório filtra (`findStaleIds`). A página usa o caso como exemplo de "data de auditoria fica na infra";
+  - **O `createdBy`:** o guia citava as duas formas de preencher e falava do "único `AsyncLocalStorage` hoje". A página compara as duas sem marcar tempo e acrescenta que um job não tem ator.
+
+  O link do passo 2 do `passo-a-passo.md` aponta para a página nova, e o passo deixou de mandar copiar o `Money` do guia. Rota nova no `AGENTS.md`, índice e mapa atualizados. Passo só de texto: `/simplify` e `/code-review` pulados.
+
 ### Passo 13: how-tos e skills-ponteiro
 
 **Por quê:** num how-to, o humano lê o passo a passo. Numa skill, a descrição fica sempre visível para o Claude, e o corpo só carrega quando a skill é usada.
@@ -544,7 +552,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`.
+- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

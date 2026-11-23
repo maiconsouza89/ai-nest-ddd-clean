@@ -58,6 +58,7 @@ Leia a página antes de agir no assunto.
 | Publicar um evento de integração ou consumir um em outro módulo | `docs/how-to/publicar-um-evento-de-integracao.md` |
 | Criar ou mudar uma listagem paginada | `docs/how-to/paginar-uma-listagem.md` |
 | Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
+| Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar módulo, entidade, caso de uso ou repositório novo | `docs/research/modules-ddd-clean-nest.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |

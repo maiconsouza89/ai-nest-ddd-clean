@@ -119,7 +119,7 @@ export abstract class DomainError extends Error {
 }
 ```
 
-- `shared/domain/money.vo.ts`: copie o `Money` do guia de referência ([Modelagem do domínio](../research/modules-ddd-clean-nest.md#modelagem-do-domínio)). O valor fica em centavos inteiros, e somar moedas diferentes é erro.
+- `shared/domain/money.vo.ts`: o `Money`, com `fromCents`, `zero`, `add` e `times`. O valor fica em centavos inteiros, e somar moedas diferentes é erro (o porquê em [Modelagem do domínio](../explanation/modelagem-do-dominio.md#dinheiro-em-centavos-inteiros)).
 - Testes: soma, `times` com quantidade não inteira e soma de moedas diferentes.
 
 Só entra no `shared` o que vale do mesmo jeito para todos os módulos. `Money` atende a esse critério.
