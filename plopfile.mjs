@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { quadrantTypes } from './scripts/remark-docs-rules.mjs';
 
 const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
@@ -36,7 +37,63 @@ const FILES = [
   ],
 ];
 
+// Quadrantes do Diátaxis (ADR 0006): tipo da página → pasta em docs/, a partir do mapa que o docs:check usa
+const DOC_FOLDERS = Object.fromEntries(
+  Object.entries(quadrantTypes).map(([folder, type]) => [type, folder]),
+);
+
+// "Variáveis de ambiente" → "variaveis-de-ambiente": nome de arquivo sem acento
+const slugify = (text) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+// Nome da página sem espaços nas pontas. O how-to se chama "Como <tarefa>", e o "como" digitado sai daqui.
+const docStem = ({ type, name }) =>
+  type === 'how-to' ? name.trim().replace(/^como(?:[\s:,-]+|$)/i, '') : name.trim();
+
 export default function (plop) {
+  plop.setGenerator('doc', {
+    description: 'Nova página de docs/ (tutorial, how-to, reference ou explanation)',
+    prompts: [
+      {
+        type: 'list',
+        name: 'type',
+        message: 'Tipo da página',
+        choices: Object.keys(DOC_FOLDERS),
+      },
+      {
+        type: 'input',
+        name: 'name',
+        message:
+          'Nome da página, em pt-BR (ex.: variáveis de ambiente). No how-to, comece pelo verbo: rodar as migrations',
+        validate: (name, { type }) =>
+          slugify(docStem({ type, name })) !== '' || 'Informe um nome com letras ou números',
+      },
+    ],
+    actions: (data) => {
+      const isHowTo = data.type === 'how-to';
+      const stem = docStem(data);
+      // O validate não conhece o tipo quando ele é escolhido depois (`plop doc _ como`)
+      if (slugify(stem) === '') throw new Error(`Nome sem letras ou números: "${data.name}"`);
+      // "Rodar…" vira "Como rodar…", mas uma sigla ("API…") fica como está
+      const title = isHowTo
+        ? `Como ${stem.replace(/^\p{Lu}(?=\p{Ll})/u, (c) => c.toLowerCase())}`
+        : `${stem.charAt(0).toUpperCase()}${stem.slice(1)}`;
+      return [
+        {
+          type: 'add',
+          path: `docs/${DOC_FOLDERS[data.type]}/${slugify(stem)}.md`,
+          templateFile: `plop-templates/doc/${data.type}.md.hbs`,
+          data: { title },
+        },
+      ];
+    },
+  });
+
   plop.setGenerator('module', {
     description: 'Novo módulo (domain, application, infra, migrations) no padrão do orders',
     prompts: [

@@ -67,7 +67,7 @@ Convenções:
 >
 > - [x] Passo 1: ADR 0006
 > - [x] Passo 2: `docs:check` no CI
-> - [ ] Passo 3: templates `plop doc`
+> - [x] Passo 3: templates `plop doc`
 > - [ ] Passo 4: referência operacional
 > - [ ] Passo 5: `AGENTS.md` e `CLAUDE.md` enxuto
 > - [ ] Passo 6: `README.md` e `docs/README.md`
@@ -154,6 +154,21 @@ Convenções:
 
 **Pronto quando:** o gerador cria uma página de cada tipo, e as quatro passam no `docs:check`. Apague as páginas de teste depois.
 
+**Como ficou (2026-11-23):**
+
+- **Uso:** `npm run plop doc <tipo> "<nome>"`, consultado no Context7 (`/plopjs/plop`, bypass de prompts por posição). O nome dá o título e o arquivo sem acento: `"variáveis de ambiente"` → `docs/reference/variaveis-de-ambiente.md`, com título "Variáveis de ambiente". No how-to, o título vira "Como …", e um "como" digitado não se repete nem entra no arquivo: `"Rodar as migrations"` → "Como rodar as migrations", em `rodar-as-migrations.md`. Siglas ficam como estão ("Como configurar a API do JWT"). O plop recusa sobrescrever uma página que já existe e rejeita tipo inválido.
+- **Mapa de quadrantes:** o plopfile deriva o mapa do `quadrantTypes` do `scripts/remark-docs-rules.mjs`. O gerador e o `docs:check` não têm como divergir.
+- **Templates:** cada seção pedida tem um comentário HTML com o que escrever nela, e a abertura diz em uma linha o que fica fora do quadrante.
+- **Mudança no "Pronto quando":** o `docs:check` passou a barrar comentários de template que sobram numa página de quadrante (regra `scaffold`, menos os comentários `markdownlint-`). O Claude Code só remove comentários do `CLAUDE.md` e do `AGENTS.md`. Nas páginas de `docs/`, um comentário esquecido viraria instrução velha em toda leitura de agente. Por isso a página recém-gerada **falha** no `docs:check` (21 avisos `scaffold` nas quatro, e nenhum outro). Com os comentários apagados, as quatro passam. As páginas de teste foram apagadas.
+- **`/simplify`:** quatro revisores. Daí saíram o mapa único, uma variável só para o título e o arquivo, os comentários mais curtos e a regra `scaffold`. A regra dos termos datados ("hoje", "atualmente") vale para toda página, não só para a referência. Ela saiu do template e vai para o "Como escrever uma página" do passo 6. O passo 7 também foi corrigido: o `FILES` do gerador `module` só serve para destinos em `src/modules/<m>/`.
+- **`/code-review`:** corrigiu quatro pontos:
+  - um how-to chamado só "como", com o tipo escolhido depois do nome (`plop doc _ como`), gerava `docs/how-to/.md`. As actions agora param com erro;
+  - a regra `scaffold` não pegava comentário recuado ou dentro de um bloco HTML;
+  - o "como" seguido de pontuação ("Como: rodar") não saía;
+  - o `slugify` apagava sinais soltos (`^`, `´`) em vez de virá-los `-`.
+
+  A primeira palavra do how-to continua em minúscula, menos siglas, e o prompt pede para começar pelo verbo.
+
 ### Passo 4: referência operacional
 
 **Por quê:** hoje o `CLAUDE.md` é a única cópia dos comandos, do setup e das convenções. Um humano sem o Claude não tem onde encontrá-los.
@@ -206,7 +221,7 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 **Faça:**
 
 - **`README.md`:** o que é o projeto (um parágrafo), requisitos, quickstart com os passos numerados do setup (cada um com link para `docs/reference/comandos.md`) e um mapa da documentação.
-- **`docs/README.md`:** a bússola do Diátaxis (ação ou conhecimento, adquirir ou aplicar), um índice por quadrante com só as páginas que existem, a lista de ADRs e uma seção "Como escrever uma página" (`npm run plop doc`, `type:`, `docs:check`).
+- **`docs/README.md`:** a bússola do Diátaxis (ação ou conhecimento, adquirir ou aplicar), um índice por quadrante com só as páginas que existem, a lista de ADRs e uma seção "Como escrever uma página" (`npm run plop doc`, `type:`, `docs:check`, apagar os comentários do template, nada de "hoje", "atualmente" ou "novo", e data só em registro).
 
 **Pronto quando:** alguém sem contexto chega do `README.md` à app rodando seguindo só links, e o `docs/README.md` lista todas as páginas existentes.
 
@@ -237,7 +252,7 @@ Escreva de forma atemporal: sem "hoje", "atualmente" ou "novo". Data só em regi
 - schema e migrations;
 - links para os ADRs.
 
-Inclua o template na lista `FILES` do gerador `module`, com destino em `docs/reference/modules/{{kebabCase name}}.md`.
+Acrescente ao gerador `module` uma action `add` própria, com destino em `docs/reference/modules/{{kebabCase name}}.md`. A lista `FILES` não serve: ela prefixa o template com `plop-templates/module/` e o destino com `src/modules/<m>/`.
 
 **Pronto quando:** `npm run plop module teste` gera a doc junto com o código, e a doc passa no `docs:check`. Desfaça o módulo de teste depois.
 
@@ -383,7 +398,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 - [ ] `npm run ci` passa, com o `docs:check` incluído.
 - [ ] Teste negativo: quebrar um link interno, uma âncora, um `type:` e incluir um `@docs/` no `AGENTS.md`. Cada caso faz o `docs:check` falhar e é desfeito depois.
-- [ ] `npm run plop doc` gera os quatro tipos, e todos passam no `docs:check`.
+- [ ] `npm run plop doc` gera os quatro tipos. Recém-gerados, eles falham só pela regra `scaffold`, e passam no `docs:check` depois de apagados os comentários.
 
 **Conteúdo:**
 

@@ -3,7 +3,8 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 
-const quadrantTypes = {
+// Pasta do quadrante em docs/ → `type:` da página. O gerador `plop doc` usa o mesmo mapa.
+export const quadrantTypes = {
   tutorials: 'tutorial',
   'how-to': 'how-to',
   reference: 'reference',
@@ -52,6 +53,17 @@ export default function remarkDocsRules() {
           'quadrant-type',
         );
       }
+      // As instruções do template (`plop doc`) saem quando a seção é preenchida. Agentes leem a página crua,
+      // e um comentário esquecido vira instrução velha em toda leitura.
+      visit(tree, ['html'], (node) => {
+        if (/<!--(?!\s*markdownlint-)/.test(node.value)) {
+          fail(
+            'Comentário do template sobrando. Preencha a seção e apague o comentário.',
+            node,
+            'scaffold',
+          );
+        }
+      });
     }
 
     if (isAgentFile) {
