@@ -4,7 +4,7 @@ status: accepted
 
 # Documentação em Diátaxis com roteamento para agentes
 
-A documentação serve a humanos e a agentes, mas existe uma vez só. Os humanos leem `docs/`, organizado nos quatro quadrantes do [Diátaxis](https://diataxis.fr/): tutoriais, how-tos, referência e explicação. Os agentes recebem uma camada fina de roteamento (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/` e `.claude/skills/`) que aponta para `docs/` e não tem texto próprio.
+A documentação serve a humanos e a agentes, mas existe uma vez só. Os humanos leem `docs/`, organizado nos quatro quadrantes do [Diátaxis](https://diataxis.fr/): tutoriais, how-tos, referência e explicação. Os agentes recebem uma camada fina de roteamento (`AGENTS.md`, `CLAUDE.md` e `.claude/rules/`) que aponta para `docs/` e não tem texto próprio.
 
 O plano de execução foi concluído e removido. Ele está no histórico do git: `git show d1edeb4:docs/plan/documentacao.md`.
 
@@ -20,9 +20,8 @@ O plano de execução foi concluído e removido. Ele está no histórico do git:
 
 1. O conhecimento de cada módulo fica em `docs/reference/modules/<módulo>.md`: propósito, linguagem ubíqua, contrato público, eventos, invariantes, dependências e schema.
 2. O agente descobre esse arquivo por dois caminhos: a tabela de rotas do `AGENTS.md` ("vai fazer X → leia Y") e uma única regra-ponteiro, `.claude/rules/modules.md`, com `paths: ["src/modules/**"]`. A regra só carrega quando o agente lê um arquivo do módulo.
-3. Convenções de camada: o que dá para verificar vira regra do dependency-cruiser ou do ESLint, com mensagem que cita a doc. O que exige julgamento vira texto em `docs/reference/camadas.md`, com regras-ponteiro por camada. Uma convenção fica num lugar só, nunca nos dois.
-4. Procedimentos: o passo a passo fica em `docs/how-to/`. Os procedimentos frequentes ganham uma skill-ponteiro em `.claude/skills/`, cuja descrição traz o gatilho e cujo corpo aponta para o how-to.
-5. A linguagem ubíqua fica numa seção do doc de cada módulo, perto do código que a usa. O `docs/reference/glossario.md` guarda os termos compartilhados entre módulos e um índice A–Z de todos os termos, com link para o módulo dono.
+3. Convenções de camada: o que dá para verificar vira regra do dependency-cruiser ou do ESLint, com mensagem que cita a doc. O que exige julgamento vira texto em `docs/reference/camadas.md`, com uma regra-ponteiro, `.claude/rules/camadas.md`. Uma convenção fica num lugar só, nunca nos dois.
+4. A linguagem ubíqua fica numa seção do doc de cada módulo, perto do código que a usa. O `docs/reference/glossario.md` guarda os termos compartilhados entre módulos e um índice A–Z de todos os termos, com link para o módulo dono.
 
 ### Formato
 
@@ -62,7 +61,7 @@ O plano de execução foi concluído e removido. Ele está no histórico do git:
 
 - Cada fato tem um endereço em `docs/`. Mudar um fato é editar uma página, e os ponteiros continuam válidos.
 - Um caminho citado que deixa de existir quebra o CI, pelo `docs:check`. Sem ele, os ponteiros apodreceriam em silêncio.
-- O contexto fixo do agente fica pequeno (meta de menos de 200 linhas para o `CLAUDE.md` com o `AGENTS.md` expandido). O resto carrega sob demanda, pelas regras com `paths`, pelas skills e pela leitura das páginas.
-- Agentes que não são o Claude Code leem o `AGENTS.md` e seguem a tabela de rotas, mas não têm as regras-ponteiro nem as skills.
+- O contexto fixo do agente fica pequeno (meta de menos de 200 linhas para o `CLAUDE.md` com o `AGENTS.md` expandido). O resto carrega sob demanda, pelas regras com `paths` e pela leitura das páginas.
+- Agentes que não são o Claude Code leem o `AGENTS.md` e seguem a tabela de rotas, mas não têm as regras-ponteiro.
 - Todo módulo novo nasce com a sua doc, pelo template do `plop module`.
 - O roteamento depende do comportamento do agente e não é verificado no CI. Ele é conferido à mão, com perguntas de teste numa sessão nova, ao trocar de modelo ou atualizar o Claude Code.

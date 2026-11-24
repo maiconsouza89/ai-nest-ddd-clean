@@ -4,9 +4,9 @@ status: accepted
 
 # Ator carregado a cada requisição
 
-O token passa a levar só o `sub`. A cada requisição, o `JwtAuthGuard` monta o `Actor` (id e roles atuais) por meio do port `ActorResolver`. O port fica no `shared`, é implementado pelo `identity` e é ligado no `AppModule`. Assim, mudar uma role ou apagar um usuário vale na requisição seguinte, e não quando o token expirar. É o que a doc oficial do Nest recomenda: não pôr nas claims nada que possa mudar. O preço é uma leitura por PK em cada requisição, por enquanto sem cache.
+O token passa a levar só o `sub`. A cada requisição, o `JwtAuthGuard` monta o `Actor` (id e roles atuais) por meio do port `ActorResolver`. O port fica no `shared`, é implementado pelo `identity` e é ligado no `IdentityAuthModule` (`identity/infra/identity-auth.module.ts`). O `AppModule` só repassa esse módulo para o `AuthModule.forRoot`. Assim, mudar uma role ou apagar um usuário vale na requisição seguinte, e não quando o token expirar. É o que a doc oficial do Nest recomenda: não pôr nas claims nada que possa mudar. O preço é uma leitura por PK em cada requisição, por enquanto sem cache.
 
-O `shared` não importa o `identity`. Só o `AppModule`, que é a raiz de composição, conhece os dois.
+O `shared` não importa o `identity`. Só o `AppModule`, que é a raiz de composição, conhece os dois: ele importa o `IdentityAuthModule` e o entrega ao `AuthModule.forRoot`.
 
 ## Considered Options
 

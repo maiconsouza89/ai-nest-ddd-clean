@@ -52,9 +52,9 @@ Cada alias tem duas saídas, escolhidas por condição:
 - **Barrels (`index.ts`):** encurtariam os imports, mas trazem de volta o risco de ciclo, que no ESM vira `ReferenceError` na carga, e escondem a dependência real (ADR 0003).
 - **Manter os `../../../../`:** funciona, mas 311 imports atravessavam fronteiras com caminhos de até cinco níveis, frágeis a qualquer mudança de pasta.
 
-## Consequências
+## Consequences
 
 - Os scripts `mig:*` e `seed:*` ficam mais longos e dependem de `NODE_OPTIONS=...` na frente, sintaxe de shell POSIX.
 - O gerador do plop produz imports com alias e scripts com a condição, e registra o módulo novo no `app.module.ts` como `#modules/<nome>/...`.
-- A convenção é verificada pelo `npm run arch`: a regra `fronteira-via-alias` barra um `../` que sai do módulo (ou do shared), e a `alias-so-entre-fronteiras` barra um alias que aponta para dentro da própria fronteira. Os specs ficam fora do `arch` (a configuração os exclui), então nos testes a convenção depende de revisão.
+- A convenção é verificada pelo `npm run arch`: a regra `fronteira-via-alias` barra um `../` que sai do módulo (ou do shared), e a `alias-so-entre-fronteiras` barra um alias que aponta para dentro da própria fronteira. O `arch` roda `depcruise src`: não olha o `test/`, e a configuração exclui os specs de `src/`. Nos testes, a convenção depende de revisão.
 - Os arquivos da raiz de `src/` (`app.module.ts`, `app.setup.ts`) não têm alias. Os testes e2e os importam por caminho relativo (`../src/app.module.js`), e isso é intencional.
