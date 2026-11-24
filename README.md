@@ -49,3 +49,5 @@ Uma mudança de comportamento atualiza a página afetada em `docs/`, ou o PR diz
 | [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, testes, operação, autenticação, glossário e uma página por módulo |
 | [docs/adr/](docs/README.md#decisões-adr) | As decisões de arquitetura e o porquê de cada uma |
 | [AGENTS.md](AGENTS.md) | Instruções para agentes de código: armadilhas e rotas para `docs/` |
+
+<!-- teste do CI: job ci com unit e integration pulados -->
