@@ -1,7 +1,8 @@
 # AGENTS.md
 
-<!-- Roteador lido por qualquer agente (ADR 0006). Os fatos ficam em docs/. Aqui ficam só o projeto em
-poucas linhas, o resumo dos comandos de verificação, as armadilhas e os ponteiros. Meta: até 100 linhas.
+<!-- Único arquivo de instruções, lido por qualquer agente e pelo Claude Code (ADRs 0006 e 0007). Os fatos
+ficam em docs/. Aqui ficam só o projeto em poucas linhas, o resumo dos comandos de verificação, as
+armadilhas, a pesquisa de documentação, o fluxo de entrega e os ponteiros. Meta: até 100 linhas.
 Cite caminhos de docs/ em texto simples: o `@caminho` importa o arquivo inteiro em toda sessão. -->
 
 ## Projeto
@@ -33,10 +34,27 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 
 Sempre a latest estável, menos as exceções de `docs/reference/versoes-e-excecoes.md`. Confira o gatilho registrado antes de atualizar um pacote da tabela.
 
+## Context7
+
+Consulte a documentação atual no Context7 (MCP `context7`: `resolve-library-id`, depois `query-docs`) antes de adicionar ou atualizar uma biblioteca, framework ou SDK, e antes de usar uma API dela que o repositório ainda não usa. O conhecimento de treino pode estar velho; o código que já está no repositório mostra a API da versão instalada.
+
+- Ao adicionar ou atualizar, confira a versão estável mais recente e a API atual.
+- Ao migrar de versão ou corrigir um erro específico de biblioteca, leia o guia de migração antes de mudar o código.
+- Sem a biblioteca no Context7, use a documentação oficial na web e diga isso.
+
 ## Definição de pronto
 
 - `npm run ci` passa.
 - Uma mudança de comportamento atualiza a página do quadrante afetado em `docs/`, ou o PR diz por que não precisa.
+
+## Fluxo de entrega
+
+No Claude Code, numa entrega de implementação (código novo ou alterado), antes de reportar como pronta:
+
+1. Rode a skill `/simplify` sobre as mudanças.
+2. Depois rode a skill `/code-review` sobre as mudanças.
+
+Se uma etapa não se aplicar, diga na mensagem final qual foi pulada e por quê.
 
 ## Rotas
 

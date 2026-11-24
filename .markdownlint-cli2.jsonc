@@ -10,7 +10,7 @@
   },
   "overrides": [
     {
-      // O CLAUDE.md começa com `@AGENTS.md` na primeira linha, antes do título.
+      // Um CLAUDE.md ou CLAUDE.local.md começa com `@AGENTS.md` na primeira linha, antes do título (ADR 0007).
       "filter": ["**/CLAUDE.md", "**/CLAUDE.local.md"],
       "config": { "MD041": false },
       "combine": "merge",

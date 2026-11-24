@@ -82,6 +82,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0004: Prettier formata e ESLint com tipos pega bugs, sem sobreposição](adr/0004-lint-e-formatacao.md)
 - [0005: Aliases de import com `imports` do `package.json`](adr/0005-aliases-de-import-por-subpath-imports.md)
 - [0006: Documentação em Diátaxis com roteamento para agentes](adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md)
+- [0007: `AGENTS.md` como único arquivo de instruções](adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md)
 
 ## Fora dos quadrantes
 

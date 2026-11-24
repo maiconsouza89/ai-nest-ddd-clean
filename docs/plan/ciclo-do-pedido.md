@@ -12,7 +12,7 @@ Cada fase usa um how-to que já existe e ainda não foi seguido numa funcionalid
 
 - Cada passo tem **Por quê**, **Faça** e **Pronto quando**.
 - Antes de cada passo, leia as páginas da tabela de rotas do `AGENTS.md` para o assunto. As rotas mais usadas aqui: `docs/reference/modules/orders.md`, `docs/reference/camadas.md`, `docs/how-to/publicar-um-evento-de-integracao.md`, `docs/how-to/paginar-uma-listagem.md`, `docs/how-to/cachear-uma-leitura.md` e `docs/reference/testes.md`.
-- Uma fase só termina com `npm run ci`, `npm run test:int` e `npm run test:e2e` passando, e depois de `/simplify` e `/code-review` sobre as mudanças dela (fluxo de entrega do `CLAUDE.md`).
+- Uma fase só termina com `npm run ci`, `npm run test:int` e `npm run test:e2e` passando, e depois de `/simplify` e `/code-review` sobre as mudanças dela (fluxo de entrega do `AGENTS.md`).
 - Toda mudança de comportamento atualiza a página do módulo afetado em `docs/reference/modules/` e, se surgir termo novo, o `docs/reference/glossario.md`.
 - Ao fim de cada passo, registre um **Como ficou** curto: o que mudou em relação ao "Faça" e o que foi conferido.
 - Legenda: ⬜ não iniciada, 🟡 em andamento, ✅ concluída. Ao começar uma fase, marque 🟡 e preencha **Início**. Marque cada passo (`- [x]`) quando o **Pronto quando** dele for atendido.
