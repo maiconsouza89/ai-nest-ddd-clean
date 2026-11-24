@@ -26,7 +26,9 @@ export class TypeOrm{{pascalCase name}}Repository implements {{pascalCase name}}
       );
       if (res.affected === 0) throw new ConcurrencyError();
     }
-    await this.repo.save({ ...{{pascalCase name}}Mapper.toPersistence({{camelCase name}}), version: next });
+    const row = {{pascalCase name}}Mapper.toPersistence({{camelCase name}});
+    row.version = next;
+    await this.repo.save(row);
   }
 
   async findById(id: string) {

@@ -1,0 +1,43 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
+import { ConcurrencyError } from '#shared/domain/concurrency.error';
+import { start{{pascalCase name}}Database } from '#test/helpers/{{kebabCase name}}-database';
+import { {{pascalCase name}} } from '../../../domain/entities/{{kebabCase name}}.entity.js';
+import { TypeOrm{{pascalCase name}}Repository } from './typeorm-{{kebabCase name}}.repository.js';
+
+describe('TypeOrm{{pascalCase name}}Repository (integração)', () => {
+  let ds: DataSource;
+  let stop: () => Promise<void>;
+  let repo: TypeOrm{{pascalCase name}}Repository;
+
+  beforeAll(async () => {
+    ({ ds, stop } = await start{{pascalCase name}}Database());
+    repo = new TypeOrm{{pascalCase name}}Repository(ds);
+  }, 120_000);
+
+  afterAll(() => stop?.());
+
+  it('salva e busca por id', async () => {
+    const {{camelCase name}} = {{pascalCase name}}.create(crypto.randomUUID(), 'primeiro');
+    await repo.save({{camelCase name}});
+
+    const found = await repo.findById({{camelCase name}}.id);
+    expect(found?.name).toBe('primeiro');
+    expect(found?.version).toBe(1);
+  });
+
+  it('devolve null para id desconhecido', async () => {
+    expect(await repo.findById(crypto.randomUUID())).toBeNull();
+  });
+
+  it('gravar sobre uma versão velha falha com ConcurrencyError', async () => {
+    const {{camelCase name}} = {{pascalCase name}}.create(crypto.randomUUID(), 'primeiro');
+    await repo.save({{camelCase name}});
+    const first = await repo.findById({{camelCase name}}.id);
+    const second = await repo.findById({{camelCase name}}.id);
+
+    await repo.save(first!);
+    await expect(repo.save(second!)).rejects.toThrow(ConcurrencyError);
+  });
+});

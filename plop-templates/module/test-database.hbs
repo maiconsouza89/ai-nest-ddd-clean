@@ -1,0 +1,11 @@
+import { {{pascalCase name}}OrmEntity } from '#modules/{{kebabCase name}}/infra/database/typeorm/entities/{{kebabCase name}}.orm-entity';
+import { Create{{pascalCase name}}Schema{{timestamp}} } from '#modules/{{kebabCase name}}/infra/database/typeorm/migrations/{{timestamp}}-create-{{kebabCase name}}-schema';
+import { Create{{pascalCase name}}Table{{timestamp2}} } from '#modules/{{kebabCase name}}/infra/database/typeorm/migrations/{{timestamp2}}-create-{{kebabCase name}}-table';
+import { startDatabase } from './database.js';
+
+export const start{{pascalCase name}}Database = () =>
+  startDatabase({
+    entities: [{{pascalCase name}}OrmEntity],
+    migrations: [Create{{pascalCase name}}Schema{{timestamp}}, Create{{pascalCase name}}Table{{timestamp2}}],
+    migrationsTableName: '{{snakeCase name}}_migrations',
+  });

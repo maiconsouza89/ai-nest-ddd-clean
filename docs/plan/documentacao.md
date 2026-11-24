@@ -356,8 +356,8 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-23 · **Conclusão:** —
 >
 > - [x] Passo 11: camadas (check primeiro)
-> - [ ] Passo 12: dividir o guia de pesquisa (parcial: Visão geral, Estrutura de pastas, Camadas, Persistência, Módulos independentes, Dependências e contratos, Shared kernel, Autenticação, Agregados, Transações, concorrência e eventos, Paginação, Modelagem do domínio, Infra, Qualidade e Operação)
-> - [ ] Passo 13: how-tos e skills-ponteiro
+> - [x] Passo 12: dividir o guia de pesquisa
+> - [ ] Passo 13: how-tos e skills-ponteiro (parcial: criar um módulo)
 > - [ ] Passo 14: tutoriais
 > - [ ] Passo 15: remover `docs/research/`
 
@@ -513,6 +513,21 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
   Fora do escopo: no desligamento, o `/health/ready` continua 200 até o servidor fechar. Um `gracefulShutdownTimeoutMs` no `TerminusModule`, um pouco maior que o intervalo da sonda, tiraria a instância do tráfego antes. Fica como candidato para quando houver um orquestrador. A página não foi conferida com a app no ar: nenhuma instância respondia na porta 3000, e os containers do compose estavam parados. `/simplify` e `/code-review`: pulados, o passo só mexe em Markdown. Rota nova no `AGENTS.md`, índice e mapa atualizados.
 
+- **Pragmatismo e checklist, e Referências (2026-11-23):** as últimas seções. Com elas, o guia ficou só com ponteiros, e o passo 12 fecha. Nenhuma virou `explanation/pragmatismo.md` nem `how-to/revisar-um-modulo.md`:
+  - **"Nem todo módulo precisa de DDD"** já estava em `explanation/arquitetura.md` ("Nem todo módulo precisa das camadas") e na seção "Estrutura" do catalog. O link do catalog e o do passo 22 do `passo-a-passo.md`, que apontavam para o guia, passaram a apontar para lá;
+  - **"Gerador de módulos" e "Checklist de um módulo novo"** viraram `how-to/criar-um-modulo.md`, que adianta um how-to do passo 13. O resumo do `plopfile.mjs` saiu: o arquivo e a linha do `plop module` em `comandos.md` são a referência. Do checklist ficou só o que nenhum check confere e que vale para um módulo novo. Saíram os itens que o `arch` e o `lint` barram (imports de camada, `abstract class`, fronteiras, ciclos), os que valem para a app inteira e já existem uma vez (`ValidationPipe`, guard global, `helmet`, health, Redis com `noeviction`, variáveis validadas, outbox com `SKIP LOCKED`) e as versões, que estão no `package.json`;
+  - **Referências** virou `reference/leituras.md`, e não uma seção do `docs/README.md`: são 39 links que um agente roteado para o índice não precisa ler. Saíram o "TypeORM 1.0 is here" e o "BullMQ: Repeatable (legado)", que só registravam o contexto da migração de versão.
+
+  O how-to foi seguido num worktree descartável, com um Postgres e um Redis do projeto do compose `ddd-howto-mod` (removido com `down -v`): `plop module shipment`, as migrations dos seis módulos, o seed do identity e o `start:dev`. `POST /v1/shipment` respondeu 401 sem token e `{ id }` com o token do admin. O `GET` devolveu `{ id, name }`, um uuid inexistente deu 404 com `SHIPMENT_NOT_FOUND`, e um corpo vazio deu 400. Dois achados mudaram o gerador:
+  - **Lint:** o repositório gerado falhava no `npm run lint` (`no-misused-spread` no `save`, registrado na seção Transações como fora do escopo). O template passou a atribuir a versão à linha, como o `typeorm-order.repository.ts`;
+  - **Testes de integração:** o gerador não criava o helper nem o int-spec, e o how-to mandava escrevê-los à mão. O `/simplify` apontou que o gerador já sabe as classes das migrations e o nome da tabela de migrations, e que o how-to escrito à mão já errava o nome para um módulo com hífen (`<nome>_migrations` no lugar do snake_case do DataSource). O gerador passou a criar `test/helpers/<nome>-database.ts` e `typeorm-<nome>.repository.int-spec.ts` (salvar e buscar, id desconhecido e `ConcurrencyError` numa versão velha). Ele recusa o nome se o helper já existir.
+
+  Conferido de novo com `plop module price-list`, que separa kebab de snake case: `typecheck`, `lint`, `arch`, `format:check`, os unitários (2) e os de integração (3) passaram. O `docs:links` acusou 403 no `npmjs.com/package/pg-types`, que bloqueia o lychee. É o mesmo link do guia, e a página abre no navegador. Rota "Criar um módulo novo" no `AGENTS.md` no lugar da rota para o guia, índice do `docs/README.md` e mapa do `README.md` atualizados.
+
+  `/simplify` (quatro revisores): saíram a lista do que o gerador cria (fica em `comandos.md` e no terminal), os passos à mão do helper e do int-spec, a regra do 422, a lista do que o `ci` roda, o item "job só chama caso de uso" (o `arch` barra persistência em `infra/jobs`), os itens repetidos entre os passos e o checklist e os que têm how-to próprio (cache, job, fornecedor). O pré-requisito passou a subir também o Redis, que o `start:dev` exige. Ficou de fora um script que gere um módulo num worktree e rode `tsc`, `lint` e os testes nele, para os templates não voltarem a falhar sem ninguém ver: é um check novo, de 30 a 60 s, e fica como candidato para quando os templates mudarem de novo.
+
+  `/code-review`: o gerador não punha o módulo nos loops de migration do setup do zero (`README.md` e `comandos.md`), e quem clonasse o repositório ficava sem as tabelas dele. O `plopfile.mjs` passou a acrescentá-lo aos dois loops e a conferir se acrescentou, como faz com o `app.module.ts`. Um loop fora do padrão faz o gerador parar com "não entrou no loop de migrations", conferido de propósito. A linha `mig:<módulo>:run` de `comandos.md` deixou de listar os módulos à mão. Ajustes de texto: o `code` do 404 em constant case (`PRICE_LIST_NOT_FOUND`), um parágrafo que manda consumidor de evento, cache, job e fornecedor para a página de cada um, a rota de camadas do `AGENTS.md` cobrindo "criar entidade, caso de uso ou repositório" (a rota antiga para o guia fazia isso), e o trecho do `save` no passo 21 do `passo-a-passo.md` sem o spread. Ficaram de fora os dois links tirados de propósito de `leituras.md` e o `evolucao.md` e o `passo-a-passo.md`, que ainda chamam o guia de "guia de referência": o passo 15 os troca quando o guia sair.
+
 ### Passo 13: how-tos e skills-ponteiro
 
 **Por quê:** num how-to, o humano lê o passo a passo. Numa skill, a descrição fica sempre visível para o Claude, e o corpo só carrega quando a skill é usada.
@@ -524,6 +539,10 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 - Cada skill fica em `.claude/skills/<nome>/SKILL.md`. A `description` começa pelo gatilho ("Use ao …"), e o corpo diz "siga `docs/how-to/x.md`; verifique com `npm run …`".
 
 **Pronto quando:** em uma sessão nova, um pedido como "crie um módulo billing" faz o Claude escolher a skill sem que ela seja citada, e o how-to funciona seguido à mão.
+
+**Como ficou (parcial):**
+
+- **Criar um módulo (2026-11-23):** `how-to/criar-um-modulo.md` saiu do passo 12, com a seção "Pragmatismo e checklist" do guia, e foi seguido à mão (ver o passo 12). Falta a skill-ponteiro.
 
 ### Passo 14: tutoriais
 
@@ -596,7 +615,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 ### Fase 3 (por passo)
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
-- [ ] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Parcial, 2026-11-23: Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`; Operação, em `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md`.
+- [x] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Concluído em 2026-11-23: Pragmatismo e checklist, em `explanation/arquitetura.md` e `how-to/criar-um-modulo.md`; Referências, em `reference/leituras.md`; Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`; Operação, em `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.

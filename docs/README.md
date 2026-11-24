@@ -18,6 +18,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 
 ## How-to
 
+- [Como criar um módulo](how-to/criar-um-modulo.md): do `plop module` ao helper dos testes de integração, e o que conferir antes do PR.
 - [Como gerar uma migration](how-to/gerar-uma-migration.md): depois de mudar uma ORM entity, do generate ao helper dos testes de integração.
 - [Como publicar um evento de integração](how-to/publicar-um-evento-de-integracao.md): do evento de domínio à outbox, o teste de contrato e o handler no módulo consumidor.
 - [Como paginar uma listagem](how-to/paginar-uma-listagem.md): do `PaginationQuery` à query com desempate estável, e o cursor para listas grandes.
@@ -51,6 +52,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, em qual pasta, e as regras entre módulos.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.
+- [Leituras](reference/leituras.md): a documentação oficial e os textos de padrões consultados no desenho do projeto.
 
 ### Módulos
 
@@ -75,7 +77,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Guia: módulos com DDD e Clean Architecture](research/modules-ddd-clean-nest.md): agregados, eventos, persistência e o resto do desenho. Vai sendo dividido entre os quadrantes ([plano de documentação](plan/documentacao.md), fase 3).
+- [Guia: módulos com DDD e Clean Architecture](research/modules-ddd-clean-nest.md): só ponteiros para as páginas que receberam cada seção. Sai do repositório no passo 15 do [plano de documentação](plan/documentacao.md).
 - [Planos](plan/): trabalho interno. O [passo a passo](plan/passo-a-passo.md) que montou o projeto do zero, o [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
 
 ## Como escrever uma página

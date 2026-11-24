@@ -653,7 +653,9 @@ if (order.version > 0) {
   const res = await manager.update(OrderOrmEntity, { id: order.id, version: order.version }, { version: next });
   if (res.affected === 0) throw new ConcurrencyError();
 }
-await manager.getRepository(OrderOrmEntity).save({ ...OrderMapper.toPersistence(order), version: next });
+const row = OrderMapper.toPersistence(order);
+row.version = next;
+await manager.getRepository(OrderOrmEntity).save(row);
 ```
 
 - `ConcurrencyError` estende `DomainError` em `shared/domain/` e vira 409 nos filters.
@@ -675,7 +677,7 @@ await manager.getRepository(OrderOrmEntity).save({ ...OrderMapper.toPersistence(
 
 **Faça:**
 
-- `catalog` é um cadastro simples, então não precisa de DDD completo: controller, service e repositório TypeORM, dentro de `modules/catalog/` e com schema `catalog` próprio (ver [Pragmatismo e checklist](../research/modules-ddd-clean-nest.md#pragmatismo-e-checklist)).
+- `catalog` é um cadastro simples, então não precisa de DDD completo: controller, service e repositório TypeORM, dentro de `modules/catalog/` e com schema `catalog` próprio (ver [Nem todo módulo precisa das camadas](../explanation/arquitetura.md#nem-todo-módulo-precisa-das-camadas)).
 - `catalog/contracts/catalog.facade.ts`:
 
 ```ts

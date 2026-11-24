@@ -50,7 +50,7 @@ Leia a página antes de agir no assunto.
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
 | Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md` e `docs/explanation/autenticacao.md` |
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
-| Decidir em qual camada e pasta fica uma classe | `docs/reference/camadas.md` |
+| Criar entidade, caso de uso, repositório ou outra classe, ou decidir em qual camada e pasta ela fica | `docs/reference/camadas.md` |
 | Entender por que o projeto é um monólito modular em camadas | `docs/explanation/arquitetura.md` |
 | Decidir se um objeto entra num agregado ou vira outro módulo | `docs/explanation/agregados.md` |
 | Fazer um módulo usar outro, ou mudar um evento ou uma facade | `docs/explanation/comunicacao-entre-modulos.md` e `docs/reference/camadas.md` |
@@ -68,7 +68,7 @@ Leia a página antes de agir no assunto.
 | Mexer no tracing, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
-| Criar módulo, entidade, caso de uso ou repositório novo | `docs/research/modules-ddd-clean-nest.md` |
+| Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
 | Escrever ou mover documentação | `docs/README.md` |
 | Continuar um plano em andamento | `docs/plan/` |

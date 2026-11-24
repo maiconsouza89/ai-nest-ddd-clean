@@ -10,7 +10,7 @@ Código em `src/modules/catalog/`, registrado no `src/app.module.ts` como `Catal
 
 ## Estrutura
 
-O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as pastas `domain/`, `application/` e `infra/`. É intencional. O módulo só valida campos e não tem regra de negócio, e o guia de pesquisa manda usar CRUD nesse caso e passar para a estrutura completa quando surgir regra ([Nem todo módulo precisa de DDD](../../research/modules-ddd-clean-nest.md#nem-todo-módulo-precisa-de-ddd)). O isolamento vale do mesmo jeito: o módulo exporta só a `CatalogFacade`, de `contracts/`.
+O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as pastas `domain/`, `application/` e `infra/`. É intencional. O módulo só valida campos e não tem regra de negócio, e nesse caso o projeto usa CRUD e passa para a estrutura completa quando surgir regra ([Nem todo módulo precisa das camadas](../../explanation/arquitetura.md#nem-todo-módulo-precisa-das-camadas)). O isolamento vale do mesmo jeito: o módulo exporta só a `CatalogFacade`, de `contracts/`.
 
 ## Linguagem ubíqua
 

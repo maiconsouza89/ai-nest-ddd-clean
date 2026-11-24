@@ -4,6 +4,9 @@ import { quadrantTypes } from './scripts/remark-docs-rules.mjs';
 const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
 const DOCS_INDEX = 'docs/README.md';
+// o setup do zero aplica as migrations de cada módulo num loop escrito nestes arquivos
+const SETUP_DOCS = ['README.md', 'docs/reference/comandos.md'];
+const MIGRATION_LOOP = /(for m in [a-z0-9 -]+)(; do npm run "mig:\$\{m\}:run")/;
 // `@app/source` resolve os aliases `#shared/*` para `src` quando o ts-node carrega o data source
 const TYPEORM_CLI = 'NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm';
 
@@ -27,6 +30,10 @@ const FILES = [
   ['orm-entity.hbs', 'infra/database/typeorm/entities/{{kebabCase name}}.orm-entity.ts'],
   ['mapper.hbs', 'infra/database/typeorm/typeorm-{{kebabCase name}}.mapper.ts'],
   ['typeorm.repository.hbs', 'infra/database/typeorm/typeorm-{{kebabCase name}}.repository.ts'],
+  [
+    'typeorm.repository.int-spec.hbs',
+    'infra/database/typeorm/typeorm-{{kebabCase name}}.repository.int-spec.ts',
+  ],
   ['data-source.hbs', 'infra/database/typeorm/{{kebabCase name}}.data-source.ts'],
   [
     'migration-schema.hbs',
@@ -112,7 +119,10 @@ export default function (plop) {
       const pascal = plop.getHelper('pascalCase')(data.name);
       const dir = `${MODULES_DIR}/${kebab}`;
       const doc = `docs/reference/modules/${kebab}.md`;
-      for (const path of [dir, doc]) if (existsSync(path)) throw new Error(`${path} já existe`);
+      const testDb = `test/helpers/${kebab}-database.ts`;
+      for (const path of [dir, doc, testDb]) {
+        if (existsSync(path)) throw new Error(`${path} já existe`);
+      }
 
       // timestamps das migrations: o do schema vem antes do da tabela
       data.timestamp = Date.now();
@@ -126,6 +136,8 @@ export default function (plop) {
 
       return [
         ...add,
+        // entidades e migrations do módulo para os testes de integração, que não leem a pasta de migrations
+        { type: 'add', path: testDb, templateFile: `${TEMPLATES}/test-database.hbs` },
         // a doc do módulo nasce com ele (ADR 0006) e falha no docs:check até os comentários saírem
         { type: 'add', path: doc, templateFile: 'plop-templates/doc/module.md.hbs' },
         // o docs:check exige cada módulo no índice: entra no fim da lista "Módulos"
@@ -171,12 +183,26 @@ export default function (plop) {
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
           return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;
         },
-        // por último: um índice fora do padrão não impede os scripts de migration
+        ...SETUP_DOCS.map((path) => ({
+          type: 'modify',
+          path,
+          pattern: MIGRATION_LOOP,
+          template: `$1 ${kebab}$2`,
+        })),
+        // por último: um documento fora do padrão não impede os scripts de migration
         () => {
+          const missing = SETUP_DOCS.filter(
+            (path) => !readFileSync(path, 'utf8').match(MIGRATION_LOOP)?.[1].endsWith(` ${kebab}`),
+          );
+          if (missing.length > 0) {
+            throw new Error(
+              `${kebab} não entrou no loop de migrations de ${missing.join(' e ')}: adicione à mão`,
+            );
+          }
           if (!readFileSync(DOCS_INDEX, 'utf8').includes(`(reference/modules/${kebab}.md)`)) {
             throw new Error(`${kebab} não entrou no índice de ${DOCS_INDEX}: adicione à mão`);
           }
-          return `${kebab} listado em ${DOCS_INDEX}: escreva a descrição de uma linha`;
+          return `${kebab} no setup e no índice de ${DOCS_INDEX}: escreva a descrição de uma linha`;
         },
       ];
     },
