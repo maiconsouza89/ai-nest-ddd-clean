@@ -28,7 +28,7 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 | 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ✅ |
 | 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ✅ |
 | 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ✅ |
-| 6. Entrega | Verificação completa, `/simplify`, `/code-review` e este plano apagado | ⬜ |
+| 6. Entrega | Verificação completa, `/simplify`, `/code-review` e este plano apagado | ✅ |
 
 A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que a doc vai citar. As fases 2, 3 e 4 são independentes entre si. A fase 5 depende da 3, porque confere o texto que a 3 escreve.
 
@@ -492,11 +492,11 @@ Em todas as rodadas, o log mostrou `redis connection error`, `cache store error`
 
 ## Fase 6: entrega
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: verificação completa
-> - [ ] Passo 2: `/simplify` e `/code-review`
-> - [ ] Passo 3: apagar este plano
+> - [x] Passo 1: verificação completa
+> - [x] Passo 2: `/simplify` e `/code-review`
+> - [x] Passo 3: apagar este plano
 
 ### Passo 1: verificação completa
 
@@ -504,8 +504,10 @@ Em todas as rodadas, o log mostrou `redis connection error`, `cache store error`
 
 **Pronto quando:**
 
-- [ ] Os quatro comandos passam.
-- [ ] O total de testes é o da linha de base mais os casos acrescentados na fase 1 (a linha de base foi 195 unitários, 79 de integração e 55 e2e).
+- [x] Os quatro comandos passam.
+- [x] O total de testes é o da linha de base mais os casos acrescentados na fase 1 (a linha de base foi 195 unitários, 79 de integração e 55 e2e).
+
+**Como ficou:** rodado duas vezes, antes e depois das correções do passo 2. Nas duas: 200 unitários (195 + 5), 80 de integração (79 + 1) e 58 e2e (55 + 3), e o `db:setup` com "No migrations are pending" nos 5 módulos. O caso do `null` no PATCH, do passo 2, entrou num teste e2e que já existia, e por isso o total não mudou.
 
 ### Passo 2: `/simplify` e `/code-review`
 
@@ -515,7 +517,22 @@ Em todas as rodadas, o log mostrou `redis connection error`, `cache store error`
 
 **Pronto quando:**
 
-- [ ] As duas skills rodaram, e cada achado foi corrigido ou descartado com o motivo registrado.
+- [x] As duas skills rodaram, e cada achado foi corrigido ou descartado com o motivo registrado.
+
+**Como ficou:**
+
+- **`/simplify`** (reuso, simplificação, eficiência e altitude):
+  - Corrigido: o `app.module.ts` usa o `ENV_FILES` e o `ignoresEnvFiles` do `load-env-files.ts`, e a regra deixou de existir em duas cópias.
+  - Corrigido: a checagem de 404 voltou para o teste de validação do catálogo, e o teste do PATCH cria o produto com o `seedProduct`.
+  - Corrigido: o JSDoc do `loadEnvFiles` ficou mais curto.
+  - Descartado: tirar o trim do `products.service.ts`. O passo 2 da fase 1 manda mantê-lo, para quem não passa pelo HTTP.
+  - Descartado: a eficiência não achou nada material.
+- **`/code-review`:**
+  - Corrigido: o cadastro com nome só de espaços passou a responder 400, e o `autenticacao.md` ainda prometia 422 `INVALID_NAME`. O `autenticacao.md` e o `identity.md` foram atualizados.
+  - Corrigido, embora já existisse antes: `PATCH /v1/products/:id` com `name` ou `priceCents` nulo dava 500. O `@IsOptional` virou `@ValidateIf` (campo ausente), o caso e2e falhou com 500 antes da correção e passa com 400, e o `catalog.md` registra o 400.
+  - Descartado: o `productId` em maiúsculas, que recebe `PRODUCT_NOT_FOUND`. Já existia antes, com o `@IsString`, e fica fora desta auditoria.
+  - Descartado: o `isUUID` mais estrito que a coluna `uuid`. Segue o padrão das facades do identity e do `ParseUUIDPipe`, e todos os ids gerados e semeados são RFC.
+  - Descartado: o trim duplicado no catálogo. É o mesmo caso do `/simplify`.
 
 ### Passo 3: apagar este plano
 
