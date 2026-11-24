@@ -22,8 +22,8 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 
 | Fase | O que entrega | Status |
 | --- | --- | --- |
-| 0. Preparação | Branch e linha de base verde | ⬜ |
-| 1. Correções no código | Os três bugs, os adapters no lugar certo e os comentários corrigidos | ⬜ |
+| 0. Preparação | Branch e linha de base verde | ✅ |
+| 1. Correções no código | Os três bugs, os adapters no lugar certo e os comentários corrigidos | ✅ |
 | 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ⬜ |
 | 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ⬜ |
 | 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ⬜ |
@@ -36,9 +36,9 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 ## Fase 0: preparação
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: branch e linha de base
+> - [x] Passo 1: branch e linha de base
 
 ### Passo 1: branch e linha de base
 
@@ -52,20 +52,22 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git branch --show-current` mostra `fix/docs-vs-codigo`.
-- [ ] `npm run ci` passa.
+- [x] `git branch --show-current` mostra `fix/docs-vs-codigo`.
+- [x] `npm run ci` passa.
+
+**Como ficou:** branch criada a partir da `main` (`131ce7f`). O `npm run ci` passou com 195 testes unitários e nenhuma violação do dependency-cruiser.
 
 ---
 
 ## Fase 1: correções no código
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: `productId` malformado devolve 400
-> - [ ] Passo 2: trim antes da validação de tamanho
-> - [ ] Passo 3: DataSources da CLI ignoram o `.env` em produção
-> - [ ] Passo 4: adapters do identity e do inventory em `infra/adapters/`
-> - [ ] Passo 5: comentários de código desatualizados
+> - [x] Passo 1: `productId` malformado devolve 400
+> - [x] Passo 2: trim antes da validação de tamanho
+> - [x] Passo 3: DataSources da CLI ignoram o `.env` em produção
+> - [x] Passo 4: adapters do identity e do inventory em `infra/adapters/`
+> - [x] Passo 5: comentários de código desatualizados
 
 ### Passo 1: `productId` malformado devolve 400
 
@@ -80,9 +82,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `npm run test:e2e -- orders` passa, com o caso novo devolvendo 400.
-- [ ] O `src/modules/catalog/typeorm-catalog.facade.int-spec.ts` tem um caso em que o `pricesOf(['abc', <uuid existente>])` devolve só o uuid existente, sem lançar erro, e `npm run test:int -- typeorm-catalog.facade` passa.
-- [ ] A página do orders cita o 400.
+- [x] `npm run test:e2e -- orders` passa, com o caso novo devolvendo 400.
+- [x] O `src/modules/catalog/typeorm-catalog.facade.int-spec.ts` tem um caso em que o `pricesOf(['abc', <uuid existente>])` devolve só o uuid existente, sem lançar erro, e `npm run test:int -- typeorm-catalog.facade` passa.
+- [x] A página do orders cita o 400.
+
+**Como ficou:** o caso e2e novo falhou com 500 antes da correção e passou com 400 depois (18 de 18). O caso de integração também confere que `pricesOf(['abc'])` devolve `[]` (3 de 3). Além do orders, o `catalog.md` passou a dizer que o `pricesOf` deixa de fora os ids que não são uuid.
 
 ### Passo 2: trim antes da validação de tamanho
 
@@ -96,9 +100,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] Um teste de unidade do decorator cobre string com espaços, string só de espaços e valor que não é string.
-- [ ] `npm run test:e2e -- catalog` tem o caso `name: "   "` devolvendo 400, no `POST` e no `PATCH`.
-- [ ] `npm run test:e2e -- auth` tem o caso de cadastro com 100 caracteres e espaços nas pontas devolvendo 201, com o nome salvo sem os espaços.
+- [x] Um teste de unidade do decorator cobre string com espaços, string só de espaços e valor que não é string.
+- [x] `npm run test:e2e -- catalog` tem o caso `name: "   "` devolvendo 400, no `POST` e no `PATCH`.
+- [x] `npm run test:e2e -- auth` tem o caso de cadastro com 100 caracteres e espaços nas pontas devolvendo 201, com o nome salvo sem os espaços.
+
+**Como ficou:** o decorator ficou em `src/shared/infra/http/trim.decorator.ts`, com o spec ao lado (3 casos). Sem o `@Trim()` nos DTOs, os três casos e2e novos falharam; com ele, `catalog` e `auth` passaram (27 de 27). O caso do `auth` confere o nome direto em `identity.users`, porque nenhuma resposta da API devolve o nome. `typecheck` e `arch` passaram.
 
 ### Passo 3: DataSources da CLI ignoram o `.env` em produção
 
@@ -118,10 +124,12 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] Um teste de unidade da função mostra que, com `NODE_ENV=production`, nenhum arquivo é lido, e que, fora de produção, uma variável que já está no ambiente não é sobrescrita.
-- [ ] `git grep -n "config({ path" -- src plop-templates` não acha nada.
-- [ ] `npm run db:setup` roda sem erro, e cada módulo diz "No migrations are pending".
-- [ ] `npm run plop module <nome-de-teste>` gera um DataSource que usa a função. Apague o módulo de teste depois, com `git checkout` e `git clean` só nos arquivos gerados.
+- [x] Um teste de unidade da função mostra que, com `NODE_ENV=production`, nenhum arquivo é lido, e que, fora de produção, uma variável que já está no ambiente não é sobrescrita.
+- [x] `git grep -n "config({ path" -- src plop-templates` não acha nada.
+- [x] `npm run db:setup` roda sem erro, e cada módulo diz "No migrations are pending".
+- [x] `npm run plop module <nome-de-teste>` gera um DataSource que usa a função. Apague o módulo de teste depois, com `git checkout` e `git clean` só nos arquivos gerados.
+
+**Como ficou:** a função ficou em `src/shared/infra/config/load-env-files.ts` e recebe o `processEnv` e os caminhos como parâmetros opcionais, para o teste usar arquivos temporários sem tocar no `process.env`. A opção `processEnv` do `dotenv` foi conferida nos tipos da versão instalada (18.0.10). O `dotenv` continua nas dependências, porque a função o usa. Conferido também na prática: com `NODE_ENV=production` e sem `DATABASE_URL` no ambiente, o `mig:catalog:run` falha na validação em vez de ler o `.env`. O módulo gerado pelo `plop` (`zzteste`) passou no `typecheck`. Rodar a migration dele, o que o passo não pedia, criou o schema e a tabela de migrations no banco do docker-compose; as duas migrations foram revertidas e a tabela apagada, e o banco ficou como antes. O `variaveis-de-ambiente.md` e o `adicionar-uma-variavel-de-ambiente.md` passaram a citar a função.
 
 ### Passo 4: adapters do identity e do inventory em `infra/adapters/`
 
@@ -138,8 +146,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "infra/typeorm-actor-resolver\|infra/typeorm-user-directory\|infra/inventory-facade" -- src test docs` não acha nada.
-- [ ] `npm run typecheck`, `npm run arch` e `npm test` passam.
+- [x] `git grep -n "infra/typeorm-actor-resolver\|infra/typeorm-user-directory\|infra/inventory-facade" -- src test docs` não acha nada.
+- [x] `npm run typecheck`, `npm run arch` e `npm test` passam.
+
+**Como ficou:** os quatro arquivos foram movidos com `git mv`, e os imports relativos de dentro deles subiram um nível. O `git grep` só acha os caminhos antigos neste plano, que os cita de propósito. Nenhuma página de `docs/` citava os caminhos. `typecheck`, `arch` e `npm test` (200 testes) passaram.
 
 ### Passo 5: comentários de código desatualizados
 
@@ -154,10 +164,12 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "passo 18" -- src docs` não acha nada.
-- [ ] `git grep -n "ligado no .AppModule" -- src .dependency-cruiser.js` não acha nada.
-- [ ] `npm run ci` passa.
-- [ ] `npm run test:int` e `npm run test:e2e` passam (fecham a fase 1).
+- [x] `git grep -n "passo 18" -- src docs` não acha nada.
+- [x] `git grep -n "ligado no .AppModule" -- src .dependency-cruiser.js` não acha nada.
+- [x] `npm run ci` passa.
+- [x] `npm run test:int` e `npm run test:e2e` passam (fecham a fase 1).
+
+**Como ficou:** os quatro comentários e a regra do dependency-cruiser foram reescritos. O `git grep "passo 18"` não acha nada em `src`. Em `docs`, só acha a ADR 0004, que a fase 4 corrige, e este plano. Fechamento da fase: `npm run ci` passou com 200 testes unitários (195 + 3 do `Trim` + 2 do `loadEnvFiles`), `npm run test:int` com 80 (79 + 1) em 3 min 54 s, e `npm run test:e2e` com 58 (55 + 3).
 
 ---
 
