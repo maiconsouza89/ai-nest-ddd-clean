@@ -28,6 +28,13 @@ Mudanças adiadas de propósito, cada uma com a condição que a destrava. Os pa
 | Um fornecedor real instável, com tráfego suficiente para que vários segundos de timeout por requisição esgotem o pool | Circuit breaker na chamada ao fornecedor (por exemplo, `opossum` ou `cockatiel`): passado um limite de falhas, para de chamar por um tempo e falha na hora | [Serviços externos](../explanation/servicos-externos.md#circuit-breaker-quando-houver-tráfego) |
 | Uma listagem crescer sem limite, passar a ser lida por rolagem infinita, ou as páginas altas ficarem lentas | Paginação por cursor (keyset): a rota recebe `after` no lugar de `page`, e a resposta devolve o cursor da próxima página no lugar do `total` | [Como paginar uma listagem](../how-to/paginar-uma-listagem.md#lista-grande-ou-rolagem-infinita-cursor) |
 
+## CI
+
+| Condição | O que fazer | Contexto |
+| --- | --- | --- |
+| Os minutos de CI pesarem no custo ou na fila | Fail-fast entre jobs: `unit` e `integration` com `needs: check`, para um erro de lint ou de tipo não subir containers. O resultado dos testes passa a sair depois do `check`, e não junto dele | [Comandos](comandos.md#ci). Alternativas piores: `gh run cancel` quando um job falha (exige `actions: write`), `--bail` (esconde as outras falhas) e `fail-fast` na matriz (perde qual versão do Node falhou) |
+| Uma migration nova chegar à `main` sem entrar no `test/helpers/<módulo>-database.ts`, ou o gatilho `**/migrations/**` rodar a suíte de integração sem proveito | Uma lista única de migrations por módulo (por exemplo, `migrations/index.ts` com o array em ordem), importada pelo `*.data-source.ts` e pelo helper. Uma migration esquecida passa a quebrar também o `mig:<módulo>:run`, e o `--changed` a enxerga por import. Depois, tirar `**/migrations/**` do `forceRerunTriggers` | Os data sources carregam as migrations por glob, mas os testes de integração recebem a lista explícita do helper. Uma migration que não entra no helper roda os 16 int-specs pelo gatilho sem que nenhum a aplique ([Testes](testes.md#só-os-testes-afetados), [Como gerar uma migration](../how-to/gerar-uma-migration.md)) |
+
 ## Agentes de código
 
 | Condição | O que fazer | Contexto |

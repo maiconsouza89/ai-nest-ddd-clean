@@ -14,7 +14,7 @@ O teste `test/primeiro-pedido.e2e-spec.ts` segue os mesmos passos, na mesma orde
 
 ## Pré-requisitos
 
-- Node 22.13 ou superior e Docker ([Comandos](../reference/comandos.md#requisitos)).
+- Node 22.22.3 ou superior e Docker ([Comandos](../reference/comandos.md#requisitos)).
 - `curl` e um shell bash ou zsh.
 - Nada rodando nas portas 3000, 5432 e 6379.
 - Um ambiente limpo. Se você já subiu o projeto ou rodou os testes e2e, que gravam no mesmo banco, siga antes [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md) até o passo 2.

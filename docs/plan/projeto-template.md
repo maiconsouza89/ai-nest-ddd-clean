@@ -14,7 +14,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | Documentação presa aos exemplos | Fica como está neste plano. O how-to de remoção lista o que quebra. Descolar a documentação dos exemplos é trabalho futuro |
 | CI em PR | `check` (typecheck, lint, format, docs e arch) no projeto inteiro. `unit` e `integration` com `vitest --changed origin/main`. PR só de Markdown pula os testes |
 | CI na `main` | Tudo inteiro, como rede de segurança contra o que o grafo de imports não enxerga |
-| Matriz do Node | `unit` em 22.13 e na versão do `.nvmrc`. `check` e `integration` só no `.nvmrc` |
+| Matriz do Node | `unit` em 22.22.3 (mínimo do `engines`, que subiu de 22.13 em 2026-11-24) e na versão do `.nvmrc`. `check` e `integration` só no `.nvmrc` |
 | E2E no CI | Fora: depende do docker-compose |
 | Termos | "Verificar o e-mail" e "código de verificação" (`verifyEmail`, `VerificationCode`). "Confirmar" já é do orders e do notifications |
 | Login sem verificação | Recusado com `EMAIL_NOT_VERIFIED` |
@@ -43,7 +43,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 
 | Fase | O que entrega | Status |
 | --- | --- | --- |
-| 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | ⬜ |
+| 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | 🟡 |
 | 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ⬜ |
 | 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | ⬜ |
 
@@ -53,10 +53,10 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 ## Fase 1: CI
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 1: Vitest pronto para o `--changed`
-> - [ ] Passo 2: workflow do GitHub Actions
+> - [x] Passo 1: Vitest pronto para o `--changed`
+> - [x] Passo 2: workflow do GitHub Actions
 > - [ ] Passo 3: documentação e primeira execução no GitHub
 
 ### Passo 1: Vitest pronto para o `--changed`
@@ -76,6 +76,16 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Numa branch que só muda um `.md`, `npx vitest run --project unit --changed main --passWithNoTests` termina com código 0 sem rodar testes.
 - `npm run ci` passa.
 
+**Como ficou:**
+
+- A lista parte de `configDefaults.forceRerunTriggers` (no Vitest 5.1 é `**/package.json` e `**/{vitest,vite}.config.*`) em vez de repetir os padrões.
+- O `test/setup-env.ts` ficou fora: o Vitest já trata o `setupFiles` como gatilho (conferido: mudar só ele seleciona os 37 unitários sem estar na lista). Os seeds não têm teste. O `ENV_FILES` só é lido pelo `load-env-files.spec.ts`, que usa arquivos temporários. As entidades do TypeORM entram por import nos data sources e nos helpers, não por glob. Nada mais entrou.
+- O catalog não tem teste unitário (só `typeorm-catalog.facade.int-spec.ts`). Mudando `typeorm-catalog.facade.ts`, o `unit` seleciona zero arquivos e o `int` só o int-spec do catalog. Para provar a seleção com testes reais: mudando `refresh-token.entity.ts`, o `unit` roda 3 de 37 arquivos, todos do identity.
+- Migration nova em `identity/.../migrations/` seleciona os 16 de 16 int-specs. PR só de `.md` termina com "No affected test files found" e código 0.
+- Conferido num worktree descartável, sem commits: a config nova entrou com `git update-index --assume-unchanged`, porque com ela alterada (ou com uma config com outro nome) o Vitest roda tudo.
+- Corrigido no `/code-review`: `.env.example`, `docker-compose.yml` e `.github/workflows/**` sem o prefixo `**/` nunca casavam, porque o Vitest compara com o caminho absoluto. Com o prefixo, mudar cada um deles, o `tsconfig.json`, o `package-lock.json` ou uma migration seleciona os 37 unitários. A regra do `**/` ficou no comentário da config e em `testes.md`.
+- `npm run ci` passa.
+
 ### Passo 2: workflow do GitHub Actions
 
 **Por quê:** jobs separados devolvem o resultado do `check` e do `unit` antes da integração, que sobe containers e é a mais lenta. Um job que falha é repetido sozinho. O filtro de PR só de Markdown fica num job, e não no gatilho do workflow, para os checks obrigatórios continuarem aparecendo num PR de docs.
@@ -85,7 +95,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - `.github/workflows/ci.yml`, disparado em `push` na `main` e em `pull_request`, com `concurrency` por branch que cancela a execução anterior do mesmo PR.
 - Job `changes`: compara o PR com a `main` (`git diff --name-only origin/main...HEAD`) e expõe uma saída `code` que é falsa quando todos os arquivos alterados são `**/*.md` ou estão em `docs/`. Prefira um passo de shell a uma action de terceiros.
 - Job `check`: `npm ci` e `npm run ci` sem os unitários. Se for preciso, crie um script `ci:static` com typecheck, lint, format:check, docs:check e arch, e faça o `ci` chamá-lo, para a lista não ficar duplicada.
-- Job `unit`: matriz com `22.13` e a versão do `.nvmrc`. Em PR, `npx vitest run --project unit --changed origin/main --passWithNoTests`. Na `main`, `npm test`. Pulado quando `changes.code` é falso.
+- Job `unit`: matriz com o mínimo do `engines` e a versão do `.nvmrc`. Em PR, `npx vitest run --project unit --changed origin/main --passWithNoTests`. Na `main`, `npm test`. Pulado quando `changes.code` é falso.
 - Job `integration`: Node do `.nvmrc`. Em PR, `npx vitest run --project int --changed origin/main --passWithNoTests`. Na `main`, `npm run test:int`. Pulado quando `changes.code` é falso.
 - Checkout com `fetch-depth: 0` nos jobs que usam o `--changed`. `actions/setup-node` com `cache: npm` e `node-version-file: .nvmrc` (ou a versão da matriz).
 - Use a versão estável mais recente de cada action, conferida na documentação oficial, e fixe pela tag maior (`@vN`).
@@ -95,13 +105,25 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - O arquivo passa no `actionlint` (`docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`).
 - `npm run ci` passa, e o `ci` local continua rodando as mesmas verificações de antes.
 
+**Como ficou:**
+
+- `actions/checkout@v7` e `actions/setup-node@v7`, as maiores estáveis em 2026-11-24 (v7.0.1 e v7.1.0, conferidas nas releases do GitHub; o Context7 lista o checkout até a v7).
+- `ci:static` criado. O `ci` passou a ser `ci:static && npm test`: as mesmas verificações, com o `arch` agora antes dos unitários. A linha do `ci` em `docs/reference/comandos.md` foi ajustada já neste passo, porque citava a ordem antiga. O resto da documentação fica para o passo 3.
+- A base do diff é `HEAD^1`, e não `origin/main`: em PR o checkout é o merge do PR na base, e o primeiro pai dele é a ponta da base. Com isso o checkout usa `fetch-depth: 2`, e não o histórico inteiro, e funciona também num PR empilhado. Os argumentos ficam numa variável só (`VITEST_ARGS`), vazia fora de PR, e cada job roda um passo só: `npm test -- ...` e `npm run test:int -- ...`, reaproveitando os scripts. Na `main`, o `changes` não faz checkout e sai com `code=true`. (Ajustes do `/simplify`; a conferir nos PRs de teste do passo 3.)
+- A matriz do `unit` usa `include` com `node-version` (`22.22.3`) numa entrada e `node-version-file` (`.nvmrc`) na outra: a chave ausente vira string vazia, e o `setup-node` usa a outra. O nome do job é `unit (Node 22.22.3)` ou `unit (Node .nvmrc)`.
+- `engines.node` subiu de `>=22.13` para `>=22.22.3`, com o ok do dono, depois do `/code-review`: o OpenTelemetry pede `>=22.15`, e o testcontainers e o `@nestjs/schematics` pedem até `^22.22.3`. O `npm ci` só avisa (EBADENGINE), e um job verde em 22.13 sugeria um suporte que não existe. README, `comandos.md` e o tutorial foram junto. Isso cumpre a condição da linha do `module.register` em `evolucoes-com-gatilho.md`, que fica para um passo à parte. Os unitários em 22.22.3 não rodaram localmente (o download do Node foi bloqueado): a primeira prova é o job da matriz no passo 3.
+- O filtro do job `changes` é um `grep -vE '\.md$|^docs/'` sobre o diff: só `.md`/`docs/` dá `false`; qualquer outro arquivo, inclusive `.github/workflows/ci.yml`, dá `true`. Fora de PR, `true` sempre.
+- `permissions: contents: read` no workflow inteiro. O grupo do `concurrency` é o número do PR ou, na `main`, o `run_id` (ajuste do `/code-review`): com um grupo só para a `main`, uma terceira execução descartaria a pendente, e o `head_ref` misturava PRs de forks com o mesmo nome de branch.
+- Sem fail-fast entre jobs, de propósito: todos os resultados saem de uma vez, e só o `cancel-in-progress` corta uma execução. A decisão, as alternativas e o gatilho para rever ficaram na seção "CI" de `docs/reference/evolucoes-com-gatilho.md`.
+- actionlint 1.7.12 sem erros, Prettier ok e `npm run ci` passa.
+
 ### Passo 3: documentação e primeira execução no GitHub
 
 **Por quê:** o comportamento só se prova no GitHub. A documentação precisa dizer o que roda em PR e na `main`, para ninguém estranhar um PR verde que não rodou um teste.
 
 **Faça:**
 
-- `docs/reference/comandos.md`: seção "CI", com os jobs, o que cada um roda em PR e na `main`, o filtro de Markdown e a lista do `forceRerunTriggers`.
+- `docs/reference/comandos.md`: seção "CI", com os jobs, o que cada um roda em PR e na `main`, o filtro de Markdown, a lista do `forceRerunTriggers` e a ausência de fail-fast entre jobs, com link para a linha de `docs/reference/evolucoes-com-gatilho.md`.
 - `docs/reference/testes.md`: o que o `--changed` enxerga, o que ele não enxerga e o que fazer ao criar um arquivo carregado por glob (acrescentar ao `forceRerunTriggers`).
 - Com o ok do dono: crie o remote `maiconsouza89/ai-nest-ddd-clean`, faça push da `main` e abra os três PRs de teste abaixo. Feche-os sem merge depois de conferir.
 
@@ -112,6 +134,15 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Um PR que muda só um arquivo do catalog roda no `unit` só os testes do catalog. Confira no log do job.
 - Um PR que acrescenta uma migration vazia roda todos os testes de integração.
 - `npm run docs:check` passa.
+
+**Como ficou (parte local):**
+
+- `docs/reference/comandos.md`: seção "CI" com a tabela dos jobs (PR, `main` e Node), o filtro de Markdown, a suíte inteira pelo `forceRerunTriggers`, a falta de fail-fast com link para `evolucoes-com-gatilho.md#ci` e o que fica fora do CI (e2e e `docs:links`).
+- `docs/reference/testes.md`: seção "Só os testes afetados", com o que o `--changed` enxerga, o que não enxerga e o que fazer com um arquivo novo carregado por glob.
+- Conferido num worktree descartável antes de escrever: o `--changed` segue imports por alias `#...` (mudar `money.vo.ts` seleciona os specs do orders), mas não um import usado só como tipo (mudar `catalog.facade.ts` não seleciona o `catalog-price.adapter.spec.ts`, porque a `CatalogFacade` só anota tipos lá). Isso ficou registrado em `testes.md`, com o `typecheck` do `check` como rede.
+- `npm run docs:check` e o Prettier passam.
+- Achado do `/simplify`, com o ok do dono: o gatilho `**/migrations/**` fica, mas não prova que a migration foi testada, porque os int-specs recebem a lista do helper. A correção de fundo ficou em `evolucoes-com-gatilho.md` (seção "CI"). `.env.example`, `docker-compose.yml` e os workflows continuam na lista.
+- Com o ok do dono: push da `main` como está, e este branch num PR, que é a primeira execução do workflow.
 
 ---
 
