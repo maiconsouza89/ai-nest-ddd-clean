@@ -12,7 +12,7 @@ Todas são `POST`, públicas e com rate limit próprio, por IP. Um erro de domí
 
 | Rota | Corpo | Sucesso | Erros | Limite |
 | --- | --- | --- | --- | --- |
-| `/v1/auth/register` | `name` (até 100), `email` (até 254), `password` (8 a 128) | 201 `{ id }` | 409 `EMAIL_ALREADY_IN_USE`, 422 `INVALID_EMAIL` ou `INVALID_NAME` | 10 por minuto |
+| `/v1/auth/register` | `name` (1 a 100, sem contar os espaços das pontas), `email` (até 254), `password` (8 a 128) | 201 `{ id }` | 400 de validação, inclusive para um `name` vazio, só de espaços ou longo demais; 409 `EMAIL_ALREADY_IN_USE`; 422 `INVALID_EMAIL` | 10 por minuto |
 | `/v1/auth/login` | `email`, `password` (até 128) | 200 `{ accessToken, expiresIn, refreshToken }` | 401 `INVALID_CREDENTIALS` | 5 por minuto |
 | `/v1/auth/refresh` | `refreshToken` | 200 `{ accessToken, expiresIn, refreshToken }`, um par novo | 401 `INVALID_REFRESH_TOKEN` | 10 por minuto |
 | `/v1/auth/logout` | `refreshToken` | 204, sempre | — | 10 por minuto |

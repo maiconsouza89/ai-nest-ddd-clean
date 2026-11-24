@@ -53,7 +53,7 @@ Nenhum.
 | Regra | Erro |
 | --- | --- |
 | O e-mail tem formato válido e até 254 caracteres | `INVALID_EMAIL` |
-| O nome tem de 1 a 100 caracteres, sem contar os espaços nas pontas | `INVALID_NAME` |
+| O nome tem de 1 a 100 caracteres, sem contar os espaços nas pontas. Pelo HTTP, o DTO barra antes, com 400 de validação | `INVALID_NAME` |
 | O e-mail é único. O caso de uso confere antes, e o `UNIQUE` do banco resolve a corrida | `EMAIL_ALREADY_IN_USE` |
 | O register não concede roles | — |
 | E-mail desconhecido e senha errada dão o mesmo erro | `INVALID_CREDENTIALS` |

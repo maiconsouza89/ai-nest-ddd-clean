@@ -72,7 +72,7 @@ describe('Catalog (e2e)', () => {
     await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
   });
 
-  it('rejeita nome só de espaços na atualização (400)', async () => {
+  it('rejeita nome só de espaços e campos nulos na atualização (400)', async () => {
     const admin = await registerAdmin(app);
     const productId = await seedProduct(app, 100);
     await request(server())
@@ -80,5 +80,8 @@ describe('Catalog (e2e)', () => {
       .set(admin)
       .send({ name: '   ' })
       .expect(400);
+    for (const body of [{ name: null }, { priceCents: null }]) {
+      await request(server()).patch(`/v1/products/${productId}`).set(admin).send(body).expect(400);
+    }
   });
 });
