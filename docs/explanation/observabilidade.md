@@ -24,7 +24,7 @@ A auto-instrumentação funciona trocando o módulo carregado por uma versão in
 
 No ESM, a interceptação do `require` não basta. O `tracing.ts` registra o hook `@opentelemetry/instrumentation/hook.mjs` com `module.register` antes de iniciar o SDK. Sem ele, o que o código importa direto (como o `ioredis`) e o `express` ficam sem spans, e nada falha nem avisa.
 
-O mesmo motivo mantém o `tracing.ts` com poucos imports: tudo o que ele importa carrega antes do hook e fica sem instrumentação. Ele também lê o `.env` por conta própria, porque roda antes do `ConfigModule`, e sem isso as variáveis `OTEL_*` escritas no `.env` seriam ignoradas.
+O mesmo motivo mantém o `tracing.ts` com poucos imports: tudo o que ele importa carrega antes do hook e fica sem instrumentação. Ele também lê o `.env` por conta própria, porque roda antes do `ConfigModule`, e sem isso as variáveis `OTEL_*` escritas no `.env` seriam ignoradas. O `NodeSDK` também liga os exporters de métricas e de logs, que o projeto não usa: eles ficam em `none` pelo ambiente, e não no código ([Variáveis de ambiente](../reference/variaveis-de-ambiente.md#tracing-opentelemetry)).
 
 ### O trace atravessa a outbox e as filas
 

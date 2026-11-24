@@ -107,3 +107,7 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans pendentes |
 
 Até a fase 3, o servidor aceita requisições e o `/health/ready` responde 200. Não há atraso de desligamento: o `gracefulShutdownTimeoutMs` do Terminus fica no padrão, `0`.
+
+Na imagem Docker, o PID 1 é o `tini` (`ENTRYPOINT` do `Dockerfile`), que repassa o sinal ao node. Com o node como PID 1, o kernel ignora o sinal que o Nest reenvia a si mesmo no fim, porque o PID 1 não tem handler padrão. Se sobrar um handle aberto, o container só sai no `SIGKILL` da plataforma, com código 137. Com o `tini`, ele sai com 143, término por `SIGTERM`. O passo a passo está em [Como fazer o deploy](../how-to/fazer-o-deploy.md).
+
+Com `OTEL_METRICS_EXPORTER` ou `OTEL_LOGS_EXPORTER` no padrão (`otlp`) e sem coletor, a fase 4 espera o timeout da exportação, uns 8 s, no `TracingShutdown`. Sem coletor, deixe os dois em `none` ([Variáveis de ambiente](variaveis-de-ambiente.md#tracing-opentelemetry)).

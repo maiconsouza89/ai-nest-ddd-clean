@@ -1,4 +1,48 @@
+# Env dos serviços do profile `prod`, que testam a imagem de produção localmente: o mínimo para a
+# validação passar. Os valores são só locais; em produção, cada um vem do ambiente da plataforma.
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: so-local-nao-use-em-producao-0123456789
+  SMTP_URL: smtp://mailpit:1025
+  EMAIL_FROM: App <no-reply@example.com>
+  # sem coletor, os três em none (docs/reference/variaveis-de-ambiente.md)
+  OTEL_TRACES_EXPORTER: none
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+
 services:
+  # Profile `prod`: roda as migrations da imagem e depois sobe a app, na ordem do deploy. Fora do `up`
+  # de sempre. Como usar: docs/how-to/fazer-o-deploy.md#testar-a-imagem-localmente
+  migrate:
+    profiles: [prod]
+    build: .
+    image: ai-nest-ddd-clean:local
+    command: ['npm', 'run', 'db:migrate:prod']
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Mesma porta do start:dev, de propósito: com ele no ar, este não sobe, em vez de duas instâncias
+  # disputarem as filas do BullMQ no mesmo Redis
+  app:
+    profiles: [prod]
+    image: ai-nest-ddd-clean:local
+    ports:
+      - '127.0.0.1:3000:3000'
+    environment: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
   postgres:
     image: postgres:19
     environment:

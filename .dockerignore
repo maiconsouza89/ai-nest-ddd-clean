@@ -1,0 +1,10 @@
+# Lista de permitidos: tudo fica fora do contexto do build, menos o que está abaixo. Assim `.env`,
+# `.git`, `node_modules` e `dist` locais nunca entram na imagem. Um arquivo novo que o build precise entra aqui.
+*
+!src
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!nest-cli.json
+!scripts/run-scripts.mjs

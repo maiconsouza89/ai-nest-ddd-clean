@@ -43,12 +43,12 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-24
 >
-> - [ ] Passo 1: scripts de migration a partir do `dist/`
-> - [ ] Passo 2: `plop module` gera o `mig:<nome>:run:prod`
-> - [ ] Passo 3: `Dockerfile` e `.dockerignore`
-> - [ ] Passo 4: profile `prod` no `docker-compose.yml`
-> - [ ] Passo 5: desligamento com o `tini`
-> - [ ] Passo 6: documentação
+> - [x] Passo 1: scripts de migration a partir do `dist/`
+> - [x] Passo 2: `plop module` gera o `mig:<nome>:run:prod`
+> - [x] Passo 3: `Dockerfile` e `.dockerignore`
+> - [x] Passo 4: profile `prod` no `docker-compose.yml`
+> - [x] Passo 5: desligamento com o `tini`
+> - [x] Passo 6: documentação
 > - [ ] Passo 7: entrega
 
 A ordem importa: os scripts (passo 1) vêm antes da imagem, que os chama, e a imagem vem antes do compose, que a constrói. A documentação vem depois, para descrever o que foi conferido.
@@ -78,7 +78,7 @@ A ordem importa: os scripts (passo 1) vêm antes da imagem, que os chama, e a im
 - Depois de `rm -r dist`, `npm run mig:identity:run:prod` falha com erro de arquivo não encontrado, e não com outro erro qualquer.
 - `npm run ci` passa.
 
-**Como ficou:**
+**Como ficou:** ✅ Como no "Faça". Context7 (TypeORM 1.1.1, "Executing and reverting"): o `migration:run` só roda `.js` e recebe o data source com `-d`. Conferido: `db:migrate:prod` roda os 5 scripts com "No migrations are pending" e código 0; `db:setup` roda só os 5 `mig:<módulo>:run`, sem nenhum `:run:prod` na saída; sem o `dist/`, o `mig:identity:run:prod` falha com `ERR_MODULE_NOT_FOUND` no `identity.data-source.js`; `npm run ci` passa. O comentário do `scripts/run-scripts.mjs` passou a citar o `db:migrate:prod`.
 
 ### Passo 2: `plop module` gera o `mig:<nome>:run:prod`
 
@@ -95,7 +95,7 @@ A ordem importa: os scripts (passo 1) vêm antes da imagem, que os chama, e a im
 - O módulo de teste é desfeito por completo: `git restore` nos arquivos modificados que o plop listou e `rm -r` só nos caminhos que ele criou. `git status` volta a mostrar só as mudanças deste plano.
 - `npm run ci` passa.
 
-**Como ficou:**
+**Como ficou:** ✅ Como no "Faça": o caminho do `dist/` sai do `ds` com troca de `src/` por `dist/` e de `.ts` por `.js`. Conferido: `npm run plop module plan-check` gerou os três scripts, e o `dist/modules/plan-check/infra/database/typeorm/plan-check.data-source.js` existia depois do build. Desfeito com `git restore` no `docs/README.md` e no `src/app.module.ts`, `rm -r` nos caminhos criados (e no `dist/modules/plan-check`). O `package.json` já tinha as mudanças do passo 1, então nele saíram só as 3 linhas do `plan-check`, em vez de `git restore`. `npm run ci` passa.
 
 ### Passo 3: `Dockerfile` e `.dockerignore`
 
@@ -120,7 +120,13 @@ A ordem importa: os scripts (passo 1) vêm antes da imagem, que os chama, e a im
 - `docker run --rm ai-nest-ddd-clean:local printenv NODE_ENV` imprime `production`.
 - O **Como ficou** registra o tamanho da imagem (`docker image ls ai-nest-ddd-clean:local`).
 
-**Como ficou:**
+**Como ficou:** ✅ Context7 (Docker docs, guia de Node.js e `docker run --init`): multi-stage, `--omit=dev`, forma exec no `ENTRYPOINT`/`CMD`; o `--init` do Docker é o próprio tini. Diferenças do "Faça":
+
+- **`--omit=optional`.** O `npm ci --omit=dev` mantinha o `ts-node` e o `typescript`: o `ts-node` é peer opcional do `typeorm` e devDependency nossa, e o lockfile o marca `devOptional` (recalculado do zero, dá o mesmo). O `--omit=peer` não muda nada. A primeira versão apagava os dois com `rm -rf`, porque eu achava que o `--omit=optional` tiraria o `@grpc/proto-loader` de que o `@grpc/grpc-js` de produção depende. O `/simplify` mostrou que não: o `@grpc/grpc-js` usa um `@grpc/proto-loader@0.8.1` aninhado e sem flag, e o da raiz só vem do `dockerode` (dev) e de um peer opcional do `@nestjs/terminus`. Com o ok do dono do repositório, ficou `npm ci --omit=dev --omit=optional`. Ele tira o `ts-node`, o `typescript` e as ~16 dependências deles. Das dependências de produção, sai só o `msgpackr-extract` (a aceleração nativa do msgpackr, que cai para JavaScript puro), o `pg-cloudflare` e o `@pkgjs/parseargs`. Conferido na imagem: o import de `@grpc/grpc-js`, `@opentelemetry/sdk-node`, `typeorm`, `bullmq`, `pg`, `@nestjs/terminus`, `argon2` e `msgpackr` funciona.
+- **Cache do npm.** Os dois `npm ci` usam `--mount=type=cache,target=/root/.npm`, no lugar do `npm cache clean --force`. Uma mudança no `package.json`, como a de um `plop module`, não baixa tudo de novo.
+- **`NPM_CONFIG_UPDATE_NOTIFIER=false`**, para o npm do `db:migrate:prod` não consultar o registry a cada `npm run`.
+
+Conferido: o segundo build usa o cache nas 12 camadas; `whoami` = `node`; o teste do `ts-node` e do `vitest` imprime `ok`; `ls -A` mostra só `dist`, `node_modules`, `package-lock.json`, `package.json` e `scripts`; `NODE_ENV` = `production`; nenhum link quebrado no `.bin`. Tamanho: 599 MB no `docker image ls` (632 MB com o `ts-node` e o `typescript`). Os passos 4 e 5 rodaram de novo com essa imagem, com o mesmo resultado (19 migrations, `/health/ready` = 200, `stop` em 0,55 s, saída 143).
 
 ### Passo 4: profile `prod` no `docker-compose.yml`
 
@@ -149,7 +155,12 @@ E, no projeto padrão:
 - `docker compose up -d postgres redis mailpit` não sobe o `migrate` nem o `app` (`docker compose ps -a` não os lista).
 - `docker compose config --quiet` passa, com e sem `--profile prod`.
 
-**Como ficou:**
+**Como ficou:** ✅ Context7 (código do Docker Compose, `dependency_wait.go` e `start.go`): o `up --wait` espera um one-shot sair com 0 quando outro serviço depende dele com `service_completed_successfully`. Diferenças do "Faça":
+
+- O `x-app-env` ganhou `OTEL_METRICS_EXPORTER: none` e `OTEL_LOGS_EXPORTER: none` (ver o passo 5), e o `.env.example` também.
+- O `curl` do item 4 falha com "Connection reset by peer" (código 56) enquanto a app sobe: o docker-proxy aceita a conexão antes de a app escutar, e o `--retry-connrefused` não cobre o reset. Com `--retry-all-errors` no lugar dele, chega ao 200. O how-to usa esse.
+
+Conferido, no projeto `ai-nest-deploy-check`: o `up -d --build` subiu tudo; o log do `migrate` mostra as migrations dos 5 data sources aplicadas, e o `ps -a` mostra o `migrate` com `Exited (0)`; `/health/ready` = 200 com `database` e `redis` `up`; o `run --rm migrate` de novo responde 5 "No migrations are pending" com código 0; o `down -v --remove-orphans` apagou só os volumes do projeto isolado, e o `docker compose start` devolveu o ambiente de desenvolvimento. No projeto padrão, o `up -d postgres redis mailpit` não lista `migrate` nem `app`, e o `config --quiet` passa com e sem `--profile prod`. O único aviso no log do `app` é o esperado `TRUST_PROXY=0 em produção`.
 
 ### Passo 5: desligamento com o `tini`
 
@@ -167,7 +178,20 @@ E, no projeto padrão:
 - `docker inspect` do `app` parado mostra um código de saída de término por sinal (143) ou 0, e não 137 (`SIGKILL`).
 - O **Como ficou** registra os dois tempos medidos, com e sem `tini`.
 
-**Como ficou:**
+**Como ficou:** ✅ Com diferenças do previsto:
+
+- **Atraso do OpenTelemetry.** Com o env do plano, o desligamento levava ~8,6 s, com ou sem `tini`. O `NodeSDK` liga os exporters de métricas e de logs por padrão (`otlp`), e o `sdk.shutdown()` espera o timeout da exportação para um coletor que não existe. Isolado desligando uma peça de cada vez: sem workers, outbox ou jobs, continua em ~8 s; com `OTEL_SDK_DISABLED=true`, cai para 226 ms; com `OTEL_METRICS_EXPORTER=none` e `OTEL_LOGS_EXPORTER=none`, cai para ~200 ms. Com o ok do dono do repositório, as duas entraram no `x-app-env`, no `.env.example` e na documentação, sem mudança no `src/`. O `.env` local de quem já usa o template não muda sozinho.
+- **Timeout local de 1 s.** Neste Docker Desktop (engine 28.5.1), todo container nasce com `StopTimeout=1`, até um `docker run` simples, em vez dos 10 s do padrão. Por isso, com o atraso acima, o `docker compose stop` mandava `SIGKILL` em ~1,5 s e saía 137. As medições abaixo usam `docker stop -t 30` para medir o tempo real.
+- **Sem log das fases.** Os hooks de desligamento não escrevem log, então o `logs app` não mostra as fases. Conferido que não há linha de erro: o único aviso é o `TRUST_PROXY=0`.
+
+Tempos (`docker run` na rede do projeto isolado, mesmo env, `docker stop -t 30`):
+
+| Env | Com `tini` | Sem `tini` (`--entrypoint node`) |
+| --- | --- | --- |
+| Do plano (métricas e logs em `otlp`) | 8,6 s, saída 143 | 8,6 s, saída 0 |
+| Métricas e logs em `none` | 198 ms, saída 143 | 222 ms, saída 0 |
+
+Sem handle preso, os dois tempos empatam: sem `tini`, o node ignora o `SIGTERM` reenviado no PID 1 e sai sozinho (0) quando o event loop esvazia. O `tini` muda o código de saída (143, término por sinal) e protege o caso em que sobra um handle aberto. Com o env novo, `time docker compose -p ai-nest-deploy-check stop app` levou 0,47 s, e o `docker inspect` mostra saída 143.
 
 ### Passo 6: documentação
 
@@ -204,7 +228,7 @@ E, no projeto padrão:
 - Cada comando do how-to foi rodado como está escrito, no passo 4 ou de novo agora, e funcionou.
 - `npm run docs:links` passa, se houver rede.
 
-**Como ficou:**
+**Como ficou:** ✅ Como no "Faça", com dois acréscimos que vêm do passo 5: `OTEL_METRICS_EXPORTER` e `OTEL_LOGS_EXPORTER` em `variaveis-de-ambiente.md`, e um parágrafo sobre o atraso que eles causam no Desligamento de `operacao.md`. O `README.md` ganhou uma seção "Deploy" de uma linha, e o how-to entrou na linha de how-to da tabela "Documentação". Em `comandos.md`, além do previsto, a linha do `npm run build` aponta para o how-to. O how-to usa o projeto isolado `-p ai-nest-deploy-check` do passo 4, para não tocar no banco de desenvolvimento, e o `curl` com `--retry-all-errors`. Conferido: `npm run docs:check` passa; cada comando do how-to rodou como está escrito, inclusive o `--build-arg NODE_VERSION=24` e a verificação (19 migrations aplicadas, `/health/ready` = 200, 5 "No migrations are pending" na segunda rodada, `stop` em 0,66 s com saída 143); `npm run docs:links` passa, sem erro.
 
 ### Passo 7: entrega
 
@@ -224,4 +248,30 @@ E, no projeto padrão:
 - Os itens de "Pronto quando" da issue #10 foram conferidos: a imagem é gerada, o container sobe contra o Postgres e o Redis do compose com `/health/ready` em 200, as migrations rodam a partir da imagem sem `ts-node`, o `npm run ci` passa e o `comandos.md` lista os scripts novos.
 - O CI do PR passa.
 
-**Como ficou:**
+**Como ficou:** 🟡 Falta o commit, o push, o PR e o CI do PR, que esperam o ok do dono do repositório. `npm run ci` passa. `test:int` e `test:e2e` não rodaram: nada mudou no `src/`.
+
+`/simplify` (reuso, simplificação, eficiência e altitude). Corrigido:
+
+- `npm ci --omit=dev --omit=optional` no lugar do `rm -rf` por nome (ver o passo 3).
+- Cache mount do npm e `NPM_CONFIG_UPDATE_NOTIFIER=false` no Dockerfile.
+- A explicação do atraso do OpenTelemetry fica em `variaveis-de-ambiente.md` e `operacao.md`. O how-to, o compose e o `.env.example` apontam para elas.
+- O how-to remete o `tini` para `operacao.md`, e o passo 1 dele encolheu.
+- A seção do profile em `comandos.md` virou uma frase com link.
+- O comentário do compose não repete o comando sem `-p`.
+- Uma frase em `observabilidade.md` sobre os exporters desligados pelo ambiente.
+
+Pulado:
+
+- Derivar o `:run:prod` no `run-scripts.mjs` em vez de um script por módulo: contraria a decisão "Runner de migrations".
+- Tirar o `NODE_ENV` do `x-app-env` e o `postgres` do `depends_on` do `app`: os dois estão no "Faça" do passo 4.
+- Rodar as migrations em paralelo: ganho de segundos num passo one-shot.
+- Trocar o `tsc` pelo SWC: o plugin do Swagger depende do `tsc`.
+
+`/code-review` (high): nenhum bug que bloqueie, quatro `nit`, todos corrigidos:
+
+- A imagem define `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` e `OTEL_LOGS_EXPORTER` em `none`, para um deploy só com as variáveis obrigatórias não herdar o atraso de ~8 s. A plataforma os sobrescreve quando houver coletor.
+- `"deleteOutDir": true` no `nest-cli.json`: sem ele, uma migration apagada ou renomeada no `src/` continuava no `dist/`, e o `:run:prod` local a aplicaria. Conferido: um arquivo solto no `dist/` some no build.
+- O how-to diz que o passo de migration roda uma cópia por vez (um Job ou release command por deploy, nunca um initContainer por réplica): o `migration:run` não trava contra execuções simultâneas.
+- Rota nova no `AGENTS.md` para o Dockerfile, o `.dockerignore`, o profile `prod` e os scripts `:run:prod`.
+
+Depois das correções, o profile `prod` rodou de novo: 19 migrations, `/health/ready` = 200, `stop` em 0,49 s, saída 143.

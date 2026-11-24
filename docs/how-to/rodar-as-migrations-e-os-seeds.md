@@ -4,7 +4,7 @@ type: how-to
 
 # Como rodar as migrations e os seeds
 
-Use este guia depois de clonar o repositório, de puxar mudanças que trazem migrations novas ou de [resetar o ambiente local](resetar-o-ambiente-local.md). Para criar uma migration, siga [Como gerar uma migration](gerar-uma-migration.md).
+Use este guia depois de clonar o repositório, de puxar mudanças que trazem migrations novas ou de [resetar o ambiente local](resetar-o-ambiente-local.md). Para criar uma migration, siga [Como gerar uma migration](gerar-uma-migration.md). Para as migrations em produção, com o `db:migrate:prod` da imagem Docker, siga [Como fazer o deploy](fazer-o-deploy.md).
 
 ## Pré-requisitos
 

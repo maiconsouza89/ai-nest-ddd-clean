@@ -31,6 +31,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como adicionar uma variável de ambiente](how-to/adicionar-uma-variavel-de-ambiente.md): da validação ao `useFactory` do módulo, com o `.env.example`, o `RENAMED` e os testes.
 - [Como criar um seed](how-to/criar-um-seed.md): dados de desenvolvimento com ids fixos e `orIgnore`, o `runSeed` e o script.
 - [Como rodar as migrations e os seeds](how-to/rodar-as-migrations-e-os-seeds.md): o `db:setup`, o `db:seed`, como conferir o que falta e os erros comuns.
+- [Como fazer o deploy](how-to/fazer-o-deploy.md): a imagem Docker, as migrations num passo antes da app, as variáveis e as probes, e o teste local com o profile `prod`.
 - [Como rodar um teste específico](how-to/rodar-um-teste-especifico.md): o script por tipo de teste, o filtro por caminho, por nome e por linha.
 - [Como resetar o ambiente local](how-to/resetar-o-ambiente-local.md): apagar o Postgres e o Redis deste projeto e subir tudo do zero.
 - [Como remover os módulos de exemplo](how-to/remover-os-modulos-de-exemplo.md): tirar o orders, o catalog e o inventory e ficar só com a base, com a lista das páginas que ainda citam os exemplos.
