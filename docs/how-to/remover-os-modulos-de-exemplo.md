@@ -79,7 +79,7 @@ O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `sh
     - Na linha "Verificar o e-mail" da linguagem ubíqua, apague a frase "'Confirmar' é termo do orders e do notifications, não daqui."
     - A `UserDirectoryFacade` fica sem consumidor. Mantenha-a para o primeiro módulo seu que precisar do e-mail de um usuário, ou apague o contrato, o adapter, o export no `identity.module.ts` e a menção na página.
 
-11. No `AGENTS.md`, seção "Projeto", o primeiro item passa a começar por: "A base é o `src/shared/` (kernel compartilhado e infraestrutura transversal) e os módulos `identity` e `notifications`." O resto do item, a partir de `src/app.module.ts`, fica igual.
+11. No `AGENTS.md`, seção "Projeto", apague o item "Exemplos removíveis".
 
 12. No `README.md`, apague a seção "Módulos de exemplo" e as menções ao orders, ao catalog e ao inventory.
 

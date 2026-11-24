@@ -2,7 +2,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/maiconsouza89/ai-nest-ddd-clean/ci.yml?branch=main&label=CI)](https://github.com/maiconsouza89/ai-nest-ddd-clean/actions/workflows/ci.yml)
 [![Licença](https://img.shields.io/github/license/maiconsouza89/ai-nest-ddd-clean)](LICENSE)
-[![Node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmaiconsouza89%2Fai-nest-ddd-clean%2Fmain%2Fpackage.json&query=%24.engines.node&label=node&logo=nodedotjs&logoColor=white)](package.json)
+[![Node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmaiconsouza89%2Fai-nest-ddd-clean%2Fmain%2Fpackage.json&query=$.engines.node&label=node&logo=nodedotjs&logoColor=white)](package.json)
 [![NestJS](https://img.shields.io/github/package-json/dependency-version/maiconsouza89/ai-nest-ddd-clean/@nestjs/core?label=NestJS&logo=nestjs)](package.json)
 [![TypeScript](https://img.shields.io/github/package-json/dependency-version/maiconsouza89/ai-nest-ddd-clean/dev/typescript?label=TypeScript&logo=typescript&logoColor=white)](package.json)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
@@ -14,13 +14,13 @@
 [![Use this template](https://img.shields.io/badge/Use_this_template-2EA44F?logo=github&logoColor=white)](https://github.com/maiconsouza89/ai-nest-ddd-clean/generate)
 [![Docs: Diátaxis](https://img.shields.io/badge/Docs-Di%C3%A1taxis-0A66C2)](docs/README.md)
 
-Template de API em NestJS: um monólito modular com DDD e Clean Architecture, em ESM, com a infraestrutura, a autenticação e os e-mails prontos, e três módulos de exemplo para ler e depois apagar.
+Template de API em NestJS: um monólito modular com DDD e Clean Architecture, em ESM, com a infraestrutura, a autenticação e os e-mails prontos, e três módulos de exemplo.
 
 Cada módulo fica em `src/modules/`, com as regras de negócio no centro e o framework restrito à infraestrutura. Um módulo fala com outro só pelo `contracts/` dele e por eventos de integração, publicados pela outbox, e declara de quem depende em `imports` ([ADR 0003](docs/adr/0003-imports-explicitos-entre-modulos.md)). Stack: NestJS 12, TypeORM com Postgres 19, Redis 8 (cache, filas do BullMQ e rate limit), Vitest, pino e OpenTelemetry.
 
 ## O que vem pronto
 
-A base acompanha todo projeto feito do template ([ADR 0008](docs/adr/0008-projeto-template-com-modulos-de-exemplo.md)):
+A base acompanha todo projeto feito do template:
 
 - **`src/shared/`:** banco com transação pelo contexto, cache no Redis, filas do BullMQ, outbox com consumidor idempotente, guards de autenticação por JWT e de roles, observabilidade (tracing do OpenTelemetry e logs do pino com o id do trace), jobs agendados e rate limit.
 - **identity:** contas, verificação do e-mail com código, login, sessões com refresh token rotativo e o ator de cada requisição ([referência](docs/reference/modules/identity.md)).
@@ -28,18 +28,18 @@ A base acompanha todo projeto feito do template ([ADR 0008](docs/adr/0008-projet
 
 ## Módulos de exemplo
 
-Três módulos mostram, funcionando e testados, os desenhos que a base sozinha não mostra:
+Mostram, funcionando e testados, os desenhos que a base não mostra. O porquê de ficarem no repositório está na [ADR 0008](docs/adr/0008-projeto-template-com-modulos-de-exemplo.md).
 
-- **orders:** um agregado com itens, ciclo de vida, concorrência otimista, eventos pela outbox, `Idempotency-Key`, job agendado, cache e paginação ([referência](docs/reference/modules/orders.md)).
-- **catalog:** CRUD direto, sem as camadas, para um módulo sem regra de negócio ([referência](docs/reference/modules/catalog.md)).
-- **inventory:** reserva de estoque síncrona, chamada pelo orders por facade dentro da transação do pedido ([referência](docs/reference/modules/inventory.md)).
+- **orders:** agregado com itens, outbox e concorrência ([referência](docs/reference/modules/orders.md)).
+- **catalog:** CRUD direto, sem as camadas ([referência](docs/reference/modules/catalog.md)).
+- **inventory:** reserva síncrona dentro da transação do pedido ([referência](docs/reference/modules/inventory.md)).
 
 A base não depende deles. Para ficar só com ela, siga [Como remover os módulos de exemplo](docs/how-to/remover-os-modulos-de-exemplo.md).
 
 ## Usar como template
 
 1. Crie o seu repositório pelo botão **Use this template**, no topo da página do GitHub.
-2. Renomeie o projeto: o `name` do `package.json` (depois rode `npm install`, para o `package-lock.json` acompanhar) e o `OTEL_SERVICE_NAME` do `.env.example` e de [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md). O título do Swagger fica em `src/shared/infra/http/swagger.setup.ts`.
+2. Renomeie o projeto: o `name` do `package.json` (depois rode `npm install`, para o `package-lock.json` acompanhar) e o `OTEL_SERVICE_NAME` do `.env.example` e de [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md). O título do Swagger fica em `src/shared/infra/http/swagger.setup.ts`, e o `maiconsouza89/ai-nest-ddd-clean` dos badges, no topo deste README. Troque também o `author` do `package.json`. O `LICENSE` mantém o aviso do template, como pede a MIT, e pode ganhar a sua linha de copyright.
 3. Exija o check `ci` na branch padrão: `npm run github:setup`, com o `gh` autenticado e admin no repositório ([Comandos → CI](docs/reference/comandos.md#ci)).
 4. Remova os exemplos, se não forem servir de modelo, e crie o primeiro módulo seu: [Como criar um módulo](docs/how-to/criar-um-modulo.md).
 

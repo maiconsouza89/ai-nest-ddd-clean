@@ -9,15 +9,13 @@ O repositório é um template público: quem o usa cria um repositório a partir
 - **Base:** o `shared` (banco, cache, filas, outbox, auth, observabilidade, jobs e rate limit), o identity (contas, verificação do e-mail, login e sessões) e o notifications (e-mails por SMTP disparados pelos eventos do identity). Acompanha todo projeto feito do template.
 - **Exemplos:** o orders, o catalog e o inventory, mais o aviso de pedido pago do notifications. Ficam no repositório para serem lidos e, quando não servirem mais, removidos ([Como remover os módulos de exemplo](../how-to/remover-os-modulos-de-exemplo.md)).
 
-A base não depende dos exemplos: o `src` da base importa só a base, e os testes da base usam rotas, eventos e helpers da base. Remover os exemplos deixa a app de pé, com o `npm run ci`, a integração e o e2e passando, o que foi conferido seguindo o how-to num worktree descartável.
+A base não depende dos exemplos: o `src` da base só os cita nos pontos de ligação que o how-to remove (a composição no `app.module.ts`, o registro do aviso de pedido pago no `notifications.module.ts` e a `ORDER_EXPIRATION_MINUTES` no `env.validation.ts`), e os testes da base usam rotas, eventos e helpers da base. Remover os exemplos deixa a app de pé, com o `npm run ci`, a integração e o e2e passando, o que foi conferido seguindo o how-to num worktree descartável.
 
-Os exemplos ficam porque mostram, funcionando e testados, os desenhos que a base sozinha não mostra:
+Os exemplos ficam porque mostram, funcionando e testados, os desenhos que a base (um módulo em camadas e um consumidor de eventos) não mostra:
 
 - o orders, um agregado com itens, status, concorrência otimista, outbox, `Idempotency-Key`, job agendado, cache e paginação;
 - o catalog, um módulo CRUD direto, sem as camadas, para quando não há regra de negócio;
 - o inventory, um módulo sem entidade, chamado pelo orders por facade, com a reserva síncrona dentro da transação do pedido.
-
-A base cobre um módulo em camadas (o identity) e um consumidor de eventos (o notifications), mas não um agregado com filhos, nem uma chamada síncrona entre módulos, nem um módulo sem camadas.
 
 ## Considered Options
 

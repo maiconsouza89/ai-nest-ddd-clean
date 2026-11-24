@@ -9,7 +9,8 @@ Cite caminhos de docs/ em texto simples: o `@caminho` importa o arquivo inteiro 
 
 API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeORM sobre Postgres e Redis (cache, filas do BullMQ e rate limit).
 
-- O projeto é um template. A base é o `src/shared/` (kernel compartilhado e infraestrutura transversal) e os módulos `identity` e `notifications`; o `orders`, o `catalog` e o `inventory` em `src/modules/` são exemplos removíveis, e a base importa só a base (ADR 0008). `src/app.module.ts`: composição. `src/main.ts` carrega o `tracing.ts` antes do `bootstrap.ts`.
+- Base: `src/shared/` (kernel compartilhado e infraestrutura transversal) e os módulos `identity` e `notifications` em `src/modules/`. `src/app.module.ts`: composição. `src/main.ts` carrega o `tracing.ts` antes do `bootstrap.ts`.
+- Exemplos removíveis (`docs/how-to/remover-os-modulos-de-exemplo.md`): `orders`, `catalog`, `inventory` e o aviso de pedido pago do `notifications`. Fora dos pontos de ligação que o how-to remove (`app.module.ts`, `notifications.module.ts` e `env.validation.ts`), a base não importa exemplo (ADR 0008).
 - Um módulo fala com outro só pelo `contracts/` dele e por eventos de integração, e declara de quem depende em `imports`. `@Global` é só para a infraestrutura do `shared` (ADR 0003).
 
 ## Verificação
@@ -88,7 +89,6 @@ Leia a página antes de agir no assunto.
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
-| Remover os módulos de exemplo | `docs/how-to/remover-os-modulos-de-exemplo.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
 | Escrever ou mover documentação | `docs/README.md` |
 | Continuar um plano em andamento | `docs/plan/` |

@@ -427,8 +427,8 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 **Como ficou:**
 
 - ADR 0008 com a base, os exemplos, o que cada exemplo mostra que a base não mostra, duas alternativas recusadas (esqueleto vazio, e exemplos num repositório ou branch à parte, que deixariam de rodar no CI da base) e o custo da documentação. Também registra que o `npm run arch` não distingue base de exemplo: quem confere é o how-to de remoção.
-- `AGENTS.md`: o item de `src/modules/` virou uma frase com a base, os exemplos e a regra "a base importa só a base" (ADR 0008). Ganhou a rota "Remover os módulos de exemplo". 94 linhas.
-- O how-to do passo 12 já estava no índice. Ele ganhou a ADR em "Veja também", e o passo do `AGENTS.md` passou a dar o texto exato da frase sem os exemplos.
+- `AGENTS.md`: o item de `src/modules/` passou a separar a base dos exemplos, com a regra de que a base não importa exemplo (ADR 0008). Forma final no `/simplify` do passo 14.
+- O how-to do passo 12 já estava no índice. Ele ganhou a ADR em "Veja também".
 - `npm run docs:check` e `npm run ci` passam (43 arquivos, 240 testes unitários).
 
 ### Passo 14: README com badges
@@ -466,6 +466,16 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - `docs:links`: o lychee roda num container e não alcança o `localhost` do host. O `http://localhost:8025`, no tutorial desde a Fase 2 e agora no README, falhava. O script ganhou `--exclude-loopback`, e a linha em `comandos.md` diz isso. Sobram dois 404 esperados até o passo 15: o link do badge de CI (`actions/workflows/ci.yml`) e o `/generate` do "Use this template", com o repositório privado. O `npmjs.com` às vezes responde 403 ao lychee (anti-bot), fora do README.
 - Quickstart conferido num clone limpo em outra pasta (`ai-nest-ddd-clean`, outro projeto do Compose), com o compose do dono parado por `docker compose stop` e religado depois, sem tocar nos volumes dele. `npm install`, `.env` copiado, `docker compose up -d postgres redis mailpit`, `db:setup` e `db:seed` sem erro, `start:dev`; `/health/live` 200, `/docs` 200, Mailpit 200 e o login do `user@example.com` do seed 200. O projeto do clone saiu com `docker compose down -v --remove-orphans`.
 - `npm run docs:check` e `npm run ci` passam.
+- `/simplify` sobre os passos 13 e 14:
+  - `AGENTS.md`: a frase única virou dois itens, "Base" e "Exemplos removíveis". O segundo leva o caminho do how-to (a rota da tabela saiu: é tarefa de uma vez por projeto) e passa a contar o aviso de pedido pago como exemplo, o que torna verdadeira a regra "a base não importa exemplo". O passo 11 do how-to virou "apague o item", sem copiar texto do `AGENTS.md`.
+  - ADR 0008: o parágrafo do que a base não mostra entrou na frase que abre a lista dos exemplos.
+  - README: os itens dos exemplos voltaram às palavras do plano, com o porquê só na ADR 0008; o "para ler e depois apagar" da introdução saiu; e o passo de renomear cita o `maiconsouza89/ai-nest-ddd-clean` dos badges, que um repositório criado pelo botão herda.
+  - Ficaram de fora: badges estáticos no lugar dos dinâmicos e sem os de tecnologia (decisão do plano); excluir o `img.shields.io` do lychee, que sempre responde 200 (ganho pequeno); e uma regra do dependency-cruiser para "a base não importa exemplo", que fica para o dono decidir.
+- `/code-review` (nível high), sem bug de código. Corrigido nos docs:
+  - a regra do `AGENTS.md` e a ADR 0008 passaram a citar os pontos de ligação que o how-to remove (`app.module.ts`, `notifications.module.ts` e `env.validation.ts`): sem eles, "a base não importa exemplo" era falso;
+  - o `label=CI` do badge, tirado no `/simplify`, voltou: sem ele o shields.io mostra "build", conferido num repositório público;
+  - o passo de renomear cita o `author` do `package.json` e diz que o `LICENSE` mantém o aviso do template.
+  - Ficou como estava, por decisão do passo 12: o `docs.e2e` confere uma tag por rota, mas não qual. Um `@ApiTags` trocado num exemplo passa.
 
 ### Passo 15: repositório público e template no GitHub
 
