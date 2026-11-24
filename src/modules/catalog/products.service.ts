@@ -6,7 +6,7 @@ import { Page, PageRequest } from '#shared/application/page';
 import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request.js';
 import { ProductOrmEntity } from './product.orm-entity.js';
 
-// Cadastro simples: sem domain/application separados (ver "Pragmatismo" no guia).
+// Cadastro simples: sem domain/application separados (docs/explanation/arquitetura.md).
 @Injectable()
 export class ProductsService {
   constructor(

@@ -359,7 +359,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > - [x] Passo 12: dividir o guia de pesquisa
 > - [ ] Passo 13: how-tos e skills-ponteiro (parcial: criar um módulo)
 > - [ ] Passo 14: tutoriais
-> - [ ] Passo 15: remover `docs/research/`
+> - [x] Passo 15: remover `docs/research/`
 
 Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar marcado parcialmente, com uma nota do que já foi feito.
 
@@ -561,6 +561,16 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
 **Pronto quando:** `grep -r "research/" .` (fora de `node_modules` e `dist`) não encontra nada, e o `docs:check` passa.
 
+**Como ficou (2026-11-23):** o guia, já só com ponteiros, saiu com a pasta. Referências trocadas:
+
+- **`docs/README.md`:** saiu a linha do guia em "Fora dos quadrantes".
+- **`passo-a-passo.md`:** a introdução aponta para `explanation/arquitetura.md`, e "o código completo está no guia de referência" passou a "está em `src/`, na forma final". As oito citações "copiado do guia de referência" ou "ver guia de referência" apontam para o arquivo correspondente em `src/` (`order.entity.ts`, `order.repository.ts`, `create-order.use-case.ts`, `current-user.decorator.ts`, `aggregate-root.ts`, `idempotent-consumer.ts`), para o `package.json` (scripts de migration) e para a estrutura de pastas de `reference/camadas.md` (gerador).
+- **`evolucao.md`:** a linha do "Como usar" diz que o guia acompanhava o código e foi dividido e removido por este plano. As menções do passo 17 e dos "No guia" ficam como registro do que foi feito na época.
+- **ADR 0006:** a decisão 2 cita o guia pelo nome, sem o caminho. O conteúdo da decisão não mudou.
+- **Código:** o comentário do `products.service.ts` citava o "Pragmatismo" do guia e passou a apontar para `docs/explanation/arquitetura.md`.
+
+`CLAUDE.md` e `AGENTS.md` já não citavam o guia desde o passo 12. Os dois links que o passo 12 tirou de `leituras.md` de propósito continuam fora. O grep só encontra este plano, que registra o próprio passo e o histórico da divisão. `npm run ci` passou (191 testes, `docs:check` sem erros, arch sem violações). Passo de texto mais um comentário: `/simplify` e `/code-review` pulados.
+
 ---
 
 ## Validação da entrega
@@ -618,7 +628,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 - [x] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Concluído em 2026-11-23: Pragmatismo e checklist, em `explanation/arquitetura.md` e `how-to/criar-um-modulo.md`; Referências, em `reference/leituras.md`; Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`; Operação, em `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md`.
 - [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
-- [ ] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório.
+- [x] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório. 2026-11-23: o grep só encontra este plano, que registra a remoção. Ver o "Como ficou" do passo 15.
 
 ### Contínuo (depois da entrega)
 

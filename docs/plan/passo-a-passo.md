@@ -1,12 +1,12 @@
 # Passo a passo: construindo o projeto do zero
 
-Este roteiro monta, em etapas, o monólito modular descrito em [Guia: módulos com DDD e Clean Architecture no NestJS](../research/modules-ddd-clean-nest.md), chamado aqui de **guia de referência**. A primeira etapa é TypeScript puro, e cada peça nova só entra quando o projeto precisa dela.
+Este roteiro monta, em etapas, o monólito modular descrito em [Arquitetura](../explanation/arquitetura.md). A primeira etapa é TypeScript puro, e cada peça nova só entra quando o projeto precisa dela.
 
 ## Como usar
 
 - Cada passo tem três partes. **Por quê** diz qual necessidade motiva a mudança, **Faça** diz o que muda e **Pronto quando** diz o critério para seguir adiante.
 - Só avance com typecheck, testes e regras de arquitetura passando.
-- O código completo de cada conceito está no guia de referência. Este roteiro mostra só o que é novo ou o que muda.
+- O código completo de cada conceito está em `src/`, na forma final, que pode ter peças de passos posteriores. Este roteiro mostra só o que é novo ou o que muda.
 - O progresso fica registrado no próprio arquivo, em três lugares: a coluna **Status** do mapa, o **Progresso geral** logo abaixo dele e o bloco de status no início de cada fase.
 - Legenda: ⬜ não iniciada, 🟡 em andamento, ✅ concluída.
 - Ao começar uma fase, marque 🟡 e preencha **Início** com a data. Marque cada passo (`- [x]`) quando o **Pronto quando** dele for atendido.
@@ -177,9 +177,9 @@ export class Order {
   get items(): readonly OrderItem[] { return [...this._items]; }
   get total() { return this._items.reduce((sum, i) => sum.add(i.subtotal), Money.zero()); }
 
-  addItem(productId: string, qty: number, unitPrice: Money) { /* guia de referência */ }
-  place() { /* guia de referência */ }
-  pay() { /* guia de referência, sem o addDomainEvent() por enquanto */ }
+  addItem(productId: string, qty: number, unitPrice: Money) { /* ver order.entity.ts */ }
+  place() { /* ver order.entity.ts */ }
+  pay() { /* ver order.entity.ts, sem o addDomainEvent() por enquanto */ }
   isOwnedBy(userId: string) { return this.customerId === userId; }
 }
 ```
@@ -209,7 +209,7 @@ Testes: adicionar o mesmo produto soma a quantidade, não edita depois de fechad
 
 **Faça:**
 
-- `domain/repositories/order.repository.ts` como `abstract class` (ver guia de referência). No passo 9, a mesma classe vira token de injeção do Nest.
+- `domain/repositories/order.repository.ts` como `abstract class` (ver o arquivo de mesmo nome em `src/modules/orders/`). No passo 9, a mesma classe vira token de injeção do Nest.
 - `infra/database/in-memory/in-memory-order.repository.ts`:
 
 ```ts
@@ -240,7 +240,7 @@ export abstract class PriceCatalog {
 ```
 
 - `orders/application/dtos/create-order.input.ts`: um tipo simples, sem decorators.
-- `CreateOrderUseCase`, copiado do guia de referência.
+- `CreateOrderUseCase`, como em `application/use-cases/create-order.use-case.ts`, sem a transação e a outbox, que entram depois.
 - Fakes em `test/fakes/`: `SequentialIdGenerator` (`order-1`, `order-2`...) e `FakePriceCatalog` (um `Map` fixo).
 
 O preço nunca vem do cliente. A entrada traz só `productId` e quantidade.
@@ -354,7 +354,7 @@ O versionamento entra desde o primeiro dia porque, agora, não custa nada. Adici
   - Cada caso de uso registrado com `useFactory` e `inject`. O `useFactory` é o mesmo `new` que os testes já fazem, por isso o caso de uso não precisa de `@Injectable`.
 - `infra/http/dtos/create-order.request.ts` com `class-validator`: `items` é array com `@ValidateNested` e `@Type`, cada item tem `productId` string e `qty` inteiro maior ou igual a 1, e o array tem tamanho máximo.
 - `infra/http/controllers/orders.controller.ts` com `POST /orders`, `POST /orders/:id/place` e `POST /orders/:id/pay`.
-- `shared/infra/auth/current-user.decorator.ts`, copiado do guia de referência.
+- `shared/infra/auth/current-user.decorator.ts`, como o do `src/`.
 - Guard **provisório**, para ter um `Actor` antes da autenticação real (sai no passo 19):
 
 ```ts
@@ -512,7 +512,7 @@ npm i -D ts-node
 - `orders.data-source.ts` (ver [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios)) com as entidades do módulo e `migrationsTableName: 'orders_migrations'`. Ele carrega o `.env` com `dotenv` e reaproveita o `validateEnv`.
 - Primeira migration, criada vazia com `migration:create`, só com `CREATE SCHEMA IF NOT EXISTS orders`. Rode-a.
 - Em seguida, `npm run mig:orders:gen` gera as tabelas. **Revise o SQL** antes do commit.
-- Scripts `mig:orders:gen` e `mig:orders:run`, copiados do guia de referência.
+- Scripts `mig:orders:gen` e `mig:orders:run`, como os do `package.json`.
 
 **Pronto quando:** `mig:orders:run` cria o schema e as tabelas, e o e2e passa com o banco real.
 
@@ -732,7 +732,7 @@ Limite conhecido: se o `save` falhar depois da reserva, sobra estoque reservado.
 
 **Faça:**
 
-- `shared/domain/aggregate-root.ts` com `addDomainEvent` e `pullDomainEvents` (ver guia de referência).
+- `shared/domain/aggregate-root.ts` com `addDomainEvent` e `pullDomainEvents`, como o do `src/`.
 - `Order extends AggregateRoot`, e `pay()` passa a chamar `this.addDomainEvent(new OrderPaid(this.id))`.
 - O teste de `pay()` também verifica o evento registrado.
 
@@ -784,7 +784,7 @@ Com o outbox, trocar o barramento em memória por RabbitMQ ou Kafka depois muda 
 **Faça:**
 
 - Tabela `processed_events` com `UNIQUE(event_id, consumer)`.
-- Todo handler roda dentro de `tx.run` e começa com `tryMark` (`INSERT ... ON CONFLICT DO NOTHING`). Se não inseriu, retorna (ver guia de referência).
+- Todo handler roda dentro de `tx.run` e começa com `tryMark` (`INSERT ... ON CONFLICT DO NOTHING`). Se não inseriu, retorna (ver `shared/application/idempotent-consumer.ts`).
 
 Verificar com `exists` antes de processar não resolve a corrida entre duas entregas simultâneas. Só a constraint resolve.
 
@@ -1025,7 +1025,7 @@ caso de uso ─tx─▶ outbox (Postgres) ─relay─▶ fila por consumidor (Re
 
 **Por quê:** a partir do terceiro módulo, criar a estrutura à mão gera divergência.
 
-**Faça:** `plop` com um template baseado no módulo `orders` (ver guia de referência). O template já inclui o módulo Nest com `useFactory`, o DataSource, a primeira migration com `CREATE SCHEMA` e os scripts de migration.
+**Faça:** `plop` com um template baseado no módulo `orders` (ver [Camadas](../reference/camadas.md#estrutura-de-pastas)). O template já inclui o módulo Nest com `useFactory`, o DataSource, a primeira migration com `CREATE SCHEMA` e os scripts de migration.
 
 **Pronto quando:** `npx plop module` gera um módulo que passa no `npm run arch` sem ajustes.
 

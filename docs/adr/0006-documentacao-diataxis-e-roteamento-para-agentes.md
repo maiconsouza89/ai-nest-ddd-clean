@@ -27,7 +27,7 @@ O plano de execução está em `docs/plan/documentacao.md`.
 ### Formato
 
 1. Pastas em inglês (os nomes do Diátaxis), nomes de arquivo e conteúdo em pt-BR. Os docs de módulo usam o nome do módulo no código (`orders.md`).
-2. `docs/adr/` e `docs/plan/` ficam fora dos quadrantes: o ADR é um registro imutável e o plano é trabalho interno. O `docs/research/` é dividido entre os quadrantes e depois removido.
+2. `docs/adr/` e `docs/plan/` ficam fora dos quadrantes: o ADR é um registro imutável e o plano é trabalho interno. O guia de pesquisa sobre módulos com DDD é dividido entre os quadrantes e depois removido.
 3. Toda página de quadrante tem frontmatter `type:` igual à pasta onde está (`tutorial`, `how-to`, `reference` ou `explanation`) e nasce do `npm run plop doc <tipo> <nome>`, com o formato do seu tipo.
 4. Só Markdown, sem site gerado.
 

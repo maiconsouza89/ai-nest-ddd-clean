@@ -77,7 +77,6 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Guia: módulos com DDD e Clean Architecture](research/modules-ddd-clean-nest.md): só ponteiros para as páginas que receberam cada seção. Sai do repositório no passo 15 do [plano de documentação](plan/documentacao.md).
 - [Planos](plan/): trabalho interno. O [passo a passo](plan/passo-a-passo.md) que montou o projeto do zero, o [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
 
 ## Como escrever uma página

@@ -9,7 +9,7 @@ Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest
 - Cada passo tem **Por quê**, **Faça** e **Pronto quando**, como no roteiro original.
 - Uma fase só termina com `npm run ci`, `npm run test:int` e `npm run test:e2e` passando.
 - Toda fase que muda código passa por `/simplify` e depois `/code-review` antes de ser marcada (fluxo de entrega do `CLAUDE.md`).
-- O [guia de referência](../research/modules-ddd-clean-nest.md) acompanha o código. Os erros que já valiam para o código atual foram corrigidos na revisão. Cada fase atualiza, no próprio "Pronto quando", as seções do guia que ela muda. Assim o guia nunca descreve um código que ainda não existe.
+- O guia de referência (o guia de pesquisa sobre módulos com DDD) acompanhava o código. Depois deste plano, ele foi dividido entre as páginas de `docs/` e removido (passos 12 e 15 do [plano de documentação](documentacao.md)). Os erros que já valiam para o código atual foram corrigidos na revisão. Cada fase atualiza, no próprio "Pronto quando", as seções do guia que ela muda. Assim o guia nunca descreve um código que ainda não existe.
 - Legenda: ⬜ não iniciada, 🟡 em andamento, ✅ concluída. Ao começar uma fase, marque 🟡 e preencha **Início**. Marque cada passo (`- [x]`) quando o **Pronto quando** dele for atendido. A fase fica ✅ com todos os passos marcados.
 
 ### Regra de versões
