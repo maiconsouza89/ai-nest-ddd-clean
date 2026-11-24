@@ -9,7 +9,7 @@ Use este guia para rodar um arquivo de teste, ou um teste dentro dele, sem esper
 ## Pré-requisitos
 
 - **Unitário** (`*.spec.ts`): só o `npm install`.
-- **Integração** (`*.int-spec.ts`): Docker no ar. Cada arquivo sobe o seu Postgres e o seu Redis descartáveis.
+- **Integração** (`*.int-spec.ts`): Docker no ar. Cada arquivo sobe, descartável, só o que usa: o Postgres, o Redis ou os dois.
 - **E2E** (`*.e2e-spec.ts`): o Postgres e o Redis do `docker-compose.yml` no ar, com as [migrations aplicadas](rodar-as-migrations-e-os-seeds.md), e nenhum `start:dev` rodando. Outra instância no mesmo Redis consome as filas do BullMQ e derruba o teste. O e2e grava nesse banco.
 
 ## Passos

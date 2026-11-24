@@ -24,7 +24,7 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 | --- | --- | --- |
 | 0. Preparação | Branch e linha de base verde | ✅ |
 | 1. Correções no código | Os três bugs, os adapters no lugar certo e os comentários corrigidos | ✅ |
-| 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ⬜ |
+| 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ✅ |
 | 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ⬜ |
 | 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ⬜ |
 | 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ⬜ |
@@ -175,11 +175,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 ## Fase 2: doc dos módulos, ferramentas e testes
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: páginas de módulo e glossário
-> - [ ] Passo 2: premissa do plano do pedido
-> - [ ] Passo 3: comandos, variáveis, testes e tutorial
+> - [x] Passo 1: páginas de módulo e glossário
+> - [x] Passo 2: premissa do plano do pedido
+> - [x] Passo 3: comandos, variáveis, testes e tutorial
 
 ### Passo 1: páginas de módulo e glossário
 
@@ -193,8 +193,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] As três frases descrevem o comportamento citado, cada uma apontando o arquivo do código onde ele está.
-- [ ] `npm run docs:check` passa.
+- [x] As três frases descrevem o comportamento citado, cada uma apontando o arquivo do código onde ele está.
+- [x] `npm run docs:check` passa.
+
+**Como ficou:** no `inventory.md`, a célula da facade diz "na ordem de `productId`", e um item da lista abaixo dela explica a ordenação contra deadlock, citando o `reserve-stock.use-case.ts`. O glossário cita a regra `modulo-nest-so-importa-modulo-nest` do `.dependency-cruiser.js`. A linha "Sessão" do `identity.md` cita o `isDeadAt` da `refresh-token.entity.ts` para o TTL e o `onDelete: 'CASCADE'` da `refresh-token.orm-entity.ts`.
 
 ### Passo 2: premissa do plano do pedido
 
@@ -207,7 +209,9 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] O passo 2 da fase 1 do `ciclo-do-pedido.md` não afirma mais que o `create` usa `addItem`, e lista a decisão em aberto.
+- [x] O passo 2 da fase 1 do `ciclo-do-pedido.md` não afirma mais que o `create` usa `addItem`, e lista a decisão em aberto.
+
+**Como ficou:** o item "Cuidado" descreve o fluxo do `CreateOrderUseCase` (`Order.create` e depois `order.addItem` por item), e um item novo registra a decisão em aberto, a ser fechada no **Como ficou** daquele passo.
 
 ### Passo 3: comandos, variáveis, testes e tutorial
 
@@ -228,9 +232,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "75 s" -- docs` não acha nada.
-- [ ] Cada frase listada corresponde ao comportamento descrito.
-- [ ] `npm run ci` passa (fecha a fase 2).
+- [x] `git grep -n "75 s" -- docs` não acha nada.
+- [x] Cada frase listada corresponde ao comportamento descrito.
+- [x] `npm run ci` passa (fecha a fase 2).
+
+**Como ficou:** as sete frases foram reescritas. O `git grep "75 s"` só acha este plano. O how-to dos seeds cita o `run-seed.ts`, onde fica a lista de valores aceitos, e a linha do `docs:check` no `comandos.md` cita o `scripts/remark-docs-rules.mjs`. Na conferência, só 8 dos 31 arquivos de `test/fakes/` e `test/helpers/` têm um comentário no topo, o que confirma a frase nova do `testes.md`. `npm run ci` passou.
 
 ---
 

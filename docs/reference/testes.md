@@ -29,7 +29,7 @@ As facades não têm teste de contrato: o `npm run typecheck` confere a assinatu
 
 ## Apoio aos testes
 
-Cada arquivo de `test/fakes/` e `test/helpers/` diz no cabeçalho o que faz. Os que pedem atenção:
+Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome explicam no topo o que fazem. Os que pedem atenção:
 
 | Onde | O que tem |
 | --- | --- |

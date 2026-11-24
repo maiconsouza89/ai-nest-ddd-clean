@@ -8,7 +8,7 @@ Use este guia depois de clonar o repositório, de puxar mudanças que trazem mig
 
 ## Pré-requisitos
 
-- `.env` criado a partir do `.env.example`, com `NODE_ENV=development`. Os seeds recusam qualquer outro valor ([Variáveis de ambiente](../reference/variaveis-de-ambiente.md)).
+- `.env` criado a partir do `.env.example`, com `NODE_ENV=development`. Os seeds aceitam `development` ou `test` e recusam qualquer outro valor (`src/shared/infra/database/run-seed.ts`, [Variáveis de ambiente](../reference/variaveis-de-ambiente.md)).
 - Postgres no ar:
 
   ```bash

@@ -58,7 +58,7 @@ O port é uma classe abstrata que a `application/` define com o que precisa de f
 
 ### Contrato
 
-Tudo o que um módulo expõe aos outros: as facades e os eventos de integração, em `contracts/`. Um módulo importa só o `contracts/` de outro.
+Tudo o que um módulo expõe aos outros: as facades e os eventos de integração, em `contracts/`. Um módulo importa só o `contracts/` de outro e, no arquivo do Nest module, o Nest module dele, para declarar a dependência em `imports`. O `.dependency-cruiser.js` permite esse segundo import de propósito, na regra `modulo-nest-so-importa-modulo-nest`.
 
 ### Shared kernel
 

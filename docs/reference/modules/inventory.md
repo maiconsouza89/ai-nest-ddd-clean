@@ -26,8 +26,9 @@ O `domain/` não tem entidade: as regras do saldo são operações atômicas no 
 
 | Método | Devolve |
 | --- | --- |
-| `reserve({ referenceId, items: { productId, qty }[] })` | `{ ok: true }`, ou `{ ok: false, reason: 'INSUFFICIENT_STOCK', productId }` com o primeiro produto sem saldo |
+| `reserve({ referenceId, items: { productId, qty }[] })` | `{ ok: true }`, ou `{ ok: false, reason: 'INSUFFICIENT_STOCK', productId }` com o primeiro produto sem saldo na ordem de `productId` |
 
+- O "primeiro produto sem saldo" segue a ordem de `productId`, não a ordem dos itens no pedido: o `reserve-stock.use-case.ts` ordena os itens antes de dar baixa, para que duas reservas concorrentes travem as linhas na mesma ordem e não entrem em deadlock.
 - Repetir a mesma `referenceId` não reserva de novo e devolve `{ ok: true }`.
 - Com `ok: false`, quem chamou desfaz a transação em andamento. Chamada dentro de uma transação, a facade entra nela e não reverte as baixas feitas antes da falta. Fora de uma transação, ela abre a própria e desfaz tudo.
 - Um produto sem linha em `stock_items` conta como saldo insuficiente.

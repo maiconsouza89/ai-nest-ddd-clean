@@ -70,7 +70,7 @@ São as variáveis padrão do SDK do OpenTelemetry. As mais usadas:
 
 O `test/setup-env.ts` define o mínimo para os testes que sobem o `AppModule`, sem sobrescrever o que já estiver no ambiente:
 
-- `NODE_ENV=test`, mais `DATABASE_URL`, `REDIS_URL` e `JWT_SECRET` apontando para o `docker-compose.yml`;
+- `NODE_ENV=test`, mais `DATABASE_URL` e `REDIS_URL` apontando para o `docker-compose.yml`, e um `JWT_SECRET` fixo, só de teste;
 - `OUTBOX_WORKER_ENABLED`, `QUEUE_WORKERS_ENABLED`, `JOBS_ENABLED` e `THROTTLE_ENABLED` em `false`;
 - `LOG_LEVEL=silent` e `OTEL_SDK_DISABLED=true`.
 

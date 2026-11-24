@@ -23,7 +23,7 @@ Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta pág
 | E-mail | `Email` | Value object. Gravado sem espaços nas pontas e em minúsculas, com até 254 caracteres. Único entre os usuários. |
 | Role | `roles` | Permissão da conta, como `admin`. Um usuário cadastrado pelo register nasce sem roles. |
 | Registrar | `User.register`, `RegisterUserUseCase` | Criar a conta. Não abre sessão. |
-| Sessão | família de refresh tokens (`familyId`) | Nasce no login e termina no logout, no reuso de um token ou no prazo absoluto. |
+| Sessão | família de refresh tokens (`familyId`) | Nasce no login e termina no logout, no reuso de um token, no prazo absoluto, quando o token vence pelo próprio TTL (`REFRESH_TOKEN_TTL_SECONDS`) sem ser renovado (`isDeadAt` em `refresh-token.entity.ts`) ou quando o usuário é apagado (`ON DELETE CASCADE` em `refresh_tokens`, na `refresh-token.orm-entity.ts`). |
 | Refresh token | `RefreshToken` | Token opaco, de uso único, trocado por um sucessor a cada renovação. O banco guarda só o hash. |
 | Access token | `TokenIssuer` (`JwtTokenIssuer`) | JWT de vida curta, com o `sub` do usuário e sem roles. |
 | Ator | `Actor` (shared), `TypeOrmActorResolver` | Quem faz a requisição: id e roles lidos do banco a cada requisição. O identity o fornece, mas o tipo é do shared. |

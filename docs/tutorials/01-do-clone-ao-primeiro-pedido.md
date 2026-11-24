@@ -10,7 +10,7 @@ Neste tutorial você sobe a API na sua máquina e faz uma compra completa pela l
 
 A API no ar com os produtos de exemplo, um usuário seu e um pedido pago. No fim, o log da app mostra o e-mail de confirmação que o módulo de notificações enviou sozinho, avisado pelo módulo de pedidos.
 
-O teste `test/primeiro-pedido.e2e-spec.ts` segue os mesmos passos, na mesma ordem, e confere cada resposta.
+O teste `test/primeiro-pedido.e2e-spec.ts` segue os mesmos passos, na mesma ordem, e confere cada resposta. A diferença é o produto: em vez do mouse do seed, o teste cria um produto próprio, para não esgotar o estoque do seed.
 
 ## Pré-requisitos
 

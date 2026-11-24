@@ -54,7 +54,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run format` | Aplica o Prettier. O Markdown fica fora ([ADR 0006](../adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md)) |
 | `npm run format:check` | Só confere a formatação |
 | `npm run arch` | Regras de camadas e de fronteiras entre módulos, com o dependency-cruiser (`.dependency-cruiser.js`) |
-| `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/`, comentários de template que sobraram e caminhos de `docs/` citados nos arquivos de agente |
+| `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
 | `npm run docs:links` | Links externos, com o lychee via Docker. Fora do CI, porque depende da rede |
 | `npm run ci` | `typecheck`, `lint`, `format:check`, `docs:check`, `test` e `arch`, nessa ordem. **Não** roda integração nem e2e |
 
@@ -64,7 +64,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | --- | --- |
 | `npm test` | Unitários (`*.spec.ts`), sem banco |
 | `npm run test:watch` | Os unitários em modo watch |
-| `npm run test:int` | Integração (`*.int-spec.ts`). Sobe Postgres e Redis descartáveis com o Testcontainers, então exige Docker. Leva cerca de 75 s |
+| `npm run test:int` | Integração (`*.int-spec.ts`). Sobe Postgres e Redis descartáveis com o Testcontainers, então exige Docker. Leva alguns minutos: cada arquivo sobe os containers de que precisa |
 | `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` |
 
 O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).
