@@ -348,7 +348,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 > - [x] Passo 11: licença e nome do projeto
 > - [x] Passo 12: how-to para remover os módulos de exemplo
 > - [x] Passo 13: ADR 0008 e AGENTS.md
-> - [ ] Passo 14: README com badges
+> - [x] Passo 14: README com badges
 > - [ ] Passo 15: repositório público e template no GitHub
 
 ### Passo 11: licença e nome do projeto
@@ -454,6 +454,18 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - `npm run docs:check` passa, e `npm run docs:links` não aponta link quebrado no README (os badges dinâmicos só respondem depois do passo 15; anote a exceção no **Como ficou** se ele rodar antes).
 - Cada seção da estrutura acima existe, na ordem.
 - O Quickstart, seguido à mão num ambiente zerado, deixa a app no ar com `/health/live` respondendo e o Mailpit abrindo.
+
+**Como ficou:**
+
+- Seções na ordem do plano: título, badges e a frase do template; "O que vem pronto"; "Módulos de exemplo", com o link para o how-to de remoção; "Usar como template"; e Requisitos, Quickstart, "Antes de abrir um PR" e Documentação, como antes. A introdução deixou de listar os cinco módulos como iguais e cita a ADR 0008. A tabela da documentação ganhou o how-to de remoção.
+- "Usar como template" também aponta o título do Swagger (`swagger.setup.ts`) e o `npm install` depois de renomear, para o `package-lock.json` acompanhar.
+- Badges conferidos no código do shields.io (o Context7 não tinha as rotas) e testados contra repositórios públicos:
+  - o `engines.node` usa o badge JSON dinâmico sobre o `package.json` cru da `main`, porque a rota `github/package-json/<chave>` recusa um objeto ("invalid key value") e não lê `engines.node`;
+  - o TypeScript é `devDependency` e usa a rota `.../dev/typescript`. O `@nestjs/core` com escopo funciona na rota normal. Os dois mostram a faixa do `package.json` (`^12.6.0`, `~6.0`);
+  - o BullMQ não tem logo no Simple Icons e ficou sem logo. O ESM usa o logo do JavaScript.
+- `docs:links`: o lychee roda num container e não alcança o `localhost` do host. O `http://localhost:8025`, no tutorial desde a Fase 2 e agora no README, falhava. O script ganhou `--exclude-loopback`, e a linha em `comandos.md` diz isso. Sobram dois 404 esperados até o passo 15: o link do badge de CI (`actions/workflows/ci.yml`) e o `/generate` do "Use this template", com o repositório privado. O `npmjs.com` às vezes responde 403 ao lychee (anti-bot), fora do README.
+- Quickstart conferido num clone limpo em outra pasta (`ai-nest-ddd-clean`, outro projeto do Compose), com o compose do dono parado por `docker compose stop` e religado depois, sem tocar nos volumes dele. `npm install`, `.env` copiado, `docker compose up -d postgres redis mailpit`, `db:setup` e `db:seed` sem erro, `start:dev`; `/health/live` 200, `/docs` 200, Mailpit 200 e o login do `user@example.com` do seed 200. O projeto do clone saiu com `docker compose down -v --remove-orphans`.
+- `npm run docs:check` e `npm run ci` passam.
 
 ### Passo 15: repositório público e template no GitHub
 
