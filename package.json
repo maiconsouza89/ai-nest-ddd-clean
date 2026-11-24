@@ -7,7 +7,8 @@
     "test:watch": "vitest --project unit",
     "typecheck": "tsc --noEmit",
     "arch": "depcruise src --output-type err-long",
-    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run docs:check && npm test && npm run arch",
+    "ci:static": "npm run typecheck && npm run lint && npm run format:check && npm run docs:check && npm run arch",
+    "ci": "npm run ci:static && npm test",
     "build": "nest build",
     "start:dev": "nest start --watch",
     "test:e2e": "vitest run --project e2e",
@@ -115,6 +116,6 @@
     "uuid": "^14.0.3"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.22.3"
   }
 }

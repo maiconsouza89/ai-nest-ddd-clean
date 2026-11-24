@@ -38,6 +38,19 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 | `test/helpers/redis.ts` | `startRedis`, com a política de memória do `docker-compose.yml` ([Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)) |
 | `test/helpers/contract.ts` | `incompatibilities(exemplo, real)`: lista os campos do exemplo que faltam ou mudaram de tipo, em qualquer profundidade. Campo a mais é aceito (mudança aditiva) |
 
+## Só os testes afetados
+
+Em PR, o CI roda os unitários e os de integração com `vitest run --changed <base>` ([Comandos](comandos.md#ci)). Localmente, o mesmo vale com `npx vitest run --project unit --changed main`.
+
+| O `--changed` | Detalhe |
+| --- | --- |
+| Enxerga | Os arquivos do diff contra a base (`<base>...HEAD`), os modificados e os novos ainda sem commit. Roda cada teste que importa um deles, direta ou indiretamente, por caminho relativo ou por alias `#...` |
+| Não enxerga | O que é carregado por glob ou por caminho, e não por import. Exemplo: os data sources carregam as migrations por glob (`migrations/*.{ts,js}`) |
+| Não enxerga | Um import usado só como tipo, que some na compilação. Mudar `catalog/contracts/catalog.facade.ts` não roda o `catalog-price.adapter.spec.ts` do orders, que só anota tipos com a `CatalogFacade`. Uma mudança de tipo quebra no `typecheck`, que o job `check` roda no projeto inteiro |
+| Roda tudo | Quando o diff tem um arquivo do `forceRerunTriggers` do `vitest.config.ts`, ou o arquivo do `setupFiles` |
+
+Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o padrão dele ao `forceRerunTriggers`, começando por `**/` (o Vitest compara com o caminho absoluto), com um comentário dizendo por quê. Sem isso, um PR que muda só esse arquivo passa sem rodar os testes que dependem dele.
+
 ## Convenções
 
 | Convenção | Detalhe |

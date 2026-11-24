@@ -8,7 +8,7 @@ Todos os comandos rodam na raiz do repositório.
 
 ## Requisitos
 
-- Node 22.13 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
+- Node 22.22.3 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
 - Docker, para o Postgres e o Redis do `docker-compose.yml` e para os testes de integração.
 
 ## Setup do zero
@@ -56,7 +56,8 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run arch` | Regras de camadas e de fronteiras entre módulos, com o dependency-cruiser (`.dependency-cruiser.js`) |
 | `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
 | `npm run docs:links` | Links externos, com o lychee via Docker. Fora do CI, porque depende da rede |
-| `npm run ci` | `typecheck`, `lint`, `format:check`, `docs:check`, `test` e `arch`, nessa ordem. **Não** roda integração nem e2e |
+| `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check` e `arch`, nessa ordem. É o job `check` do CI |
+| `npm run ci` | `ci:static` e depois `test`. **Não** roda integração nem e2e |
 
 ## Testes
 
@@ -80,6 +81,23 @@ Cuidados com o e2e:
 - Por padrão, `DATABASE_URL` e `REDIS_URL` apontam para o Postgres e o Redis do `docker-compose.yml`. Os dois precisam estar no ar.
 - O e2e **grava dados** nesse banco.
 - Encerre qualquer `start:dev` antes. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
+
+## CI
+
+O GitHub Actions roda o `.github/workflows/ci.yml` em todo PR e em todo push na `main`. Num PR, um push novo cancela a execução anterior do mesmo PR. Na `main`, cada push roda até o fim, sem fila com os outros.
+
+| Job | Em PR | Na `main` | Node |
+| --- | --- | --- | --- |
+| `changes` | Compara o PR com a branch de destino e diz se ele muda código | Roda sem checkout e diz que muda: a `main` sempre testa | — |
+| `check` | `npm run ci:static`, no projeto inteiro | O mesmo | `.nvmrc` |
+| `unit` | `npm test -- --changed HEAD^1 --passWithNoTests` | `npm test` | `22.22.3` e `.nvmrc`, em matriz |
+| `integration` | `npm run test:int -- --changed HEAD^1 --passWithNoTests` | `npm run test:int` | `.nvmrc` |
+| `ci` | Falha se um dos outros falhou ou foi cancelado. Um job pulado conta como aprovado. É o check obrigatório do PR | O mesmo | — |
+
+- **PR só de Markdown:** quando todos os arquivos do PR são `*.md` ou estão em `docs/`, o `unit` e o `integration` são pulados, e o `ci` passa. O filtro fica num job, e não no gatilho do workflow, para o check obrigatório continuar aparecendo no PR. Marque como obrigatório só o `ci`: a matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão.
+- **Só os testes afetados:** em PR, o checkout é o merge do PR na branch de destino, e `HEAD^1` é a ponta da branch de destino. O `--changed HEAD^1` roda os testes ligados por import aos arquivos do PR, ou a suíte inteira quando o PR muda um arquivo do `forceRerunTriggers` do `vitest.config.ts`. Um PR verde pode não ter rodado um teste que o grafo de imports não liga à mudança. A `main` roda tudo e pega o que escapou. O que o `--changed` enxerga: [Testes](testes.md#só-os-testes-afetados).
+- **Sem fail-fast:** os jobs rodam em paralelo, a matriz do `unit` não cancela a outra versão quando uma falha, e o Vitest não para no primeiro erro. Todos os resultados saem de uma vez. Quando rever: [Evoluções com gatilho](evolucoes-com-gatilho.md#ci).
+- **Fora do CI:** o e2e, que depende do `docker-compose.yml`, e o `docs:links`, que depende da rede.
 
 ## Migrations
 

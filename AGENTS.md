@@ -90,3 +90,4 @@ Leia a página antes de agir no assunto.
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
 | Escrever ou mover documentação | `docs/README.md` |
+| Continuar um plano em andamento | `docs/plan/` |

@@ -86,7 +86,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- Planos (`docs/plan/`): trabalho interno em andamento. Nenhum no momento: ao criar um, devolva a rota "Continuar um plano em andamento" à tabela do `AGENTS.md`. Um plano concluído ou descartado sai da pasta e fica no histórico do git: o do ciclo do pedido, descartado antes de começar, está em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
+- Planos (`docs/plan/`): trabalho interno em andamento. O [plano do projeto template](plan/projeto-template.md): CI, verificação de e-mail e README. Ao apagar o último plano, tire a rota "Continuar um plano em andamento" da tabela do `AGENTS.md`. Um plano concluído ou descartado sai da pasta e fica no histórico do git: o do ciclo do pedido, descartado antes de começar, está em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
 
 ## Como escrever uma página
 

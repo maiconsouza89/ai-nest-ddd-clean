@@ -6,7 +6,7 @@ Stack: NestJS 12 em ESM, TypeORM com Postgres 19, Redis 8 (cache, filas do BullM
 
 ## Requisitos
 
-- Node 22.13 ou superior. O `.nvmrc` recomenda o 24.
+- Node 22.22.3 ou superior. O `.nvmrc` recomenda o 24.
 - Docker.
 
 Detalhes em [Comandos → Requisitos](docs/reference/comandos.md#requisitos).
