@@ -43,7 +43,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 
 | Fase | O que entrega | Status |
 | --- | --- | --- |
-| 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | 🟡 |
+| 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | ✅ |
 | 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ⬜ |
 | 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | ⬜ |
 
@@ -53,11 +53,11 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 ## Fase 1: CI
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
 > - [x] Passo 1: Vitest pronto para o `--changed`
 > - [x] Passo 2: workflow do GitHub Actions
-> - [ ] Passo 3: documentação e primeira execução no GitHub
+> - [x] Passo 3: documentação e primeira execução no GitHub
 
 ### Passo 1: Vitest pronto para o `--changed`
 
@@ -153,6 +153,10 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
   - #3, só `typeorm-catalog.facade.ts`: `unit` com "No affected test files found" nas duas versões (o catalog não tem unitário), `integration` com 1 arquivo, o int-spec do catalog.
   - #4, migration vazia no identity: `integration` 16 de 16 e, pelo mesmo gatilho, `unit` 37 de 37.
 - Achado: quando o `unit` é pulado, a matriz não expande, e o check aparece com o nome literal `unit (Node ${{ (matrix.node-version || '.nvmrc') }})`. Um check obrigatório `unit (Node 22.22.3)` ficaria esperando para sempre num PR de docs. Corrigido com o ok do dono: job `ci`, com `needs` nos outros quatro e `if: always()`, que falha só se um deles falhou ou foi cancelado. É o único check a marcar como obrigatório (`comandos.md#ci`).
+- PR #5, só `README.md`, depois do job `ci`: `unit` e `integration` pulados e `ci` verde. O PR #1 com o `ci` também ficou todo verde. Fechado sem merge, branch apagado.
+- Push do merge na `main` (`aabdbc3`): suíte inteira, sem `--changed`. `check`, `unit` 37 de 37 em 22.22.3 e no `.nvmrc`, `integration` 16 de 16 e `ci`, todos verdes.
+- Tempo do PR #1: `check` 80 s, `unit` ~45 s, `integration` 112 s (30 s de `npm ci` e 71 s de testes, quase todo subindo containers, um arquivo por vez). Com o ok do dono, o container compartilhado ficou em `evolucoes-com-gatilho.md`, com o gatilho de 5 minutos.
+- Fechamento da fase: `npm run ci` e `npm run test:int` verdes no CI (PR #1 e `main`), `npm run test:e2e` local com 8 de 8 arquivos e 58 testes, `/simplify` e `/code-review` aplicados antes do primeiro commit. O `ci` virou check obrigatório da `main` pelo `npm run github:setup`, criado depois da fase com o ok do dono: o ruleset "branch padrão" foi aceito no repositório privado, e a segunda execução atualizou o mesmo ruleset.
 
 ---
 
@@ -343,7 +347,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
   1. Título `ai-nest-ddd-clean`, os badges e uma frase dizendo que é um template.
   2. O que vem pronto: o `shared` (banco, cache, filas, outbox, auth, observabilidade, jobs, rate limit), o identity (contas, login, sessões, verificação de e-mail) e o notifications (e-mails por SMTP).
   3. Módulos de exemplo: orders (agregado com itens, outbox, concorrência), catalog (CRUD direto, sem camadas) e inventory (reserva síncrona dentro da transação do pedido), com o link para o how-to do passo 12.
-  4. Usar como template: o botão, o que renomear (o `name` do `package.json` e o `OTEL_SERVICE_NAME`) e o link para `docs/how-to/criar-um-modulo.md`.
+  4. Usar como template: o botão, o que renomear (o `name` do `package.json` e o `OTEL_SERVICE_NAME`), `npm run github:setup` para exigir o check `ci` na branch padrão, e o link para `docs/how-to/criar-um-modulo.md`.
   5. Requisitos, Quickstart (com o Mailpit), Antes de abrir um PR e Documentação, como hoje.
 - Badges pelo shields.io, todos apontando para `maiconsouza89/ai-nest-ddd-clean`:
   - Dinâmicos: status do workflow `ci.yml` na `main`, licença, `engines.node` do `package.json`, versão de `@nestjs/core` e de `typescript` (`github/package-json/dependency-version`).
