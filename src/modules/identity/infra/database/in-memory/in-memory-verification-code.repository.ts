@@ -19,6 +19,10 @@ export class InMemoryVerificationCodeRepository implements VerificationCodeRepos
     return row ? VerificationCode.restore(row) : null;
   }
 
+  async countIssuedSince(userId: string, since: Date) {
+    return this.rows.filter((r) => r.userId === userId && r.createdAt >= since).length;
+  }
+
   async save(code: VerificationCode) {
     const { id, attempts, usedAt } = code.toProps();
     const row = this.rows.find((r) => r.id === id);

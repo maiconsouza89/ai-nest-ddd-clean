@@ -19,7 +19,6 @@ export class OnVerificationCodeIssuedHandler {
     return this.consumer.handle(CONSUMER, event, ({ payload, occurredAt }) =>
       this.sendEmail.execute({
         email: payload.email,
-        name: payload.name,
         code: payload.code,
         issuedAt: occurredAt,
         expiresAt: payload.expiresAt,

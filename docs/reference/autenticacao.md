@@ -21,7 +21,7 @@ Todas são `POST`, públicas e com rate limit próprio, por IP. Um erro de domí
 
 - **Register:** o usuário nasce sem roles e com o e-mail por verificar. O register não abre sessão. Ele emite um código de verificação, que chega por e-mail ([Código de verificação](#código-de-verificação)).
 - **Verify-email:** confere o código e marca o e-mail como verificado. Não abre sessão: depois dele, chame o login. Código errado, vencido, já usado ou esgotado e e-mail desconhecido dão o mesmo 400.
-- **Resend-verification-code:** emite um código novo, que invalida o anterior, e o envia por e-mail. Responde 202 sempre, sem dizer se o e-mail saiu: e-mail desconhecido, conta já verificada e pedido antes de 60 segundos do último código terminam em silêncio.
+- **Resend-verification-code:** emite um código novo, que invalida o anterior, e o envia por e-mail. Responde 202 sempre, sem dizer se o e-mail saiu: e-mail desconhecido, conta já verificada, pedido antes de 60 segundos do último código e cota de códigos esgotada terminam em silêncio.
 - **Login:** e-mail desconhecido e senha errada dão a mesma resposta. Os dois casos pagam uma verificação de hash, então o tempo de resposta também não revela quais e-mails estão cadastrados. Com a senha certa e o e-mail por verificar, a resposta é 403 `EMAIL_NOT_VERIFIED`. A senha é conferida antes, para o 403 não revelar a quem não a tem que a conta existe.
 - **Refresh:** o token recebido deixa de valer. Use o `refreshToken` da resposta na próxima renovação. Token desconhecido, vencido, revogado ou reusado dão o mesmo 401.
 - **Logout:** revoga a sessão inteira do refresh token (a família, ver abaixo). Responde 204 mesmo para um token desconhecido, para não revelar quais tokens existem.
@@ -31,7 +31,8 @@ Todas são `POST`, públicas e com rate limit próprio, por IP. Um erro de domí
 - 6 dígitos aleatórios (`crypto.randomInt`). O banco guarda só o hash SHA-256, na tabela `identity.email_verification_codes`.
 - Vale `EMAIL_VERIFICATION_CODE_TTL_SECONDS`, 600 segundos (10 minutos) por padrão e no mínimo 60, contados da emissão.
 - Uso único. Aceita até 5 tentativas erradas: a quinta esgota o código, e depois dela nem o código certo vale. Tentativas simultâneas contam uma a uma.
-- Só o código mais recente do usuário vale: emitir um novo invalida os anteriores. Entre dois códigos, no mínimo 60 segundos.
+- Só o código mais recente do usuário vale: emitir um novo invalida os anteriores. Entre dois códigos, no mínimo 60 segundos, e no máximo 10 códigos por usuário em 24 horas, contando o do register. Com 5 tentativas por código, são até 50 palpites por dia por conta, abaixo do teto de 100 falhas do [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html).
+- O e-mail do código leva só o código e a validade, sem o nome do cadastro: o endereço ainda não foi verificado, e o nome poderia ser de quem usou o e-mail de outra pessoa.
 - O código viaja em texto puro no evento `identity.verification-code-issued`, que o notifications usa para enviar o e-mail, e fica na outbox e nos jobs do Redis até a limpeza ([ADR 0009](../adr/0009-verificacao-de-email-com-codigo-no-evento.md)).
 
 ## Access token

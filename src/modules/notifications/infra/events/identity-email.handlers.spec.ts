@@ -34,6 +34,8 @@ describe('OnVerificationCodeIssuedHandler', () => {
     ]);
     expect(emails.sent[0].body).toContain(code);
     expect(emails.sent[0].body).toContain('10 minutos');
+    // o endereço ainda não foi verificado: nada do cadastro entra no e-mail
+    expect(emails.sent[0].body).not.toContain(verificationCodeIssuedV1Example.payload.name);
   });
 
   it('o mesmo evento entregue duas vezes envia um e-mail só', async () => {

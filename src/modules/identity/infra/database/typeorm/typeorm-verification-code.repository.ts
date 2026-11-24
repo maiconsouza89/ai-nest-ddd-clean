@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, IsNull } from 'typeorm';
+import { DataSource, IsNull, MoreThanOrEqual } from 'typeorm';
 import { currentManager } from '#shared/infra/database/transaction-context';
 import { VerificationCode } from '../../../domain/entities/verification-code.entity.js';
 import { VerificationCodeRepository } from '../../../domain/repositories/verification-code.repository.js';
@@ -31,6 +31,10 @@ export class TypeOrmVerificationCodeRepository implements VerificationCodeReposi
       .setLock('pessimistic_write')
       .getOne();
     return raw ? VerificationCode.restore(raw) : null;
+  }
+
+  countIssuedSince(userId: string, since: Date) {
+    return this.repo.countBy({ userId, createdAt: MoreThanOrEqual(since) });
   }
 
   async save(code: VerificationCode) {

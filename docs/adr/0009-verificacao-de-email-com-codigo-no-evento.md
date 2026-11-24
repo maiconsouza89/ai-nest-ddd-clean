@@ -24,4 +24,5 @@ Contas que existiam antes da migration ficam por verificar: o template sempre co
 - O login tem um passo a mais, e todo fluxo que cadastra e entra (o helper de auth do e2e, o tutorial e o e2e `primeiro-pedido`) verifica o e-mail no meio.
 - O notifications passa a ter função própria na base, sem depender do orders.
 - Encurtar a retenção da outbox, ou limpar as linhas mortas, reduz o tempo em que o código fica legível ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
-- O hash SHA-256 de 6 dígitos não resiste a força bruta. O que protege o código é o prazo, o limite de tentativas, contadas uma a uma por uma trava na linha do código, e o rate limit das rotas.
+- O hash SHA-256 de 6 dígitos não resiste a força bruta. O que protege o código é o prazo, o limite de tentativas, contadas uma a uma por uma trava, a cota de 10 códigos por usuário em 24 horas (até 50 palpites por dia, abaixo do teto de 100 falhas do NIST SP 800-63B) e o rate limit das rotas.
+- O e-mail do código não leva o nome, que chega no payload: o endereço ainda não foi verificado.

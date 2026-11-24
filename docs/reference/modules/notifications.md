@@ -16,7 +16,7 @@ O módulo não tem `domain/` nem tabelas: só reage a eventos. A lógica fica em
 | --- | --- | --- |
 | Destinatário | `RecipientDirectory` | O e-mail do cliente do pedido, lido do identity pelo `customerId`. Só o e-mail de pagamento confirmado o usa: os eventos do identity já trazem o endereço no payload. |
 | E-mail | `Email` (`to`, `subject`, `body`), `EmailSender` | A mensagem enviada. Não é o value object `Email` do identity. |
-| E-mail de código de verificação | `SendVerificationCodeEmailUseCase` | "Seu código de verificação": o código e a validade em minutos, enviado no register e em cada reenvio. |
+| E-mail de código de verificação | `SendVerificationCodeEmailUseCase` | "Seu código de verificação": o código e a validade em minutos, enviado no register e em cada reenvio. Não leva o nome do cadastro: o endereço ainda não foi verificado, e o nome poderia ser de quem usou o e-mail de outra pessoa. |
 | E-mail de boas-vindas | `SendWelcomeEmailUseCase` | "Boas-vindas, `<nome>`": enviado quando o usuário verifica o e-mail. |
 | E-mail de pagamento confirmado | `SendOrderPaidEmailUseCase` | O aviso enviado quando um pedido é pago. Exemplo, sai junto com o orders. |
 
@@ -33,7 +33,7 @@ Nenhum.
 
 | Evento | Publicado por | Consumidor | Efeito |
 | --- | --- | --- | --- |
-| `identity.verification-code-issued` v1 | [identity](identity.md#eventos-publicados) | `notifications.email-on-verification-code-issued` (`OnVerificationCodeIssuedHandler`) | Envia "Seu código de verificação" ao `email` do payload, com o código e a validade, de `occurredAt` a `expiresAt`, em minutos |
+| `identity.verification-code-issued` v1 | [identity](identity.md#eventos-publicados) | `notifications.email-on-verification-code-issued` (`OnVerificationCodeIssuedHandler`) | Envia "Seu código de verificação" ao `email` do payload, com o código e a validade, de `occurredAt` a `expiresAt`, em minutos. Ignora o `name` |
 | `identity.email-verified` v1 | [identity](identity.md#eventos-publicados) | `notifications.email-on-email-verified` (`OnEmailVerifiedHandler`) | Envia "Boas-vindas, `<nome>`" ao `email` do payload |
 | `orders.order-paid` v1 | [orders](orders.md#eventos-publicados) | `notifications.email-on-order-paid` (`OnOrderPaidHandler`) | Exemplo. Envia "Pagamento confirmado: pedido `<orderId>`", com o total em `<moeda> <valor>` |
 

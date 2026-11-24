@@ -25,7 +25,7 @@ Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta pág
 | Registrar | `User.register`, `RegisterUserUseCase` | Criar a conta, com o e-mail por verificar, e emitir o primeiro código de verificação. Não abre sessão. |
 | Verificar o e-mail | `User.verifyEmail`, `VerifyEmailUseCase`, `emailVerifiedAt` | Provar, com o código de verificação, que a pessoa recebe os e-mails do endereço da conta. Libera o login. Não abre sessão. "Confirmar" é termo do orders e do notifications, não daqui. |
 | Código de verificação | `VerificationCode`, `VerificationCodeIssuer` | Seis dígitos enviados por e-mail, de uso único, com prazo e no máximo 5 tentativas erradas. Só o mais recente do usuário vale. O banco guarda o hash. |
-| Reenviar o código | `ResendVerificationCodeUseCase` | Emitir um código novo, que invalida o anterior, no mínimo 60 segundos depois do último. |
+| Reenviar o código | `ResendVerificationCodeUseCase` | Emitir um código novo, que invalida o anterior, no mínimo 60 segundos depois do último e dentro da cota de 10 códigos por usuário em 24 horas (`CODE_QUOTA`). |
 | Sessão | família de refresh tokens (`familyId`) | Nasce no login e termina no logout, no reuso de um token, no prazo absoluto, quando o token vence pelo próprio TTL (`REFRESH_TOKEN_TTL_SECONDS`) sem ser renovado (`isDeadAt` em `refresh-token.entity.ts`) ou quando o usuário é apagado (`ON DELETE CASCADE` em `refresh_tokens`, na `refresh-token.orm-entity.ts`). |
 | Refresh token | `RefreshToken` | Token opaco, de uso único, trocado por um sucessor a cada renovação. O banco guarda só o hash. |
 | Access token | `TokenIssuer` (`JwtTokenIssuer`) | JWT de vida curta, com o `sub` do usuário e sem roles. |
@@ -74,7 +74,7 @@ Nenhum.
 | Só o código mais recente vale: emitir um novo marca os anteriores como usados | `INVALID_VERIFICATION_CODE` |
 | Código errado, vencido, usado, esgotado e e-mail desconhecido dão o mesmo erro | `INVALID_VERIFICATION_CODE` |
 | Verificar de novo não muda a data nem publica o evento outra vez | — |
-| Entre dois códigos do mesmo usuário, no mínimo 60 segundos. O reenvio fora disso, para e-mail desconhecido ou para conta verificada termina sem erro e sem e-mail | — |
+| Entre dois códigos do mesmo usuário, no mínimo 60 segundos, e no máximo 10 em 24 horas, contando o do register. O reenvio fora disso, para e-mail desconhecido ou para conta verificada termina sem erro e sem e-mail | — |
 | Um refresh token renova uma vez só. O reuso revoga a família inteira | `INVALID_REFRESH_TOKEN` |
 | Nenhum refresh token vence depois do prazo absoluto da família | — |
 

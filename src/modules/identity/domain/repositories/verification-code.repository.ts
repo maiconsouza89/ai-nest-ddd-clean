@@ -11,6 +11,8 @@ export abstract class VerificationCodeRepository {
    * tentativas simultâneas não contarem do mesmo número. Chame dentro de uma transação.
    */
   abstract findLatestForUpdate(userId: string): Promise<VerificationCode | null>;
+  /** Quantos códigos o usuário recebeu desde `since`, inclusive os já usados ou invalidados. */
+  abstract countIssuedSince(userId: string, since: Date): Promise<number>;
   /** Grava as tentativas e o uso. */
   abstract save(code: VerificationCode): Promise<void>;
 }

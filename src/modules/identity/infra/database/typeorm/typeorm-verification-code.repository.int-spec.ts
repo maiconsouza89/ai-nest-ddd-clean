@@ -66,6 +66,18 @@ describe('Código de verificação (integração)', () => {
     expect(old.usedAt).toEqual(second.createdAt);
   });
 
+  it('conta os códigos emitidos desde uma data, inclusive os invalidados', async () => {
+    const userId = await newUser();
+    const minute = (n: number) => new Date(now.getTime() + n * MINUTE);
+    await tx.run(() => repo.add(issue(userId, 'a'.repeat(64), minute(0))));
+    await tx.run(() => repo.add(issue(userId, 'b'.repeat(64), minute(2))));
+    await tx.run(() => repo.add(issue(userId, 'c'.repeat(64), minute(4))));
+
+    expect(await repo.countIssuedSince(userId, minute(0))).toBe(3);
+    expect(await repo.countIssuedSince(userId, minute(1))).toBe(2);
+    expect(await repo.countIssuedSince(await newUser(), minute(0))).toBe(0);
+  });
+
   it('grava as tentativas e o uso', async () => {
     const userId = await newUser();
     const code = issue(userId, 'a'.repeat(64));

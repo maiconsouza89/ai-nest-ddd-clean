@@ -4,12 +4,11 @@ import { SendVerificationCodeEmailUseCase } from './send-verification-code-email
 import { SendWelcomeEmailUseCase } from './send-welcome-email.use-case.js';
 
 describe('SendVerificationCodeEmailUseCase', () => {
-  it('envia o código e a validade ao e-mail da conta', async () => {
+  it('envia o código e a validade ao e-mail da conta, sem texto do cadastro', async () => {
     const emails = new FakeEmailSender();
 
     await new SendVerificationCodeEmailUseCase(emails).execute({
       email: 'ana@example.com',
-      name: 'Ana',
       code: '042137',
       issuedAt: '2026-01-01T12:00:00.000Z',
       expiresAt: '2026-01-01T12:10:00.000Z',
@@ -19,7 +18,6 @@ describe('SendVerificationCodeEmailUseCase', () => {
     const [sent] = emails.sent;
     expect(sent.to).toBe('ana@example.com');
     expect(sent.subject).toBe('Seu código de verificação');
-    expect(sent.body).toContain('Olá, Ana.');
     expect(sent.body).toContain('042137');
     expect(sent.body).toContain('10 minutos');
   });

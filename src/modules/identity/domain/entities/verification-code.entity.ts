@@ -15,6 +15,12 @@ export const MAX_VERIFICATION_ATTEMPTS = 5;
 export const RESEND_INTERVAL_MS = 60_000;
 
 /**
+ * Cota de códigos por usuário numa janela. Cada código traz 5 tentativas, então a cota limita os
+ * palpites a 50 por dia por conta, abaixo do teto de 100 falhas do NIST SP 800-63B (ADR 0009).
+ */
+export const CODE_QUOTA = { max: 10, windowMs: 24 * 60 * 60 * 1000 } as const;
+
+/**
  * O código que verifica o e-mail de um usuário. Vale por um prazo, aceita poucas tentativas erradas
  * e é de uso único. A entidade só conhece o hash: o código em texto puro existe apenas na emissão.
  */

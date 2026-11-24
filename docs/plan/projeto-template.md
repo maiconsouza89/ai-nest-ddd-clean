@@ -337,6 +337,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Nenhuma página cita o `LoggingEmailSender`. A ADR 0004 ainda cita o arquivo `logging-email-sender.ts`, mas ADRs são imutáveis (`docs/README.md`).
 - Do `/code-review`, registrado nas docs em vez de mudar código: o código também fica nos jobs do BullMQ no Redis (ADR 0009 e `identity.md`); `SMTP_URL` e `EMAIL_FROM` passam a ser exigidas pelos scripts de migration e seed (`variaveis-de-ambiente.md`); o envio roda dentro da transação do `IdempotentConsumer` e segura uma conexão por até 15 s (`notifications.md`); e, num banco antigo, uma sessão aberta antes da migration continua renovando (ADR 0009).
 - Fechamento da fase: `npm run ci`, `npm run test:int` (20 de 20 arquivos, 92 testes) e `npm run test:e2e` (8 de 8, 63 testes) passam, depois do `/simplify` e do `/code-review`.
+- Revisão de segurança no PR #7, conferida contra o NIST SP 800-63B e o OWASP. Duas correções, com o ok do dono: cota de 10 códigos por usuário em 24 horas no reenvio (até 50 palpites por dia por conta, abaixo do teto de 100 do NIST), e o e-mail do código sem o nome do cadastro (content spoofing para um endereço não verificado). O código em texto puro no evento ficou como está (ADR 0009). `npm run ci`, o int-spec do código e o e2e inteiro passaram de novo.
 
 ---
 

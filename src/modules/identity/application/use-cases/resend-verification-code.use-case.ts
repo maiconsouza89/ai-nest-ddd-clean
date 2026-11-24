@@ -1,5 +1,6 @@
 import { Clock } from '#shared/application/ports/clock';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
+import { CODE_QUOTA } from '../../domain/entities/verification-code.entity.js';
 import { VerificationCodeRepository } from '../../domain/repositories/verification-code.repository.js';
 import { UserRepository } from '../../domain/repositories/user.repository.js';
 import { Email } from '../../domain/value-objects/email.vo.js';
@@ -7,8 +8,8 @@ import { ResendVerificationCodeInput } from '../dtos/identity.inputs.js';
 import { VerificationCodeIssuer } from '../verification-code-issuer.js';
 
 /**
- * Emite um código novo, que invalida o anterior. E-mail desconhecido, conta já verificada e pedido
- * antes do intervalo mínimo terminam em silêncio: quem chama recebe sempre a mesma resposta, sem
+ * Emite um código novo, que invalida o anterior. E-mail desconhecido, conta já verificada, pedido
+ * antes do intervalo mínimo e cota de códigos esgotada terminam em silêncio: quem chama recebe sempre a mesma resposta, sem
  * saber se a conta existe nem se o e-mail saiu.
  */
 export class ResendVerificationCodeUseCase {
@@ -31,7 +32,11 @@ export class ResendVerificationCodeUseCase {
       const user = await this.users.findByIdForUpdate(found.id);
       if (!user || user.isEmailVerified) return;
       const latest = await this.codes.findLatestForUpdate(user.id);
-      if (latest && !latest.allowsResendAt(this.clock.now())) return;
+      const now = this.clock.now();
+      if (latest && !latest.allowsResendAt(now)) return;
+      // a cota por conta, e não só por IP: cada código novo traz mais tentativas
+      const since = new Date(now.getTime() - CODE_QUOTA.windowMs);
+      if ((await this.codes.countIssuedSince(user.id, since)) >= CODE_QUOTA.max) return;
       await this.issuer.issue(user);
     });
   }

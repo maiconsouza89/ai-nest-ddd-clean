@@ -10,7 +10,7 @@ import { Email } from '../../domain/value-objects/email.vo.js';
 import { InMemoryUserRepository } from '../../infra/database/in-memory/in-memory-user.repository.js';
 import { InMemoryVerificationCodeRepository } from '../../infra/database/in-memory/in-memory-verification-code.repository.js';
 import { VerificationCodeIssuer } from '../verification-code-issuer.js';
-import { RESEND_INTERVAL_MS } from '../../domain/entities/verification-code.entity.js';
+import { CODE_QUOTA, RESEND_INTERVAL_MS } from '../../domain/entities/verification-code.entity.js';
 import { ResendVerificationCodeUseCase } from './resend-verification-code.use-case.js';
 import { VerifyEmailUseCase } from './verify-email.use-case.js';
 
@@ -133,6 +133,25 @@ describe('ResendVerificationCodeUseCase', () => {
       expect(outbox.events).toEqual([]);
     },
   );
+
+  it('esgotada a cota de códigos da janela, termina sem erro e sem evento até a janela passar', async () => {
+    const { resend, outbox, clock } = await setup();
+    // o setup já emitiu o primeiro código, como o register
+    for (let i = 1; i < CODE_QUOTA.max; i++) {
+      clock.advance(RESEND_INTERVAL_MS);
+      await resend.execute({ email: EMAIL });
+    }
+    expect(outbox.events).toHaveLength(CODE_QUOTA.max - 1);
+
+    clock.advance(RESEND_INTERVAL_MS);
+    await expect(resend.execute({ email: EMAIL })).resolves.toBeUndefined();
+    expect(outbox.events).toHaveLength(CODE_QUOTA.max - 1);
+
+    // o primeiro código sai da janela, e a cota abre uma vaga
+    clock.advance(CODE_QUOTA.windowMs - CODE_QUOTA.max * RESEND_INTERVAL_MS + 1);
+    await resend.execute({ email: EMAIL });
+    expect(outbox.events).toHaveLength(CODE_QUOTA.max);
+  });
 
   it('conta já verificada: termina sem erro e sem evento', async () => {
     const { resend, verify, outbox, clock } = await setup();
