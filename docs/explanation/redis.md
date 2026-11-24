@@ -36,16 +36,16 @@ Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão v
 
 ### Redis fora do ar: cada uso falha do seu jeito
 
-Nenhum uso espera o Redis voltar segurando uma requisição. O que acontece com cada um:
+Nenhum uso espera o Redis voltar segurando uma requisição. O que acontece com cada um, conferido com o Redis parado e a app no ar:
 
 | Uso | Com o Redis fora | Por quê |
 | --- | --- | --- |
-| Cache | A leitura vai direto ao banco | O cache é otimização. Perdê-lo deixa a API mais lenta, não errada |
-| Rate limit | 503 em todas as rotas limitadas | Falha fechada: deixar passar abriria o limite de tentativas de login quando não dá para contá-las |
-| Outbox | Os eventos ficam na tabela, e o relay tenta de novo com backoff. Depois de 8 falhas, o evento é marcado como morto (`deadAt`) | A outbox existe para isso ([Consistência e eventos](consistencia-e-eventos.md#o-evento-sai-pela-outbox)) |
-| Workers | Esperam a reconexão | Não há requisição esperando por eles |
-| Agendador de jobs | A subida falha em até cerca de 15 s: até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro dos jobs agendados | Sem o agendador, o job nunca rodaria, e ninguém perceberia |
-| `/health/ready` | Responde que não está pronto | O orquestrador tira a instância do tráfego. O `/health/live` não depende do Redis |
+| Cache | A leitura vai direto ao banco, e o log mostra os avisos `redis connection error` e `cache store error` | O cache é otimização. Perdê-lo deixa a API mais lenta, não errada |
+| Rate limit | 503 (`Rate limiting unavailable`) na hora, em todas as rotas limitadas. O `ThrottlerGuard` é global, e só o health fica fora dele: com o rate limit ligado, a API inteira responde 503, antes de chegar ao cache ou à outbox | Falha fechada: deixar passar abriria o limite de tentativas de login quando não dá para contá-las |
+| Outbox | Os eventos ficam na tabela, e o relay tenta de novo com backoff. Depois de 8 falhas, o evento é marcado como morto (`deadAt`). Exceção: o primeiro envio a uma fila desde a subida não falha. A `Queue` do BullMQ espera a conexão ficar pronta, e o relay fica parado nesse lote, com a transação aberta, até o Redis voltar | A outbox existe para isso ([Consistência e eventos](consistencia-e-eventos.md#o-evento-sai-pela-outbox)) |
+| Workers | Esperam a reconexão, com avisos no log, e voltam a processar sozinhos | Não há requisição esperando por eles |
+| Agendador de jobs | A subida falha cerca de 15 s depois da primeira tentativa de conexão: até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro dos jobs agendados | Sem o agendador, o job nunca rodaria, e ninguém perceberia |
+| `/health/ready` | Responde 503, com o `redis` `down` (`The client is offline`), e volta a 200 quando o Redis volta | O orquestrador tira a instância do tráfego. O `/health/live` não depende do Redis |
 
 A conexão do cache não bloqueia a subida. A app sobe sem cache, e o `/health/ready` acusa a falta. Já o registro dos jobs bloqueia, porque um job que não roda é um erro silencioso, e um cache ausente não é.
 

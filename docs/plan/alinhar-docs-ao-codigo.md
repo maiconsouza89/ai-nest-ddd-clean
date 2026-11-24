@@ -27,7 +27,7 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 | 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ✅ |
 | 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ✅ |
 | 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ✅ |
-| 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ⬜ |
+| 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ✅ |
 | 6. Entrega | Verificação completa, `/simplify`, `/code-review` e este plano apagado | ⬜ |
 
 A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que a doc vai citar. As fases 2, 3 e 4 são independentes entre si. A fase 5 depende da 3, porque confere o texto que a 3 escreve.
@@ -434,10 +434,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 ## Fase 5: Redis fora do ar na prática
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: subida sem Redis
-> - [ ] Passo 2: Redis caindo com a app no ar
+> - [x] Passo 1: subida sem Redis
+> - [x] Passo 2: Redis caindo com a app no ar
 
 **Cuidado:** use só `docker compose stop redis` e `docker compose start redis`, na raiz deste repo. Nada de `down -v`, nada de `prune`, e nada em containers de outros projetos. Não rode o e2e enquanto a app estiver de pé.
 
@@ -453,8 +453,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] O tempo medido e a mensagem de erro estão no **Como ficou** do passo.
-- [ ] O `redis.md` e o `agendar-um-job.md` dizem o tempo medido, ou o texto foi corrigido para bater com ele.
+- [x] O tempo medido e a mensagem de erro estão no **Como ficou** do passo.
+- [x] O `redis.md` e o `agendar-um-job.md` dizem o tempo medido, ou o texto foi corrigido para bater com ele.
+
+**Como ficou:** com o Redis parado, o `npm run start:dev` compilou em 13 s, e o processo levou mais 11 s carregando o código até a primeira tentativa de conexão (`bullmq redis connection error`, `ECONNREFUSED 127.0.0.1:6379`). Dali até o processo cair foram 15,4 s, os 5 s do `PRODUCER_READY_TIMEOUT_MS` mais os 10 s do `REGISTER_TIMEOUT_MS`. O erro: `Error: identity.purge-expired-refresh-tokens: scheduler registration failed`, com `[cause]: TimeoutError: Operation timed out after 10000ms`. O watch do Nest fica esperando mudanças depois da queda, e foi encerrado à mão. As duas páginas passaram a contar os ~15 s "depois da primeira tentativa de conexão", porque, contado do `start:dev`, o total inclui a compilação e o carregamento.
 
 ### Passo 2: Redis caindo com a app no ar
 
@@ -474,9 +476,17 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] Cada afirmação da seção "Redis fora do ar: cada uso falha do seu jeito" do `redis.md`, e o aviso citado no `cachear-uma-leitura.md`, foi confirmada ou corrigida, com o resultado no **Como ficou**.
-- [ ] `docker compose ps` mostra o Postgres e o Redis `healthy`, e nenhuma app ficou de pé.
-- [ ] `npm run ci` passa (fecha a fase 5).
+- [x] Cada afirmação da seção "Redis fora do ar: cada uso falha do seu jeito" do `redis.md`, e o aviso citado no `cachear-uma-leitura.md`, foi confirmada ou corrigida, com o resultado no **Como ficou**.
+- [x] `docker compose ps` mostra o Postgres e o Redis `healthy`, e nenhuma app ficou de pé.
+- [x] `npm run ci` passa (fecha a fase 5).
+
+**Como ficou:** foram três rodadas, todas com o login feito antes de parar o Redis, porque a rota de login tem rate limit.
+
+- **Com o `.env` padrão (`THROTTLE_ENABLED=true`):** `GET` e `POST /v1/orders` responderam 503 `Rate limiting unavailable` em 6 a 19 ms. O `ThrottlerGuard` é global, então nenhuma requisição chega ao cache nem à outbox. O `/health/ready` respondeu 503 (`redis: down`, `The client is offline`) e voltou a 200 cerca de 7 s depois do `docker compose start redis`.
+- **Com `THROTTLE_ENABLED=false`:** o `GET /v1/orders` respondeu 200 em 65 ms, lendo do banco, e o `POST` respondeu 201 em 68 ms. O evento do pedido não falhou: foi o primeiro envio à fila `events.orders.invalidate-list-cache` desde a subida, e a `Queue` nova do BullMQ 6.7.8 chama `RedisConnection.waitUntilReady`, que espera o `ready` sem prazo. O relay ficou parado no lote, com a transação aberta, até o Redis voltar. Depois o evento saiu com `attempts=0`, e o handler o processou.
+- **Com a fila aquecida por um pedido antes da queda:** a entrega falhou na hora (`event delivery failed, will retry`), com esperas de 1 s, 2 s e 4 s, e o evento saiu na quarta tentativa, depois de o Redis voltar (`attempts=3`).
+
+Em todas as rodadas, o log mostrou `redis connection error`, `cache store error`, `bullmq redis connection error` e os avisos dos workers, que voltaram a processar sozinhos. Correções: no `redis.md`, as linhas do rate limit (o guard global), da outbox (a exceção do primeiro envio), dos workers e do `/health/ready`; no `cachear-uma-leitura.md`, o aviso passou a exigir `THROTTLE_ENABLED=false`. A espera sem prazo do primeiro envio é comportamento do código, e mudá-la fica fora desta auditoria.
 
 ---
 

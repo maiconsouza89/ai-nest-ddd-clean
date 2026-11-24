@@ -96,7 +96,7 @@ Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pod
 
 - `npm test -- cached-<leitura>` e `npm run test:int -- cached-<leitura>` passam.
 - Com a app no ar, depois de uma chamada à rota, a chave aparece no Redis: `docker compose exec redis redis-cli --scan --pattern '<módulo>:<leitura>:*'`. Uma escrita no recurso faz a chamada seguinte vir atualizada assim que o evento sai da outbox.
-- Com o Redis parado (`docker compose stop redis`), a rota continua respondendo, e o log mostra os avisos do Redis (`redis connection error`, `cache store error`). Suba-o de novo com `docker compose start redis`.
+- Com o Redis parado (`docker compose stop redis`) e a app rodando com `THROTTLE_ENABLED=false`, a rota continua respondendo, e o log mostra os avisos do Redis (`redis connection error`, `cache store error`). Com o rate limit ligado, toda rota responde 503 antes de chegar ao cache ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)). Suba o Redis de novo com `docker compose start redis`.
 
 ## Veja também
 
