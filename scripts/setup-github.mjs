@@ -1,6 +1,7 @@
 // Cria o ruleset da branch padrão no repositório do remote `origin`, pelo `gh`. O que ele exige está
 // em docs/reference/comandos.md#ci. Rodar de novo atualiza o mesmo ruleset, achado pelo nome, e mantém
-// o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos.
+// o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos. Também deixa
+// o squash como único jeito de fazer merge de PR e apaga o branch do PR depois do merge.
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
@@ -106,3 +107,21 @@ if (!result.ok) {
 process.stdout.write(
   `${existingId ? 'Atualizado' : 'Criado'} o ruleset "${RULESET_NAME}" em ${repo} (docs/reference/comandos.md#ci).\n`,
 );
+
+// Merge de PR só por squash (um commit por PR na branch padrão), e o branch do PR some depois dele.
+const merge = run('gh', [
+  'api',
+  '--method',
+  'PATCH',
+  `repos/${repo}`,
+  '-F',
+  'allow_squash_merge=true',
+  '-F',
+  'allow_merge_commit=false',
+  '-F',
+  'allow_rebase_merge=false',
+  '-F',
+  'delete_branch_on_merge=true',
+]);
+if (!merge.ok) fail(`não foi possível configurar o merge de PR em ${repo}:\n${merge.stderr}`);
+process.stdout.write(`Merge de PR em ${repo} só por squash, apagando o branch depois.\n`);
