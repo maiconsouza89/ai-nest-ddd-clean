@@ -63,7 +63,26 @@ describe('Catalog (e2e)', () => {
       .set(admin)
       .send({ name: 'X', priceCents: -1 })
       .expect(400);
+    await request(server())
+      .post('/v1/products')
+      .set(admin)
+      .send({ name: '   ', priceCents: 100 })
+      .expect(400);
     await request(server()).get('/v1/products/nao-e-uuid').set(admin).expect(400);
+  });
+
+  it('rejeita nome só de espaços na atualização (400)', async () => {
+    const admin = await registerAdmin(app);
+    const created = await request(server())
+      .post('/v1/products')
+      .set(admin)
+      .send({ name: 'Lápis', priceCents: 100 })
+      .expect(201);
+    await request(server())
+      .patch(`/v1/products/${created.body.id}`)
+      .set(admin)
+      .send({ name: '   ' })
+      .expect(400);
     await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
   });
 });

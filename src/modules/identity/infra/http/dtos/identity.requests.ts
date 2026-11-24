@@ -1,6 +1,8 @@
 import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { Trim } from '#shared/infra/http/trim.decorator';
 
 export class RegisterRequest {
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)

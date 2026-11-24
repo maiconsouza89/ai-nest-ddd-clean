@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { deleteUser, registerAndLogin, setRoles, uniqueEmail } from './helpers/auth.js';
@@ -92,6 +93,18 @@ describe('Auth (e2e)', () => {
       .post('/v1/auth/register')
       .send({ ...base, name: 'x'.repeat(101) })
       .expect(400);
+  });
+
+  it('não conta os espaços das pontas do nome e grava o nome sem eles', async () => {
+    const name = 'x'.repeat(100);
+    const reg = await request(server())
+      .post('/v1/auth/register')
+      .send({ name: `  ${name}  `, email: uniqueEmail(), password: 'secret-123' })
+      .expect(201);
+    const [row] = await app
+      .get(DataSource)
+      .query(`SELECT name FROM identity.users WHERE id = $1`, [reg.body.id]);
+    expect(row.name).toBe(name);
   });
 
   it('valida o corpo (e-mail inválido, senha curta, campo extra)', async () => {
