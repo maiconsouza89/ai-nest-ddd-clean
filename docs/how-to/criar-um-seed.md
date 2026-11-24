@@ -53,7 +53,7 @@ Use este guia para dar a um módulo dados de desenvolvimento e teste manual, com
    "seed:inventory": "node --conditions=@app/source --loader ts-node/esm --no-warnings src/modules/inventory/infra/database/typeorm/seeds/run.ts"
    ```
 
-4. Inclua o módulo no loop de seeds do setup, no `README.md` e em `docs/reference/comandos.md` (seções "Setup do zero" e "Seeds"). A ordem do loop segue as referências entre os dados.
+4. Inclua o módulo no loop de seeds do setup, no `README.md`, em `docs/reference/comandos.md` (seções "Setup do zero" e "Seeds") e no passo 3 do [tutorial 01](../tutorials/01-do-clone-ao-primeiro-pedido.md). A ordem do loop segue as referências entre os dados.
 
 5. Descreva o que o seed cria na seção "Schema e migrations" da doc do módulo, em `docs/reference/modules/<módulo>.md`, como faz o [inventory](../reference/modules/inventory.md#schema-e-migrations).
 

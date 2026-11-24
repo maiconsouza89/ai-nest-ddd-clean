@@ -1,6 +1,12 @@
-# Passo a passo: construindo o projeto do zero
+---
+type: tutorial
+---
+
+# Construindo o projeto do zero
 
 Este roteiro monta, em etapas, o monólito modular descrito em [Arquitetura](../explanation/arquitetura.md). A primeira etapa é TypeScript puro, e cada peça nova só entra quando o projeto precisa dela.
+
+O roteiro registra o caminho que montou o projeto, com as ferramentas e versões da época, como o Jest no lugar do Vitest. O que mudou desde então, e por quê, está no [plano de evolução](../plan/evolucao.md). O código em `src/` é a versão atual.
 
 ## Como usar
 

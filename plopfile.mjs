@@ -5,7 +5,11 @@ const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
 const DOCS_INDEX = 'docs/README.md';
 // o setup do zero aplica as migrations de cada módulo num loop escrito nestes arquivos
-const SETUP_DOCS = ['README.md', 'docs/reference/comandos.md'];
+const SETUP_DOCS = [
+  'README.md',
+  'docs/reference/comandos.md',
+  'docs/tutorials/01-do-clone-ao-primeiro-pedido.md',
+];
 const MIGRATION_LOOP = /(for m in [a-z0-9 -]+)(; do npm run "mig:\$\{m\}:run")/;
 // `@app/source` resolve os aliases `#shared/*` para `src` quando o ts-node carrega o data source
 const TYPEORM_CLI = 'NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm';

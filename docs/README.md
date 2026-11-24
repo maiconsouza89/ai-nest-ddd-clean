@@ -16,6 +16,11 @@ A documentação segue o [Diátaxis](https://diataxis.fr/): cada página tem um 
 
 Uma pasta de quadrante só existe a partir da primeira página dela.
 
+## Tutoriais
+
+- [Do clone ao primeiro pedido](tutorials/01-do-clone-ao-primeiro-pedido.md): a app no ar com os dados de exemplo, um usuário seu e um pedido criado, fechado e pago pela API.
+- [Construindo o projeto do zero](tutorials/02-construindo-do-zero.md): o roteiro histórico que montou o projeto em 42 passos, do domínio em TypeScript puro ao gerador de módulos. Usa as ferramentas da época; o que mudou está no plano de evolução.
+
 ## How-to
 
 - [Como criar um módulo](how-to/criar-um-modulo.md): do `plop module` ao helper dos testes de integração, e o que conferir antes do PR.
@@ -80,7 +85,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Planos](plan/): trabalho interno. O [passo a passo](plan/passo-a-passo.md) que montou o projeto do zero, o [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
+- [Planos](plan/): trabalho interno. O [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
 
 ## Como escrever uma página
 
