@@ -17,6 +17,7 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 | Cliente | `customerId` | O dono do pedido: o id do usuário que o criou (`actor.id` no `POST /v1/orders`). Não muda depois, nem quando um admin age sobre o pedido. Ver [Usuário, ator e cliente](../glossario.md#usuário-ator-e-cliente). |
 | Status | `OrderStatus` | `DRAFT`, `PLACED`, `PAID` ou `CANCELLED`. Ver [Ciclo de vida](#ciclo-de-vida). |
 | Criar | `Order.create`, `CreateOrderUseCase` | Abrir o pedido como rascunho, já com os itens e os preços do catalog. |
+| Consultar | `GetOrderUseCase` | Ler um pedido com itens e total, para o dono ou um admin. |
 | Fechar | `place()`, `PlaceOrderUseCase` | Reservar o estoque e confirmar o pedido. Depois disso os itens não mudam. |
 | Pagar | `pay()`, `PayOrderUseCase` | Cobrar o total no fornecedor de pagamento. |
 | Cancelar | `cancel()`, `CancelOrderUseCase` | Desistir do pedido antes do pagamento. O inventory repõe o estoque reservado. |
@@ -42,13 +43,14 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 
 | Rota | Corpo | Sucesso |
 | --- | --- | --- |
-| `GET /v1/orders` | Query `page` (padrão 1) e `limit` (1 a 100, padrão 20) | 200 `{ items, total, page, limit }`, só os pedidos do próprio ator. Cada item tem `id`, `status`, `itemCount`, `totalCents`, `currency` e `createdAt` |
+| `GET /v1/orders` | Query `page` (padrão 1) e `limit` (1 a 100, padrão 20) | 200 `{ items, total, page, limit }`, só os pedidos do próprio ator. Cada item tem `id`, `status`, `itemCount`, `totalCents`, `currency` e `createdAt`. Passa pelo [cache](#jobs-e-cache): logo depois de uma escrita, pode mostrar o estado anterior |
+| `GET /v1/orders/:id` | — | 200 `{ id, customerId, status, items, totalCents, currency }`, cada item com `productId`, `qty`, `unitPriceCents` e `currency`. Sem cache: mostra a última escrita |
 | `POST /v1/orders` | `items`: de 1 a 100 `{ productId, qty }`, `qty` inteiro ≥ 1 | 201 `{ id }` |
 | `POST /v1/orders/:id/place` | — | 204 |
 | `POST /v1/orders/:id/pay` | Cabeçalho opcional `Idempotency-Key` (1 a 255 caracteres) | 204 |
 | `POST /v1/orders/:id/cancel` | — | 204 |
 
-`place`, `pay` e `cancel` só valem para o dono do pedido ou para um ator com o role `admin`.
+`GET /v1/orders/:id`, `place`, `pay` e `cancel` só valem para o dono do pedido ou para um ator com o role `admin`. Um `:id` que não é uuid responde 400 nas quatro.
 
 | Código | HTTP | Quando |
 | --- | --- | --- |

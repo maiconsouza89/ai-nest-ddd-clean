@@ -22,6 +22,7 @@ import { StockGateway } from '../application/ports/stock-gateway.js';
 import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case.js';
 import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case.js';
 import { ExpirePendingOrdersUseCase } from '../application/use-cases/expire-pending-orders.use-case.js';
+import { GetOrderUseCase } from '../application/use-cases/get-order.use-case.js';
 import { PayOrderUseCase } from '../application/use-cases/pay-order.use-case.js';
 import { PlaceOrderUseCase } from '../application/use-cases/place-order.use-case.js';
 import { OrderRepository } from '../domain/repositories/order.repository.js';
@@ -143,6 +144,11 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
         PaymentGateway,
         IdempotencyStore,
       ],
+    },
+    {
+      provide: GetOrderUseCase,
+      useFactory: (queries: OrderQueries) => new GetOrderUseCase(queries),
+      inject: [OrderQueries],
     },
     {
       provide: CancelOrderUseCase,

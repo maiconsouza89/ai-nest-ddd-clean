@@ -149,9 +149,4 @@ describe('Order', () => {
     (o.items as unknown[]).push('x');
     expect(o.items).toHaveLength(0);
   });
-
-  it('informa o dono', () => {
-    expect(draft().isOwnedBy('u1')).toBe(true);
-    expect(draft().isOwnedBy('u2')).toBe(false);
-  });
 });

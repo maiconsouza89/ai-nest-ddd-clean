@@ -72,6 +72,26 @@ describe('TypeOrmOrderQueries (integração)', () => {
     expect(p3.items).toHaveLength(1);
   });
 
+  it('um pedido com os itens e o total, ou null se não existe', async () => {
+    const id = await seed('detail-owner', [
+      ['p2', 1, 2500],
+      ['p1', 2, 1000],
+    ]);
+
+    expect(await queries.getById(id)).toEqual({
+      id,
+      customerId: 'detail-owner',
+      status: 'DRAFT',
+      items: [
+        { productId: 'p1', qty: 2, unitPriceCents: 1000, currency: 'BRL' },
+        { productId: 'p2', qty: 1, unitPriceCents: 2500, currency: 'BRL' },
+      ],
+      totalCents: 4500,
+      currency: 'BRL',
+    });
+    expect(await queries.getById(crypto.randomUUID())).toBeNull();
+  });
+
   it('cliente sem pedidos recebe página vazia', async () => {
     const page = await queries.listByCustomer('nobody', { page: 1, limit: 20 });
     expect(page).toEqual({ items: [], total: 0, page: 1, limit: 20 });

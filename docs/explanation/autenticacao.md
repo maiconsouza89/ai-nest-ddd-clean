@@ -67,16 +67,17 @@ O preço é não ter janela de tolerância. Um cliente que dispara duas renovaç
 
 ### Ownership no caso de uso
 
-A entidade sabe quem é o dono, guardando só o id dele, sem FK para o `identity`. O caso de uso decide se o ator pode agir:
+A entidade sabe quem é o dono, guardando só o id dele, sem FK para o `identity`. O caso de uso decide se o ator pode agir, com uma regra só para as ações e para a leitura de um pedido:
 
 ```ts
 // orders/application/order-access.ts
-const order = await (lock ? repo.findByIdForUpdate(orderId) : repo.findById(orderId));
-if (!order) throw new OrderNotFoundError();
-
-const isAdmin = actor.roles.includes('admin');
-if (!order.isOwnedBy(actor.id) && !isAdmin) throw new NotOrderOwnerError();
+export function assertCanAccessOrder(actor: Actor, customerId: string) {
+  const isAdmin = actor.roles.includes('admin');
+  if (customerId !== actor.id && !isAdmin) throw new NotOrderOwnerError();
+}
 ```
+
+As ações carregam o agregado pelo repositório e chamam a regra com o `customerId` dele. A leitura de um pedido chama a mesma regra com o `customerId` que a query devolve.
 
 Um guard não resolveria isso: ele vê a rota e o token, mas não o pedido. A regra "o dono ou um admin" é de negócio, e o teste dela é um teste unitário do caso de uso, sem HTTP.
 

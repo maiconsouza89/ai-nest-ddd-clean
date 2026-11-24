@@ -88,8 +88,4 @@ export class Order extends AggregateRoot {
     // o inventory reage a este evento para repor o estoque
     this.addDomainEvent(new OrderCancelled(this.id, this.customerId));
   }
-
-  isOwnedBy(userId: string) {
-    return this.customerId === userId;
-  }
 }

@@ -57,7 +57,7 @@ O cache é um decorator em volta da query, ligado no módulo Nest no lugar dela.
 
 **TTL como rede de segurança.** A invalidação depende de um evento, e um evento pode atrasar ou, se uma escrita não publicar nada, nem existir. O TTL de 60 segundos limita o pior caso. A geração vive o dobro das páginas: se expirasse antes, voltaria ao valor inicial, e uma página antiga gravada nele voltaria a ser lida.
 
-**Consistência eventual.** O evento sai pela outbox depois do commit. Logo depois de uma escrita, a listagem pode vir desatualizada pelo intervalo entre o commit e a entrega do evento. Para uma listagem, isso é aceitável. Uma leitura que precisa mostrar a escrita na hora, como a confirmação de um pagamento, não deve passar pelo cache.
+**Consistência eventual.** O evento sai pela outbox depois do commit. Logo depois de uma escrita, a listagem pode vir desatualizada pelo intervalo entre o commit e a entrega do evento. Para uma listagem, isso é aceitável. Uma leitura que precisa mostrar a escrita na hora, como a confirmação de um pagamento, não deve passar pelo cache: por isso o decorator repassa a consulta de um pedido (`GET /v1/orders/:id`) direto para a query do banco. Invalidar também no fluxo da escrita, a forma canônica do cache-aside, seria um segundo mecanismo ao lado do evento, igualmente sujeito a falha do Redis, e não ajudaria quem precisa da escrita na hora mais do que essa leitura direta.
 
 **Store no Redis.** O cache em memória funcionaria com uma instância. Com várias, o evento de invalidação chega a uma só, e as outras continuam servindo a página velha até o TTL.
 

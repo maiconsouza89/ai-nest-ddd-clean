@@ -203,6 +203,48 @@ describe('Orders (e2e)', () => {
     expect(res.body.code).toBe('NOT_ORDER_OWNER');
   });
 
+  describe('GET /v1/orders/:id', () => {
+    it('mostra a escrita na hora, mesmo com a listagem em cache', async () => {
+      const user = await registerAndLogin(app);
+      const id = await createOrder(user);
+      // a primeira leitura da listagem fica em cache; os workers estão desligados neste arquivo
+      await request(server()).get('/v1/orders').set(user.auth).expect(200);
+      await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
+
+      const res = await request(server()).get(`/v1/orders/${id}`).set(user.auth).expect(200);
+      expect(res.body).toEqual({
+        id,
+        customerId: user.id,
+        status: 'PLACED',
+        items: [{ productId, qty: 2, unitPriceCents: 1000, currency: 'BRL' }],
+        totalCents: 2000,
+        currency: 'BRL',
+      });
+    });
+
+    it('outro usuário recebe 403 e um id desconhecido, 404', async () => {
+      const owner = await registerAndLogin(app);
+      const other = await registerAndLogin(app);
+      const id = await createOrder(owner);
+
+      const forbidden = await request(server()).get(`/v1/orders/${id}`).set(other.auth).expect(403);
+      expect(forbidden.body.code).toBe('NOT_ORDER_OWNER');
+      const missing = await request(server())
+        .get(`/v1/orders/${crypto.randomUUID()}`)
+        .set(owner.auth)
+        .expect(404);
+      expect(missing.body.code).toBe('ORDER_NOT_FOUND');
+    });
+
+    it('rejeita id que não é uuid (400), também nas ações', async () => {
+      const user = await registerAndLogin(app);
+      await request(server()).get('/v1/orders/nao-e-uuid').set(user.auth).expect(400);
+      for (const action of ['place', 'pay', 'cancel']) {
+        await request(server()).post(`/v1/orders/nao-e-uuid/${action}`).set(user.auth).expect(400);
+      }
+    });
+  });
+
   describe('GET /v1/orders', () => {
     it('lista só os pedidos do usuário autenticado', async () => {
       const me = await registerAndLogin(app);

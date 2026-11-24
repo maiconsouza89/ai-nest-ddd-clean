@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Page, PageRequest } from '#shared/application/page';
-import { OrderListItem, OrderQueries } from '../../../application/queries/order.queries.js';
+import {
+  OrderDetails,
+  OrderListItem,
+  OrderQueries,
+} from '../../../application/queries/order.queries.js';
 import { OrderOrmEntity } from './entities/order.orm-entity.js';
 
 type Row = Omit<OrderListItem, 'itemCount' | 'totalCents'> & {
@@ -50,6 +54,34 @@ export class TypeOrmOrderQueries implements OrderQueries {
       total,
       page,
       limit,
+    };
+  }
+
+  async getById(orderId: string): Promise<OrderDetails | null> {
+    // query builder sem take: uma consulta só, com o join dos itens
+    const order = await this.dataSource
+      .getRepository(OrderOrmEntity)
+      .createQueryBuilder('o')
+      .leftJoinAndSelect('o.items', 'i')
+      .where('o.id = :orderId', { orderId })
+      .orderBy('i.productId')
+      .getOne();
+    if (!order) return null;
+
+    const items = order.items.map((i) => ({
+      productId: i.productId,
+      qty: i.qty,
+      unitPriceCents: Number(i.unitPriceCents), // bigint chega do driver como string
+      currency: i.currency,
+    }));
+    return {
+      id: order.id,
+      customerId: order.customerId,
+      status: order.status,
+      items,
+      totalCents: items.reduce((sum, i) => sum + i.qty * i.unitPriceCents, 0),
+      // como na listagem: a moeda dos itens, ou BRL num pedido sem itens
+      currency: items[0]?.currency ?? 'BRL',
     };
   }
 }

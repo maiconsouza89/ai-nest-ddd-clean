@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { FakeCache } from '#test/fakes/fake-cache';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { Page, PageRequest } from '#shared/application/page';
-import { OrderListItem, OrderQueries } from '../../application/queries/order.queries.js';
+import {
+  OrderDetails,
+  OrderListItem,
+  OrderQueries,
+} from '../../application/queries/order.queries.js';
 import { CachedOrderQueries } from './cached-order.queries.js';
 
 const TTL = 60_000;
@@ -32,6 +36,18 @@ class CountingQueries implements OrderQueries {
       limit,
     };
   }
+
+  async getById(orderId: string): Promise<OrderDetails> {
+    this.calls++;
+    return {
+      id: orderId,
+      customerId: 'u1',
+      status: this.status,
+      items: [],
+      totalCents: 0,
+      currency: 'BRL',
+    };
+  }
 }
 
 function setup() {
@@ -52,6 +68,17 @@ describe('CachedOrderQueries', () => {
     await queries.listByCustomer('u1', first);
 
     expect(inner.calls).toBe(1);
+  });
+
+  it('a consulta de um pedido não passa pelo cache', async () => {
+    const { inner, cache, queries } = setup();
+
+    await queries.getById('o1');
+    inner.status = 'PAID';
+
+    expect(await queries.getById('o1')).toMatchObject({ status: 'PAID' });
+    expect(inner.calls).toBe(2);
+    expect(cache.store.size).toBe(0);
   });
 
   it('devolve a data como Date também quando vem do cache', async () => {

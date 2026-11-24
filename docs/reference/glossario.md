@@ -90,6 +90,7 @@ Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop modul
 | Chave de idempotência | [Idempotency key](#idempotency-key) |
 | Cliente | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Concorrência otimista | [Concorrência otimista](#concorrência-otimista) |
+| Consultar (pedido) | [orders](modules/orders.md#linguagem-ubíqua) |
 | Consumidor | [Consumidor](#consumidor) |
 | Consumidor idempotente | [Consumidor idempotente](#consumidor-idempotente) |
 | Contrato | [Contrato](#contrato) |

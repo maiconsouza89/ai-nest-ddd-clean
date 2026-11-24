@@ -2,7 +2,11 @@ import { randomUUID } from 'node:crypto';
 import type { Cache } from '@nestjs/cache-manager';
 import { Page, PageRequest } from '#shared/application/page';
 import { Logger } from '#shared/application/ports/logger';
-import { OrderListItem, OrderQueries } from '../../application/queries/order.queries.js';
+import {
+  OrderDetails,
+  OrderListItem,
+  OrderQueries,
+} from '../../application/queries/order.queries.js';
 
 // o JSON do Redis devolve a data como texto
 type CachedPage = Omit<Page<OrderListItem>, 'items'> & {
@@ -45,6 +49,11 @@ export class CachedOrderQueries implements OrderQueries {
     const fresh = await this.inner.listByCustomer(customerId, request);
     if (key) await this.write(key, fresh);
     return fresh;
+  }
+
+  /** Sem cache, de propósito: a consulta de um pedido mostra a última escrita (ex.: o pagamento). */
+  getById(orderId: string): Promise<OrderDetails | null> {
+    return this.inner.getById(orderId);
   }
 
   /** Descarta as páginas em cache do cliente. Idempotente; falha do Redis só é registrada (o TTL cobre). */
