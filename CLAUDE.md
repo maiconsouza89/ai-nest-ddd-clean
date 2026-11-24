@@ -6,9 +6,9 @@
 
 ## Context7
 
-Antes de adicionar, atualizar ou usar uma biblioteca, framework ou SDK, consulte a documentação atual no Context7 (MCP `context7`: `resolve-library-id`, depois `query-docs`). O conhecimento de treino pode estar velho.
+Consulte a documentação atual no Context7 (MCP `context7`: `resolve-library-id`, depois `query-docs`) antes de adicionar ou atualizar uma biblioteca, framework ou SDK, e antes de usar uma API dela que o repositório ainda não usa. O conhecimento de treino pode estar velho; o código que já está no repositório mostra a API da versão instalada.
 
-- Confira a versão estável mais recente e a API atual antes de instalar ou de escrever código que dependa dela.
+- Ao adicionar ou atualizar, confira a versão estável mais recente e a API atual.
 - Ao migrar de versão ou corrigir um erro específico de biblioteca, leia o guia de migração antes de mudar o código.
 - Sem a biblioteca no Context7, use a documentação oficial na web e diga isso.
 
