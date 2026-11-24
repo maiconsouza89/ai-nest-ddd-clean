@@ -206,4 +206,4 @@ Separar as duas abre espaço para o cache da listagem, que envolve a query e é 
 
 ## Decisões relacionadas
 
-Nenhum ADR trata deste desenho. As decisões vêm do roteiro original: [`TransactionManager`](../tutorials/02-construindo-do-zero.md#passo-20-transactionmanager), [concorrência otimista](../tutorials/02-construindo-do-zero.md#passo-21-optimistic-locking-no-order), [outbox](../tutorials/02-construindo-do-zero.md#passo-25-outbox), [consumidores idempotentes](../tutorials/02-construindo-do-zero.md#passo-27-consumidores-idempotentes), [`Idempotency-Key`](../tutorials/02-construindo-do-zero.md#passo-36-serviços-externos-e-idempotency-key) e [BullMQ como transporte](../tutorials/02-construindo-do-zero.md#passo-38-bullmq-como-transporte-dos-eventos).
+Nenhum ADR trata deste desenho: o porquê está nesta página.

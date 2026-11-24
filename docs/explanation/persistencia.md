@@ -78,4 +78,4 @@ Para trocar o TypeORM por outro ORM (Prisma, por exemplo), mudam o repositório 
 
 ## Decisões relacionadas
 
-Nenhum ADR trata da persistência. A decisão vem do roteiro original, nos passos [13](../tutorials/02-construindo-do-zero.md#passo-13-postgres-e-typeorm) e [14](../tutorials/02-construindo-do-zero.md#passo-14-repositório-typeorm-do-order).
+Nenhum ADR trata da persistência: o porquê está nesta página.

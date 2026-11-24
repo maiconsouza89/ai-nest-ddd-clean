@@ -128,8 +128,4 @@ O histórico completo das mudanças sairia dos eventos de domínio: um consumido
 
 ## Decisões relacionadas
 
-Não há ADR para estas escolhas. Elas entraram no roteiro que montou o projeto:
-
-- [Passo 2 do passo a passo](../tutorials/02-construindo-do-zero.md#passo-2-primeiros-blocos-do-shared-domainerror-e-money): o `DomainError` e o `Money`.
-- [Passo 10](../tutorials/02-construindo-do-zero.md#passo-10-erros-de-domínio-viram-status-http): o filter que traduz o `code` para o status HTTP.
-- [Passo 42](../tutorials/02-construindo-do-zero.md#passo-42-evoluções-sob-demanda): o domain service, o `createdBy` e o `allocate`, que só entram quando a necessidade aparecer.
+Não há ADR para estas escolhas: o porquê está nesta página. O domain service, o `createdBy` e o `allocate` só entram quando a necessidade aparecer.

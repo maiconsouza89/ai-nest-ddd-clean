@@ -28,7 +28,7 @@ O nome igual engana. O identity tem um `Email`, value object com o endereço nor
 
 Mesmo quando o conceito é o mesmo, um value object usado por um módulo só fica nele. O `Email` do identity sobe para o `shared` quando outro módulo precisar da mesma regra, e não antes.
 
-O `Money` é a exceção. Só o orders o usa no domínio, mas ele está no `shared` desde o [passo 2 do roteiro original](../tutorials/02-construindo-do-zero.md#passo-2-primeiros-blocos-do-shared-domainerror-e-money), porque a regra dele não depende de módulo nenhum: valor em centavos inteiros, e somar moedas diferentes é erro. Já a normalização e a validação do `Email` do identity são regras de conta.
+O `Money` é a exceção. Só o orders o usa no domínio, mas ele está no `shared` desde o começo do projeto, porque a regra dele não depende de módulo nenhum: valor em centavos inteiros, e somar moedas diferentes é erro. Já a normalização e a validação do `Email` do identity são regras de conta.
 
 O exception filter segue a mesma lógica: o `shared` tem a base `DomainError`, e cada módulo tem o seu filter, com a tabela dos próprios códigos de erro para status HTTP.
 

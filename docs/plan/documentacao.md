@@ -360,6 +360,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 > - [ ] Passo 13: how-tos e skills-ponteiro (parcial: how-tos prontos, skills adiadas)
 > - [x] Passo 14: tutoriais
 > - [x] Passo 15: remover `docs/research/`
+> - [ ] ~~Passo 16: roteiro fiel ao repositório, com o código completo~~ (cancelado)
 
 Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar marcado parcialmente, com uma nota do que já foi feito.
 
@@ -592,6 +593,10 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 - **Código:** o comentário do `products.service.ts` citava o "Pragmatismo" do guia e passou a apontar para `docs/explanation/arquitetura.md`.
 
 `CLAUDE.md` e `AGENTS.md` já não citavam o guia desde o passo 12. Os dois links que o passo 12 tirou de `leituras.md` de propósito continuam fora. O grep só encontra este plano, que registra o próprio passo e o histórico da divisão. `npm run ci` passou (191 testes, `docs:check` sem erros, arch sem violações). Passo de texto mais um comentário: `/simplify` e `/code-review` pulados.
+
+### Passo 16: roteiro fiel ao repositório, com o código completo (cancelado)
+
+**Cancelado em 2026-11-23** pelo dono do repositório, por não ser necessário. A ideia era reescrever o `tutorials/02-construindo-do-zero.md` com o código completo de cada passo, na versão atual das ferramentas, para ele funcionar seguido do zero. As fases 1 a 7 chegaram a ser reescritas fora do repositório, e foram descartadas. Logo depois, o roteiro também saiu do repositório, por decisão do dono: as páginas de explicação que citavam passos dele passaram a dizer que o porquê está nelas mesmas, e o `evolucao.md` cita o roteiro sem link.
 
 ---
 

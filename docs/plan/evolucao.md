@@ -1,6 +1,6 @@
 # Plano de evolução: atualizando o projeto existente
 
-O [roteiro original](../tutorials/02-construindo-do-zero.md) está concluído e não muda. Este plano parte do código atual e aplica as decisões da revisão de 2026-11-21. Nessa revisão, cada fase do roteiro original foi conferida no Context7, no `npm view` e na documentação oficial. Algumas instruções de lá quebram hoje se seguidas do zero, mas o código já contornou quase todas. O que sobrou, e as decisões novas, estão aqui.
+O roteiro original, que montou o projeto do zero, está concluído e saiu do repositório. Este plano parte do código atual e aplica as decisões da revisão de 2026-11-21. Nessa revisão, cada fase do roteiro original foi conferida no Context7, no `npm view` e na documentação oficial. Algumas instruções de lá quebram hoje se seguidas do zero, mas o código já contornou quase todas. O que sobrou, e as decisões novas, estão aqui.
 
 Decisões com contexto próprio: [ADR 0001](../adr/0001-vitest-e-esm.md) (Vitest e ESM), [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md) (ator carregado por requisição) e [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md) (imports explícitos entre módulos), [ADR 0004](../adr/0004-lint-e-formatacao.md) (lint e formatação), [ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md) (aliases de import) e [ADR 0006](../adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md) (documentação em Diátaxis e roteamento para agentes).
 

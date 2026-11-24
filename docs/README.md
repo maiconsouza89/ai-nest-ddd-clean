@@ -19,7 +19,6 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 ## Tutoriais
 
 - [Do clone ao primeiro pedido](tutorials/01-do-clone-ao-primeiro-pedido.md): a app no ar com os dados de exemplo, um usuário seu e um pedido criado, fechado e pago pela API.
-- [Construindo o projeto do zero](tutorials/02-construindo-do-zero.md): o roteiro histórico que montou o projeto em 42 passos, do domínio em TypeScript puro ao gerador de módulos. Usa as ferramentas da época; o que mudou está no plano de evolução.
 
 ## How-to
 
