@@ -5,7 +5,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { registerAndLogin } from './helpers/auth.js';
-import { registerAdmin } from './helpers/catalog.js';
+import { registerAdmin, seedProduct } from './helpers/catalog.js';
 
 describe('Catalog (e2e)', () => {
   let app: TestApp;
@@ -69,20 +69,16 @@ describe('Catalog (e2e)', () => {
       .send({ name: '   ', priceCents: 100 })
       .expect(400);
     await request(server()).get('/v1/products/nao-e-uuid').set(admin).expect(400);
+    await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
   });
 
   it('rejeita nome só de espaços na atualização (400)', async () => {
     const admin = await registerAdmin(app);
-    const created = await request(server())
-      .post('/v1/products')
-      .set(admin)
-      .send({ name: 'Lápis', priceCents: 100 })
-      .expect(201);
+    const productId = await seedProduct(app, 100);
     await request(server())
-      .patch(`/v1/products/${created.body.id}`)
+      .patch(`/v1/products/${productId}`)
       .set(admin)
       .send({ name: '   ' })
       .expect(400);
-    await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
   });
 });

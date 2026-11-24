@@ -17,6 +17,7 @@ import { HealthModule } from '#shared/infra/health/health.module';
 import { DatabaseModule } from '#shared/infra/database/database.module';
 import { ObservabilityModule } from '#shared/infra/observability/observability.module';
 import { Logger } from '#shared/application/ports/logger';
+import { ENV_FILES, ignoresEnvFiles } from '#shared/infra/config/load-env-files';
 import { RedisThrottlerStorage } from '#shared/infra/http/redis-throttler-storage';
 import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
 import { MessagingModule } from '#shared/infra/messaging/messaging.module';
@@ -27,8 +28,8 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      envFilePath: ['.env.local', '.env'],
-      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      envFilePath: ENV_FILES,
+      ignoreEnvFile: ignoresEnvFiles(),
       validate: validateEnv,
     }),
     ThrottlerModule.forRootAsync({
