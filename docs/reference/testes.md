@@ -37,7 +37,8 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 | `test/fakes/` | Um fake por port, para os unitários |
 | `test/helpers/<módulo>-database.ts` | As entidades e a lista de migrations de cada módulo, para o `startDatabase`. O helper não lê a pasta de migrations: uma migration nova entra na lista ([Como gerar uma migration](../how-to/gerar-uma-migration.md)) |
 | `test/helpers/redis.ts` | `startRedis`, com a política de memória do `docker-compose.yml` ([Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)) |
-| `test/helpers/auth.ts` | `registerAndLogin`: cadastra, verifica o e-mail com o código que chega ao Mailpit e faz login. O código sai por evento, então o arquivo de e2e que o usa importa o `test/helpers/enable-outbox-worker.ts` antes do `AppModule` |
+| `test/helpers/auth.ts` | `registerUser` só cadastra. `registerAndLogin` cadastra, verifica o e-mail com o código que chega ao Mailpit e faz login. O código sai por evento, então o arquivo de e2e que o usa importa o `test/helpers/enable-outbox-worker.ts` antes do `AppModule` |
+| `test/helpers/guard-probe.controller.ts` | `GuardProbeController`: uma rota autenticada (`GET /v1/guard-probe`) e uma só de admin (`POST /v1/guard-probe/admin`), registradas só no `TestingModule` do `auth.e2e-spec.ts`. Os testes do guard e das roles não dependem das rotas dos módulos de exemplo |
 | `test/helpers/mailpit.ts` | Lê os e-mails pela API do Mailpit: `emailsTo`, `waitForEmail` e `verificationCodeFor`. Os e2e não trocam o `EmailSender` por um fake: o e-mail sai por SMTP, como em produção |
 | `test/helpers/contract.ts` | `incompatibilities(exemplo, real)`: lista os campos do exemplo que faltam ou mudaram de tipo, em qualquer profundidade. Campo a mais é aceito (mudança aditiva) |
 

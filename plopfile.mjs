@@ -100,7 +100,7 @@ export default function (plop) {
   });
 
   plop.setGenerator('module', {
-    description: 'Novo módulo (domain, application, infra, migrations) no padrão do orders',
+    description: 'Novo módulo com todas as camadas (domain, application, infra, migrations)',
     prompts: [
       {
         type: 'input',

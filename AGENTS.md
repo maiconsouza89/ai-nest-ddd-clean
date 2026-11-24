@@ -15,7 +15,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 ## Verificação
 
 - `npm run typecheck`, `npm run lint` e `npm run arch` (camadas e fronteiras entre módulos).
-- `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- pay-order` e `npm run test:e2e -- auth`.
+- `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- register-user` e `npm run test:e2e -- auth`.
 - `npm run test:int` sobe Postgres e Redis descartáveis pelo Testcontainers, isolados do docker-compose. Só precisa do Docker.
 - `npm run test:e2e` sobe a app inteira contra o Postgres, o Redis e o Mailpit do docker-compose (ver a armadilha do E2E abaixo).
 - `npm run ci` roda typecheck, lint, format:check, docs:check, unitários e arch. Integração e e2e ficam fora: rode-os quando a mudança tocar banco, Redis, filas ou HTTP.

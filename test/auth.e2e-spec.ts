@@ -10,6 +10,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { deleteUser, registerAndLogin, setRoles, uniqueEmail } from './helpers/auth.js';
+import { GuardProbeController } from './helpers/guard-probe.controller.js';
 import { emailsTo, emailsWith, verificationCodeFor, waitForEmail } from './helpers/mailpit.js';
 
 describe('Auth (e2e)', () => {
@@ -17,7 +18,10 @@ describe('Auth (e2e)', () => {
   const server = () => app.getHttpServer();
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+      controllers: [GuardProbeController],
+    }).compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();
   });
@@ -193,13 +197,14 @@ describe('Auth (e2e)', () => {
       new JwtService({ secret }).signAsync(payload, options);
     const secret = () => process.env.JWT_SECRET as string;
     const call = (token?: string, scheme = 'Bearer') => {
-      const req = request(server()).get('/v1/orders');
+      const req = request(server()).get('/v1/guard-probe');
       return token ? req.set('Authorization', `${scheme} ${token}`) : req;
     };
 
-    it('aceita um token válido e usa o sub como dono', async () => {
+    it('aceita um token válido e carrega o ator pelo sub', async () => {
       const user = await registerAndLogin(app);
-      await call(user.token).expect(200);
+      const res = await call(user.token).expect(200);
+      expect(res.body).toEqual({ id: user.id, roles: [] });
     });
 
     it('rejeita sem header, com esquema errado e com lixo', async () => {
@@ -246,13 +251,13 @@ describe('Auth (e2e)', () => {
 
     it('aplica a mudança de role na requisição seguinte, com o mesmo token', async () => {
       const user = await registerAndLogin(app);
-      const createProduct = () =>
-        request(server()).post('/v1/products').set(user.auth).send({ name: 'X', priceCents: 100 });
+      const adminOnly = () => request(server()).post('/v1/guard-probe/admin').set(user.auth);
 
+      await adminOnly().expect(403);
       await setRoles(app, user.id, ['admin']);
-      await createProduct().expect(201);
+      await adminOnly().expect(204);
       await setRoles(app, user.id, []);
-      await createProduct().expect(403);
+      await adminOnly().expect(403);
     });
 
     it('as rotas de auth continuam públicas', async () => {
@@ -279,7 +284,7 @@ describe('Auth (e2e)', () => {
       expect(renewed.body.refreshToken).not.toBe(user.refreshToken);
 
       await request(server())
-        .get('/v1/orders')
+        .get('/v1/guard-probe')
         .set({ Authorization: `Bearer ${renewed.body.accessToken}` })
         .expect(200);
 

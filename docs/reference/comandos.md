@@ -128,7 +128,7 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 | Comando | O que gera |
 | --- | --- |
-| `npm run plop module <nome>` | Um módulo no padrão do `orders`, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
+| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
 | `npm run plop doc <tipo> "<nome>"` | Uma página de `docs/` do tipo `tutorial`, `how-to`, `reference` ou `explanation`. Templates em `plop-templates/doc/`. A página falha no `docs:check` até os comentários do template serem apagados |
 
 ## Baixar o ambiente

@@ -51,7 +51,7 @@ describe('Rate limiting (e2e)', () => {
   });
 
   it('envia os cabeçalhos do helmet', async () => {
-    const res = await request(app.getHttpServer()).get('/v1/orders');
+    const res = await request(app.getHttpServer()).get('/health/live');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['x-powered-by']).toBeUndefined();
   });

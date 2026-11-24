@@ -346,7 +346,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
 > - [x] Passo 11: licença e nome do projeto
-> - [ ] Passo 12: how-to para remover os módulos de exemplo
+> - [x] Passo 12: how-to para remover os módulos de exemplo
 > - [ ] Passo 13: ADR 0008 e AGENTS.md
 > - [ ] Passo 14: README com badges
 > - [ ] Passo 15: repositório público e template no GitHub
@@ -370,6 +370,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Volumes: `comandos.md` diz `<pasta>_*` e por quê; `resetar-o-ambiente-local.md` já explicava o nome da pasta e ganhou o exemplo `ai-nest-ddd-clean_*`.
 - O `grep` só encontra este plano, que descreve a própria troca e é apagado no fim da fase. O `.env` local do dono não define o `OTEL_SERVICE_NAME`, então não precisou mudar.
 - `npm run ci` passa (43 arquivos, 240 testes unitários).
+- Achado no passo 12: o título do Swagger ainda era `DDD Clean Nest`, que o `grep` do critério não pega por causa da grafia. O dono o trocou por `AI NestJS DDD/Clean`. Um `grep -i` com espaço, hífen ou sublinhado entre as palavras não acha mais nada fora deste plano.
 
 ### Passo 12: how-to para remover os módulos de exemplo
 
@@ -382,6 +383,34 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Remover um exemplo só é possível porque nada da base depende dele. Confira com `npm run arch` e com um `grep` que o identity, o notifications (fora o handler de pedido pago) e o `shared` não importam o orders, o catalog nem o inventory.
 
 **Pronto quando:** num worktree descartável (`git worktree add`), seguindo só o guia, sem conhecimento prévio: `npm run typecheck`, `npm run lint`, `npm run arch`, `npm test`, `npm run test:int` e `npm run test:e2e` passam, e as falhas do `docs:check` são exatamente as listadas no guia. Registre no **Como ficou** o que precisou ser corrigido no guia durante a conferência. Apague o worktree depois.
+
+**Como ficou:**
+
+- O `src` da base não importava os exemplos (só o handler de pedido pago), mas os testes da base, sim. Desacoplados antes do guia, com o ok do dono:
+  - `auth.e2e`: o guard e as roles usavam `GET /v1/orders` e `POST /v1/products`. A base não tem rota protegida, então os testes passaram a usar o `GuardProbeController` (`test/helpers/guard-probe.controller.ts`), registrado só no `TestingModule` deles. O teste do token válido passou a conferir o ator devolvido, e o das roles, também o 403 antes de virar admin.
+  - `throttle.e2e`: os headers do helmet com `/health/live`.
+  - `docs.e2e`: confere as tags do auth e do health pelo nome e exige uma tag em toda rota, sem citar os exemplos. As tags do orders e do catalog não foram para o e2e de cada um, como combinado: a regra geral já as cobre.
+  - `outbox.e2e`: passou a usar o `identity.verification-code-issued` (relay, worker, marca de processado e reentrega sem e-mail repetido). Os cinco casos de pedido foram para um `describe` "eventos do pedido" no `orders.e2e`.
+  - `testes.md` ganhou o `GuardProbeController` na tabela de helpers, e `operacao.md`, a nova regra do `docs.e2e`.
+- Também da base, ajustados agora: a descrição do Swagger (citava pedidos, catálogo e estoque) e a do gerador `plop module` ("no padrão do orders").
+- Achados que entraram no guia: o `ORDER_EXPIRATION_MINUTES` mora na validação do env do `shared`; o notifications deixa de importar o `IdentityModule` (só a facade do pedido pago o exigia, e o inventory já consome eventos do orders sem importar o `OrdersModule`); o `Idempotency-Key` sai junto com o orders.
+- Exploração num worktree descartável antes de escrever: sem os exemplos, `typecheck`, `lint`, `arch`, 136 unitários, 44 de integração, 37 e2e, `db:setup` e `db:seed` passaram, e o `docs:check` apontou 9 páginas.
+- Conferência às cegas: um agente novo, sem esta conversa, seguiu só o guia num segundo worktree. Tudo passou (25 arquivos e 136 unitários, 10 e 44 de integração, 5 e 37 e2e, `grep` vazio), e o `docs:check` falhou exatamente nas 9 páginas marcadas "sim". O passo do reset do banco ficou de fora, para não derrubar o compose do dono. Corrigido no guia depois da conferência, só no texto:
+  - o comentário "exemplo removível" sai junto com os providers, e o `.env` local recebe as mesmas mudanças do `.env.example`;
+  - o texto exato da introdução e da frase dos testes no `notifications.md`, que ficavam quebradas ao só cortar trechos;
+  - passo novo para o `identity.md` ("Quem importa" e o termo "Confirmar"), e o que fazer com a `UserDirectoryFacade`, que fica sem consumidor;
+  - no `AGENTS.md`, só o `pay-order` muda: o `money.vo` está no `shared` e fica;
+  - a tabela passou a listar também as páginas que passam no `docs:check` mas usam os exemplos como modelo (14 a mais), e diz que as ADRs ficam como estão.
+- O passo do README cita a seção "Módulos de exemplo", que o passo 14 cria.
+- A página entrou no índice do `docs/README.md` já neste passo; o passo 13 acrescenta só a ADR.
+- `/simplify` sobre os passos 11 e 12:
+  - `orders.e2e`: os casos que vieram do outbox usam os helpers do arquivo (`createOrderOf`, `stockOf`, `server()`), sem cópias nem sombra. Os dois testes do pedido pago viraram um, e o caso do rascunho deixou de esperar o `publishedAt`: ele só confere a marca de processado e o estoque.
+  - `outbox.e2e`: um teste só (evento, publicação, e-mail, marca e reentrega), com o `registerUser`, novo em `test/helpers/auth.ts` e usado pelo `registerAndLogin`. A linha da outbox é lida direto, sem espera: ela é gravada na transação do register.
+  - Desacoplados na base, para o guia ter menos passos: o comentário do `JOBS_ENABLED` no `.env.example`, o exemplo `pay-order` do `AGENTS.md` (virou `register-user`) e, no `/code-review`, a linha do `plop module` em `comandos.md`.
+  - Guia mais curto: sem a explicação no passo do `IdentityModule`, e as três páginas que ficam como leitura numa frase abaixo da tabela.
+  - Ficaram de fora, para o dono decidir: configuração por módulo em vez do `ORDER_EXPIRATION_MINUTES` no `env.validation.ts` do `shared`; o aviso de pedido pago num Nest module próprio, para sair com um `rm -r`; um script genérico de migration e seed, no lugar dos `mig:<módulo>:*` no `package.json`; e o `Idempotency-Key` no `shared`. Também ficou de fora um helper para a reentrega de evento, porque sem os exemplos sobra uma cópia só.
+- `/code-review`: o `outbox.e2e` lia o `publishedAt` uma vez só depois da marca de processado, mas o relay publica e marca a linha na mesma transação do lote, e o worker pode terminar antes do commit (falha intermitente). Passou a esperar a coluna. Também: o `docs.e2e` confere a tag em todos os métodos HTTP do Swagger, e um comentário diz que a marca única é a garantia da reentrega, não o e-mail único.
+- Worktrees apagados. Na árvore principal: `npm run ci` e `docs:check` passam, e o `npm run test:e2e` inteiro passa (8 arquivos, 64 testes).
 
 ### Passo 13: ADR 0008 e AGENTS.md
 

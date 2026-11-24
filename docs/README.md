@@ -33,6 +33,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como rodar as migrations e os seeds](how-to/rodar-as-migrations-e-os-seeds.md): o `db:setup`, o `db:seed`, como conferir o que falta e os erros comuns.
 - [Como rodar um teste específico](how-to/rodar-um-teste-especifico.md): o script por tipo de teste, o filtro por caminho, por nome e por linha.
 - [Como resetar o ambiente local](how-to/resetar-o-ambiente-local.md): apagar o Postgres e o Redis deste projeto e subir tudo do zero.
+- [Como remover os módulos de exemplo](how-to/remover-os-modulos-de-exemplo.md): tirar o orders, o catalog e o inventory e ficar só com a base, com a lista das páginas que ainda citam os exemplos.
 
 ## Explicação
 
