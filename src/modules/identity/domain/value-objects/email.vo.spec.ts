@@ -10,4 +10,9 @@ describe('Email', () => {
   it.each(['', 'sem-arroba', 'a@b', 'a b@c.com', '@c.com'])('rejeita "%s"', (raw) => {
     expect(() => Email.create(raw)).toThrow(InvalidEmailError);
   });
+
+  it('tryCreate devolve null para um endereço inválido e normaliza o válido', () => {
+    expect(Email.tryCreate('sem-arroba')).toBeNull();
+    expect(Email.tryCreate(' A@X.com ')?.value).toBe('a@x.com');
+  });
 });

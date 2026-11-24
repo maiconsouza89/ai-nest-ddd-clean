@@ -9,7 +9,7 @@ Todos os comandos rodam na raiz do repositório.
 ## Requisitos
 
 - Node 22.22.3 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
-- Docker, para o Postgres e o Redis do `docker-compose.yml` e para os testes de integração.
+- Docker, para o Postgres, o Redis e o Mailpit do `docker-compose.yml` e para os testes de integração.
 
 ## Setup do zero
 
@@ -17,7 +17,7 @@ Nesta ordem:
 
 1. `npm install`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
 2. `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](variaveis-de-ambiente.md).
-3. `docker compose up -d postgres redis`. Sobe o Postgres 19 em `127.0.0.1:5432` e o Redis 8 em `127.0.0.1:6379`.
+3. `docker compose up -d postgres redis mailpit`. Sobe o Postgres 19 em `127.0.0.1:5432`, o Redis 8 em `127.0.0.1:6379` e o Mailpit 1, o SMTP de desenvolvimento, em `127.0.0.1:1025`.
 4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
 
    ```sh
@@ -35,6 +35,7 @@ Com a app no ar:
 | `http://localhost:3000/docs` | Swagger. Só existe fora de `NODE_ENV=production` |
 | `http://localhost:3000/health/live` | O processo está vivo. Não consulta dependências |
 | `http://localhost:3000/health/ready` | O banco e o Redis respondem |
+| `http://localhost:8025` | Mailpit: os e-mails que a app enviou, como o código de verificação. Nada sai para fora. A API do Mailpit, que o e2e usa, fica em `/api/v1` |
 
 O health não tem versão na URL, não pede token e fica fora do rate limit. O que cada endereço confere e responde está em [Operação](operacao.md).
 
@@ -66,7 +67,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm test` | Unitários (`*.spec.ts`), sem banco |
 | `npm run test:watch` | Os unitários em modo watch |
 | `npm run test:int` | Integração (`*.int-spec.ts`). Sobe Postgres e Redis descartáveis com o Testcontainers, então exige Docker. Leva alguns minutos: cada arquivo sobe os containers de que precisa |
-| `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL` e o Redis de `REDIS_URL` |
+| `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL`, o Redis de `REDIS_URL` e o SMTP de `SMTP_URL`, e lê os e-mails pela API do Mailpit |
 
 O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).
 
@@ -78,7 +79,7 @@ Para rodar um arquivo só, passe um padrão de caminho depois do `--`. O filtro 
 
 Cuidados com o e2e:
 
-- Por padrão, `DATABASE_URL` e `REDIS_URL` apontam para o Postgres e o Redis do `docker-compose.yml`. Os dois precisam estar no ar.
+- Por padrão, `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` apontam para o Postgres, o Redis e o Mailpit do `docker-compose.yml`. Os três precisam estar no ar. O endereço da API do Mailpit muda com `MAILPIT_API_URL` (padrão `http://127.0.0.1:8025`).
 - O e2e **grava dados** nesse banco.
 - Encerre qualquer `start:dev` antes. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
 

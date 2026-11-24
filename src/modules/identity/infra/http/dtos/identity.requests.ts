@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { Trim } from '#shared/infra/http/trim.decorator';
 
 export class RegisterRequest {
@@ -34,4 +34,20 @@ export class LoginRequest {
   @IsNotEmpty()
   @MaxLength(128)
   password!: string;
+}
+
+export class VerifyEmailRequest {
+  @IsEmail()
+  @MaxLength(254)
+  email!: string;
+
+  /** Os 6 dígitos recebidos por e-mail. */
+  @Matches(/^\d{6}$/, { message: 'code must have exactly 6 digits' })
+  code!: string;
+}
+
+export class ResendVerificationCodeRequest {
+  @IsEmail()
+  @MaxLength(254)
+  email!: string;
 }

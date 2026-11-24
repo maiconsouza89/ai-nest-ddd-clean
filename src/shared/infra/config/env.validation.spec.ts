@@ -1,61 +1,68 @@
 import { describe, it, expect } from 'vitest';
 import { validateEnv } from './env.validation.js';
 
-const SECRET = 'a'.repeat(32);
-const REDIS = 'redis://localhost:6379';
+// só as obrigatórias, com valores válidos; cada caso tira ou troca uma
+const REQUIRED = {
+  DATABASE_URL: 'postgres://x',
+  REDIS_URL: 'redis://localhost:6379',
+  JWT_SECRET: 'a'.repeat(32),
+  SMTP_URL: 'smtp://127.0.0.1:1025',
+  EMAIL_FROM: 'no-reply@example.com',
+};
+
+const without = (key: keyof typeof REQUIRED) =>
+  Object.fromEntries(Object.entries(REQUIRED).filter(([k]) => k !== key));
 
 describe('validateEnv', () => {
   it('aceita configuração válida e converte PORT para número', () => {
-    const env = validateEnv({
-      DATABASE_URL: 'postgres://x',
-      REDIS_URL: REDIS,
-      JWT_SECRET: SECRET,
-      PORT: '4000',
-      NODE_ENV: 'test',
-    });
+    const env = validateEnv({ ...REQUIRED, PORT: '4000', NODE_ENV: 'test' });
     expect(env.PORT).toBe(4000);
   });
 
   it('aplica padrões para NODE_ENV e PORT', () => {
-    const env = validateEnv({ DATABASE_URL: 'postgres://x', REDIS_URL: REDIS, JWT_SECRET: SECRET });
+    const env = validateEnv(REQUIRED);
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3000);
   });
 
-  it('falha sem DATABASE_URL com mensagem clara', () => {
-    expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
+  it.each(Object.keys(REQUIRED) as (keyof typeof REQUIRED)[])(
+    'falha sem %s, com a variável na mensagem',
+    (key) => {
+      expect(() => validateEnv(without(key))).toThrow(new RegExp(key));
+    },
+  );
+
+  it('falha com segredo curto', () => {
+    expect(() => validateEnv({ ...REQUIRED, JWT_SECRET: 'short' })).toThrow(/JWT_SECRET/);
   });
 
-  it('falha sem REDIS_URL com mensagem clara', () => {
-    expect(() => validateEnv({ DATABASE_URL: 'x', JWT_SECRET: SECRET })).toThrow(/REDIS_URL/);
+  it.each(['http://mail.example.com', '127.0.0.1:1025'])('recusa SMTP_URL "%s"', (url) => {
+    expect(() => validateEnv({ ...REQUIRED, SMTP_URL: url })).toThrow(/SMTP_URL/);
   });
 
-  it('falha sem JWT_SECRET ou com segredo curto', () => {
-    expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS })).toThrow(/JWT_SECRET/);
-    expect(() => validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: 'short' })).toThrow(
-      /JWT_SECRET/,
-    );
+  it('aceita SMTP_URL com TLS e credenciais', () => {
+    const url = 'smtps://user:pass@smtp.example.com:465';
+    expect(validateEnv({ ...REQUIRED, SMTP_URL: url }).SMTP_URL).toBe(url);
   });
 
   it('usa 15 minutos como validade padrão do access token', () => {
-    const env = validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: SECRET });
-    expect(env.JWT_ACCESS_TTL_SECONDS).toBe(900);
+    expect(validateEnv(REQUIRED).JWT_ACCESS_TTL_SECONDS).toBe(900);
+  });
+
+  it('usa 10 minutos como validade padrão do código de verificação e recusa menos de 1 minuto', () => {
+    expect(validateEnv(REQUIRED).EMAIL_VERIFICATION_CODE_TTL_SECONDS).toBe(600);
+    expect(() => validateEnv({ ...REQUIRED, EMAIL_VERIFICATION_CODE_TTL_SECONDS: '59' })).toThrow(
+      /EMAIL_VERIFICATION_CODE_TTL_SECONDS/,
+    );
   });
 
   it('recusa JWT_EXPIRES_IN_SECONDS e aponta o nome novo', () => {
-    expect(() =>
-      validateEnv({
-        DATABASE_URL: 'x',
-        REDIS_URL: REDIS,
-        JWT_SECRET: SECRET,
-        JWT_EXPIRES_IN_SECONDS: '3600',
-      }),
-    ).toThrow('JWT_EXPIRES_IN_SECONDS: renamed to JWT_ACCESS_TTL_SECONDS');
+    expect(() => validateEnv({ ...REQUIRED, JWT_EXPIRES_IN_SECONDS: '3600' })).toThrow(
+      'JWT_EXPIRES_IN_SECONDS: renamed to JWT_ACCESS_TTL_SECONDS',
+    );
   });
 
   it('falha com PORT inválida', () => {
-    expect(() =>
-      validateEnv({ DATABASE_URL: 'x', REDIS_URL: REDIS, JWT_SECRET: SECRET, PORT: 'abc' }),
-    ).toThrow(/PORT/);
+    expect(() => validateEnv({ ...REQUIRED, PORT: 'abc' })).toThrow(/PORT/);
   });
 });

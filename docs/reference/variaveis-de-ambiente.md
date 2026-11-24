@@ -32,6 +32,8 @@ O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-
 | --- | --- | --- |
 | `DATABASE_URL` | obrigatória | Conexão com o Postgres. No `.env.example`, o Postgres do `docker-compose.yml` |
 | `REDIS_URL` | obrigatória | Conexão com o Redis: cache de leitura, filas do BullMQ e contadores do rate limit. No `.env.example`, o Redis do `docker-compose.yml` |
+| `SMTP_URL` | obrigatória, inclusive nos scripts de migration e de seed | Servidor SMTP dos e-mails do notifications, `smtp://` ou `smtps://`, com usuário e senha na URL se houver (`smtps://usuario:senha@smtp.exemplo.com:465`). No `.env.example`, o Mailpit do `docker-compose.yml` (`smtp://127.0.0.1:1025`) |
+| `EMAIL_FROM` | obrigatória, inclusive nos scripts de migration e de seed | Remetente dos e-mails, como `no-reply@example.com` ou `App <no-reply@example.com>` |
 
 ## Autenticação
 
@@ -41,6 +43,7 @@ O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-
 | `JWT_ACCESS_TTL_SECONDS` | `900` (15 minutos) | Validade do access token. Curta porque um access token não pode ser revogado antes de vencer |
 | `REFRESH_TOKEN_TTL_SECONDS` | `2592000` (30 dias) | Validade de cada refresh token. Cada renovação emite um novo |
 | `REFRESH_FAMILY_MAX_AGE_SECONDS` | `7776000` (90 dias) | Prazo absoluto da sessão, contado do login. Renovar não o estende. Depois dele, só com a senha de novo |
+| `EMAIL_VERIFICATION_CODE_TTL_SECONDS` | `600` (10 minutos) | Validade do código de verificação do e-mail, contada da emissão. No mínimo `60`: o e-mail mostra a validade em minutos |
 
 Como esses prazos se combinam está em [Autenticação](autenticacao.md).
 
@@ -70,8 +73,8 @@ São as variáveis padrão do SDK do OpenTelemetry. As mais usadas:
 
 O `test/setup-env.ts` define o mínimo para os testes que sobem o `AppModule`, sem sobrescrever o que já estiver no ambiente:
 
-- `NODE_ENV=test`, mais `DATABASE_URL` e `REDIS_URL` apontando para o `docker-compose.yml`, e um `JWT_SECRET` fixo, só de teste;
+- `NODE_ENV=test`, mais `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` apontando para o `docker-compose.yml`, `EMAIL_FROM` e um `JWT_SECRET` fixo, só de teste;
 - `OUTBOX_WORKER_ENABLED`, `QUEUE_WORKERS_ENABLED`, `JOBS_ENABLED` e `THROTTLE_ENABLED` em `false`;
 - `LOG_LEVEL=silent` e `OTEL_SDK_DISABLED=true`.
 
-Os testes de integração ignoram `DATABASE_URL` e `REDIS_URL` e sobem containers próprios.
+Os testes de integração ignoram `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` e sobem containers próprios.

@@ -8,7 +8,7 @@ Por que cada serviço de fora do processo entra por um port, por que o adapter t
 
 ## Contexto
 
-O projeto fala com dois fornecedores, os dois simulados: o de pagamento do orders (`SimulatedPaymentGateway`, que aprova tudo) e o de e-mail do notifications (`LoggingEmailSender`, que só registra no log). Um fornecedor real pode demorar, cair, responder com erro no formato dele ou mudar de API. Nada disso pode vazar para o domínio nem travar a aplicação.
+O projeto fala com dois fornecedores: o de pagamento do orders, simulado (`SimulatedPaymentGateway`, que aprova tudo), e o de e-mail do notifications, um servidor SMTP de verdade (`SmtpEmailSender`). Em desenvolvimento, o SMTP é o Mailpit do `docker-compose.yml`, que guarda os e-mails sem enviá-los para fora. Um fornecedor real pode demorar, cair, responder com erro no formato dele ou mudar de API. Nada disso pode vazar para o domínio nem travar a aplicação.
 
 ## Por quê
 
@@ -18,7 +18,7 @@ O caso de uso declara o que precisa num port (`PaymentGateway`, `EmailSender`), 
 
 - **Teste sem rede:** o caso de uso é testado com um fake, sem fornecedor nem chave de API.
 - **Troca de fornecedor:** integrar um fornecedor de pagamento de verdade é escrever outro adapter e trocar a ligação no módulo Nest. O caso de uso não muda.
-- **Desenvolvimento local:** os adapters simulados deixam rodar o fluxo inteiro sem conta em fornecedor nenhum.
+- **Desenvolvimento local:** o adapter simulado do pagamento e o Mailpit no lugar de um provedor de e-mail deixam rodar o fluxo inteiro sem conta em fornecedor nenhum.
 
 ### O adapter traduz o erro
 
@@ -48,6 +48,8 @@ Sem timeout, um fornecedor lento prende a requisição, a conexão com o banco e
 
 O `withTimeout` desiste de esperar, mas não cancela a chamada, que pode terminar depois, do lado do fornecedor. No pagamento, isso é seguro pelo mesmo motivo do retry.
 
+O e-mail não passa por um decorator: o `SmtpEmailSender` usa os prazos de cada fase do Nodemailer (conexão, saudação e socket parado, que por padrão chegam a 10 minutos) e um `withTimeout` no envio inteiro. Sem retry, sobra só o timeout, e ele cabe no adapter.
+
 ### Retry só no que é idempotente
 
 Repetir uma chamada que falhou pode repetir o efeito. Uma cobrança que deu timeout pode ter sido feita, e cobrar de novo cobraria duas vezes. O pagamento pode ter retry porque toda chamada leva a chave de idempotência `pay:<orderId>`: o fornecedor devolve o mesmo pagamento para a mesma chave, em vez de cobrar de novo. Sem essa chave, o certo seria não repetir.
@@ -58,7 +60,7 @@ O e-mail não tem retry no adapter. Ele roda num consumidor de evento, e se o en
 
 ### Circuit breaker, quando houver tráfego
 
-Com um fornecedor fora do ar, cada requisição ainda gasta o timeout inteiro antes de falhar. Um circuit breaker (por exemplo, o `opossum`) conta as falhas e, passado um limite, para de chamar por um tempo e falha na hora. O projeto não usa um: os fornecedores são simulados, e o timeout curto já limita o estrago. Ele faz sentido com um fornecedor real instável e tráfego suficiente para que vários segundos de timeout por requisição esgotem o pool ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
+Com um fornecedor fora do ar, cada requisição ainda gasta o timeout inteiro antes de falhar. Um circuit breaker (por exemplo, o `opossum`) conta as falhas e, passado um limite, para de chamar por um tempo e falha na hora. O projeto não usa um: o pagamento é simulado, o e-mail roda fora da requisição, num consumidor de evento, e o timeout curto já limita o estrago. Ele faz sentido com um fornecedor real instável e tráfego suficiente para que vários segundos de timeout por requisição esgotem o pool ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
 
 ## Alternativas e trade-offs
 

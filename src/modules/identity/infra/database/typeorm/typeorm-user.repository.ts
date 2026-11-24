@@ -34,6 +34,15 @@ export class TypeOrmUserRepository implements UserRepository {
     }
   }
 
+  async findByIdForUpdate(id: string) {
+    const raw = await this.repo
+      .createQueryBuilder('u')
+      .where('u.id = :id', { id })
+      .setLock('pessimistic_write')
+      .getOne();
+    return raw ? UserMapper.toDomain(raw) : null;
+  }
+
   async findByEmail(email: Email) {
     const raw = await this.repo.findOneBy({ email: email.value });
     return raw ? UserMapper.toDomain(raw) : null;

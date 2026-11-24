@@ -88,6 +88,7 @@ Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop modul
 | Ator | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Cancelar | [orders](modules/orders.md#linguagem-ubíqua) |
 | Chave de idempotência | [Idempotency key](#idempotency-key) |
+| Código de verificação | [identity](modules/identity.md#linguagem-ubíqua) |
 | Cliente | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Concorrência otimista | [Concorrência otimista](#concorrência-otimista) |
 | Consultar (pedido) | [orders](modules/orders.md#linguagem-ubíqua) |
@@ -98,6 +99,8 @@ Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop modul
 | Destinatário | [notifications](modules/notifications.md#linguagem-ubíqua) |
 | Dinheiro | [Dinheiro](#dinheiro) |
 | E-mail | [Mesmo termo, sentidos diferentes](#mesmo-termo-sentidos-diferentes) |
+| E-mail de boas-vindas | [notifications](modules/notifications.md#linguagem-ubíqua) |
+| E-mail de código de verificação | [notifications](modules/notifications.md#linguagem-ubíqua) |
 | E-mail de pagamento confirmado | [notifications](modules/notifications.md#linguagem-ubíqua) |
 | Evento de domínio | [Evento de domínio](#evento-de-domínio) |
 | Evento de integração | [Evento de integração](#evento-de-integração) |
@@ -125,3 +128,4 @@ Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop modul
 | Status (do pedido) | [orders](modules/orders.md#linguagem-ubíqua) |
 | Total | [orders](modules/orders.md#linguagem-ubíqua) |
 | Usuário | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
+| Verificar o e-mail | [identity](modules/identity.md#linguagem-ubíqua) |

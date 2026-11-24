@@ -10,6 +10,7 @@ export class UserMapper {
       name: raw.name,
       passwordHash: raw.passwordHash,
       roles: raw.roles,
+      emailVerifiedAt: raw.emailVerifiedAt,
     });
   }
 
@@ -20,6 +21,7 @@ export class UserMapper {
     raw.name = user.name;
     raw.passwordHash = user.passwordHash;
     raw.roles = [...user.roles];
+    raw.emailVerifiedAt = user.emailVerifiedAt;
     return raw;
   }
 }

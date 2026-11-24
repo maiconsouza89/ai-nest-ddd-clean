@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+// o código de verificação sai por evento: os workers ficam ligados
+import './helpers/enable-outbox-worker.js';
 import type { TestApp } from './helpers/test-app.js';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +10,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { deleteUser, registerAndLogin, setRoles, uniqueEmail } from './helpers/auth.js';
+import { emailsTo, emailsWith, verificationCodeFor, waitForEmail } from './helpers/mailpit.js';
 
 describe('Auth (e2e)', () => {
   let app: TestApp;
@@ -21,16 +24,33 @@ describe('Auth (e2e)', () => {
 
   afterAll(() => app.close());
 
-  it('cadastra e faz login, devolvendo um JWT assinado só com o sub', async () => {
+  it('cadastra, recusa o login até verificar o e-mail, verifica e entra com um JWT só com o sub', async () => {
     const email = uniqueEmail();
+    const password = 'secret-123';
     const reg = await request(server())
       .post('/v1/auth/register')
-      .send({ name: 'Ana', email, password: 'secret-123' })
+      .send({ name: 'Ana', email, password })
       .expect(201);
+
+    const blocked = await request(server())
+      .post('/v1/auth/login')
+      .send({ email, password })
+      .expect(403);
+    expect(blocked.body.code).toBe('EMAIL_NOT_VERIFIED');
+
+    const code = await verificationCodeFor(email);
+    const wrongCode = String((Number(code) + 1) % 1_000_000).padStart(6, '0');
+    const wrong = await request(server())
+      .post('/v1/auth/verify-email')
+      .send({ email, code: wrongCode })
+      .expect(400);
+    expect(wrong.body.code).toBe('INVALID_VERIFICATION_CODE');
+
+    await request(server()).post('/v1/auth/verify-email').send({ email, code }).expect(204);
 
     const login = await request(server())
       .post('/v1/auth/login')
-      .send({ email: email.toUpperCase(), password: 'secret-123' })
+      .send({ email: email.toUpperCase(), password })
       .expect(200);
 
     const claims = await app.get(JwtService).verifyAsync(login.body.accessToken);
@@ -41,6 +61,56 @@ describe('Auth (e2e)', () => {
     const ttl = app.get(ConfigService).getOrThrow<number>('JWT_ACCESS_TTL_SECONDS');
     expect(claims.exp - claims.iat).toBe(ttl);
     expect(login.body.expiresIn).toBe(ttl);
+
+    const welcome = await waitForEmail(email, 'Boas-vindas, Ana');
+    expect(welcome.text).toContain('Seu e-mail foi verificado');
+  });
+
+  describe('verificação do e-mail', () => {
+    const post = (path: string, body: object) =>
+      request(server()).post(`/v1/auth/${path}`).send(body);
+
+    it('o código vale uma vez só', async () => {
+      const email = uniqueEmail();
+      await post('register', { name: 'Ana', email, password: 'secret-123' }).expect(201);
+      const code = await verificationCodeFor(email);
+
+      await post('verify-email', { email, code }).expect(204);
+      const again = await post('verify-email', { email, code }).expect(400);
+      expect(again.body.code).toBe('INVALID_VERIFICATION_CODE');
+    });
+
+    it('e-mail desconhecido dá o mesmo erro que código errado', async () => {
+      const res = await post('verify-email', { email: uniqueEmail(), code: '123456' }).expect(400);
+      expect(res.body.code).toBe('INVALID_VERIFICATION_CODE');
+    });
+
+    it('valida o formato do código', async () => {
+      const email = uniqueEmail();
+      for (const code of ['12345', '1234567', 'abcdef', 123456]) {
+        await post('verify-email', { email, code }).expect(400);
+      }
+    });
+
+    it('o reenvio responde 202 para e-mail desconhecido, sem enviar nada', async () => {
+      const email = uniqueEmail();
+      await post('resend-verification-code', { email }).expect(202);
+      expect(await emailsTo(email)).toEqual([]);
+    });
+
+    it('o reenvio antes de 60 segundos responde 202 e não envia outro código', async () => {
+      const email = uniqueEmail();
+      await post('register', { name: 'Ana', email, password: 'secret-123' }).expect(201);
+      const code = await verificationCodeFor(email);
+
+      await post('resend-verification-code', { email }).expect(202);
+
+      // o primeiro código continua valendo: um reenvio aceito o teria invalidado
+      await post('verify-email', { email, code }).expect(204);
+      // as boas-vindas saem depois de tudo o que veio antes delas na outbox do usuário
+      await waitForEmail(email, 'Boas-vindas, Ana');
+      expect(await emailsWith(email, 'Seu código de verificação')).toHaveLength(1);
+    });
   });
 
   it('não devolve a senha nem o hash em nenhuma resposta', async () => {
@@ -65,11 +135,7 @@ describe('Auth (e2e)', () => {
   });
 
   it('rejeita senha errada e e-mail desconhecido com a mesma resposta (401)', async () => {
-    const email = uniqueEmail();
-    await request(server())
-      .post('/v1/auth/register')
-      .send({ name: 'Ana', email, password: 'secret-123' })
-      .expect(201);
+    const { email } = await registerAndLogin(app);
 
     const wrong = await request(server())
       .post('/v1/auth/login')

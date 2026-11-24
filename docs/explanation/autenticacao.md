@@ -65,6 +65,15 @@ A segunda renovação espera a linha do token ser liberada, não acha mais o `us
 
 O preço é não ter janela de tolerância. Um cliente que dispara duas renovações em paralelo, ou que repete uma renovação porque perdeu a resposta, perde a sessão e volta ao login.
 
+### O e-mail é verificado antes do primeiro login
+
+O register cria a conta com o e-mail por verificar, e o login recusa a conta até lá. Sem isso, qualquer um abriria uma conta com o e-mail de outra pessoa, e os avisos dela iriam para quem é dono do endereço. A decisão, com o preço de guardar o código no evento, está na [ADR 0009](../adr/0009-verificacao-de-email-com-codigo-no-evento.md).
+
+- **Quem envia é o notifications.** O identity grava o hash do código e publica o evento `identity.verification-code-issued` na mesma transação do usuário. O notifications o consome e envia o e-mail. Se o register falhar, nem o usuário, nem o código, nem o e-mail saem.
+- **O código é curto, então o limite é o que protege.** Seis dígitos têm um milhão de valores: o hash no banco não resiste a força bruta. O que protege é o prazo de 10 minutos e o limite de 5 tentativas erradas por código. O reenvio emite um código novo, mas espera 60 segundos entre um e outro e passa pelo rate limit da rota.
+- **A contagem das tentativas não pode correr.** Dez tentativas simultâneas que leiam o mesmo `attempts` virariam dez palpites com uma tentativa contada. O caso de uso lê o código com `SELECT ... FOR UPDATE`, e as tentativas entram uma depois da outra. O erro sai depois da transação, como na renovação: lançado dentro dela, desfaria a contagem.
+- **As respostas não revelam a conta.** O login confere a senha antes de dizer `EMAIL_NOT_VERIFIED`. A verificação dá o mesmo erro para e-mail desconhecido e código errado, e o reenvio responde 202 sempre.
+
 ### Ownership no caso de uso
 
 A entidade sabe quem é o dono, guardando só o id dele, sem FK para o `identity`. O caso de uso decide se o ator pode agir, com uma regra só para as ações e para a leitura de um pedido:

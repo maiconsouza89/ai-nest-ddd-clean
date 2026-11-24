@@ -18,6 +18,10 @@ export class UserOrmEntity {
   @Column('text', { array: true, default: () => "'{}'" })
   roles!: string[];
 
+  // nulo até a verificação do e-mail: o login fica recusado enquanto isso
+  @Column('timestamptz', { nullable: true })
+  emailVerifiedAt!: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

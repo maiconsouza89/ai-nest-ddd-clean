@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+// o registerAndLogin verifica o e-mail com o código que sai por evento: os workers ficam ligados
+import './helpers/enable-outbox-worker.js';
 import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
