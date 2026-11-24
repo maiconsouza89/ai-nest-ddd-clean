@@ -57,8 +57,9 @@ const rules = [
   {
     name: 'shared-nao-importa-modulos',
     comment:
-      'O shared não conhece os módulos, nem por alias. Quem liga um port do shared à implementação de um ' +
-      `módulo é o AppModule (ADR 0002). Ver ${CAMADAS}.`,
+      'O shared não conhece os módulos, nem por alias. Um port do shared é ligado à implementação num ' +
+      'Nest module do módulo dono (o IdentityAuthModule), que o AppModule só repassa para o ' +
+      `AuthModule.forRoot (ADR 0002). Ver ${CAMADAS}.`,
     from: { path: '^src/shared/' },
     to: { path: '^src/modules/' },
   },

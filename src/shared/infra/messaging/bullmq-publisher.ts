@@ -20,10 +20,10 @@ const QUEUE_JOB_OPTIONS = {
 const jobIdOf = (eventId: string, consumer: string) => `${eventId}__${consumer}`;
 
 /**
- * Enfileira (a ordem por agregado vale só até a fila: o retry com backoff pode reordenar dentro dela,
- * então nenhum consumidor pode depender da ordem).
- * o evento em uma fila por consumidor assinante. A outbox continua sendo a fonte da verdade:
+ * Enfileira o evento em uma fila por consumidor assinante. A outbox continua sendo a fonte da verdade:
  * se enfileirar falha, o evento fica pendente e o relay repete (o `jobId` evita o job duplicado).
+ * A ordem por agregado vale só até a fila: o retry com backoff pode reordenar dentro dela, então
+ * nenhum consumidor pode depender da ordem.
  */
 @Injectable()
 export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdown {
