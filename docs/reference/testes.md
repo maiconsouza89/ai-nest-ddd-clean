@@ -21,9 +21,10 @@ A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transf
 | Adapter, gateway, guard, handler de evento, decorator de cache | Unitário | `*.spec.ts` ao lado do arquivo | Fakes do port que ele chama | `resilient-payment.gateway.spec.ts`, `on-order-paid.handler.spec.ts` |
 | Repositório, query, transação, idempotência no Postgres | Integração | `*.int-spec.ts` ao lado do arquivo, em geral em `infra/database/typeorm/` | Postgres descartável com as migrations reais do módulo | `typeorm-order.repository.int-spec.ts`, `transaction.int-spec.ts` |
 | Cache, filas, jobs agendados e rate limit no Redis | Integração | `*.int-spec.ts` ao lado do arquivo | Redis descartável | `cached-order.queries.int-spec.ts`, `expire-pending-orders.processor.int-spec.ts` |
-| Evento de integração, lado de quem publica | Contrato (unitário) | `application/events/to-integration-event.contract.spec.ts` | O evento gerado a partir do agregado, comparado com o exemplo `contracts/events/*.v<N>.example.ts` | `orders` |
+| Evento de integração, lado de quem publica | Contrato (unitário) | `application/events/to-integration-event.contract.spec.ts` | O evento gerado a partir do agregado, comparado com o exemplo `contracts/events/*.v<N>.example.ts` | `orders`, `identity` |
 | Evento de integração, lado de quem consome | Contrato (unitário) | O spec do handler | O mesmo exemplo do contrato como entrada, inclusive entregue duas vezes | `on-order-cancelled.handler.spec.ts` |
-| Fluxo crítico pela API | E2E | `test/*.e2e-spec.ts` | O `AppModule` inteiro, contra o Postgres e o Redis do `docker-compose.yml` | `orders.e2e-spec.ts`, `outbox.e2e-spec.ts` |
+| Adapter de fornecedor real | Integração | `*.int-spec.ts` ao lado do adapter | O serviço num `GenericContainer` do Testcontainers | `smtp-email-sender.int-spec.ts`, com o Mailpit |
+| Fluxo crítico pela API | E2E | `test/*.e2e-spec.ts` | O `AppModule` inteiro, contra o Postgres, o Redis e o Mailpit do `docker-compose.yml` | `auth.e2e-spec.ts`, `outbox.e2e-spec.ts` |
 
 As facades não têm teste de contrato: o `npm run typecheck` confere a assinatura dos dois lados.
 
@@ -36,6 +37,8 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 | `test/fakes/` | Um fake por port, para os unitários |
 | `test/helpers/<módulo>-database.ts` | As entidades e a lista de migrations de cada módulo, para o `startDatabase`. O helper não lê a pasta de migrations: uma migration nova entra na lista ([Como gerar uma migration](../how-to/gerar-uma-migration.md)) |
 | `test/helpers/redis.ts` | `startRedis`, com a política de memória do `docker-compose.yml` ([Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)) |
+| `test/helpers/auth.ts` | `registerAndLogin`: cadastra, verifica o e-mail com o código que chega ao Mailpit e faz login. O código sai por evento, então o arquivo de e2e que o usa importa o `test/helpers/enable-outbox-worker.ts` antes do `AppModule` |
+| `test/helpers/mailpit.ts` | Lê os e-mails pela API do Mailpit: `emailsTo`, `waitForEmail` e `verificationCodeFor`. Os e2e não trocam o `EmailSender` por um fake: o e-mail sai por SMTP, como em produção |
 | `test/helpers/contract.ts` | `incompatibilities(exemplo, real)`: lista os campos do exemplo que faltam ou mudaram de tipo, em qualquer profundidade. Campo a mais é aceito (mudança aditiva) |
 
 ## Só os testes afetados

@@ -6,22 +6,18 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { OnOrderCancelledHandler } from '#modules/inventory/infra/events/on-order-cancelled.handler';
-import { Email, EmailSender } from '#modules/notifications/application/ports/email-sender';
 import { configureApp } from '../src/app.setup.js';
 import { IntegrationEvent } from '#shared/application/integration-event';
 import { registerAndLogin } from './helpers/auth.js';
 import { seedProduct } from './helpers/catalog.js';
+import { emailsWith, waitForEmail } from './helpers/mailpit.js';
 import { waitFor } from './helpers/wait-for.js';
 
 describe('Outbox worker (e2e)', () => {
   let app: TestApp;
-  const sentEmails: Email[] = [];
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(EmailSender)
-      .useValue({ send: async (email: Email) => void sentEmails.push(email) })
-      .compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();
   });
@@ -85,9 +81,10 @@ describe('Outbox worker (e2e)', () => {
     await request(server).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
     await request(server).post(`/v1/orders/${id}/pay`).set(user.auth).expect(204);
 
-    await waitFor(() => sentEmails.some((e) => e.to === user.email));
+    const subject = `Pagamento confirmado: pedido ${id}`;
+    await waitForEmail(user.email, subject);
 
-    expect(sentEmails.filter((e) => e.to === user.email)).toHaveLength(1);
+    expect(await emailsWith(user.email, subject)).toHaveLength(1);
   });
 
   describe('cancelar um pedido', () => {

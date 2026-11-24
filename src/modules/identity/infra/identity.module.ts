@@ -8,9 +8,14 @@ import { TransactionManager } from '#shared/application/ports/transaction-manage
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { MessagingModule } from '#shared/infra/messaging/messaging.module';
+import { Outbox } from '#shared/application/ports/outbox';
 import { OpaqueTokenGenerator } from '../application/ports/opaque-token-generator.js';
 import { PasswordHasher } from '../application/ports/password-hasher.js';
 import { TokenIssuer } from '../application/ports/token-issuer.js';
+import { VerificationCodeGenerator } from '../application/ports/verification-code-generator.js';
+import { VerificationCodeIssuer } from '../application/verification-code-issuer.js';
+import { ResendVerificationCodeUseCase } from '../application/use-cases/resend-verification-code.use-case.js';
+import { VerifyEmailUseCase } from '../application/use-cases/verify-email.use-case.js';
 import { SessionIssuer } from '../application/session-issuer.js';
 import { LoginUseCase } from '../application/use-cases/login.use-case.js';
 import { LogoutUseCase } from '../application/use-cases/logout.use-case.js';
@@ -20,13 +25,17 @@ import { RegisterUserUseCase } from '../application/use-cases/register-user.use-
 import { UserDirectoryFacade } from '../contracts/user-directory.facade.js';
 import { RefreshTokenRepository } from '../domain/repositories/refresh-token.repository.js';
 import { UserRepository } from '../domain/repositories/user.repository.js';
+import { VerificationCodeRepository } from '../domain/repositories/verification-code.repository.js';
 import { Argon2PasswordHasher } from './adapters/argon2-password-hasher.js';
 import { CryptoOpaqueTokenGenerator } from './adapters/crypto-opaque-token-generator.js';
 import { JwtTokenIssuer } from './adapters/jwt-token-issuer.js';
+import { CryptoVerificationCodeGenerator } from './adapters/crypto-verification-code-generator.js';
 import { RefreshTokenOrmEntity } from './database/typeorm/entities/refresh-token.orm-entity.js';
 import { UserOrmEntity } from './database/typeorm/entities/user.orm-entity.js';
+import { VerificationCodeOrmEntity } from './database/typeorm/entities/verification-code.orm-entity.js';
 import { TypeOrmRefreshTokenRepository } from './database/typeorm/typeorm-refresh-token.repository.js';
 import { TypeOrmUserRepository } from './database/typeorm/typeorm-user.repository.js';
+import { TypeOrmVerificationCodeRepository } from './database/typeorm/typeorm-verification-code.repository.js';
 import { AuthController } from './http/controllers/auth.controller.js';
 import { PurgeExpiredRefreshTokensProcessor } from './jobs/purge-expired-refresh-tokens.processor.js';
 import { TypeOrmUserDirectoryFacade } from './adapters/typeorm-user-directory.facade.js';
@@ -34,14 +43,19 @@ import { TypeOrmUserDirectoryFacade } from './adapters/typeorm-user-directory.fa
 type Config = ConfigService<EnvironmentVariables, true>;
 
 @Module({
-  imports: [MessagingModule, TypeOrmModule.forFeature([UserOrmEntity, RefreshTokenOrmEntity])],
+  imports: [
+    MessagingModule,
+    TypeOrmModule.forFeature([UserOrmEntity, RefreshTokenOrmEntity, VerificationCodeOrmEntity]),
+  ],
   controllers: [AuthController],
   providers: [
     { provide: UserRepository, useClass: TypeOrmUserRepository },
     { provide: RefreshTokenRepository, useClass: TypeOrmRefreshTokenRepository },
+    { provide: VerificationCodeRepository, useClass: TypeOrmVerificationCodeRepository },
     { provide: UserDirectoryFacade, useClass: TypeOrmUserDirectoryFacade },
     { provide: PasswordHasher, useClass: Argon2PasswordHasher },
     { provide: OpaqueTokenGenerator, useClass: CryptoOpaqueTokenGenerator },
+    { provide: VerificationCodeGenerator, useClass: CryptoVerificationCodeGenerator },
     {
       provide: TokenIssuer,
       useFactory: (jwt: JwtService, config: Config) =>
@@ -74,14 +88,86 @@ type Config = ConfigService<EnvironmentVariables, true>;
       ],
     },
     {
+      provide: VerificationCodeIssuer,
+      useFactory: (
+        codes: VerificationCodeRepository,
+        generator: VerificationCodeGenerator,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        config: Config,
+      ) =>
+        new VerificationCodeIssuer(
+          codes,
+          generator,
+          outbox,
+          ids,
+          clock,
+          config.getOrThrow('EMAIL_VERIFICATION_CODE_TTL_SECONDS', { infer: true }) * 1000,
+        ),
+      inject: [
+        VerificationCodeRepository,
+        VerificationCodeGenerator,
+        Outbox,
+        IdGenerator,
+        Clock,
+        ConfigService,
+      ],
+    },
+    {
       provide: RegisterUserUseCase,
       useFactory: (
         users: UserRepository,
         hasher: PasswordHasher,
         ids: IdGenerator,
         tx: TransactionManager,
-      ) => new RegisterUserUseCase(users, hasher, ids, tx),
-      inject: [UserRepository, PasswordHasher, IdGenerator, TransactionManager],
+        codes: VerificationCodeIssuer,
+      ) => new RegisterUserUseCase(users, hasher, ids, tx, codes),
+      inject: [
+        UserRepository,
+        PasswordHasher,
+        IdGenerator,
+        TransactionManager,
+        VerificationCodeIssuer,
+      ],
+    },
+    {
+      provide: ResendVerificationCodeUseCase,
+      useFactory: (
+        users: UserRepository,
+        codes: VerificationCodeRepository,
+        issuer: VerificationCodeIssuer,
+        clock: Clock,
+        tx: TransactionManager,
+      ) => new ResendVerificationCodeUseCase(users, codes, issuer, clock, tx),
+      inject: [
+        UserRepository,
+        VerificationCodeRepository,
+        VerificationCodeIssuer,
+        Clock,
+        TransactionManager,
+      ],
+    },
+    {
+      provide: VerifyEmailUseCase,
+      useFactory: (
+        users: UserRepository,
+        codes: VerificationCodeRepository,
+        generator: VerificationCodeGenerator,
+        outbox: Outbox,
+        ids: IdGenerator,
+        clock: Clock,
+        tx: TransactionManager,
+      ) => new VerifyEmailUseCase(users, codes, generator, outbox, ids, clock, tx),
+      inject: [
+        UserRepository,
+        VerificationCodeRepository,
+        VerificationCodeGenerator,
+        Outbox,
+        IdGenerator,
+        Clock,
+        TransactionManager,
+      ],
     },
     {
       provide: LoginUseCase,

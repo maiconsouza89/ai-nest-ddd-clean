@@ -17,7 +17,7 @@ Na raiz do repositório:
 
 1. Instale as dependências: `npm install`. O aviso sobre scripts de instalação não aprovados pode ser ignorado ([Setup do zero](docs/reference/comandos.md#setup-do-zero)).
 2. Crie o `.env` a partir do exemplo: `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md).
-3. Suba o Postgres e o Redis: `docker compose up -d postgres redis`.
+3. Suba o Postgres, o Redis e o Mailpit: `docker compose up -d postgres redis mailpit`. Os e-mails da app, como o código de verificação, aparecem em <http://localhost:8025>.
 4. Rode as migrations e os seeds de cada módulo:
 
    ```sh

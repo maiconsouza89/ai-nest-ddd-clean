@@ -70,12 +70,7 @@ export default defineConfig(
   },
   {
     // Fakes, repositórios em memória e adaptadores simulados implementam portas assíncronas. Ver ADR 0004.
-    files: [
-      ...testFiles,
-      '**/in-memory/**',
-      '**/simulated-payment.gateway.ts',
-      '**/logging-email-sender.ts',
-    ],
+    files: [...testFiles, '**/in-memory/**', '**/simulated-payment.gateway.ts'],
     rules: { '@typescript-eslint/require-await': 'off' },
   },
   {

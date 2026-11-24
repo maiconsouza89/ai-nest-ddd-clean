@@ -5,6 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
+  Matches,
   Max,
   MinLength,
   Min,
@@ -32,6 +33,15 @@ export class EnvironmentVariables {
   @MinLength(32)
   JWT_SECRET!: string;
 
+  // servidor SMTP dos e-mails do notifications, com usuário e senha na URL se houver
+  @Matches(/^smtps?:\/\/\S+$/, { message: 'SMTP_URL must be an smtp:// or smtps:// URL' })
+  SMTP_URL!: string;
+
+  // remetente dos e-mails, como `no-reply@example.com` ou `App <no-reply@example.com>`
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_FROM!: string;
+
   // curto porque não há como revogar um access token antes de ele vencer
   @IsInt()
   @Min(1)
@@ -46,6 +56,11 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   REFRESH_FAMILY_MAX_AGE_SECONDS: number = 90 * 24 * 60 * 60;
+
+  // validade do código de verificação do e-mail, contada da emissão; o e-mail a mostra em minutos
+  @IsInt()
+  @Min(60)
+  EMAIL_VERIFICATION_CODE_TTL_SECONDS: number = 600;
 
   // texto, e não boolean: o `enableImplicitConversion` transformaria 'false' em true
   @IsIn(['true', 'false'])

@@ -6,6 +6,7 @@ import { UserRepository } from '../../domain/repositories/user.repository.js';
 import { Email } from '../../domain/value-objects/email.vo.js';
 import { RegisterUserInput } from '../dtos/identity.inputs.js';
 import { PasswordHasher } from '../ports/password-hasher.js';
+import { VerificationCodeIssuer } from '../verification-code-issuer.js';
 
 export class RegisterUserUseCase {
   constructor(
@@ -13,6 +14,7 @@ export class RegisterUserUseCase {
     private readonly hasher: PasswordHasher,
     private readonly ids: IdGenerator,
     private readonly tx: TransactionManager,
+    private readonly codes: VerificationCodeIssuer,
   ) {}
 
   async execute(input: RegisterUserInput) {
@@ -27,7 +29,11 @@ export class RegisterUserUseCase {
       input.name,
       await this.hasher.hash(input.password),
     );
-    await this.tx.run(() => this.users.save(user));
+    // usuário, código e evento juntos: se um falhar, nenhum e-mail sai para uma conta que não existe
+    await this.tx.run(async () => {
+      await this.users.save(user);
+      await this.codes.issue(user);
+    });
     return { id: user.id };
   }
 }

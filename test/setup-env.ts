@@ -6,6 +6,9 @@ process.env.DATABASE_URL ??= 'postgres://postgres:postgres@localhost:5432/app';
 process.env.REDIS_URL ??= 'redis://localhost:6379';
 // o worker da outbox não roda nos testes que sobem o app; os testes dele o chamam direto
 process.env.OUTBOX_WORKER_ENABLED ??= 'false';
+// o Mailpit do docker-compose; os testes de integração sobem o próprio
+process.env.SMTP_URL ??= 'smtp://127.0.0.1:1025';
+process.env.EMAIL_FROM ??= 'no-reply@example.com';
 process.env.JWT_SECRET ??= 'test-secret-test-secret-test-secret-0123';
 // os e2e fazem muitos logins do mesmo IP; o teste de rate limit liga o throttler por conta própria
 process.env.THROTTLE_ENABLED ??= 'false';

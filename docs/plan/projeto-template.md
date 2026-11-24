@@ -44,7 +44,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | Fase | O que entrega | Status |
 | --- | --- | --- |
 | 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | ✅ |
-| 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ⬜ |
+| 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ✅ |
 | 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | ⬜ |
 
 A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem por último para descrever a base como ela ficou.
@@ -162,15 +162,15 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 ## Fase 2: verificação de e-mail e boas-vindas
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 4: regras do código de verificação no domínio
-> - [ ] Passo 5: persistência do código e do `emailVerifiedAt`
-> - [ ] Passo 6: casos de uso e eventos do identity
-> - [ ] Passo 7: SMTP com Mailpit
-> - [ ] Passo 8: e-mails do notifications
-> - [ ] Passo 9: rotas HTTP, seeds e testes de ponta a ponta
-> - [ ] Passo 10: documentação e ADR 0009
+> - [x] Passo 4: regras do código de verificação no domínio
+> - [x] Passo 5: persistência do código e do `emailVerifiedAt`
+> - [x] Passo 6: casos de uso e eventos do identity
+> - [x] Passo 7: SMTP com Mailpit
+> - [x] Passo 8: e-mails do notifications
+> - [x] Passo 9: rotas HTTP, seeds e testes de ponta a ponta
+> - [x] Passo 10: documentação e ADR 0009
 
 ### Passo 4: regras do código de verificação no domínio
 
@@ -186,6 +186,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 **Pronto quando:** os testes de unidade cobrem: código certo dentro do prazo, código errado (incrementa `attempts`), a quinta tentativa errada e a sexta recusada mesmo com o código certo, código vencido, código já usado e `verifyEmail` repetido. `npm test -- verification-code` e `npm test -- user.entity` passam.
 
+**Como ficou:**
+
+- O `User` passou a estender o `AggregateRoot`: o `verifyEmail(now)` anota o evento de domínio `EmailVerified`, que vira o `identity.email-verified` no passo 6. Repetir não muda a data nem anota de novo.
+- `VerificationCode.issue` (como o `RefreshToken.startFamily`), `verify(codeHash, now)` e `acceptsAttemptsAt(now)`. No `/simplify`, a regra dos 60 s entre códigos também foi para a entidade (`allowsResendAt`), e o `Email` ganhou o `tryCreate`, que substituiu três cópias do try/catch de `InvalidEmailError` (login, verificação e reenvio).
+- Port `VerificationCodeGenerator`, com o `CryptoVerificationCodeGenerator` (`randomInt` e SHA-256) e o `FakeVerificationCodeGenerator` em `test/fakes/`.
+- Os testes cobrem os casos do critério e mais o intervalo de reenvio. `npm test -- verification-code` e `npm test -- user.entity` passam.
+
 ### Passo 5: persistência do código e do `emailVerifiedAt`
 
 **Por quê:** o código é gravado na mesma transação do usuário e da outbox. Se o register falhar depois de gravar o código, nada sai.
@@ -199,6 +206,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Atualize `test/helpers/identity-database.ts` se ele listar tabelas.
 
 **Pronto quando:** `npm run mig:identity:run` aplica as migrations num banco do compose recém-criado, e um teste de integração do repositório confere: gravar e ler o código ativo, emitir um segundo invalida o primeiro, e apagar o usuário apaga os códigos. `npm run test:int -- verification-code` passa.
+
+**Como ficou:**
+
+- Sem mapper, como o `RefreshToken`: as props da entidade são as colunas (`convencoes.md` atualizado). O repositório tem `add` (invalida os anteriores e grava o novo), `findLatestForUpdate` (o mais recente, com `FOR UPDATE`) e `save` (tentativas e uso).
+- Migration `1795545972474-add-email-verification`, gerada e renomeada; um segundo `gen` não acha diferença. O `identity-database.ts` ganhou a entidade, a migration e as da outbox, que o passo 6 usa.
+- Conferido: `mig:identity:run` e o `db:setup` inteiro num banco do compose recém-criado, numa cópia do repositório em outra pasta (outro projeto do Compose, sem tocar nos volumes do dono). O int-spec cobre os três casos do critério, a data da verificação lida do banco e 10 tentativas erradas simultâneas que param em 5.
+- Achado do `/code-review`: o teste de concorrência usava um hash curto, que a coluna `char(64)` completa com espaços, e a última asserção passava de qualquer jeito. Passou a usar o hash real.
 
 ### Passo 6: casos de uso e eventos do identity
 
@@ -218,6 +232,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Testes de unidade dos quatro casos de uso cobrem: register grava usuário, código e evento; reenvio dentro de 60 s, para e-mail desconhecido e para conta verificada não grava evento; verificação com código certo grava o evento, e com código errado incrementa `attempts` e lança o erro; login de conta não verificada com senha certa dá `EMAIL_NOT_VERIFIED`, e com senha errada dá `INVALID_CREDENTIALS`.
 - Um teste de integração confere que o register grava o código e a linha da outbox na mesma transação, e que uma falha depois do usuário não deixa nenhum dos três.
 - Os testes de contrato dos dois eventos passam.
+
+**Como ficou:**
+
+- O `VerificationCodeIssuer`, helper da raiz de `application/` como o `SessionIssuer`, gera o código, grava o hash e publica o `identity.verification-code-issued` direto, sem evento de domínio: a entidade só conhece o hash. O register e o reenvio o usam. O `identity.email-verified` segue o how-to (`to-integration-event.ts` e `publish-user-events.ts`).
+- O erro da verificação sai depois da transação, como no refresh: lançado dentro dela, desfaria a contagem da tentativa.
+- Achado do `/code-review` (importante): a verificação lia o usuário fora da transação, e o `save`, que grava todas as colunas, podia desfazer uma troca de roles feita no meio. O `UserRepository` ganhou o `findByIdForUpdate`, e a verificação e o reenvio releem o usuário travado dentro da transação. Isso também fecha o reenvio que corria com a verificação ou com outro reenvio.
+- Testes: unitários dos quatro casos de uso, contrato dos dois eventos e dois int-specs (`register-user.int-spec.ts`: usuário, hash e evento juntos, e nada sobra quando a outbox falha depois de gravar).
 
 ### Passo 7: SMTP com Mailpit
 
@@ -239,6 +260,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - `docker compose up -d mailpit` sobe o serviço, e `http://localhost:8025` abre.
 - Sem `SMTP_URL` no `.env`, a app não sobe, e a validação do env cita a variável na mensagem.
 
+**Como ficou:**
+
+- Nodemailer 10.6.1, conferido no Context7. Ele traz os próprios tipos, então o `@types/nodemailer` não entrou. `testcontainers` 12.2.2 virou dependência direta. Mailpit pela tag maior `axllent/mailpit:v1` (v1.34 em 2026-11-24, no Docker Hub), como `postgres:19` e `redis:8`.
+- `SmtpEmailSender` com os prazos de fase do Nodemailer (5 s de conexão e saudação, 10 s de socket) e um `withTimeout` de 15 s no envio inteiro. O `SMTP_URL` é validado como `smtp://` ou `smtps://`. O spec do env passou a partir de uma base com as obrigatórias.
+- Conferido: o int-spec acha o e-mail no Mailpit com remetente, destinatário, assunto e corpo; com o servidor fora do ar, falha na hora (`ECONNREFUSED`); `docker compose up -d mailpit` sobe com healthcheck e `http://localhost:8025` responde 200; sem `SMTP_URL`, a app para com `Invalid environment configuration` citando a variável.
+- O `.env` local do dono não tinha as variáveis novas: as duas linhas do `.env.example` foram acrescentadas a ele. A entrada morta do `logging-email-sender.ts` saiu do `eslint.config.mjs`.
+
 ### Passo 8: e-mails do notifications
 
 **Por quê:** o notifications passa a ter função própria na base, ligada ao identity, e o handler de pedido pago vira exemplo removível.
@@ -252,6 +280,12 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Testes de contrato do lado do consumidor contra os exemplos do identity.
 
 **Pronto quando:** testes de unidade dos dois casos de uso, com o `FakeEmailSender`, conferem destinatário, assunto e corpo. Os testes de contrato dos dois consumidores passam. Um teste de integração confere que a mesma entrega duas vezes envia um e-mail só.
+
+**Como ficou:**
+
+- O e-mail do código diz a validade em minutos, calculada de `occurredAt` a `expiresAt`. Depois do `/code-review`, o `EMAIL_VERIFICATION_CODE_TTL_SECONDS` exige no mínimo 60, para o texto nunca dizer "0 minutos".
+- O `RecipientDirectory` foi para junto do handler de pedido pago no `notifications.module.ts`, com um comentário marcando os dois como exemplo removível.
+- Testes: `send-identity-emails.use-case.spec.ts`, `identity-email.handlers.spec.ts` (consumidor contra os exemplos do identity) e `identity-email.handlers.int-spec.ts`, com a marca de processado no Postgres.
 
 ### Passo 9: rotas HTTP, seeds e testes de ponta a ponta
 
@@ -272,6 +306,14 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Seguindo o tutorial à mão num ambiente zerado (`docs/how-to/resetar-o-ambiente-local.md`), cada comando dá a resposta que a página mostra.
 - O Swagger em `/docs` mostra as duas rotas novas com os códigos de resposta.
 
+**Como ficou:**
+
+- O e2e usa o SMTP de verdade contra o Mailpit do compose: o `outbox` e o `primeiro-pedido` deixaram de trocar o `EmailSender` por um fake e leem os e-mails pelo `test/helpers/mailpit.ts`. O código sai por evento, então os e2e que usam o `registerAndLogin` (`auth`, `orders`, `catalog`) passaram a importar o `enable-outbox-worker`.
+- No `/simplify`, o helper do Mailpit passou a consultar só a busca no laço de espera e a baixar o corpo uma vez, e o int-spec do SMTP passou a usá-lo.
+- O seed, além de criar os usuários verificados, verifica as contas de teste que um banco antigo tinha sem verificação (achado do `/code-review`; conferido no banco do compose).
+- Conferido: `npm run test:e2e` com 8 de 8 arquivos e 63 testes; o tutorial seguido à mão, passo a passo, num ambiente zerado na cópia em outra pasta, com cada resposta igual à da página e os três e-mails no Mailpit; o login de `user@example.com` do seed; e o `/docs-json` com 204 e 400 no `verify-email`, 202 no reenvio e 401 e 403 no login.
+- Tutorial renumerado: o passo 6 é a verificação, e o e-mail de confirmação, antes lido no log, é lido no Mailpit (passo 12).
+
 ### Passo 10: documentação e ADR 0009
 
 **Por quê:** o identity mudou de contrato, e duas decisões (login bloqueado e código em texto puro no evento) surpreendem sem contexto.
@@ -288,6 +330,14 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Índice do `docs/README.md` com a ADR nova.
 
 **Pronto quando:** `npm run docs:check` passa, as páginas citadas descrevem o comportamento que os testes do passo 9 provam, e nenhuma página cita o `LoggingEmailSender`.
+
+**Como ficou:**
+
+- Além das páginas listadas: `explanation/servicos-externos.md`, `reference/testes.md`, `reference/convencoes.md`, `how-to/resetar-o-ambiente-local.md`, o Quickstart do README e a linha do e2e no `AGENTS.md`.
+- Nenhuma página cita o `LoggingEmailSender`. A ADR 0004 ainda cita o arquivo `logging-email-sender.ts`, mas ADRs são imutáveis (`docs/README.md`).
+- Do `/code-review`, registrado nas docs em vez de mudar código: o código também fica nos jobs do BullMQ no Redis (ADR 0009 e `identity.md`); `SMTP_URL` e `EMAIL_FROM` passam a ser exigidas pelos scripts de migration e seed (`variaveis-de-ambiente.md`); o envio roda dentro da transação do `IdempotentConsumer` e segura uma conexão por até 15 s (`notifications.md`); e, num banco antigo, uma sessão aberta antes da migration continua renovando (ADR 0009).
+- Fechamento da fase: `npm run ci`, `npm run test:int` (20 de 20 arquivos, 92 testes) e `npm run test:e2e` (8 de 8, 63 testes) passam, depois do `/simplify` e do `/code-review`.
+- Revisão de segurança no PR #7, conferida contra o NIST SP 800-63B e o OWASP. Duas correções, com o ok do dono: cota de 10 códigos por usuário em 24 horas no reenvio (até 50 palpites por dia por conta, abaixo do teto de 100 do NIST), e o e-mail do código sem o nome do cadastro (content spoofing para um endereço não verificado). O código em texto puro no evento ficou como está (ADR 0009). `npm run ci`, o int-spec do código e o e2e inteiro passaram de novo.
 
 ---
 

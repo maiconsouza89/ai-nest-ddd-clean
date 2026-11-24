@@ -62,9 +62,9 @@ Cada agregado tem uma entidade de domínio e uma ORM entity, convertidas por um 
 
 | Regra | Detalhe |
 | --- | --- |
-| A ORM entity não sai do repositório concreto | O repositório recebe e devolve a entidade de domínio. O mapper usa `restore` no `toDomain`. Exceção: o `RefreshToken` do identity não tem mapper. As props dele já são as colunas, e o `TypeOrmRefreshTokenRepository` grava o `toProps()` e lê com `restore()` direto |
+| A ORM entity não sai do repositório concreto | O repositório recebe e devolve a entidade de domínio. O mapper usa `restore` no `toDomain`. Exceção: o `RefreshToken` e o `VerificationCode` do identity não têm mapper. As props deles já são as colunas, e os repositórios TypeORM gravam o `toProps()` e leem com `restore()` direto |
 | Id gerado pelo domínio | `@PrimaryColumn('uuid')`, não `@PrimaryGeneratedColumn` |
-| `createdAt` e `updatedAt` só na ORM entity | `@CreateDateColumn` e `@UpdateDateColumn` são detalhe técnico e não vão para o domínio. Exceção: no `RefreshToken`, o `createdAt` é do domínio e é uma coluna comum (`@Column`). Ele é o `now` do `Clock` em que o token foi emitido, o mesmo instante de onde sai o `expiresAt` |
+| `createdAt` e `updatedAt` só na ORM entity | `@CreateDateColumn` e `@UpdateDateColumn` são detalhe técnico e não vão para o domínio. Exceção: no `RefreshToken` e no `VerificationCode`, o `createdAt` é do domínio e é uma coluna comum (`@Column`). Ele é o `now` do `Clock` da emissão, o mesmo instante de onde sai o `expiresAt` |
 | `bigint` e `numeric` são `string` | O driver `pg` não converte inteiros de 64 bits para `number`, porque haveria perda de precisão. Tipe a coluna como `string` e converta no mapper |
 | Filhos do agregado com `cascade` e `orphanedRowAction` | `cascade: true` no `@OneToMany` da raiz e `orphanedRowAction: 'delete'` no `@ManyToOne` do filho. Sem o `orphanedRowAction`, um item removido do array não é apagado no `save()` |
 | Filho com chave composta | `orderId` e `productId` como `@PrimaryColumn`: o `save()` atualiza o item existente em vez de apagar e inserir de novo |

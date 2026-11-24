@@ -21,13 +21,13 @@ Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo
 
    Este é o comando de limpeza: ele só alcança o que pertence a este projeto. O `docker volume prune` e o `docker system prune` apagam também volumes de outros projetos.
 
-2. Suba o Postgres e o Redis vazios:
+2. Suba o Postgres, o Redis e o Mailpit vazios:
 
    ```bash
-   docker compose up -d --wait postgres redis
+   docker compose up -d --wait postgres redis mailpit
    ```
 
-   O `--wait` só volta quando os dois respondem ao healthcheck.
+   O `--wait` só volta quando os três respondem ao healthcheck.
 
 3. Aplique as migrations e rode os seeds: [Como rodar as migrations e os seeds](rodar-as-migrations-e-os-seeds.md#passos).
 

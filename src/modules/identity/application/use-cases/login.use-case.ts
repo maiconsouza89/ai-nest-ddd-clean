@@ -1,5 +1,5 @@
+import { EmailNotVerifiedError } from '../../domain/errors/email-not-verified.error.js';
 import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error.js';
-import { InvalidEmailError } from '../../domain/errors/invalid-email.error.js';
 import { UserRepository } from '../../domain/repositories/user.repository.js';
 import { Email } from '../../domain/value-objects/email.vo.js';
 import { LoginInput } from '../dtos/identity.inputs.js';
@@ -17,7 +17,9 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginInput) {
-    const user = await this.users.findByEmail(this.parseEmail(input.email));
+    const email = Email.tryCreate(input.email);
+    if (!email) throw new InvalidCredentialsError();
+    const user = await this.users.findByEmail(email);
 
     // sempre paga o custo de uma verificação, exista o usuário ou não, para que o tempo
     // de resposta não revele quais e-mails estão cadastrados
@@ -26,6 +28,8 @@ export class LoginUseCase {
 
     // mesma resposta para e-mail desconhecido e senha errada
     if (!user || !passwordOk) throw new InvalidCredentialsError();
+    // só depois da senha: sem ela, a resposta não revela se a conta existe nem se foi verificada
+    if (!user.isEmailVerified) throw new EmailNotVerifiedError();
 
     return this.sessions.start(user.id);
   }
@@ -33,14 +37,5 @@ export class LoginUseCase {
   private getDecoyHash() {
     this.decoyHash ??= this.hasher.hash(crypto.randomUUID());
     return this.decoyHash;
-  }
-
-  private parseEmail(raw: string) {
-    try {
-      return Email.create(raw);
-    } catch (e) {
-      if (e instanceof InvalidEmailError) throw new InvalidCredentialsError();
-      throw e;
-    }
   }
 }
