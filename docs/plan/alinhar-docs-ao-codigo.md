@@ -236,7 +236,7 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 - [x] Cada frase listada corresponde ao comportamento descrito.
 - [x] `npm run ci` passa (fecha a fase 2).
 
-**Como ficou:** as sete frases foram reescritas. O `git grep "75 s"` só acha este plano. O how-to dos seeds cita o `run-seed.ts`, onde fica a lista de valores aceitos, e a linha do `docs:check` no `comandos.md` cita o `scripts/remark-docs-rules.mjs`. Na conferência, só 8 dos 31 arquivos de `test/fakes/` e `test/helpers/` têm um comentário no topo, o que confirma a frase nova do `testes.md`. `npm run ci` passou.
+**Como ficou:** as sete frases foram reescritas. O `git grep "75 s"` só acha este plano. O how-to dos seeds cita o `run-seed.ts`, onde fica a lista de valores aceitos, e a linha do `docs:check` no `comandos.md` cita o `scripts/remark-docs-rules.mjs`. Na conferência, só 11 dos 30 arquivos de `test/fakes/` e `test/helpers/` têm um comentário antes da primeira declaração, o que confirma a frase nova do `testes.md`. `npm run ci` passou.
 
 ---
 
