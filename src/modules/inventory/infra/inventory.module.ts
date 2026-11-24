@@ -12,7 +12,7 @@ import { ReservationOrmEntity } from './database/typeorm/entities/reservation.or
 import { StockItemOrmEntity } from './database/typeorm/entities/stock-item.orm-entity.js';
 import { TypeOrmStockRepository } from './database/typeorm/typeorm-stock.repository.js';
 import { OnOrderCancelledHandler } from './events/on-order-cancelled.handler.js';
-import { InventoryFacadeImpl } from './inventory-facade.impl.js';
+import { InventoryFacadeImpl } from './adapters/inventory-facade.impl.js';
 
 @Module({
   imports: [

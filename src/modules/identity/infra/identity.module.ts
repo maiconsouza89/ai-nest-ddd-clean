@@ -29,7 +29,7 @@ import { TypeOrmRefreshTokenRepository } from './database/typeorm/typeorm-refres
 import { TypeOrmUserRepository } from './database/typeorm/typeorm-user.repository.js';
 import { AuthController } from './http/controllers/auth.controller.js';
 import { PurgeExpiredRefreshTokensProcessor } from './jobs/purge-expired-refresh-tokens.processor.js';
-import { TypeOrmUserDirectoryFacade } from './typeorm-user-directory.facade.js';
+import { TypeOrmUserDirectoryFacade } from './adapters/typeorm-user-directory.facade.js';
 
 type Config = ConfigService<EnvironmentVariables, true>;
 

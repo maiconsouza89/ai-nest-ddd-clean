@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActorResolver } from '#shared/application/ports/actor-resolver';
 import { UserOrmEntity } from './database/typeorm/entities/user.orm-entity.js';
-import { TypeOrmActorResolver } from './typeorm-actor-resolver.js';
+import { TypeOrmActorResolver } from './adapters/typeorm-actor-resolver.js';
 
 // Separado do IdentityModule, que exporta só a facade (ADR 0003). Só o AppModule importa este
 // módulo, para entregá-lo ao AuthModule.forRoot.

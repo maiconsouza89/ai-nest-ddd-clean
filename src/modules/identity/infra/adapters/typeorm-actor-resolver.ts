@@ -4,7 +4,7 @@ import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import { Actor } from '#shared/application/actor';
 import { ActorResolver } from '#shared/application/ports/actor-resolver';
-import { UserOrmEntity } from './database/typeorm/entities/user.orm-entity.js';
+import { UserOrmEntity } from '../database/typeorm/entities/user.orm-entity.js';
 
 // Roda em toda requisição autenticada: uma leitura por PK, só com as colunas do ator.
 @Injectable()

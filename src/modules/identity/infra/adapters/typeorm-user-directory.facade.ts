@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
-import { UserDirectoryFacade } from '../contracts/user-directory.facade.js';
-import { UserOrmEntity } from './database/typeorm/entities/user.orm-entity.js';
+import { UserDirectoryFacade } from '../../contracts/user-directory.facade.js';
+import { UserOrmEntity } from '../database/typeorm/entities/user.orm-entity.js';
 
 @Injectable()
 export class TypeOrmUserDirectoryFacade implements UserDirectoryFacade {
