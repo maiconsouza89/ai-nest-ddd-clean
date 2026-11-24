@@ -22,14 +22,14 @@ As filas dos eventos de integração e os jobs usam o BullMQ, que roda sobre o R
 
 O BullMQ exige a política de memória `noeviction`. Com qualquer outra, o Redis pode apagar chaves das filas quando a memória enche, e jobs somem. Um Redis só de cache costuma usar `allkeys-lru`, que apaga as chaves menos usadas. A política vale para a instância inteira, e não por database.
 
-O `docker-compose.yml` sobe uma instância só, com `noeviction` e AOF (`appendonly yes`, para não perder jobs num reinício). Ela atende os dois usos porque toda chave de cache tem TTL: a memória não cresce sem limite. Em produção, o recomendado são duas instâncias: a das filas com `noeviction` e AOF, e a do cache com uma política que apaga chaves.
+O `docker-compose.yml` sobe uma instância só, com `noeviction` e AOF (`appendonly yes`, para não perder jobs num reinício). Ela atende os dois usos porque toda chave de cache tem TTL: a memória não cresce sem limite. Em produção, o recomendado são duas instâncias: a das filas com `noeviction` e AOF, e a do cache com uma política que apaga chaves ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
 
 ### Dois clientes para o mesmo endereço
 
 O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, cada uma configurada para o seu papel:
 
 - **Worker do BullMQ** (`BullMqConnection.worker`): `maxRetriesPerRequest: null`, exigido pelo BullMQ nos workers. O BullMQ só define esse valor sozinho quando cria a conexão, e o projeto passa uma instância pronta.
-- **Quem enfileira e o rate limit** (`BullMqConnection.producer`): sem fila offline (`enableOfflineQueue: false`). Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição.
+- **Quem enfileira e o rate limit** (`BullMqConnection.producer`): sem fila offline (`enableOfflineQueue: false`). Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera até 5 s por essa conexão e, sem ela, segue (`PRODUCER_READY_TIMEOUT_MS`, no `bullmq-connection.ts`).
 - **Cache e health check** (`RedisConnection`): também sem fila offline (`disableOfflineQueue: true`), com reconexão em segundo plano.
 
 Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão vira exceção não tratada e derruba o processo.
@@ -44,7 +44,7 @@ Nenhum uso espera o Redis voltar segurando uma requisição. O que acontece com 
 | Rate limit | 503 em todas as rotas limitadas | Falha fechada: deixar passar abriria o limite de tentativas de login quando não dá para contá-las |
 | Outbox | Os eventos ficam na tabela, e o relay tenta de novo com backoff. Depois de 8 falhas, o evento é marcado como morto (`deadAt`) | A outbox existe para isso ([Consistência e eventos](consistencia-e-eventos.md#o-evento-sai-pela-outbox)) |
 | Workers | Esperam a reconexão | Não há requisição esperando por eles |
-| Agendador de jobs | A subida falha em até 10 segundos | Sem o agendador, o job nunca rodaria, e ninguém perceberia |
+| Agendador de jobs | A subida falha em até cerca de 15 s: até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro dos jobs agendados | Sem o agendador, o job nunca rodaria, e ninguém perceberia |
 | `/health/ready` | Responde que não está pronto | O orquestrador tira a instância do tráfego. O `/health/live` não depende do Redis |
 
 A conexão do cache não bloqueia a subida. A app sobe sem cache, e o `/health/ready` acusa a falta. Já o registro dos jobs bloqueia, porque um job que não roda é um erro silencioso, e um cache ausente não é.
@@ -71,6 +71,7 @@ O ciclo comum (registrar o agendador, criar o worker, obedecer ao `JOBS_ENABLED`
 
 - **Concorrência global de 1** (`setGlobalConcurrency(1)`): uma execução por vez somando todas as instâncias. Uma execução longa não ganha uma segunda por cima dela no próximo disparo.
 - **Uma fila por job:** o worker roda o mesmo `run()` para qualquer job da fila. Dois jobs na mesma fila rodariam um o caso de uso do outro.
+- **Histórico curto:** cada job agendado guarda as 20 últimas execuções concluídas e as 100 últimas com falha (`removeOnComplete` e `removeOnFail` no `scheduled-job.processor.ts`).
 - **Sem retry:** o template não tem `attempts`, então um job que falha não é repetido. O próximo disparo é a nova tentativa. Os dois jobs do projeto tratam o que estiver pendente quando rodam, e um disparo perdido não deixa nada para trás.
 
 ## Alternativas e trade-offs

@@ -75,7 +75,7 @@ O `save` trata `version === 0` como agregado novo e pula a checagem. Uma linha q
 
 O pagamento cobra no fornecedor antes de salvar. Com a trava otimista apenas, um cancelamento poderia confirmar entre a cobrança e o `save`. O pagamento falharia por conflito, mas o dinheiro já teria sido cobrado de um pedido cancelado.
 
-Por isso o `PayOrderUseCase` carrega o pedido com `findByIdForUpdate` (`loadOwnedOrder(..., { lock: true })`), que faz um `SELECT ... FOR UPDATE` só na linha do pedido. O Postgres não aceita `FOR UPDATE` no lado opcional de um join, então os itens são carregados depois, sem trava. Um cancelamento ou uma expiração ao mesmo tempo espera a linha, encontra o pedido já pago e falha. O preço é segurar a linha e a conexão durante a chamada ao fornecedor, e por isso o timeout e as tentativas da cobrança são curtos (cerca de 6 segundos no pior caso). A trava pessimista fica restrita a esse caso: um efeito externo que não volta atrás.
+Por isso o `PayOrderUseCase` carrega o pedido com `findByIdForUpdate` (`loadOwnedOrder(..., { lock: true })`), que faz um `SELECT ... FOR UPDATE` só na linha do pedido. O Postgres não aceita `FOR UPDATE` no lado opcional de um join, então os itens são carregados depois, sem trava. Um cancelamento ou uma expiração ao mesmo tempo lê o pedido sem trava e ainda o vê pendente. Ele só espera no `UPDATE ... WHERE version` do `save` e, depois do commit do pagamento, não acha mais a versão que leu: falha com `CONCURRENCY_CONFLICT` (409). Se ele só lê o pedido depois do commit, encontra o pedido pago e falha com `ORDER_NOT_CANCELLABLE`. Nos dois casos, um pedido cobrado não é cancelado. O preço é segurar a linha e a conexão durante a chamada ao fornecedor, e por isso o timeout e as tentativas da cobrança são curtos (cerca de 6 segundos no pior caso). A trava pessimista fica restrita a esse caso: um efeito externo que não volta atrás.
 
 ### Estoque: update condicional, sem ler antes
 
@@ -129,12 +129,12 @@ await this.tx.run(async () => {
 
 Se o `save` falhar, o evento também não é gravado, e se a transação confirmar, o evento está no banco esperando a entrega. Assim, nada é salvo sem gerar o evento e nenhum evento sai sem o `save`. A conversão (`toIntegrationEvent`) separa o fato interno do contrato: o evento de domínio é uma classe do domain, e o de integração tem `eventId`, `version`, data em ISO e um payload só com primitivos ([Comunicação entre módulos](comunicacao-entre-modulos.md#contratos-são-api-pública-e-têm-versão)). Um evento de domínio sem contrato faz a conversão lançar um erro, e o `save` é desfeito.
 
-Um relay lê a outbox em lotes, a cada segundo, e entrega cada evento. A busca usa SQL escrito à mão:
+Com [`OUTBOX_WORKER_ENABLED`](../reference/variaveis-de-ambiente.md#workers-e-jobs) ligado, um relay lê a outbox em lotes de 50 (`DEFAULT_OUTBOX_OPTIONS`, no `outbox-relay.ts`) e entrega cada evento. O worker (`outbox-worker.ts`) só espera 1 s antes da próxima busca quando o lote vem incompleto. Com um lote cheio, busca de novo na hora. A busca usa SQL escrito à mão:
 
 - **`FOR UPDATE OF o SKIP LOCKED`:** dois processos com o worker ligado nunca pegam a mesma linha. O `.setLock('pessimistic_write').setOnLocked('skip_locked')` do query builder não serve aqui, porque a busca tem uma subquery e o Postgres recusa travar o lado anulável de um outer join. O `OF o` trava só as linhas da outbox.
 - **Ordem por agregado:** um `NOT EXISTS` deixa de fora um evento enquanto houver um anterior do mesmo agregado ainda por entregar, inclusive um que esteja esperando nova tentativa.
-- **Falhas:** cada falha registra o erro e adia a próxima tentativa com backoff exponencial. Esgotadas as tentativas, a linha ganha `deadAt` e sai da busca. Daí em diante ela não segura mais os eventos seguintes do mesmo agregado, que saem sem ela.
-- **Limpeza:** os eventos publicados são apagados depois de um prazo de retenção.
+- **Falhas:** cada falha registra o erro e adia a próxima tentativa com backoff exponencial: 1 s depois da primeira falha, dobrando a cada falha até o teto de 5 min. Na oitava falha, a linha ganha `deadAt` e sai da busca. Daí em diante ela não segura mais os eventos seguintes do mesmo agregado, que saem sem ela.
+- **Limpeza:** de hora em hora, o worker apaga os eventos publicados há mais de 7 dias (`CLEANUP_INTERVAL_MS`, no `outbox-worker.ts`, e `retentionMs`, no `outbox-relay.ts`). As linhas mortas da outbox (`deadAt`) ficam de propósito, para inspeção manual. Nada apaga essas linhas, nem as de `shared.processed_events` e de `orders.idempotency_keys`, e as três tabelas crescem sem limite ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
 
 ### Uma fila por consumidor
 
@@ -149,6 +149,7 @@ Chamar os handlers no relay os poria dentro da transação que trava o lote: um 
 - **A outbox continua.** O Redis não participa da transação do Postgres. Enfileirar direto no caso de uso traria de volta o problema que a outbox resolve.
 - **Fan-out pelo publicador.** No BullMQ, cada job vai para um worker só. O `BullMqPublisher` consulta quais consumidores assinam o tipo do evento e enfileira uma cópia para cada um. As assinaturas saem do `@IntegrationEventHandler` de cada handler, lido na subida pelo `DiscoveryService` do Nest, e cada módulo declara só os próprios handlers. Um evento sem assinante é aceito sem enfileirar nada.
 - **Job repetido é ignorado.** O `jobId` é `<eventId>__<consumidor>` (o BullMQ não aceita `:` no id), e um job com id existente é ignorado. Se o relay cair entre enfileirar e marcar a linha, a repetição não duplica o job. Isso só vale enquanto o job existir, e por isso `removeOnComplete` usa uma idade, e não `true`.
+- **Tentativas e retenção dos jobs** (`QUEUE_JOB_OPTIONS`, no `bullmq-publisher.ts`): 10 tentativas, com espera exponencial a partir de 2 s (2 s, 4 s, 8 s...), cerca de 17 min no total até o job ir para `failed`. Os jobs concluídos ficam guardados por 24 h, e os que falharam, por 7 dias. As 24 h são a janela em que o `jobId` impede o job duplicado. Depois dela, quem barra a repetição é o `processed_events` do consumidor.
 - **Uma fila com problema não esconde as outras.** O publicador usa `Promise.allSettled`: tenta todas as filas e, se alguma falhar, o relay registra a falha e repete o evento depois. As filas que já tinham o job ignoram a repetição pelo `jobId`.
 - **Duas filas de mortos.** Um job que esgota as tentativas fica no conjunto `failed` da fila do consumidor. O `deadAt` da outbox passa a valer só para o evento que não conseguiu ser enfileirado, com o Redis fora do ar, por exemplo.
 - **A ordem vale até a fila.** Dentro dela, um retry com backoff pode inverter dois eventos do mesmo agregado, então nenhum consumidor pode depender da sequência. Os do projeto não dependem: pago e cancelado são estados que se excluem.
@@ -181,8 +182,11 @@ O `PayOrderUseCase` reserva a chave dentro da transação do pagamento, por ator
 
 - **Primeira vez:** a chave é gravada junto com o pedido e o evento. Se o pagamento falhar, a transação desfaz a chave, e ela não fica queimada.
 - **Mesma chave, mesmo pedido:** a requisição termina sem cobrar e responde 204 de novo. A resposta não precisa ser guardada, porque o pagamento sempre responde 204 sem corpo. Uma rota que devolve corpo teria de guardá-lo com a chave.
-- **Mesma chave, outro pedido:** `IDEMPOTENCY_KEY_REUSED`.
+- **Mesma chave, outro pedido:** `IDEMPOTENCY_KEY_REUSED` (422).
 - **Duas requisições ao mesmo tempo:** a segunda espera a primeira no índice único. Se a primeira confirmar, a segunda cai no caso da mesma chave. Se for desfeita, a segunda reserva a chave e segue.
+- **Chave vencida:** o prazo é de 24 h (`IDEMPOTENCY_KEY_TTL_MS`, no `orders.module.ts`). Depois dele, a mesma chave pode ser usada de novo, mesmo para outro pedido: o `claim` do `typeorm-idempotency.store.ts` reaproveita a linha vencida em vez de recusar.
+
+O cabeçalho é opcional: sem ele, o pagamento roda sem reservar chave. Uma chave vazia ou com mais de 255 caracteres responde `INVALID_IDEMPOTENCY_KEY` (400) antes de abrir a transação (`pay-order.use-case.ts`). As chaves ficam em `orders.idempotency_keys`, com chave primária (`actorId`, `key`).
 
 O mesmo `pay:<orderId>` vai ao fornecedor como chave de idempotência da cobrança. Se o commit falhar depois da cobrança, o retry reenvia a mesma chave e o fornecedor não cobra de novo.
 

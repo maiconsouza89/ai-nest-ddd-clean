@@ -34,7 +34,7 @@ O contexto do OpenTelemetry vive no `AsyncLocalStorage` e não sobrevive a uma g
 
 A instrumentação do pino grava o `trace_id` e o `span_id` (nomes padrão, que a opção `logKeys` troca) em todo log emitido dentro de um span. Com isso, os logs de todos os módulos de uma requisição, inclusive os dos handlers, se juntam pelo `trace_id`.
 
-O log sai em JSON pelo `nestjs-pino`, para o coletor indexar os campos.
+Fora de `development`, o log sai em JSON pelo `nestjs-pino`, para o coletor indexar os campos. Em `development`, passa pelo `pino-pretty`, colorido e em uma linha (`observability.module.ts`).
 
 ### A application loga por um port
 

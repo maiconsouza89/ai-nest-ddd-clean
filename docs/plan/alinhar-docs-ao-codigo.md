@@ -25,7 +25,7 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 | 0. Preparação | Branch e linha de base verde | ✅ |
 | 1. Correções no código | Os três bugs, os adapters no lugar certo e os comentários corrigidos | ✅ |
 | 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ✅ |
-| 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ⬜ |
+| 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ✅ |
 | 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ⬜ |
 | 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ⬜ |
 | 6. Entrega | Verificação completa, `/simplify`, `/code-review` e este plano apagado | ⬜ |
@@ -242,13 +242,13 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 ## Fase 3: doc de infra e eventos
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: cancelamento durante o pagamento
-> - [ ] Passo 2: números e comportamentos da outbox, das filas e da `Idempotency-Key`
-> - [ ] Passo 3: tabelas que nunca são limpas
-> - [ ] Passo 4: Redis, log e how-tos
-> - [ ] Passo 5: evoluções com gatilho
+> - [x] Passo 1: cancelamento durante o pagamento
+> - [x] Passo 2: números e comportamentos da outbox, das filas e da `Idempotency-Key`
+> - [x] Passo 3: tabelas que nunca são limpas
+> - [x] Passo 4: Redis, log e how-tos
+> - [x] Passo 5: evoluções com gatilho
 
 ### Passo 1: cancelamento durante o pagamento
 
@@ -258,7 +258,9 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] A seção "Trava pessimista quando o efeito não se desfaz" cita `CONCURRENCY_CONFLICT` como o erro do cancelamento ou da expiração que coincide com o pagamento.
+- [x] A seção "Trava pessimista quando o efeito não se desfaz" cita `CONCURRENCY_CONFLICT` como o erro do cancelamento ou da expiração que coincide com o pagamento.
+
+**Como ficou:** a frase descreve a leitura sem trava, a espera no `UPDATE ... WHERE version` e o `CONCURRENCY_CONFLICT`. Também cobre o cancelamento que só lê o pedido depois do commit e recebe `ORDER_NOT_CANCELLABLE`, os dois códigos que o `orders.md:101` lista. O `CancelOrderUseCase` carrega o pedido com `loadOwnedOrder` sem `lock`, e o `ExpirePendingOrdersUseCase` com `findById`, o que confirma a leitura sem trava.
 
 ### Passo 2: números e comportamentos da outbox, das filas e da `Idempotency-Key`
 
@@ -277,9 +279,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] Cada número da lista aparece na página e bate com a constante do arquivo citado.
-- [ ] A página diz que uma `Idempotency-Key` vencida pode ser usada de novo.
-- [ ] A página cita `OUTBOX_WORKER_ENABLED`, e o link para a variável no `variaveis-de-ambiente.md` funciona.
+- [x] Cada número da lista aparece na página e bate com a constante do arquivo citado.
+- [x] A página diz que uma `Idempotency-Key` vencida pode ser usada de novo.
+- [x] A página cita `OUTBOX_WORKER_ENABLED`, e o link para a variável no `variaveis-de-ambiente.md` funciona.
+
+**Como ficou:** os números entraram no parágrafo do relay, no item "Falhas", num item novo da seção das filas e num item novo, mais um parágrafo, da `Idempotency-Key`. Cada um cita a constante: `DEFAULT_OUTBOX_OPTIONS` e `POLL_INTERVAL_MS`, `QUEUE_JOB_OPTIONS` (9 esperas de 2 s a 512 s somam 1022 s, cerca de 17 min), `IDEMPOTENCY_KEY_TTL_MS` e `MAX_KEY_LENGTH`. A tabela de variáveis não tem âncora por linha, então o link vai para a seção `#workers-e-jobs`.
 
 ### Passo 3: tabelas que nunca são limpas
 
@@ -292,7 +296,9 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] A seção "Limpeza" cita as três tabelas e aponta para a entrada no `evolucoes-com-gatilho.md`.
+- [x] A seção "Limpeza" cita as três tabelas e aponta para a entrada no `evolucoes-com-gatilho.md`.
+
+**Como ficou:** o único `DELETE` periódico do código é o do `OutboxRelay.cleanup`, que só apaga linhas com `publishedAt`. A entrada nova ficou numa seção nova do `evolucoes-com-gatilho.md`, "Infraestrutura e dados", que dá uma âncora estável para os links.
 
 ### Passo 4: Redis, log e how-tos
 
@@ -308,8 +314,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "10 segundos" -- docs/explanation/redis.md docs/how-to/agendar-um-job.md` só acha frases que falam do timeout de registro, não do tempo total até falhar.
-- [ ] Os números citados batem com as constantes dos arquivos.
+- [x] `git grep -n "10 segundos" -- docs/explanation/redis.md docs/how-to/agendar-um-job.md` só acha frases que falam do timeout de registro, não do tempo total até falhar.
+- [x] Os números citados batem com as constantes dos arquivos.
+
+**Como ficou:** os números vêm de `PRODUCER_READY_TIMEOUT_MS` (5 s, `bullmq-connection.ts`), `REGISTER_TIMEOUT_MS` (10 s) e `removeOnComplete: 20, removeOnFail: 100` (`scheduled-job.processor.ts`). A frase do log cita o `observability.module.ts`. No how-to de eventos, a frase dos fakes estava na linha 72, não na 198. Os 15 s continuam sendo leitura do código até a fase 5 medir.
 
 ### Passo 5: evoluções com gatilho
 
@@ -327,9 +335,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] A tabela tem as quatro entradas novas, cada uma com condição, ação e contexto.
-- [ ] `servicos-externos.md`, `redis.md` e `paginar-uma-listagem.md` linkam a entrada que lhes corresponde.
-- [ ] `npm run ci` passa (fecha a fase 3).
+- [x] A tabela tem as quatro entradas novas, cada uma com condição, ação e contexto.
+- [x] `servicos-externos.md`, `redis.md` e `paginar-uma-listagem.md` linkam a entrada que lhes corresponde.
+- [x] `npm run ci` passa (fecha a fase 3).
+
+**Como ficou:** as quatro entradas estão na seção "Infraestrutura e dados", e as três páginas de origem linkam a âncora dela. A entrada dos spans de controller cita a faixa `>=4.0.0 <12`, conferida no `package.json` do `@opentelemetry/instrumentation-nestjs-core` 0.72.1 instalado. `npm run ci` passou.
 
 ---
 

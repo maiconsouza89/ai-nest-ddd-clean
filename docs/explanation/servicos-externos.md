@@ -58,7 +58,7 @@ O e-mail não tem retry no adapter. Ele roda num consumidor de evento, e se o en
 
 ### Circuit breaker, quando houver tráfego
 
-Com um fornecedor fora do ar, cada requisição ainda gasta o timeout inteiro antes de falhar. Um circuit breaker (por exemplo, o `opossum`) conta as falhas e, passado um limite, para de chamar por um tempo e falha na hora. O projeto não usa um: os fornecedores são simulados, e o timeout curto já limita o estrago. Ele faz sentido com um fornecedor real instável e tráfego suficiente para que vários segundos de timeout por requisição esgotem o pool.
+Com um fornecedor fora do ar, cada requisição ainda gasta o timeout inteiro antes de falhar. Um circuit breaker (por exemplo, o `opossum`) conta as falhas e, passado um limite, para de chamar por um tempo e falha na hora. O projeto não usa um: os fornecedores são simulados, e o timeout curto já limita o estrago. Ele faz sentido com um fornecedor real instável e tráfego suficiente para que vários segundos de timeout por requisição esgotem o pool ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)).
 
 ## Alternativas e trade-offs
 

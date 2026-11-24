@@ -59,7 +59,7 @@ Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, c
 
 - `npm run test:int -- <tarefa>.processor` passa.
 - `npm run arch` passa: o processor está em `infra/jobs/` e não importa repositório nem TypeORM.
-- Com a app no ar, o log da subida não mostra `scheduler registration failed`. Com o Redis fora do ar, a subida falha com essa mensagem em até 10 segundos, em vez de seguir sem o job.
+- Com a app no ar, o log da subida não mostra `scheduler registration failed`. Com o Redis fora do ar, a subida falha com essa mensagem em até cerca de 15 s (até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro), em vez de seguir sem o job.
 
 O `JOBS_ENABLED=false` desliga todos os jobs da instância, e os testes que sobem o `AppModule` já rodam assim. Uma falha em `run()` vai para o log como `<scheduler> failed`. O job não é repetido: a próxima tentativa é o próximo disparo.
 

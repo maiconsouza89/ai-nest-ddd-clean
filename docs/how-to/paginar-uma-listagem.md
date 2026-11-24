@@ -112,7 +112,7 @@ qb.where('(o.createdAt, o.id) < (:createdAt, :id)', cursor)
   .limit(limit);
 ```
 
-Os ids são UUID v7, ordenados pelo momento da criação, e por isso o `id` sozinho pode servir de cursor numa lista ordenada por criação. Nenhuma listagem do projeto usa cursor: a rota passaria a receber `after` no lugar de `page`, e a resposta a devolver o cursor da próxima página em vez do `total`.
+Os ids são UUID v7, ordenados pelo momento da criação, e por isso o `id` sozinho pode servir de cursor numa lista ordenada por criação. Nenhuma listagem do projeto usa cursor: a rota passaria a receber `after` no lugar de `page`, e a resposta a devolver o cursor da próxima página em vez do `total`. O gatilho para a troca está em [Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados).
 
 ## Como verificar
 
