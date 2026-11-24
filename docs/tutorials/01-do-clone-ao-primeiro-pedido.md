@@ -42,8 +42,8 @@ O comando volta quando os dois estão prontos. Você deve ver as linhas dos dois
 ### 3. Crie as tabelas e os dados de exemplo
 
 ```sh
-for m in identity catalog inventory orders outbox; do npm run "mig:${m}:run"; done
-for m in identity catalog inventory; do npm run "seed:${m}"; done
+npm run db:setup
+npm run db:seed
 ```
 
 Cada módulo tem as suas tabelas e as suas migrations. Os seeds criam produtos com estoque e usuários de teste ([Seeds](../reference/comandos.md#seeds)).

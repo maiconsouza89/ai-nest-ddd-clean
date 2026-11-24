@@ -19,11 +19,21 @@ Use este guia depois de clonar o repositório, de puxar mudanças que trazem mig
 
 ## Passos
 
-1. Aplique as migrations de todos os módulos com o primeiro loop do passo 4 de [Setup do zero](../reference/comandos.md#setup-do-zero). Ele lista todos os módulos, e o `plop module` acrescenta cada módulo novo a ele.
+1. Aplique as migrations de todos os módulos:
 
-   Copie o loop como está: no zsh, sem as chaves e as aspas, o nome do script se perde. Um módulo em dia responde "No migrations are pending", então o loop pode rodar de novo sem risco. Para um módulo só: `npm run mig:<módulo>:run`.
+   ```bash
+   npm run db:setup
+   ```
 
-2. Rode os seeds com o segundo loop do mesmo passo. Os seeds inserem só o que falta e não sobrescrevem o que existe. Os usuários de teste estão em [Comandos](../reference/comandos.md#seeds).
+   Um módulo em dia responde "No migrations are pending", então o comando pode rodar de novo sem risco. Para um módulo só: `npm run mig:<módulo>:run`.
+
+2. Rode os seeds de todos os módulos:
+
+   ```bash
+   npm run db:seed
+   ```
+
+   Os seeds inserem só o que falta e não sobrescrevem o que existe, então o comando também pode rodar de novo. Para um módulo só: `npm run seed:<módulo>`. Os usuários de teste estão em [Comandos](../reference/comandos.md#seeds).
 
 ## Como verificar
 
@@ -42,11 +52,11 @@ Se algo falhar:
 | Sintoma | Causa e saída |
 | --- | --- |
 | `Seeds de desenvolvimento só rodam com NODE_ENV=development ou test.` | O `NODE_ENV` do shell vence o do `.env`. Confira `echo $NODE_ENV` e o `.env` |
-| `Missing script: "mig:ordersun"`, no zsh | O loop perdeu as chaves ou as aspas. Copie-o de novo |
 | Uma migration falhou no meio e o `run` seguinte falha de novo | No banco local, [resete o ambiente](resetar-o-ambiente-local.md). Numa migration sua ainda sem commit, veja o revert em [Como gerar uma migration](gerar-uma-migration.md#como-verificar) |
 
 ## Veja também
 
-- [Comandos](../reference/comandos.md#migrations): os scripts `mig:<módulo>:*` e `seed:<módulo>`, e a condição `@app/source`.
+- [Comandos](../reference/comandos.md#migrations): o `db:setup`, os scripts `mig:<módulo>:*` e a condição `@app/source`.
+- [Comandos](../reference/comandos.md#seeds): o `db:seed` e os scripts `seed:<módulo>`.
 - [Como criar um seed](criar-um-seed.md): o seed de um módulo novo.
 - [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios): por que cada módulo tem migrations próprias.

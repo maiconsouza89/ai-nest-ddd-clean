@@ -21,8 +21,8 @@ Na raiz do repositório:
 4. Rode as migrations e os seeds de cada módulo:
 
    ```sh
-   for m in identity catalog inventory orders outbox; do npm run "mig:${m}:run"; done
-   for m in identity catalog inventory; do npm run "seed:${m}"; done
+   npm run db:setup
+   npm run db:seed
    ```
 
    Ver [Migrations](docs/reference/comandos.md#migrations) e [Seeds](docs/reference/comandos.md#seeds).

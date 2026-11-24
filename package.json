@@ -11,6 +11,8 @@
     "build": "nest build",
     "start:dev": "nest start --watch",
     "test:e2e": "vitest run --project e2e",
+    "db:setup": "node scripts/run-scripts.mjs \"^mig:.+:run$\"",
+    "db:seed": "node scripts/run-scripts.mjs \"^seed:[^:]+$\"",
     "mig:orders:gen": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:generate src/modules/orders/infra/database/typeorm/migrations/change -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
     "mig:orders:run": "NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm migration:run -d src/modules/orders/infra/database/typeorm/orders.data-source.ts",
     "test:int": "vitest run --project int",

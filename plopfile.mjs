@@ -4,13 +4,6 @@ import { quadrantTypes } from './scripts/remark-docs-rules.mjs';
 const MODULES_DIR = 'src/modules';
 const TEMPLATES = 'plop-templates/module';
 const DOCS_INDEX = 'docs/README.md';
-// o setup do zero aplica as migrations de cada módulo num loop escrito nestes arquivos
-const SETUP_DOCS = [
-  'README.md',
-  'docs/reference/comandos.md',
-  'docs/tutorials/01-do-clone-ao-primeiro-pedido.md',
-];
-const MIGRATION_LOOP = /(for m in [a-z0-9 -]+)(; do npm run "mig:\$\{m\}:run")/;
 // `@app/source` resolve os aliases `#shared/*` para `src` quando o ts-node carrega o data source
 const TYPEORM_CLI = 'NODE_OPTIONS=--conditions=@app/source typeorm-ts-node-esm';
 
@@ -187,26 +180,12 @@ export default function (plop) {
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
           return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;
         },
-        ...SETUP_DOCS.map((path) => ({
-          type: 'modify',
-          path,
-          pattern: MIGRATION_LOOP,
-          template: `$1 ${kebab}$2`,
-        })),
-        // por último: um documento fora do padrão não impede os scripts de migration
+        // por último: um índice fora do padrão não impede o registro do módulo nem os scripts de migration
         () => {
-          const missing = SETUP_DOCS.filter(
-            (path) => !readFileSync(path, 'utf8').match(MIGRATION_LOOP)?.[1].endsWith(` ${kebab}`),
-          );
-          if (missing.length > 0) {
-            throw new Error(
-              `${kebab} não entrou no loop de migrations de ${missing.join(' e ')}: adicione à mão`,
-            );
-          }
           if (!readFileSync(DOCS_INDEX, 'utf8').includes(`(reference/modules/${kebab}.md)`)) {
             throw new Error(`${kebab} não entrou no índice de ${DOCS_INDEX}: adicione à mão`);
           }
-          return `${kebab} no setup e no índice de ${DOCS_INDEX}: escreva a descrição de uma linha`;
+          return `${kebab} no índice de ${DOCS_INDEX}: escreva a descrição de uma linha`;
         },
       ];
     },

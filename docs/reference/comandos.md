@@ -21,8 +21,8 @@ Nesta ordem:
 4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
 
    ```sh
-   for m in identity catalog inventory orders outbox; do npm run "mig:${m}:run"; done
-   for m in identity catalog inventory; do npm run "seed:${m}"; done
+   npm run db:setup
+   npm run db:seed
    ```
 
 5. `npm run start:dev`.
@@ -87,18 +87,19 @@ Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas
 
 | Comando | O que faz |
 | --- | --- |
-| `npm run mig:<módulo>:run` | Aplica as migrations pendentes. Um script por módulo com tabelas, mais o `outbox`, na ordem do loop do [Setup do zero](#setup-do-zero) |
+| `npm run db:setup` | Aplica as migrations pendentes de todos os módulos: roda cada script `mig:<módulo>:run` do `package.json`, um depois do outro, e para no primeiro que falhar (`scripts/run-scripts.mjs`). Um módulo novo entra sozinho |
+| `npm run mig:<módulo>:run` | Aplica as migrations pendentes de um módulo. Um script por módulo com tabelas, mais o `outbox` |
 | `npm run mig:<módulo>:gen` | Gera uma migration comparando as entidades com o banco, que precisa estar no ar |
 
 Os scripts usam `typeorm-ts-node-esm` com `NODE_OPTIONS=--conditions=@app/source`. Sem essa condição, os aliases `#...` carregam o `dist/`, que pode estar desatualizado, e nada avisa ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
-
-Num loop do zsh, escreva `"mig:${m}:run"`, com chaves e aspas. Sem elas, `mig:$m:run` vira `mig:$m` seguido do modificador `:r`, e o npm diz que o script não existe.
 
 ## Seeds
 
 Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa migration. Para criar o seed de um módulo, ver [Como criar um seed](../how-to/criar-um-seed.md).
 
-- `npm run seed:<módulo>`, para `identity`, `catalog` e `inventory`. Rode as migrations antes.
+- `npm run db:seed` roda todos: cada script `seed:<módulo>` do `package.json`, um depois do outro, e para no primeiro que falhar (`scripts/run-scripts.mjs`). Um seed novo entra sozinho.
+- `npm run seed:<módulo>` roda o de um módulo só. Só tem seed o módulo com um script `seed:<módulo>` no `package.json`. O que cada seed cria está na doc do módulo, em [Módulos](../README.md#módulos).
+- Rode as migrations antes.
 - Só rodam com `NODE_ENV=development` ou `test`. Qualquer outro valor, ou nenhum, recusa.
 - Inserem só o que falta e não sobrescrevem o que existe, então podem rodar mais de uma vez.
 - Usuários de teste: `admin@example.com` e `user@example.com`, os dois com a senha `Senha@12345`.
@@ -107,7 +108,7 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 | Comando | O que gera |
 | --- | --- |
-| `npm run plop module <nome>` | Um módulo no padrão do `orders`, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run`, acrescenta o módulo ao loop de migrations do setup do zero em cada página que o repete (`SETUP_DOCS` no `plopfile.mjs`) e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
+| `npm run plop module <nome>` | Um módulo no padrão do `orders`, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
 | `npm run plop doc <tipo> "<nome>"` | Uma página de `docs/` do tipo `tutorial`, `how-to`, `reference` ou `explanation`. Templates em `plop-templates/doc/`. A página falha no `docs:check` até os comentários do template serem apagados |
 
 ## Baixar o ambiente

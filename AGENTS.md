@@ -26,7 +26,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Injeção de dependência:** uma classe injetada pelo construtor entra com import de valor (`import { X }`). Com `import type`, ela some da decorator metadata e o Nest quebra em tempo de execução, sem aviso do `tsc`. Por isso a regra `consistent-type-imports` fica desligada.
 - **oxc nos testes:** "can't resolve dependencies" num construtor costuma ser um parâmetro tipado com type alias ou utility type. O oxc emite `Object` para eles. Tipe o parâmetro com a classe.
 - **Condição `@app/source`:** um script que roda o TypeScript direto (migrations, seeds) precisa de `--conditions=@app/source`. Sem ela, os aliases `#...` carregam o `dist/`, talvez velho, sem erro. O `plop module` já gera os scripts com ela.
-- **Migrations:** não rodam ao subir a app. Rode `npm run mig:<módulo>:run`. Em loop no zsh, escreva `"mig:${m}:run"`, com chaves e aspas.
+- **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
 - **E2E:** grava no banco do docker-compose. Encerre qualquer `start:dev` antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
 - **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz deste repo. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
 
