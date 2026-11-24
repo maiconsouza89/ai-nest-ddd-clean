@@ -90,7 +90,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Em andamento: o [plano do deploy com Docker](plan/deploy-com-docker.md), da issue #10. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta e fica no histórico do git: o do projeto template (CI, verificação de e-mail e README), concluído, está em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
+- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue: o do deploy com Docker, concluído, está na [issue #10](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/10); o do projeto template (CI, verificação de e-mail e README), concluído, em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
 
 ## Como escrever uma página
 

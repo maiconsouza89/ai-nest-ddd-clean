@@ -9,18 +9,22 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar: as migration
 ## Pré-requisitos
 
 - Docker com BuildKit, o padrão do Docker atual.
-- Um Postgres e um Redis acessíveis pela plataforma, e um servidor SMTP.
+- Um registry de imagens em que a plataforma consiga ler (GitHub Container Registry, Docker Hub, ECR...), com `docker login <registry>` feito na máquina ou no CI que publica.
+- Um Postgres e um Redis acessíveis pela plataforma, e um servidor SMTP. O Postgres pode ser um serviço gerenciado: ver [Postgres externo](#postgres-externo).
 - As variáveis obrigatórias de [Variáveis de ambiente](../reference/variaveis-de-ambiente.md) definidas no ambiente da plataforma: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `SMTP_URL` e `EMAIL_FROM`. Com `NODE_ENV=production`, que a imagem já define, os arquivos `.env` são ignorados.
 
 ## Passos
 
-1. Gere a imagem:
+1. Gere a imagem e publique-a no registry, com uma tag por versão:
 
    ```bash
-   docker build -t ai-nest-ddd-clean:local .
+   docker build -t <registry>/ai-nest-ddd-clean:$(git rev-parse --short HEAD) .
+   docker push <registry>/ai-nest-ddd-clean:$(git rev-parse --short HEAD)
    ```
 
-   A imagem final tem só o `dist/`, as dependências de produção e o `scripts/run-scripts.mjs`, e roda como o usuário `node`. Um arquivo novo que o build precise entra no `.dockerignore`, que é uma lista de permitidos. Para outra versão do Node que não a do `.nvmrc`: `docker build --build-arg NODE_VERSION=<versão> -t ai-nest-ddd-clean:local .`.
+   O nome tem o formato `<registry>/<imagem>:<tag>`, como `ghcr.io/<usuário>/ai-nest-ddd-clean:3d10305`. Use uma tag fixa por versão, como o hash do commit, e não `latest`: o passo de migration e a app precisam rodar a mesma imagem, e voltar uma versão é trocar a tag. A tag `:local` do `docker-compose.yml` serve só para o teste local.
+
+   A imagem final tem só o `dist/`, as dependências de produção e o `scripts/run-scripts.mjs`, e roda como o usuário `node`. Um arquivo novo que o build precise entra no `.dockerignore`, que é uma lista de permitidos. Para outra versão do Node que não a do `.nvmrc`, acrescente `--build-arg NODE_VERSION=<versão>` ao `docker build`.
 
 2. Defina o ambiente da plataforma. Além das obrigatórias:
 
@@ -45,6 +49,28 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar: as migration
    A imagem não tem `HEALTHCHECK`: as plataformas usam as próprias probes. O que cada rota responde está em [Operação](../reference/operacao.md#health).
 
 O desligamento já está pronto na imagem, com o `tini` como PID 1: ver [Operação](../reference/operacao.md#desligamento).
+
+## Postgres externo
+
+Num Postgres gerenciado ou em outro servidor, nada muda na imagem: a app e as migrations leem a conexão só do `DATABASE_URL`.
+
+- **URL:** `postgres://<usuário>:<senha>@<host>:5432/<banco>?sslmode=verify-full`. Codifique na senha os caracteres reservados de URL (`@` vira `%40`, `:` vira `%3A`, `/` vira `%2F`, `#` vira `%23`).
+- **SSL:** vai só na URL; o driver `pg` lê o `sslmode` dela.
+  - Com certificado de uma CA pública, `sslmode=verify-full` basta.
+  - Com CA própria do provedor, como no RDS, acrescente `&sslrootcert=<caminho do .pem>` e monte o arquivo no container pela plataforma (secret ou volume). A imagem não traz certificados de CA de provedor.
+  - O `pg` trata `require`, `prefer` e `verify-ca` como `verify-full`, com um aviso no log. O `sslmode=no-verify` cifra sem conferir o certificado, e deixa a conexão aberta a quem se passar pelo servidor.
+- **Permissões:** as migrations criam os schemas de cada módulo (`CREATE SCHEMA IF NOT EXISTS`), então o usuário do passo de migration precisa de `CREATE` no banco.
+- **Rede:** o firewall ou o security group do Postgres precisa aceitar a plataforma onde o container roda.
+- **Conexões:** cada instância abre até 10 conexões (o padrão do `pg`). Some as instâncias, mais uma para o passo de migration, e compare com o limite do plano do banco.
+
+Para conferir a conexão antes do deploy, rode a imagem com um arquivo de env fora do repositório (como `~/deploy/ai-nest.env`, com as variáveis obrigatórias e o `DATABASE_URL` externo):
+
+```bash
+docker run --rm --env-file ~/deploy/ai-nest.env <registry>/ai-nest-ddd-clean:<tag> npm run db:migrate:prod
+docker run --rm --env-file ~/deploy/ai-nest.env -p 127.0.0.1:3000:3000 <registry>/ai-nest-ddd-clean:<tag>
+```
+
+O primeiro aplica as migrations no banco externo; o segundo sobe a app, e o `http://localhost:3000/health/ready` responde 200. Se o SSL falhar, o erro aparece já no primeiro, como `The server does not support SSL connections` ou um erro de certificado.
 
 ## Testar a imagem localmente
 
