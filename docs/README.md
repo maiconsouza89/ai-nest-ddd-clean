@@ -86,7 +86,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Planos](plan/): trabalho interno em andamento. O [plano do ciclo do pedido](plan/ciclo-do-pedido.md). Um plano concluído sai da pasta e fica no histórico do git.
+- [Planos](plan/): trabalho interno em andamento. O [plano do ciclo do pedido](plan/ciclo-do-pedido.md) e o [plano de alinhamento da documentação ao código](plan/alinhar-docs-ao-codigo.md). Um plano concluído sai da pasta e fica no histórico do git.
 
 ## Como escrever uma página
 
