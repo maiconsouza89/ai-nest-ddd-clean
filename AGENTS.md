@@ -29,6 +29,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
 - **E2E:** grava no banco do docker-compose. Encerre qualquer `start:dev` antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
 - **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz deste repo. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
+- **Instruções de agente:** ficam só neste arquivo. Não crie `CLAUDE.md`: com ele na raiz, o Claude Code deixa de ler o `AGENTS.md` (`docs/adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md`).
 
 ## Versões
 
