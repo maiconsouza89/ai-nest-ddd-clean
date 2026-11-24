@@ -4,22 +4,19 @@
 // Mantenha os imports daqui mínimos: tudo o que for importado neste arquivo carrega antes do hook ESM
 // e não é instrumentado.
 import { register } from 'node:module';
-import { config as loadEnvFile } from 'dotenv';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { loadEnvFiles } from '#shared/infra/config/load-env-files';
 import { isHealthRequest } from '#shared/infra/observability/ignored-paths';
 import { registerTracingShutdown } from '#shared/infra/observability/tracing-lifecycle';
 
 // Este arquivo roda antes do ConfigModule: sem isto, OTEL_* escritas no .env seriam ignoradas.
-// Mesma ordem e mesma regra do ConfigModule (a primeira definição vence; produção só usa o ambiente).
-if (process.env.NODE_ENV !== 'production') {
-  loadEnvFile({ path: ['.env.local', '.env'], quiet: true });
-}
+loadEnvFiles();
 
 if (process.env.OTEL_SDK_DISABLED !== 'true') {
   // Em ESM, o `require` não é interceptado: o hook do import-in-the-middle é o que permite instrumentar
   // o que o código importa direto (como o `ioredis`). Precisa vir antes de carregar o app.
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- DEP0205: a troca exige um Node acima do `engines` (passo 18 do plano)
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- DEP0205: a troca exige um Node acima do `engines` (ver docs/reference/evolucoes-com-gatilho.md)
   register('@opentelemetry/instrumentation/hook.mjs', import.meta.url);
   const sdk = new NodeSDK({
     instrumentations: [

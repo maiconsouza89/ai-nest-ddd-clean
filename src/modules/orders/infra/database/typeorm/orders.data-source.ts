@@ -1,13 +1,13 @@
 // DataSource usado só pela CLI de migrations (não passa pelo Nest).
 import 'reflect-metadata';
-import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
+import { loadEnvFiles } from '#shared/infra/config/load-env-files';
 import { validateEnv } from '#shared/infra/config/env.validation';
 import { IdempotencyKeyOrmEntity } from './entities/idempotency-key.orm-entity.js';
 import { OrderItemOrmEntity } from './entities/order-item.orm-entity.js';
 import { OrderOrmEntity } from './entities/order.orm-entity.js';
 
-config({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 const env = validateEnv(process.env);
 
 export default new DataSource({

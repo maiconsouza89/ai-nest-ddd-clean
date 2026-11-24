@@ -53,7 +53,7 @@ Use este guia quando um prazo, um limite, um endereço ou um interruptor precisa
 
 7. Documente a variável na tabela da seção certa de `docs/reference/variaveis-de-ambiente.md`, com o padrão, os valores aceitos e o efeito.
 
-Uma variável obrigatória também passa a ser exigida pelos scripts de migration e de seed: o DataSource de cada módulo, usado pela CLI fora do Nest, carrega o `.env` com o `dotenv` e chama o mesmo `validateEnv`.
+Uma variável obrigatória também passa a ser exigida pelos scripts de migration e de seed: o DataSource de cada módulo, usado pela CLI fora do Nest, carrega os arquivos `.env` com o `loadEnvFiles()` (`src/shared/infra/config/load-env-files.ts`), pela mesma regra da app, e chama o mesmo `validateEnv`.
 
 Se a configuração de um módulo crescer a ponto de poluir a classe única, o `@nestjs/config` separa por módulo com `registerAs` e `ConfigModule.forFeature`. O projeto não usa essa forma.
 

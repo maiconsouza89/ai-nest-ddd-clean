@@ -13,6 +13,7 @@ O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-
 - A app valida as variáveis ao subir, em `src/shared/infra/config/env.validation.ts`, e não sobe se uma delas for inválida. A mensagem lista cada problema.
 - Uma variável que mudou de nome também barra a subida: `JWT_EXPIRES_IN_SECONDS` virou `JWT_ACCESS_TTL_SECONDS`.
 - As variáveis `OTEL_*` são lidas pelo `src/tracing.ts`, que carrega o `.env` pela mesma regra, antes da app. Elas não passam pela validação.
+- O `tracing.ts` e os DataSources da CLI de migrations rodam fora do `ConfigModule` e aplicam a mesma regra pelo `loadEnvFiles()` (`src/shared/infra/config/load-env-files.ts`).
 
 ## Aplicação
 
