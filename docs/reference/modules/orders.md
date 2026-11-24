@@ -45,12 +45,12 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 | --- | --- | --- |
 | `GET /v1/orders` | Query `page` (padrão 1) e `limit` (1 a 100, padrão 20) | 200 `{ items, total, page, limit }`, só os pedidos do próprio ator. Cada item tem `id`, `status`, `itemCount`, `totalCents`, `currency` e `createdAt`. Passa pelo [cache](#jobs-e-cache): logo depois de uma escrita, pode mostrar o estado anterior |
 | `GET /v1/orders/:id` | — | 200 `{ id, customerId, status, items, totalCents, currency }`, cada item com `productId`, `qty`, `unitPriceCents` e `currency`. Sem cache: mostra a última escrita |
-| `POST /v1/orders` | `items`: de 1 a 100 `{ productId, qty }`, `qty` inteiro ≥ 1 | 201 `{ id }` |
+| `POST /v1/orders` | `items`: de 1 a 100 `{ productId, qty }`, `productId` uuid, `qty` inteiro ≥ 1 | 201 `{ id }` |
 | `POST /v1/orders/:id/place` | — | 204 |
 | `POST /v1/orders/:id/pay` | Cabeçalho opcional `Idempotency-Key` (1 a 255 caracteres) | 204 |
 | `POST /v1/orders/:id/cancel` | — | 204 |
 
-`GET /v1/orders/:id`, `place`, `pay` e `cancel` só valem para o dono do pedido ou para um ator com o role `admin`. Um `:id` que não é uuid responde 400 nas quatro.
+`GET /v1/orders/:id`, `place`, `pay` e `cancel` só valem para o dono do pedido ou para um ator com o role `admin`. Um `:id` que não é uuid responde 400 nas quatro. No `POST /v1/orders`, um `productId` que não é uuid também responde 400, de validação, e não `PRODUCT_NOT_FOUND`.
 
 | Código | HTTP | Quando |
 | --- | --- | --- |

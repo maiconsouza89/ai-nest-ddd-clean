@@ -41,6 +41,15 @@ describe('TypeOrmCatalogFacade (integração)', () => {
     );
   });
 
+  it('descarta ids que não são uuid sem lançar erro', async () => {
+    const a = await insert('D', 300);
+
+    expect(await facade.pricesOf(['abc', a])).toEqual([
+      { productId: a, priceCents: 300, currency: 'BRL' },
+    ]);
+    expect(await facade.pricesOf(['abc'])).toEqual([]);
+  });
+
   it('lista vazia não consulta nada e devolve vazio', async () => {
     expect(await facade.pricesOf([])).toEqual([]);
   });

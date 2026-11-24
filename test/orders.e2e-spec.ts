@@ -102,6 +102,15 @@ describe('Orders (e2e)', () => {
       .expect(400);
   });
 
+  it('rejeita productId que não é uuid (400)', async () => {
+    const user = await registerAndLogin(app);
+    await request(server())
+      .post('/v1/orders')
+      .set(user.auth)
+      .send({ items: [{ productId: 'abc', qty: 1 }] })
+      .expect(400);
+  });
+
   it('cria, fecha e paga; pagar de novo devolve 409', async () => {
     const user = await registerAndLogin(app);
     const id = await createOrder(user);

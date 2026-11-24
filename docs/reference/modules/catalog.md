@@ -26,7 +26,7 @@ O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as 
 
 | Método | Devolve |
 | --- | --- |
-| `pricesOf(productIds: string[])` | `ProductPrice[]`, só dos produtos que existem. Ids desconhecidos ficam de fora, e uma lista vazia devolve `[]` |
+| `pricesOf(productIds: string[])` | `ProductPrice[]`, só dos produtos que existem. Ids desconhecidos ou que não são uuid ficam de fora, e uma lista vazia devolve `[]` |
 
 **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)).
 

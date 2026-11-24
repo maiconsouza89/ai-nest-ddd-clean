@@ -4,13 +4,13 @@ import {
   ArrayMinSize,
   IsArray,
   IsInt,
-  IsString,
+  IsUUID,
   Min,
   ValidateNested,
 } from 'class-validator';
 
 export class CreateOrderItemRequest {
-  @IsString()
+  @IsUUID()
   productId!: string;
 
   @IsInt()
