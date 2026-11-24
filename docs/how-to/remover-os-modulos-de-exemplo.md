@@ -45,7 +45,7 @@ O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `sh
    - Em `docs/reference/variaveis-de-ambiente.md`, a linha da tabela.
    - No seu `.env`, o mesmo que no `.env.example`, se ele veio de uma cópia antiga. Uma variável que a validação não conhece é ignorada, então deixá-la não quebra nada.
 
-6. No `package.json`, apague os scripts `mig:orders:gen`, `mig:orders:run`, `mig:catalog:gen`, `mig:catalog:run`, `mig:inventory:gen`, `mig:inventory:run`, `seed:catalog` e `seed:inventory`. O `db:setup` e o `db:seed` acham os scripts pelo nome e não mudam.
+6. No `package.json`, apague os scripts `mig:orders:gen`, `mig:orders:run`, `mig:orders:run:prod`, `mig:catalog:gen`, `mig:catalog:run`, `mig:catalog:run:prod`, `mig:inventory:gen`, `mig:inventory:run`, `mig:inventory:run:prod`, `seed:catalog` e `seed:inventory`. O `db:setup`, o `db:migrate:prod` e o `db:seed` acham os scripts pelo nome e não mudam.
 
 7. Apague os testes, os helpers e os fakes dos exemplos:
 

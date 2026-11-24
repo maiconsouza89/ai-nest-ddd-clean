@@ -110,8 +110,12 @@ Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas
 | `npm run db:setup` | Aplica as migrations pendentes de todos os módulos: roda cada script `mig:<módulo>:run` do `package.json`, um depois do outro, e para no primeiro que falhar (`scripts/run-scripts.mjs`). Um módulo novo entra sozinho |
 | `npm run mig:<módulo>:run` | Aplica as migrations pendentes de um módulo. Um script por módulo com tabelas, mais o `outbox` |
 | `npm run mig:<módulo>:gen` | Gera uma migration comparando as entidades com o banco, que precisa estar no ar |
+| `npm run db:migrate:prod` | O `db:setup` de produção: roda cada `mig:<módulo>:run:prod`, a partir do `dist/`. É o passo de migration da imagem Docker ([Como fazer o deploy](../how-to/fazer-o-deploy.md)) |
+| `npm run mig:<módulo>:run:prod` | Aplica as migrations pendentes de um módulo com o data source compilado (`typeorm migration:run -d dist/.../<módulo>.data-source.js`). Exige `npm run build` antes |
 
-Os scripts usam `typeorm-ts-node-esm` com `NODE_OPTIONS=--conditions=@app/source`. Sem essa condição, os aliases `#...` carregam o `dist/`, que pode estar desatualizado, e nada avisa ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
+Os scripts `:run` e `:gen` usam `typeorm-ts-node-esm` com `NODE_OPTIONS=--conditions=@app/source`. Sem essa condição, os aliases `#...` carregam o `dist/`, que pode estar desatualizado, e nada avisa ([ADR 0005](../adr/0005-aliases-de-import-por-subpath-imports.md)).
+
+Os `:run:prod` fazem o contrário: rodam o JavaScript do `dist/`, sem `ts-node`, que não existe na imagem de produção, e sem `@app/source`, para os aliases caírem no `dist/`. O padrão do `db:setup` (`^mig:.+:run$`) não casa com eles.
 
 ## Seeds
 
@@ -128,8 +132,12 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 | Comando | O que gera |
 | --- | --- |
-| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
+| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen`, `mig:<nome>:run` e `mig:<nome>:run:prod` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
 | `npm run plop doc <tipo> "<nome>"` | Uma página de `docs/` do tipo `tutorial`, `how-to`, `reference` ou `explanation`. Templates em `plop-templates/doc/`. A página falha no `docs:check` até os comentários do template serem apagados |
+
+## Testar a imagem de produção
+
+O profile `prod` do `docker-compose.yml` gera a imagem, roda as migrations dela e sobe a app na porta 3000. Fica fora do `docker compose up` de sempre. Os comandos estão em [Como fazer o deploy](../how-to/fazer-o-deploy.md#testar-a-imagem-localmente).
 
 ## Baixar o ambiente
 

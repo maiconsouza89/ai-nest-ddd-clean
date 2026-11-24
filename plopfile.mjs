@@ -177,8 +177,11 @@ export default function (plop) {
           pkg.scripts[`mig:${kebab}:gen`] =
             `${TYPEORM_CLI} migration:generate ${migDir}/change -d ${ds}`;
           pkg.scripts[`mig:${kebab}:run`] = `${TYPEORM_CLI} migration:run -d ${ds}`;
+          // em produção não há ts-node: o data source compilado, sem `@app/source`, para os aliases caírem no dist/
+          const distDs = ds.replace(/^src\//, 'dist/').replace(/\.ts$/, '.js');
+          pkg.scripts[`mig:${kebab}:run:prod`] = `typeorm migration:run -d ${distDs}`;
           writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
-          return `scripts mig:${kebab}:gen e mig:${kebab}:run adicionados`;
+          return `scripts mig:${kebab}:gen, mig:${kebab}:run e mig:${kebab}:run:prod adicionados`;
         },
         // por último: um índice fora do padrão não impede o registro do módulo nem os scripts de migration
         () => {

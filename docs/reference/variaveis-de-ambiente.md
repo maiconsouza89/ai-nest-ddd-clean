@@ -66,6 +66,10 @@ São as variáveis padrão do SDK do OpenTelemetry. As mais usadas:
 | --- | --- | --- |
 | `OTEL_TRACES_EXPORTER` | `none` | `otlp` envia a um coletor, `console` imprime cada span no terminal (muito ruído) e `none` não exporta. Sem spans, os logs saem sem `trace_id` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | não definida | Endereço do coletor, com `otlp` |
+| `OTEL_METRICS_EXPORTER` | `none` | Métricas do SDK. O padrão do SDK, sem a variável, é `otlp`: sem coletor, o desligamento espera uns 8 s pelo timeout da exportação. O projeto não usa métricas |
+| `OTEL_LOGS_EXPORTER` | `none` | Logs pelo SDK. Mesmo padrão e mesmo atraso do `OTEL_METRICS_EXPORTER`. Os logs da app saem pelo pino, não por aqui |
+
+A imagem Docker define as três `OTEL_*_EXPORTER` como `none`. Com um coletor, defina `OTEL_TRACES_EXPORTER=otlp` e o endpoint no ambiente da plataforma.
 | `OTEL_SERVICE_NAME` | `ai-nest-ddd-clean` | Nome do serviço nos spans |
 | `OTEL_SDK_DISABLED` | não definida | `true` desliga a instrumentação por completo |
 

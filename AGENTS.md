@@ -91,3 +91,4 @@ Leia a página antes de agir no assunto.
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
 | Escrever ou mover documentação | `docs/README.md` |
+| Mexer no `Dockerfile`, no `.dockerignore`, no profile `prod` do compose ou nos scripts `:run:prod` | `docs/how-to/fazer-o-deploy.md` |
