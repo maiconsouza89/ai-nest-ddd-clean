@@ -28,7 +28,7 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | Montagem | `setupSwagger` (`src/shared/infra/http/swagger.setup.ts`), com `addBearerAuth()` |
 | Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
 | Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
-| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, e as rotas caem na tag certa |
+| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa |
 
 O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs e as respostas das rotas.
 

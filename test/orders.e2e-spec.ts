@@ -9,6 +9,10 @@ import { configureApp } from '../src/app.setup.js';
 import { registerAndLogin } from './helpers/auth.js';
 import { seedProduct } from './helpers/catalog.js';
 import { DataSource } from 'typeorm';
+import { OnOrderCancelledHandler } from '#modules/inventory/infra/events/on-order-cancelled.handler';
+import { IntegrationEvent } from '#shared/application/integration-event';
+import { emailsWith, waitForEmail } from './helpers/mailpit.js';
+import { waitFor } from './helpers/wait-for.js';
 
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;
 
@@ -26,14 +30,23 @@ describe('Orders (e2e)', () => {
 
   afterAll(() => app.close());
 
-  async function createOrder(user: Session) {
+  const stockOf = async (id: string) =>
+    (
+      await app
+        .get(DataSource)
+        .query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [id])
+    )[0].available as number;
+
+  const createOrderOf = async (user: Session, pid: string, qty: number) => {
     const res = await request(server())
       .post('/v1/orders')
       .set(user.auth)
-      .send({ items: [{ productId, qty: 2 }] })
+      .send({ items: [{ productId: pid, qty }] })
       .expect(201);
     return res.body.id as string;
-  }
+  };
+
+  const createOrder = (user: Session) => createOrderOf(user, productId, 2);
 
   it('usa o preço do catálogo e rejeita produto inexistente (404)', async () => {
     const user = await registerAndLogin(app);
@@ -50,22 +63,6 @@ describe('Orders (e2e)', () => {
   });
 
   describe('estoque ao fechar o pedido', () => {
-    const stockOf = async (id: string) =>
-      (
-        await app
-          .get(DataSource)
-          .query(`SELECT available FROM inventory.stock_items WHERE "productId" = $1`, [id])
-      )[0].available as number;
-
-    const createOrderOf = async (user: Session, pid: string, qty: number) => {
-      const res = await request(server())
-        .post('/v1/orders')
-        .set(user.auth)
-        .send({ items: [{ productId: pid, qty }] })
-        .expect(201);
-      return res.body.id as string;
-    };
-
     it('fechar debita o estoque e repetir não debita de novo', async () => {
       const pid = await seedProduct(app, 500, 10);
       const user = await registerAndLogin(app);
@@ -276,5 +273,96 @@ describe('Orders (e2e)', () => {
     });
 
     it('exige token', () => request(server()).get('/v1/orders').expect(401));
+  });
+
+  // a outbox e o worker com os eventos do pedido; a mecânica com os eventos da base está no outbox.e2e
+  describe('eventos do pedido', () => {
+    const ds = () => app.get(DataSource);
+    const isProcessedBy = async (consumer: string, orderId: string) =>
+      (
+        await ds().query(
+          `SELECT 1 FROM shared.processed_events WHERE consumer = $1 AND "eventId" IN (SELECT id FROM shared.outbox WHERE "aggregateId" = $2)`,
+          [consumer, orderId],
+        )
+      ).length === 1;
+
+    async function placedOrder(qty: number) {
+      const user = await registerAndLogin(app);
+      const pid = await seedProduct(app, 700, 10);
+      const id = await createOrderOf(user, pid, qty);
+      await request(server()).post(`/v1/orders/${id}/place`).set(user.auth).expect(204);
+      return { user, pid, id };
+    }
+
+    it('pagar um pedido publica orders.order-paid, e o notifications envia um e-mail de confirmação', async () => {
+      const { user, id } = await placedOrder(1);
+      await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).expect(204);
+
+      // o evento entra na outbox na transação do pagamento: a linha existe quando a resposta chega
+      const [event] = await ds().query(
+        `SELECT version FROM shared.outbox WHERE "aggregateId" = $1 AND type = 'orders.order-paid'`,
+        [id],
+      );
+      expect(event).toEqual({ version: 1 });
+      const subject = `Pagamento confirmado: pedido ${id}`;
+      await waitForEmail(user.email, subject);
+      await waitFor(() => isProcessedBy('notifications.email-on-order-paid', id));
+      expect(await emailsWith(user.email, subject)).toHaveLength(1);
+    });
+
+    describe('cancelar um pedido', () => {
+      it('devolve o estoque pelo evento, e entregar o mesmo evento de novo não repete o efeito', async () => {
+        const { user, pid, id } = await placedOrder(4);
+        expect(await stockOf(pid)).toBe(6);
+
+        await request(server()).post(`/v1/orders/${id}/cancel`).set(user.auth).expect(204);
+
+        await waitFor(async () => (await stockOf(pid)) === 10);
+        const [event] = await ds().query(
+          `SELECT id, type, version, payload, "occurredAt" FROM shared.outbox WHERE "aggregateId" = $1 AND type = 'orders.order-cancelled'`,
+          [id],
+        );
+        // a outbox já publicou uma vez; entregamos a mesma mensagem outra vez, como num retry
+        const redelivered: IntegrationEvent = {
+          eventId: event.id,
+          type: event.type,
+          version: event.version,
+          occurredAt: event.occurredAt.toISOString(),
+          payload: event.payload,
+        };
+        await app.get(OnOrderCancelledHandler).handle(redelivered as never);
+
+        expect(await stockOf(pid)).toBe(10);
+        const marks = await ds().query(
+          `SELECT 1 FROM shared.processed_events WHERE "eventId" = $1`,
+          [event.id],
+        );
+        expect(marks).toHaveLength(1);
+      });
+
+      it('cancelar pedido pago devolve 409 e não mexe no estoque', async () => {
+        const { user, pid, id } = await placedOrder(2);
+        await request(server()).post(`/v1/orders/${id}/pay`).set(user.auth).expect(204);
+
+        const res = await request(server())
+          .post(`/v1/orders/${id}/cancel`)
+          .set(user.auth)
+          .expect(409);
+
+        expect(res.body.code).toBe('ORDER_NOT_CANCELLABLE');
+        expect(await stockOf(pid)).toBe(8);
+      });
+
+      it('cancelar um rascunho não mexe no estoque', async () => {
+        const user = await registerAndLogin(app);
+        const pid = await seedProduct(app, 700, 10);
+        const id = await createOrderOf(user, pid, 3);
+
+        await request(server()).post(`/v1/orders/${id}/cancel`).set(user.auth).expect(204);
+        await waitFor(() => isProcessedBy('inventory.release-on-order-cancelled', id));
+
+        expect(await stockOf(pid)).toBe(10);
+      });
+    });
   });
 });

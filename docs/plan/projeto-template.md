@@ -45,7 +45,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | --- | --- | --- |
 | 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | ✅ |
 | 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ✅ |
-| 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | ⬜ |
+| 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | 🟡 |
 
 A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem por último para descrever a base como ela ficou.
 
@@ -343,12 +343,12 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 ## Fase 3: template
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 11: licença e nome do projeto
-> - [ ] Passo 12: how-to para remover os módulos de exemplo
-> - [ ] Passo 13: ADR 0008 e AGENTS.md
-> - [ ] Passo 14: README com badges
+> - [x] Passo 11: licença e nome do projeto
+> - [x] Passo 12: how-to para remover os módulos de exemplo
+> - [x] Passo 13: ADR 0008 e AGENTS.md
+> - [x] Passo 14: README com badges
 > - [ ] Passo 15: repositório público e template no GitHub
 
 ### Passo 11: licença e nome do projeto
@@ -363,6 +363,15 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 **Pronto quando:** `grep -rn "ddd-clean-nest" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git .` não encontra nada, e `npm run ci` passa.
 
+**Como ficou:**
+
+- `LICENSE` MIT com "2026 Maicon Souza" (o nome do autor no git). `"license": "MIT"` e `"name": "ai-nest-ddd-clean"` no `package.json`; o `package-lock.json` veio do `npm install --package-lock-only`, que só trocou o nome e a licença. O `author` do `package.json` também ficou "Maicon Souza", com o ok do dono.
+- O título do README já virou `ai-nest-ddd-clean` aqui, porque o `grep` do critério o pegava. O resto do README fica para o passo 14.
+- Volumes: `comandos.md` diz `<pasta>_*` e por quê; `resetar-o-ambiente-local.md` já explicava o nome da pasta e ganhou o exemplo `ai-nest-ddd-clean_*`.
+- O `grep` só encontra este plano, que descreve a própria troca e é apagado no fim da fase. O `.env` local do dono não define o `OTEL_SERVICE_NAME`, então não precisou mudar.
+- `npm run ci` passa (43 arquivos, 240 testes unitários).
+- Achado no passo 12: o título do Swagger ainda era `DDD Clean Nest`, que o `grep` do critério não pega por causa da grafia. O dono o trocou por `AI NestJS DDD/Clean`. Um `grep -i` com espaço, hífen ou sublinhado entre as palavras não acha mais nada fora deste plano.
+
 ### Passo 12: how-to para remover os módulos de exemplo
 
 **Por quê:** remover um exemplo mexe em uns oito lugares. Um guia só serve se alguém o seguir do começo ao fim e a app continuar de pé.
@@ -375,6 +384,34 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 **Pronto quando:** num worktree descartável (`git worktree add`), seguindo só o guia, sem conhecimento prévio: `npm run typecheck`, `npm run lint`, `npm run arch`, `npm test`, `npm run test:int` e `npm run test:e2e` passam, e as falhas do `docs:check` são exatamente as listadas no guia. Registre no **Como ficou** o que precisou ser corrigido no guia durante a conferência. Apague o worktree depois.
 
+**Como ficou:**
+
+- O `src` da base não importava os exemplos (só o handler de pedido pago), mas os testes da base, sim. Desacoplados antes do guia, com o ok do dono:
+  - `auth.e2e`: o guard e as roles usavam `GET /v1/orders` e `POST /v1/products`. A base não tem rota protegida, então os testes passaram a usar o `GuardProbeController` (`test/helpers/guard-probe.controller.ts`), registrado só no `TestingModule` deles. O teste do token válido passou a conferir o ator devolvido, e o das roles, também o 403 antes de virar admin.
+  - `throttle.e2e`: os headers do helmet com `/health/live`.
+  - `docs.e2e`: confere as tags do auth e do health pelo nome e exige uma tag em toda rota, sem citar os exemplos. As tags do orders e do catalog não foram para o e2e de cada um, como combinado: a regra geral já as cobre.
+  - `outbox.e2e`: passou a usar o `identity.verification-code-issued` (relay, worker, marca de processado e reentrega sem e-mail repetido). Os cinco casos de pedido foram para um `describe` "eventos do pedido" no `orders.e2e`.
+  - `testes.md` ganhou o `GuardProbeController` na tabela de helpers, e `operacao.md`, a nova regra do `docs.e2e`.
+- Também da base, ajustados agora: a descrição do Swagger (citava pedidos, catálogo e estoque) e a do gerador `plop module` ("no padrão do orders").
+- Achados que entraram no guia: o `ORDER_EXPIRATION_MINUTES` mora na validação do env do `shared`; o notifications deixa de importar o `IdentityModule` (só a facade do pedido pago o exigia, e o inventory já consome eventos do orders sem importar o `OrdersModule`); o `Idempotency-Key` sai junto com o orders.
+- Exploração num worktree descartável antes de escrever: sem os exemplos, `typecheck`, `lint`, `arch`, 136 unitários, 44 de integração, 37 e2e, `db:setup` e `db:seed` passaram, e o `docs:check` apontou 9 páginas.
+- Conferência às cegas: um agente novo, sem esta conversa, seguiu só o guia num segundo worktree. Tudo passou (25 arquivos e 136 unitários, 10 e 44 de integração, 5 e 37 e2e, `grep` vazio), e o `docs:check` falhou exatamente nas 9 páginas marcadas "sim". O passo do reset do banco ficou de fora, para não derrubar o compose do dono. Corrigido no guia depois da conferência, só no texto:
+  - o comentário "exemplo removível" sai junto com os providers, e o `.env` local recebe as mesmas mudanças do `.env.example`;
+  - o texto exato da introdução e da frase dos testes no `notifications.md`, que ficavam quebradas ao só cortar trechos;
+  - passo novo para o `identity.md` ("Quem importa" e o termo "Confirmar"), e o que fazer com a `UserDirectoryFacade`, que fica sem consumidor;
+  - no `AGENTS.md`, só o `pay-order` muda: o `money.vo` está no `shared` e fica;
+  - a tabela passou a listar também as páginas que passam no `docs:check` mas usam os exemplos como modelo (14 a mais), e diz que as ADRs ficam como estão.
+- O passo do README cita a seção "Módulos de exemplo", que o passo 14 cria.
+- A página entrou no índice do `docs/README.md` já neste passo; o passo 13 acrescenta só a ADR.
+- `/simplify` sobre os passos 11 e 12:
+  - `orders.e2e`: os casos que vieram do outbox usam os helpers do arquivo (`createOrderOf`, `stockOf`, `server()`), sem cópias nem sombra. Os dois testes do pedido pago viraram um, e o caso do rascunho deixou de esperar o `publishedAt`: ele só confere a marca de processado e o estoque.
+  - `outbox.e2e`: um teste só (evento, publicação, e-mail, marca e reentrega), com o `registerUser`, novo em `test/helpers/auth.ts` e usado pelo `registerAndLogin`. A linha da outbox é lida direto, sem espera: ela é gravada na transação do register.
+  - Desacoplados na base, para o guia ter menos passos: o comentário do `JOBS_ENABLED` no `.env.example`, o exemplo `pay-order` do `AGENTS.md` (virou `register-user`) e, no `/code-review`, a linha do `plop module` em `comandos.md`.
+  - Guia mais curto: sem a explicação no passo do `IdentityModule`, e as três páginas que ficam como leitura numa frase abaixo da tabela.
+  - Ficaram de fora, para o dono decidir: configuração por módulo em vez do `ORDER_EXPIRATION_MINUTES` no `env.validation.ts` do `shared`; o aviso de pedido pago num Nest module próprio, para sair com um `rm -r`; um script genérico de migration e seed, no lugar dos `mig:<módulo>:*` no `package.json`; e o `Idempotency-Key` no `shared`. Também ficou de fora um helper para a reentrega de evento, porque sem os exemplos sobra uma cópia só.
+- `/code-review`: o `outbox.e2e` lia o `publishedAt` uma vez só depois da marca de processado, mas o relay publica e marca a linha na mesma transação do lote, e o worker pode terminar antes do commit (falha intermitente). Passou a esperar a coluna. Também: o `docs.e2e` confere a tag em todos os métodos HTTP do Swagger, e um comentário diz que a marca única é a garantia da reentrega, não o e-mail único.
+- Worktrees apagados. Na árvore principal: `npm run ci` e `docs:check` passam, e o `npm run test:e2e` inteiro passa (8 arquivos, 64 testes).
+
 ### Passo 13: ADR 0008 e AGENTS.md
 
 **Por quê:** o propósito do repositório mudou. Um leitor futuro vai querer saber por que há módulos de exemplo em vez de um esqueleto vazio, e o agente precisa saber o que é base e o que é exemplo.
@@ -386,6 +423,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Índice do `docs/README.md` com a ADR nova e o how-to do passo 12.
 
 **Pronto quando:** `npm run docs:check` passa, e o `AGENTS.md` diz, em uma frase, quais módulos são base e quais são exemplo.
+
+**Como ficou:**
+
+- ADR 0008 com a base, os exemplos, o que cada exemplo mostra que a base não mostra, duas alternativas recusadas (esqueleto vazio, e exemplos num repositório ou branch à parte, que deixariam de rodar no CI da base) e o custo da documentação. Também registra que o `npm run arch` não distingue base de exemplo: quem confere é o how-to de remoção.
+- `AGENTS.md`: o item de `src/modules/` passou a separar a base dos exemplos, com a regra de que a base não importa exemplo (ADR 0008). Forma final no `/simplify` do passo 14.
+- O how-to do passo 12 já estava no índice. Ele ganhou a ADR em "Veja também".
+- `npm run docs:check` e `npm run ci` passam (43 arquivos, 240 testes unitários).
 
 ### Passo 14: README com badges
 
@@ -410,6 +454,28 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - `npm run docs:check` passa, e `npm run docs:links` não aponta link quebrado no README (os badges dinâmicos só respondem depois do passo 15; anote a exceção no **Como ficou** se ele rodar antes).
 - Cada seção da estrutura acima existe, na ordem.
 - O Quickstart, seguido à mão num ambiente zerado, deixa a app no ar com `/health/live` respondendo e o Mailpit abrindo.
+
+**Como ficou:**
+
+- Seções na ordem do plano: título, badges e a frase do template; "O que vem pronto"; "Módulos de exemplo", com o link para o how-to de remoção; "Usar como template"; e Requisitos, Quickstart, "Antes de abrir um PR" e Documentação, como antes. A introdução deixou de listar os cinco módulos como iguais e cita a ADR 0008. A tabela da documentação ganhou o how-to de remoção.
+- "Usar como template" também aponta o título do Swagger (`swagger.setup.ts`) e o `npm install` depois de renomear, para o `package-lock.json` acompanhar.
+- Badges conferidos no código do shields.io (o Context7 não tinha as rotas) e testados contra repositórios públicos:
+  - o `engines.node` usa o badge JSON dinâmico sobre o `package.json` cru da `main`, porque a rota `github/package-json/<chave>` recusa um objeto ("invalid key value") e não lê `engines.node`;
+  - o TypeScript é `devDependency` e usa a rota `.../dev/typescript`. O `@nestjs/core` com escopo funciona na rota normal. Os dois mostram a faixa do `package.json` (`^12.6.0`, `~6.0`);
+  - o BullMQ não tem logo no Simple Icons e ficou sem logo. O ESM usa o logo do JavaScript.
+- `docs:links`: o lychee roda num container e não alcança o `localhost` do host. O `http://localhost:8025`, no tutorial desde a Fase 2 e agora no README, falhava. O script ganhou `--exclude-loopback`, e a linha em `comandos.md` diz isso. Sobram dois 404 esperados até o passo 15: o link do badge de CI (`actions/workflows/ci.yml`) e o `/generate` do "Use this template", com o repositório privado. O `npmjs.com` às vezes responde 403 ao lychee (anti-bot), fora do README.
+- Quickstart conferido num clone limpo em outra pasta (`ai-nest-ddd-clean`, outro projeto do Compose), com o compose do dono parado por `docker compose stop` e religado depois, sem tocar nos volumes dele. `npm install`, `.env` copiado, `docker compose up -d postgres redis mailpit`, `db:setup` e `db:seed` sem erro, `start:dev`; `/health/live` 200, `/docs` 200, Mailpit 200 e o login do `user@example.com` do seed 200. O projeto do clone saiu com `docker compose down -v --remove-orphans`.
+- `npm run docs:check` e `npm run ci` passam.
+- `/simplify` sobre os passos 13 e 14:
+  - `AGENTS.md`: a frase única virou dois itens, "Base" e "Exemplos removíveis". O segundo leva o caminho do how-to (a rota da tabela saiu: é tarefa de uma vez por projeto) e passa a contar o aviso de pedido pago como exemplo, o que torna verdadeira a regra "a base não importa exemplo". O passo 11 do how-to virou "apague o item", sem copiar texto do `AGENTS.md`.
+  - ADR 0008: o parágrafo do que a base não mostra entrou na frase que abre a lista dos exemplos.
+  - README: os itens dos exemplos voltaram às palavras do plano, com o porquê só na ADR 0008; o "para ler e depois apagar" da introdução saiu; e o passo de renomear cita o `maiconsouza89/ai-nest-ddd-clean` dos badges, que um repositório criado pelo botão herda.
+  - Ficaram de fora: badges estáticos no lugar dos dinâmicos e sem os de tecnologia (decisão do plano); excluir o `img.shields.io` do lychee, que sempre responde 200 (ganho pequeno); e uma regra do dependency-cruiser para "a base não importa exemplo", que fica para o dono decidir.
+- `/code-review` (nível high), sem bug de código. Corrigido nos docs:
+  - a regra do `AGENTS.md` e a ADR 0008 passaram a citar os pontos de ligação que o how-to remove (`app.module.ts`, `notifications.module.ts` e `env.validation.ts`): sem eles, "a base não importa exemplo" era falso;
+  - o `label=CI` do badge, tirado no `/simplify`, voltou: sem ele o shields.io mostra "build", conferido num repositório público;
+  - o passo de renomear cita o `author` do `package.json` e diz que o `LICENSE` mantém o aviso do template.
+  - Ficou como estava, por decisão do passo 12: o `docs.e2e` confere uma tag por rota, mas não qual. Um `@ApiTags` trocado num exemplo passa.
 
 ### Passo 15: repositório público e template no GitHub
 

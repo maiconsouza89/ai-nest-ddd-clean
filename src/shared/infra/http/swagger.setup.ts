@@ -3,8 +3,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
-    .setTitle('DDD Clean Nest')
-    .setDescription('API do monólito modular de pedidos, catálogo, estoque e identidade.')
+    .setTitle('AI NestJS DDD/Clean')
+    .setDescription('API em NestJS: monólito modular com DDD e Clean Architecture.')
     .setVersion('1')
     .addBearerAuth()
     .build();

@@ -9,13 +9,14 @@ Cite caminhos de docs/ em texto simples: o `@caminho` importa o arquivo inteiro 
 
 API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeORM sobre Postgres e Redis (cache, filas do BullMQ e rate limit).
 
-- `src/modules/`: os módulos de negócio `orders`, `catalog`, `inventory`, `identity` e `notifications`. `src/shared/`: kernel compartilhado e infraestrutura transversal. `src/app.module.ts`: composição. `src/main.ts` carrega o `tracing.ts` antes do `bootstrap.ts`.
+- Base: `src/shared/` (kernel compartilhado e infraestrutura transversal) e os módulos `identity` e `notifications` em `src/modules/`. `src/app.module.ts`: composição. `src/main.ts` carrega o `tracing.ts` antes do `bootstrap.ts`.
+- Exemplos removíveis (`docs/how-to/remover-os-modulos-de-exemplo.md`): `orders`, `catalog`, `inventory` e o aviso de pedido pago do `notifications`. Fora dos pontos de ligação que o how-to remove (`app.module.ts`, `notifications.module.ts` e `env.validation.ts`), a base não importa exemplo (ADR 0008).
 - Um módulo fala com outro só pelo `contracts/` dele e por eventos de integração, e declara de quem depende em `imports`. `@Global` é só para a infraestrutura do `shared` (ADR 0003).
 
 ## Verificação
 
 - `npm run typecheck`, `npm run lint` e `npm run arch` (camadas e fronteiras entre módulos).
-- `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- pay-order` e `npm run test:e2e -- auth`.
+- `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- register-user` e `npm run test:e2e -- auth`.
 - `npm run test:int` sobe Postgres e Redis descartáveis pelo Testcontainers, isolados do docker-compose. Só precisa do Docker.
 - `npm run test:e2e` sobe a app inteira contra o Postgres, o Redis e o Mailpit do docker-compose (ver a armadilha do E2E abaixo).
 - `npm run ci` roda typecheck, lint, format:check, docs:check, unitários e arch. Integração e e2e ficam fora: rode-os quando a mudança tocar banco, Redis, filas ou HTTP.

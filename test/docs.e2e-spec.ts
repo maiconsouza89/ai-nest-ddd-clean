@@ -28,9 +28,16 @@ describe('Docs (e2e)', () => {
       (document.paths[path]?.[method] as { tags?: string[] } | undefined)?.tags;
 
     expect(tagsOf('/v1/auth/login', 'post')).toEqual(['auth']);
-    expect(tagsOf('/v1/orders', 'post')).toEqual(['orders']);
-    expect(tagsOf('/v1/orders/{id}/pay', 'post')).toEqual(['orders']);
-    expect(tagsOf('/v1/products', 'get')).toEqual(['products']);
     expect(tagsOf('/health/live', 'get')).toEqual(['health']);
+  });
+
+  it('toda rota tem exatamente uma tag', () => {
+    const methods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
+    const untagged = Object.entries(document.paths).flatMap(([path, item]) =>
+      methods
+        .filter((m) => item[m] && item[m].tags?.length !== 1)
+        .map((m) => `${m.toUpperCase()} ${path}`),
+    );
+    expect(untagged).toEqual([]);
   });
 });

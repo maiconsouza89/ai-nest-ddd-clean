@@ -9,7 +9,7 @@ Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo
 ## Pré-requisitos
 
 - Nenhum `start:dev` nem e2e rodando.
-- Terminal na raiz deste repositório. O Docker Compose usa o nome da pasta como nome do projeto, e os volumes deste são `ddd-clean-nest_*`.
+- Terminal na raiz deste repositório. O Docker Compose usa o nome da pasta como nome do projeto, e os volumes deste são `<pasta>_*` (num clone na pasta `ai-nest-ddd-clean`, `ai-nest-ddd-clean_*`).
 
 ## Passos
 

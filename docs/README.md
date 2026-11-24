@@ -33,6 +33,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como rodar as migrations e os seeds](how-to/rodar-as-migrations-e-os-seeds.md): o `db:setup`, o `db:seed`, como conferir o que falta e os erros comuns.
 - [Como rodar um teste específico](how-to/rodar-um-teste-especifico.md): o script por tipo de teste, o filtro por caminho, por nome e por linha.
 - [Como resetar o ambiente local](how-to/resetar-o-ambiente-local.md): apagar o Postgres e o Redis deste projeto e subir tudo do zero.
+- [Como remover os módulos de exemplo](how-to/remover-os-modulos-de-exemplo.md): tirar o orders, o catalog e o inventory e ficar só com a base, com a lista das páginas que ainda citam os exemplos.
 
 ## Explicação
 
@@ -83,6 +84,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0005: Aliases de import com `imports` do `package.json`](adr/0005-aliases-de-import-por-subpath-imports.md)
 - [0006: Documentação em Diátaxis com roteamento para agentes](adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md)
 - [0007: `AGENTS.md` como único arquivo de instruções](adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md)
+- [0008: Projeto template com módulos de exemplo](adr/0008-projeto-template-com-modulos-de-exemplo.md)
 - [0009: Verificação do e-mail com o código no evento](adr/0009-verificacao-de-email-com-codigo-no-evento.md)
 
 ## Fora dos quadrantes

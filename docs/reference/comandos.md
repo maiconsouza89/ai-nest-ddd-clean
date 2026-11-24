@@ -56,7 +56,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run format:check` | Só confere a formatação |
 | `npm run arch` | Regras de camadas e de fronteiras entre módulos, com o dependency-cruiser (`.dependency-cruiser.js`) |
 | `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
-| `npm run docs:links` | Links externos, com o lychee via Docker. Fora do CI, porque depende da rede |
+| `npm run docs:links` | Links externos, com o lychee via Docker. Pula os endereços locais (`localhost`), que só respondem com a app ou o compose no ar. Fora do CI, porque depende da rede |
 | `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check` e `arch`, nessa ordem. É o job `check` do CI |
 | `npm run ci` | `ci:static` e depois `test`. **Não** roda integração nem e2e |
 
@@ -128,11 +128,11 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 | Comando | O que gera |
 | --- | --- |
-| `npm run plop module <nome>` | Um módulo no padrão do `orders`, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
+| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen` e `mig:<nome>:run` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
 | `npm run plop doc <tipo> "<nome>"` | Uma página de `docs/` do tipo `tutorial`, `how-to`, `reference` ou `explanation`. Templates em `plop-templates/doc/`. A página falha no `docs:check` até os comentários do template serem apagados |
 
 ## Baixar o ambiente
 
-`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `ddd-clean-nest_*`. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
+`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 
 Nunca use `docker volume prune` nem `docker system prune`, e não remova volumes, containers ou redes de outros projetos.
