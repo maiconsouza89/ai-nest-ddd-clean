@@ -357,7 +357,7 @@ Quando o mesmo termo tiver sentidos diferentes em módulos diferentes, liste os 
 >
 > - [x] Passo 11: camadas (check primeiro)
 > - [x] Passo 12: dividir o guia de pesquisa
-> - [ ] Passo 13: how-tos e skills-ponteiro (parcial: criar um módulo)
+> - [ ] Passo 13: how-tos e skills-ponteiro (parcial: how-tos prontos, skills adiadas)
 > - [ ] Passo 14: tutoriais
 > - [x] Passo 15: remover `docs/research/`
 
@@ -540,9 +540,20 @@ Cada passo desta fase é feito quando o assunto for tocado. O passo pode ficar m
 
 **Pronto quando:** em uma sessão nova, um pedido como "crie um módulo billing" faz o Claude escolher a skill sem que ela seja citada, e o how-to funciona seguido à mão.
 
-**Como ficou (parcial):**
+**Como ficou:**
 
-- **Criar um módulo (2026-11-23):** `how-to/criar-um-modulo.md` saiu do passo 12, com a seção "Pragmatismo e checklist" do guia, e foi seguido à mão (ver o passo 12). Falta a skill-ponteiro.
+- **Criar um módulo (2026-11-23):** `how-to/criar-um-modulo.md` saiu do passo 12, com a seção "Pragmatismo e checklist" do guia, e foi seguido à mão (ver o passo 12).
+- **How-tos (2026-11-23):** "publicar evento de integração" já existia desde o passo 12. Faltavam três, gerados pelo `plop doc`:
+  - `how-to/rodar-as-migrations-e-os-seeds.md`: os passos apontam para os loops do Setup do zero em `comandos.md`, sem copiá-los. O `plop module` mantém o loop de migrations no `README.md` e no `comandos.md`, e uma terceira cópia ficaria para trás no primeiro módulo novo. A página acrescenta o `migration:show` para conferir o que falta e uma tabela de sintomas: o `NODE_ENV` do shell vence o do `.env`, o `Missing script: "mig:ordersun"` do zsh sem aspas e a migration que falhou no meio;
+  - `how-to/rodar-um-teste-especifico.md`: o script pelo sufixo do arquivo, o filtro por trecho de caminho (sem diferenciar maiúsculas, vários trechos somam), por nome com `-t` (regex sobre o nome com os `describe`) e por linha, que exige o caminho completo. Conferido no Context7 (Vitest, filtro de arquivos e `-t`) e no Vitest 5.1.1: `money.vo -t "soma valores"` roda 1 e pula 5, `money.vo:11` falha com "Couldn't find file" e `src/shared/domain/money.vo.spec.ts:11` roda 1, um padrão sem arquivo sai com código 1 e mostra o `include`;
+  - `how-to/resetar-o-ambiente-local.md`: `down -v`, `up -d --wait`, migrations e seeds pelo how-to acima, e a conferência pelo `/health/ready` e pelo login.
+
+  Seguidos à mão num projeto do compose descartável (`ddd-howto-ops`, removido com `down -v`), com o `.env` do repositório: `up -d --wait` voltou com os dois `healthy` em 23 s; o `migration:show` listou as quatro do orders com `[ ]` e, depois do loop, com `[X]`; os dois loops e um segundo `mig:orders:run` ("No migrations are pending") saíram com código 0; `NODE_ENV=production` no shell fez o seed recusar. O reset apagou os dois volumes do projeto, e depois de subir tudo de novo o `/health/ready` deu 200 com `database` e `redis` `up` e o login do admin devolveu `accessToken`. `test:e2e -- auth` (21 testes) e `test:int -- idempotent-consumer` (5) passaram, e `test:int -- money` saiu com código 1, como a página diz. O `comandos.md` aponta para as três páginas nas seções de testes, migrations e baixar o ambiente, e a rota "Rodar, testar, migrar…" do `AGENTS.md` chega a elas por lá, sem linha nova. Índice e mapa do `README.md` atualizados.
+- **Skills-ponteiro (2026-11-23, adiadas):** criadas, testadas e depois removidas do projeto por decisão do dono do repositório, que ainda não quer usar skills. O registro abaixo fica para quando elas voltarem. Eram `.claude/skills/criar-modulo`, `gerar-migration` e `publicar-evento-de-integracao`. Diferente do "Faça", o corpo não repete os comandos de verificação: o critério de pronto é "cada item de 'Como verificar' do how-to passa", para a verificação ficar num lugar só. O corpo também manda corrigir o how-to se um passo não funcionar como está escrito. O `docs:check` já confere os caminhos citados em `.claude/`: um caminho quebrado de propósito numa skill falhou com `agent-pointer` e foi desfeito.
+
+  Teste de roteamento com `claude -p` em modo plan, numa sessão nova, sem citar as skills. As três aparecem na lista de skills da sessão. "crie um módulo billing" leu a `criar-modulo` e o how-to, e a resposta diz que o plano segue os dois. "acrescente uma coluna note (texto, opcional) na tabela de pedidos" leu a `gerar-migration` e o how-to. "quando um pedido for cancelado, o notifications deve mandar um e-mail ao cliente" chegou ao how-to pela rota do `AGENTS.md`, mas não à skill: a descrição só dizia "evento de integração", e o pedido não diz "evento". A descrição passou a começar pelo gatilho "um módulo deve reagir a um fato de outro módulo", e na repetição a primeira ação da sessão foi ler a skill. Nas três, a skill foi lida pelo arquivo, e não pela ferramenta `Skill`. Os planos que as sessões gravaram em `~/.claude/plans` foram apagados.
+
+  Passo só de texto (Markdown e skills): `/simplify` e `/code-review` pulados.
 
 ### Passo 14: tutoriais
 
@@ -626,7 +637,7 @@ Marque cada item com a evidência: o comando e o resultado, ou a observação.
 
 - [x] **Passo 11:** cada convenção de camada está como check ou como texto, nunca nos dois. Uma violação de propósito falha no `arch` ou no `lint`. 2026-11-23: ver o "Como ficou" do passo 11.
 - [x] **Passo 12:** cada seção migrada virou link no guia e aparece no índice. Os trechos de código foram conferidos contra o código. Concluído em 2026-11-23: Pragmatismo e checklist, em `explanation/arquitetura.md` e `how-to/criar-um-modulo.md`; Referências, em `reference/leituras.md`; Visão geral e Camadas, em `explanation/arquitetura.md`; Estrutura de pastas, em `reference/camadas.md`; Persistência com TypeORM, em `explanation/persistencia.md` e `reference/convencoes.md`; Módulos independentes e Dependências e contratos, em `explanation/comunicacao-entre-modulos.md`, `how-to/gerar-uma-migration.md`, `reference/camadas.md` e `reference/convencoes.md`; Shared kernel, em `explanation/shared-kernel.md`; Autenticação e ownership, em `explanation/autenticacao.md`; Agregados e comunicação entre módulos, em `explanation/agregados.md`; Transações, concorrência e eventos, em `explanation/consistencia-e-eventos.md` e `how-to/publicar-um-evento-de-integracao.md`; Paginação, em `how-to/paginar-uma-listagem.md`; Modelagem do domínio, em `explanation/modelagem-do-dominio.md`; Infra, em `how-to/adicionar-uma-variavel-de-ambiente.md`, `how-to/agendar-um-job.md`, `how-to/cachear-uma-leitura.md`, `how-to/criar-um-seed.md`, `explanation/redis.md` e `explanation/servicos-externos.md`; Qualidade, em `reference/testes.md` e `explanation/observabilidade.md`; Operação, em `reference/operacao.md` e `explanation/comunicacao-entre-modulos.md`.
-- [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão.
+- [ ] **Passo 13:** cada skill é escolhida pelo Claude a partir de um pedido natural, sem ser citada. Cada how-to funciona seguido à mão. 2026-11-23: os três how-tos novos foram seguidos num projeto do compose descartável. As skills passaram no teste de roteamento, a de evento depois de ajustar a descrição, mas foram removidas: ficam adiadas. Ver o "Como ficou" do passo 13.
 - [ ] **Passo 14:** o tutorial 01 funciona num banco vazio, e o e2e espelho passa.
 - [x] **Passo 15:** nenhuma referência a `docs/research/` sobra no repositório. 2026-11-23: o grep só encontra este plano, que registra a remoção. Ver o "Como ficou" do passo 15.
 

@@ -43,7 +43,7 @@ Uma mudança de comportamento atualiza a página afetada em `docs/`, ou o PR diz
 | Onde | O que tem |
 | --- | --- |
 | [docs/](docs/README.md) | Índice da documentação, organizada no modelo Diátaxis, e como escrever uma página |
-| [docs/how-to/](docs/README.md#how-to) | Passos para tarefas concretas, como criar um módulo, gerar uma migration, publicar um evento de integração, paginar uma listagem, cachear uma leitura e agendar um job |
+| [docs/how-to/](docs/README.md#how-to) | Passos para tarefas concretas, como criar um módulo, gerar uma migration, publicar um evento de integração, paginar uma listagem, cachear uma leitura, agendar um job, rodar um teste específico e resetar o ambiente local |
 | [docs/explanation/](docs/README.md#explicação) | O porquê do desenho: monólito modular, camadas, persistência, comunicação entre módulos, agregados, consistência e eventos, modelagem do domínio, Redis e cache, serviços externos, shared kernel, autenticação e observabilidade |
 | [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, testes, operação, autenticação, glossário e uma página por módulo |
 | [docs/adr/](docs/README.md#decisões-adr) | As decisões de arquitetura e o porquê de cada uma |

@@ -69,7 +69,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 
 O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).
 
-Para rodar um arquivo só, passe um padrão de caminho depois do `--`:
+Para rodar um arquivo só, passe um padrão de caminho depois do `--`. O filtro por nome e por linha está em [Como rodar um teste específico](../how-to/rodar-um-teste-especifico.md).
 
 - `npm test -- money.vo`
 - `npm run test:int -- pay-order`
@@ -83,7 +83,7 @@ Cuidados com o e2e:
 
 ## Migrations
 
-Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app (`synchronize: false` e `migrationsRun: false`): rode-as antes, no setup local e no pipeline de deploy. Passo a passo para criar uma: [Como gerar uma migration](../how-to/gerar-uma-migration.md).
+Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app (`synchronize: false` e `migrationsRun: false`): rode-as antes, no setup local e no pipeline de deploy. Passo a passo para criar uma: [Como gerar uma migration](../how-to/gerar-uma-migration.md). Para aplicar todas e conferir o que falta: [Como rodar as migrations e os seeds](../how-to/rodar-as-migrations-e-os-seeds.md).
 
 | Comando | O que faz |
 | --- | --- |
@@ -112,6 +112,6 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 ## Baixar o ambiente
 
-`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `ddd-clean-nest_*`.
+`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `ddd-clean-nest_*`. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 
 Nunca use `docker volume prune` nem `docker system prune`, e não remova volumes, containers ou redes de outros projetos.

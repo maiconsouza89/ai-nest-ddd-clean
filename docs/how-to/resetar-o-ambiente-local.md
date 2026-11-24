@@ -1,0 +1,44 @@
+---
+type: how-to
+---
+
+# Como resetar o ambiente local
+
+Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo: banco sujo do e2e, migration que falhou no meio, filas do BullMQ com jobs antigos. **Apaga todos os dados locais** deste projeto.
+
+## Pré-requisitos
+
+- Nenhum `start:dev` nem e2e rodando.
+- Terminal na raiz deste repositório. O Docker Compose usa o nome da pasta como nome do projeto, e os volumes deste são `ddd-clean-nest_*`.
+
+## Passos
+
+1. Remova os containers, a rede e os volumes deste projeto:
+
+   ```bash
+   docker compose down -v --remove-orphans
+   ```
+
+   Este é o comando de limpeza: ele só alcança o que pertence a este projeto. O `docker volume prune` e o `docker system prune` apagam também volumes de outros projetos.
+
+2. Suba o Postgres e o Redis vazios:
+
+   ```bash
+   docker compose up -d --wait postgres redis
+   ```
+
+   O `--wait` só volta quando os dois respondem ao healthcheck.
+
+3. Aplique as migrations e rode os seeds: [Como rodar as migrations e os seeds](rodar-as-migrations-e-os-seeds.md#passos).
+
+4. Suba a app: `npm run start:dev`.
+
+## Como verificar
+
+- `http://localhost:3000/health/ready` responde 200, com `database` e `redis` como `up`.
+- O login de `admin@example.com` em `POST /v1/auth/login` devolve um `accessToken`.
+
+## Veja também
+
+- [Comandos](../reference/comandos.md#baixar-o-ambiente): o comando para baixar o ambiente.
+- [Operação](../reference/operacao.md): o que o `/health/ready` confere.
