@@ -144,6 +144,16 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Achado do `/simplify`, com o ok do dono: o gatilho `**/migrations/**` fica, mas não prova que a migration foi testada, porque os int-specs recebem a lista do helper. A correção de fundo ficou em `evolucoes-com-gatilho.md` (seção "CI"). `.env.example`, `docker-compose.yml` e os workflows continuam na lista.
 - Com o ok do dono: push da `main` como está, e este branch num PR, que é a primeira execução do workflow.
 
+**Como ficou (GitHub, 2026-11-24):**
+
+- Repositório `maiconsouza89/ai-nest-ddd-clean` criado privado (fica público no passo 15). Push da `main` sem o workflow, e a Fase 1 no PR #1.
+- PR #1 (muda o `ci.yml`, então suíte inteira): `check`, `unit` em 22.22.3 e no `.nvmrc` com 37 de 37 arquivos, `integration` com 16 de 16. O Node 22.22.3 baixou e passou sem EBADENGINE.
+- Os PRs de teste saíram do `feat/ci-github-actions` e apontaram para ele, o que também prova a base `HEAD^1` num PR empilhado. Fechados sem merge, branches apagados:
+  - #2, só `README.md`: `check` verde, `unit` e `integration` pulados, PR verde.
+  - #3, só `typeorm-catalog.facade.ts`: `unit` com "No affected test files found" nas duas versões (o catalog não tem unitário), `integration` com 1 arquivo, o int-spec do catalog.
+  - #4, migration vazia no identity: `integration` 16 de 16 e, pelo mesmo gatilho, `unit` 37 de 37.
+- Achado: quando o `unit` é pulado, a matriz não expande, e o check aparece com o nome literal `unit (Node ${{ (matrix.node-version || '.nvmrc') }})`. Um check obrigatório `unit (Node 22.22.3)` ficaria esperando para sempre num PR de docs. Corrigido com o ok do dono: job `ci`, com `needs` nos outros quatro e `if: always()`, que falha só se um deles falhou ou foi cancelado. É o único check a marcar como obrigatório (`comandos.md#ci`).
+
 ---
 
 ## Fase 2: verificação de e-mail e boas-vindas

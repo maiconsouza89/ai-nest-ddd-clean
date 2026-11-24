@@ -89,3 +89,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:int -- ${{ env.VITEST_ARGS }}
+
+  # O check obrigatório do PR. Tem nome fixo, e um job pulado (PR só de docs) conta como aprovado:
+  # a matriz do unit pulada não expande, e o nome dela não serve como check obrigatório.
+  ci:
+    if: always()
+    needs: [changes, check, unit, integration]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
