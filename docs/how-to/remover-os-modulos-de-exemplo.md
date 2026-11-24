@@ -79,7 +79,7 @@ O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `sh
     - Na linha "Verificar o e-mail" da linguagem ubíqua, apague a frase "'Confirmar' é termo do orders e do notifications, não daqui."
     - A `UserDirectoryFacade` fica sem consumidor. Mantenha-a para o primeiro módulo seu que precisar do e-mail de um usuário, ou apague o contrato, o adapter, o export no `identity.module.ts` e a menção na página.
 
-11. No `AGENTS.md`, seção "Projeto", tire os módulos de exemplo da lista de módulos.
+11. No `AGENTS.md`, seção "Projeto", o primeiro item passa a começar por: "A base é o `src/shared/` (kernel compartilhado e infraestrutura transversal) e os módulos `identity` e `notifications`." O resto do item, a partir de `src/app.module.ts`, fica igual.
 
 12. No `README.md`, apague a seção "Módulos de exemplo" e as menções ao orders, ao catalog e ao inventory.
 
@@ -127,6 +127,7 @@ Ficam como leitura, sem mudança: `explanation/comunicacao-entre-modulos.md` (fa
 
 ## Veja também
 
+- [ADR 0008](../adr/0008-projeto-template-com-modulos-de-exemplo.md): o que é base, o que é exemplo e por que os exemplos ficam no repositório.
 - [ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md): imports explícitos entre módulos.
 - [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md): facade, eventos e a dependência numa direção só entre módulos.
 - [Como criar um módulo](criar-um-modulo.md): o próximo passo, com um módulo seu.

@@ -347,7 +347,7 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 >
 > - [x] Passo 11: licença e nome do projeto
 > - [x] Passo 12: how-to para remover os módulos de exemplo
-> - [ ] Passo 13: ADR 0008 e AGENTS.md
+> - [x] Passo 13: ADR 0008 e AGENTS.md
 > - [ ] Passo 14: README com badges
 > - [ ] Passo 15: repositório público e template no GitHub
 
@@ -423,6 +423,13 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Índice do `docs/README.md` com a ADR nova e o how-to do passo 12.
 
 **Pronto quando:** `npm run docs:check` passa, e o `AGENTS.md` diz, em uma frase, quais módulos são base e quais são exemplo.
+
+**Como ficou:**
+
+- ADR 0008 com a base, os exemplos, o que cada exemplo mostra que a base não mostra, duas alternativas recusadas (esqueleto vazio, e exemplos num repositório ou branch à parte, que deixariam de rodar no CI da base) e o custo da documentação. Também registra que o `npm run arch` não distingue base de exemplo: quem confere é o how-to de remoção.
+- `AGENTS.md`: o item de `src/modules/` virou uma frase com a base, os exemplos e a regra "a base importa só a base" (ADR 0008). Ganhou a rota "Remover os módulos de exemplo". 94 linhas.
+- O how-to do passo 12 já estava no índice. Ele ganhou a ADR em "Veja também", e o passo do `AGENTS.md` passou a dar o texto exato da frase sem os exemplos.
+- `npm run docs:check` e `npm run ci` passam (43 arquivos, 240 testes unitários).
 
 ### Passo 14: README com badges
 

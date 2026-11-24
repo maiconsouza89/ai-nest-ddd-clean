@@ -84,6 +84,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0005: Aliases de import com `imports` do `package.json`](adr/0005-aliases-de-import-por-subpath-imports.md)
 - [0006: Documentação em Diátaxis com roteamento para agentes](adr/0006-documentacao-diataxis-e-roteamento-para-agentes.md)
 - [0007: `AGENTS.md` como único arquivo de instruções](adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md)
+- [0008: Projeto template com módulos de exemplo](adr/0008-projeto-template-com-modulos-de-exemplo.md)
 - [0009: Verificação do e-mail com o código no evento](adr/0009-verificacao-de-email-com-codigo-no-evento.md)
 
 ## Fora dos quadrantes
