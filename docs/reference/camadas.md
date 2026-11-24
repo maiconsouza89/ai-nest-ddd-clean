@@ -15,7 +15,10 @@ O que fica em cada camada de um módulo e em qual pasta. Os imports entre camada
 | Infra | `infra/` | Liga tudo ao Nest, ao banco, às filas e ao HTTP |
 | Contracts | `contracts/` | API pública do módulo para os outros |
 
-Exceção: um módulo CRUD sem regra de negócio dispensa as camadas, como o [catalog](modules/catalog.md#estrutura). As regras de fronteira entre módulos continuam valendo para ele.
+Exceções:
+
+- Um módulo CRUD sem regra de negócio dispensa as camadas, como o [catalog](modules/catalog.md#estrutura). As regras de fronteira entre módulos continuam valendo para ele.
+- O [inventory](modules/inventory.md) não tem entidade de domínio. O saldo é disputado demais para ler, conferir e gravar com versão, então o repositório é organizado por operações (`registerReservation`, `decrease`, `increase`...), e as invariantes ficam no banco: o `CHECK` de saldo não negativo, o `UNIQUE` da referência da reserva e o update condicional da baixa ([Consistência e eventos](../explanation/consistencia-e-eventos.md#estoque-update-condicional-sem-ler-antes)).
 
 ## Estrutura de pastas
 
@@ -36,6 +39,7 @@ src/
 │       │   ├── errors/                  order-already-paid.error.ts
 │       │   └── repositories/            order.repository.ts
 │       ├── application/
+│       │   ├── order-access.ts          (helper usado por vários casos de uso)
 │       │   ├── use-cases/               create-order.use-case.ts
 │       │   ├── queries/                 order.queries.ts
 │       │   ├── ports/                   price-catalog.ts, stock-gateway.ts
@@ -60,10 +64,14 @@ src/
 │       └── contracts/
 │           └── events/                  order-paid.event.ts (OrderPaidV1), order-paid.v1.example.ts
 └── shared/
-    ├── domain/                          aggregate-root.ts, domain-error.ts, money.vo.ts
-    ├── application/                     actor.ts, page.ts
-    │   └── ports/                       clock.ts, id-generator.ts, transaction-manager.ts
-    └── infra/                           auth/, database/, outbox/, messaging/, cache/, config/, ...
+    ├── domain/                          aggregate-root.ts, domain-event.ts, domain-error.ts,
+    │                                    concurrency.error.ts, money.vo.ts (com os erros do Money)
+    ├── application/                     actor.ts, page.ts, integration-event.ts, idempotent-consumer.ts
+    │   └── ports/                       clock.ts, id-generator.ts, transaction-manager.ts, logger.ts,
+    │                                    actor-resolver.ts, outbox.ts, event-publisher.ts,
+    │                                    processed-events.ts
+    ├── infra/                           auth/, database/, outbox/, messaging/, cache/, config/, ...
+    └── testing/                         decorator-metadata.spec.ts (a injeção por classe funciona nos testes)
 ```
 
 ## Domain
@@ -90,12 +98,14 @@ src/
 | DTO de entrada | `application/dtos/` | Tipo simples, montado pelo controller a partir do DTO HTTP |
 | Evento de integração | `application/events/` | Converte o evento de domínio no evento de `contracts/events/` e o grava na outbox, na mesma transação do agregado |
 | Configuração | construtor | O caso de uso recebe valores prontos (prazo, tamanho de lote) e não lê variável de ambiente |
+| Helper de vários casos de uso | raiz de `application/` | Uma regra ou um passo repetido por mais de um caso de uso, como `orders/application/order-access.ts` (carregar o pedido e conferir o acesso) e `identity/application/session-issuer.ts` (emitir o par de tokens) |
 
 ## Infra
 
 | Peça | Pasta | Convenção |
 | --- | --- | --- |
-| Módulo Nest | `infra/<módulo>.module.ts` | Liga cada contrato à implementação. Caso de uso e adapter sem `@Injectable()` entram por `useFactory`, com o `inject` na ordem dos parâmetros. Lê o `ConfigService` e passa valores ao caso de uso |
+| Módulo Nest | `infra/<módulo>.module.ts` | Liga cada contrato à implementação. Caso de uso e adapter sem `@Injectable()` entram por `useFactory`, com o `inject` na ordem dos parâmetros. Um adapter com `@Injectable()`, como um repositório TypeORM ou uma facade, entra por `useClass`. Lê o `ConfigService` e passa valores ao caso de uso |
+| Nest module auxiliar | `infra/<nome>.module.ts` | Um segundo Nest module, quando o módulo liga um port do `shared` que não deve sair pelo Nest module principal. O `identity/infra/identity-auth.module.ts` liga o `ActorResolver` do shared, e o `AppModule` só o repassa para o `AuthModule.forRoot` |
 | Controller | `infra/http/controllers/` | Converte o DTO HTTP no DTO da application e repassa o `Actor` como dado |
 | DTO HTTP | `infra/http/dtos/` | `class-validator` e Swagger ficam aqui. Valida o formato da entrada |
 | Filter | `infra/http/filters/domain-error.filter.ts` | Um por módulo, com uma tabela de `code` para status HTTP |
@@ -116,7 +126,7 @@ src/
 
 ## Entre módulos
 
-Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/`, sem ciclo). O resto:
+Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/`, sem ciclo). Ele roda `depcruise src` e não olha o `test/`: a fronteira do `test/` só é conferida no code review, e os e2e importam `../src/app.module.js` de propósito. O resto:
 
 | Situação | Convenção |
 | --- | --- |
@@ -133,8 +143,9 @@ O `src/shared/` segue as mesmas camadas e guarda só blocos técnicos com a mesm
 
 | Vai para o `shared` | Fica no módulo |
 | --- | --- |
-| `AggregateRoot`, `DomainError`, `Money`, `Actor`, `Page` | Conceito de negócio (`Customer`, `Product`) |
-| Ports técnicos: `Clock`, `IdGenerator`, `TransactionManager`, `Logger` | Value object usado por um módulo só, mesmo que pareça genérico (o `Email` do identity) |
+| Domínio: `AggregateRoot`, `DomainEvent`, `DomainError`, `ConcurrencyError` e `Money`. Os erros do `Money` (`InvalidMoneyError`, `CurrencyMismatchError`) ficam dentro do `money.vo.ts`, e não numa pasta `domain/errors/` | Conceito de negócio (`Customer`, `Product`) |
+| Aplicação: `Actor`, `Page`, `IntegrationEvent` e `IdempotentConsumer` | Erro de domínio de um módulo, em `domain/errors/` |
+| Ports técnicos: `Clock`, `IdGenerator`, `TransactionManager`, `Logger`, `ActorResolver`, `Outbox`, `EventPublisher` e `ProcessedEvents` | Value object usado por um módulo só, mesmo que pareça genérico (o `Email` do identity) |
 | Infra comum: auth, outbox, filas, cache, banco, configuração | Repositórios, entidades e o filter de erros de cada módulo |
 
 Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`. O porquê está em [Shared kernel](../explanation/shared-kernel.md).

@@ -8,7 +8,7 @@ Por que o `src/shared/` guarda só blocos técnicos e por que, na dúvida, um ti
 
 ## Contexto
 
-Alguns blocos têm a mesma regra em qualquer módulo: a raiz de agregado (`AggregateRoot`), a base dos erros de domínio (`DomainError`), o dinheiro (`Money`), o ator da requisição (`Actor`), e os ports de relógio, ids, transação e log. Reescrevê-los em cada módulo seria repetir a mesma regra cinco vezes, com o risco de as cópias divergirem. Eles ficam no [shared kernel](../reference/glossario.md#shared-kernel), em `src/shared/`, que segue as mesmas camadas de um módulo (`domain/`, `application/`, `infra/`) e não importa nada de `src/modules/`.
+Alguns blocos têm a mesma regra em qualquer módulo: a raiz de agregado (`AggregateRoot`) e o evento de domínio (`DomainEvent`), a base dos erros de domínio (`DomainError`) e o conflito de versão (`ConcurrencyError`), o dinheiro (`Money`, com os erros dele no próprio `money.vo.ts`), o ator da requisição (`Actor`), a página (`Page`), o evento de integração (`IntegrationEvent`) e o consumidor idempotente (`IdempotentConsumer`). Também os ports de relógio, ids, transação e log, e os da entrega de eventos e da autenticação (`Outbox`, `EventPublisher`, `ProcessedEvents` e `ActorResolver`). O `src/shared/testing/` guarda um teste da toolchain: confere que a decorator metadata chega ao Nest e que a injeção por classe funciona nos testes. Reescrevê-los em cada módulo seria repetir a mesma regra cinco vezes, com o risco de as cópias divergirem. Eles ficam no [shared kernel](../reference/glossario.md#shared-kernel), em `src/shared/`, que segue as mesmas camadas de um módulo (`domain/`, `application/`, `infra/`) e não importa nada de `src/modules/`.
 
 ## Por quê
 

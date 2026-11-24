@@ -23,7 +23,7 @@ Uma fronteira é `src/shared`, cada `src/modules/<módulo>` e `test`.
 | `#modules/*` | `src/modules/*`. Um módulo só importa o `contracts/` de outro |
 | `#test/*` | `test/*`. Só para os testes: `test/` não vai para o `dist/` |
 
-O `npm run arch` barra um `../` que sai da fronteira e um alias que aponta para dentro dela. Os specs ficam fora do `arch`, então nos testes a convenção depende de revisão.
+O `npm run arch` barra um `../` que sai da fronteira e um alias que aponta para dentro dela. Ele roda `depcruise src`: não olha o `test/` e deixa de fora os specs de `src/`. Nos testes, a convenção e a fronteira do `test/` só são conferidas no code review.
 
 Os arquivos da raiz de `src/` (`app.module.ts`, `app.setup.ts`) não têm alias. Os testes e2e os importam por caminho relativo (`../src/app.module.js`).
 
@@ -62,9 +62,9 @@ Cada agregado tem uma entidade de domínio e uma ORM entity, convertidas por um 
 
 | Regra | Detalhe |
 | --- | --- |
-| A ORM entity não sai do repositório concreto | O repositório recebe e devolve a entidade de domínio. O mapper usa `restore` no `toDomain` |
+| A ORM entity não sai do repositório concreto | O repositório recebe e devolve a entidade de domínio. O mapper usa `restore` no `toDomain`. Exceção: o `RefreshToken` do identity não tem mapper. As props dele já são as colunas, e o `TypeOrmRefreshTokenRepository` grava o `toProps()` e lê com `restore()` direto |
 | Id gerado pelo domínio | `@PrimaryColumn('uuid')`, não `@PrimaryGeneratedColumn` |
-| `createdAt` e `updatedAt` só na ORM entity | `@CreateDateColumn` e `@UpdateDateColumn` são detalhe técnico e não vão para o domínio |
+| `createdAt` e `updatedAt` só na ORM entity | `@CreateDateColumn` e `@UpdateDateColumn` são detalhe técnico e não vão para o domínio. Exceção: no `RefreshToken`, o `createdAt` é do domínio e é uma coluna comum (`@Column`). Ele é o `now` do `Clock` em que o token foi emitido, o mesmo instante de onde sai o `expiresAt` |
 | `bigint` e `numeric` são `string` | O driver `pg` não converte inteiros de 64 bits para `number`, porque haveria perda de precisão. Tipe a coluna como `string` e converta no mapper |
 | Filhos do agregado com `cascade` e `orphanedRowAction` | `cascade: true` no `@OneToMany` da raiz e `orphanedRowAction: 'delete'` no `@ManyToOne` do filho. Sem o `orphanedRowAction`, um item removido do array não é apagado no `save()` |
 | Filho com chave composta | `orderId` e `productId` como `@PrimaryColumn`: o `save()` atualiza o item existente em vez de apagar e inserir de novo |

@@ -97,4 +97,4 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 5. Ponha a página no índice acima. Se um agente precisa achá-la, acrescente uma linha na tabela de rotas do `AGENTS.md`, com o caminho em texto simples, sem `@`.
 6. Rode `npm run docs:check`. Ele confere o lint do Markdown, os links e âncoras locais, o `type:`, os comentários de template e os caminhos citados nos arquivos de agente. Os links externos são conferidos com `npm run docs:links`.
 
-Um ADR não sai do gerador. Copie o formato dos existentes (`status: accepted`, "Considered Options", "Consequences") com o próximo número.
+Um ADR não sai do gerador. Use o próximo número e o formato das ADRs novas: `status: accepted`, "Considered Options" e "Consequences". As mais antigas podem não seguir esse formato.

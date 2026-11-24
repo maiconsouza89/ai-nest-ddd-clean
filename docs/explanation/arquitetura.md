@@ -32,7 +32,7 @@ export abstract class OrderRepository {
 }
 ```
 
-O caso de uso e o adapter não têm `@Injectable()`, então o módulo Nest os cria por `useFactory`. O módulo é o único lugar que conhece as implementações e liga cada contrato à sua:
+O caso de uso não tem `@Injectable()`, então o módulo Nest o cria por `useFactory`. Um adapter pode ter `@Injectable()` e entrar por `useClass`, como os repositórios TypeORM e as facades. O módulo é o único lugar que conhece as implementações e liga cada contrato à sua:
 
 ```ts
 @Module({

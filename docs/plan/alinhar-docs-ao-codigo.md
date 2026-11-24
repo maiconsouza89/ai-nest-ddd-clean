@@ -26,7 +26,7 @@ A fonte da verdade é o código, exceto quando a doc descreve uma regra de domí
 | 1. Correções no código | Os três bugs, os adapters no lugar certo e os comentários corrigidos | ✅ |
 | 2. Doc dos módulos, ferramentas e testes | Páginas de módulo, glossário, plano do pedido, comandos, testes e tutorial | ✅ |
 | 3. Doc de infra e eventos | Consistência, Redis, observabilidade, how-tos e evoluções com gatilho | ✅ |
-| 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ⬜ |
+| 4. Doc de arquitetura e ADRs | Camadas, convenções, shared kernel, arquitetura e ADRs 0002, 0004, 0005 e 0006 | ✅ |
 | 5. Redis fora do ar na prática | O `redis.md` conferido contra o comportamento real | ⬜ |
 | 6. Entrega | Verificação completa, `/simplify`, `/code-review` e este plano apagado | ⬜ |
 
@@ -345,12 +345,12 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 ## Fase 4: doc de arquitetura e ADRs
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
-> - [ ] Passo 1: exceções de camada e pastas
-> - [ ] Passo 2: shared kernel completo
-> - [ ] Passo 3: frases de arquitetura
-> - [ ] Passo 4: ADRs
+> - [x] Passo 1: exceções de camada e pastas
+> - [x] Passo 2: shared kernel completo
+> - [x] Passo 3: frases de arquitetura
+> - [x] Passo 4: ADRs
 
 ### Passo 1: exceções de camada e pastas
 
@@ -366,9 +366,11 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] O `camadas.md` lista o `inventory` ao lado do `catalog` como exceção, com o motivo.
-- [ ] O `convencoes.md` registra as duas exceções do `RefreshToken`, junto das regras do mapper e do `createdAt`.
-- [ ] A tabela de pastas do `camadas.md` cobre a raiz de `application/` e o Nest module auxiliar.
+- [x] O `camadas.md` lista o `inventory` ao lado do `catalog` como exceção, com o motivo.
+- [x] O `convencoes.md` registra as duas exceções do `RefreshToken`, junto das regras do mapper e do `createdAt`.
+- [x] A tabela de pastas do `camadas.md` cobre a raiz de `application/` e o Nest module auxiliar.
+
+**Como ficou:** a exceção do `catalog` virou uma lista, com o `inventory` ao lado e um link para a seção do estoque no `consistencia-e-eventos.md`. A árvore ganhou o `order-access.ts`, a tabela da Application ganhou a linha "Helper de vários casos de uso" e a da Infra a linha "Nest module auxiliar". Uma diferença em relação ao "Faça": o `createdAt` do `RefreshToken` não entra numa conta de expiração. O código não o lê em lugar nenhum. Ele é do domínio porque é o `now` do `Clock` em que o token foi emitido, o mesmo instante de onde sai o `expiresAt`, e foi isso que o `convencoes.md` registrou. Os adapters movidos na fase 1 não eram citados por caminho em nenhuma página.
 
 ### Passo 2: shared kernel completo
 
@@ -384,7 +386,9 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] Cada classe ou interface exportada de `src/shared/domain` e `src/shared/application` aparece em pelo menos uma das duas páginas. Para conferir: `git grep -hn "^export \(abstract \)\?\(class\|interface\)" -- src/shared/domain src/shared/application`.
+- [x] Cada classe ou interface exportada de `src/shared/domain` e `src/shared/application` aparece em pelo menos uma das duas páginas. Para conferir: `git grep -hn "^export \(abstract \)\?\(class\|interface\)" -- src/shared/domain src/shared/application`.
+
+**Como ficou:** as 16 classes e interfaces do `git grep` aparecem entre crases no `camadas.md` ou no `shared-kernel.md`, conferido nome a nome. A tabela do `camadas.md` separou domínio, aplicação e ports, e a árvore cita o `src/shared/testing/`.
 
 ### Passo 3: frases de arquitetura
 
@@ -399,8 +403,10 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "outbox e as filas do BullMQ já passam pelo Redis" -- docs` não acha nada.
-- [ ] As quatro frases descrevem o comportamento citado.
+- [x] `git grep -n "outbox e as filas do BullMQ já passam pelo Redis" -- docs` não acha nada.
+- [x] As quatro frases descrevem o comportamento citado.
+
+**Como ficou:** o `git grep` só acha este plano. O `camadas.md:98` ganhou a frase do `useClass`, para ficar coerente com o `arquitetura.md`. A frase do `arch` entrou no `convencoes.md` e na seção "Entre módulos" do `camadas.md`. No `docs/README.md`, a ressalva sobre as ADRs antigas confere: a 0003 e a 0004 não têm a seção "Consequences".
 
 ### Passo 4: ADRs
 
@@ -416,11 +422,13 @@ A fase 1 vem antes das de doc porque muda nomes de arquivo e comportamentos que 
 
 **Pronto quando:**
 
-- [ ] `git grep -n "\.claude/skills" -- docs/adr` não acha nada.
-- [ ] `git grep -n "passo 18" -- docs` não acha nada.
-- [ ] `git grep -n "Consequências" -- docs/adr` não acha nada.
-- [ ] Os links para a ADR 0006 continuam válidos.
-- [ ] `npm run ci` passa (fecha a fase 4).
+- [x] `git grep -n "\.claude/skills" -- docs/adr` não acha nada.
+- [x] `git grep -n "passo 18" -- docs` não acha nada.
+- [x] `git grep -n "Consequências" -- docs/adr` não acha nada.
+- [x] Os links para a ADR 0006 continuam válidos.
+- [x] `npm run ci` passa (fecha a fase 4).
+
+**Como ficou:** na ADR 0006, a remoção do item 4 renumerou o item seguinte. Os 13 ponteiros para ela (docs, `AGENTS.md`, `plopfile.mjs`, `scripts/remark-docs-rules.mjs` e `.markdownlint-cli2.jsonc`) continuam como estavam, menos a coluna de contexto do `evolucoes-com-gatilho.md`, que mudou conforme o "Faça". Os links da ADR 0004 apontam para a seção `#código-e-dependências`. O `git grep "passo 18"` só acha este plano, e o `npm run ci` passou.
 
 ---
 
