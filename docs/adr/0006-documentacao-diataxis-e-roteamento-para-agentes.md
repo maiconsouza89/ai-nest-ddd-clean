@@ -6,7 +6,7 @@ status: accepted
 
 A documentação serve a humanos e a agentes, mas existe uma vez só. Os humanos leem `docs/`, organizado nos quatro quadrantes do [Diátaxis](https://diataxis.fr/): tutoriais, how-tos, referência e explicação. Os agentes recebem uma camada fina de roteamento (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/` e `.claude/skills/`) que aponta para `docs/` e não tem texto próprio.
 
-O plano de execução está em `docs/plan/documentacao.md`.
+O plano de execução foi concluído e removido. Ele está no histórico do git: `git show d1edeb4:docs/plan/documentacao.md`.
 
 ## Decisões
 

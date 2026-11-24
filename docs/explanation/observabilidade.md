@@ -44,12 +44,12 @@ Um caso de uso que precisa logar recebe o port `Logger` (`src/shared/application
 
 - **As sondas de health** (`/health/*`) não geram span nem log de acesso. O orquestrador as chama a cada poucos segundos, e elas encheriam os dois sem informação.
 - **O `fs`** fica sem instrumentação: cada leitura de arquivo viraria um span.
-- **A camada do Nest** (controllers, guards, handlers) fica sem spans próprios: a instrumentação do Nest não aceita o Nest 12 (gatilho no [passo 18 do plano de evolução](../plan/evolucao.md#passo-18-evoluções-sob-demanda)). Os spans de HTTP, Express, Postgres e `ioredis` bastam para seguir uma requisição.
+- **A camada do Nest** (controllers, guards, handlers) fica sem spans próprios: a instrumentação do Nest não aceita o Nest 12 (gatilho em [Evoluções com gatilho](../reference/evolucoes-com-gatilho.md)). Os spans de HTTP, Express, Postgres e `ioredis` bastam para seguir uma requisição.
 
 ## Alternativas e trade-offs
 
 - **O hook na linha de comando** (`node --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./tracing.js`): é a forma que a documentação do OpenTelemetry mostra para ESM. Exigiria a flag em todo jeito de subir a app (`nest start`, `node dist/main.js`, a imagem de produção), e esquecê-la em um deles tira os spans sem erro. Com o `module.register` no `tracing.ts`, o hook vai junto com o código.
-- **O custo do `module.register`:** no Node 26 ele está depreciado e imprime o aviso `DEP0205` na subida. A troca pelo `register-hooks.mjs` do `import-in-the-middle`, que usa o `module.registerHooks`, exige um Node acima do `engines` do projeto. O gatilho está no [passo 18 do plano de evolução](../plan/evolucao.md#passo-18-evoluções-sob-demanda).
+- **O custo do `module.register`:** no Node 26 ele está depreciado e imprime o aviso `DEP0205` na subida. A troca pelo `register-hooks.mjs` do `import-in-the-middle`, que usa o `module.registerHooks`, exige um Node acima do `engines` do projeto. O gatilho está em [Evoluções com gatilho](../reference/evolucoes-com-gatilho.md).
 - **Correlation id próprio:** dispensa o SDK e o coletor, mas exige passar o id à mão em cada chamada e em cada evento, e não mede a duração das etapas.
 - **Span manual no caso de uso,** para cobrir a falta dos spans do Nest: seria código do OpenTelemetry na application, o que a regra de dependência não permite.
 

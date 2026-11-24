@@ -53,6 +53,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Comandos](reference/comandos.md): setup do zero, verificação, testes, migrations, seeds, geradores e como baixar o ambiente.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
+- [Evoluções com gatilho](reference/evolucoes-com-gatilho.md): mudanças adiadas de propósito, com a condição que destrava cada uma.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...`, `import type`, versão da API HTTP e as regras das ORM entities do TypeORM.
 - [Testes](reference/testes.md): o tipo de teste de cada camada, onde fica, com que fakes e containers, e o teste de contrato dos eventos.
 - [Operação](reference/operacao.md): configuração HTTP, Swagger, health check, rate limit, logs de acesso e a ordem de desligamento.
@@ -84,7 +85,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- [Planos](plan/): trabalho interno. O [plano de evolução](plan/evolucao.md) e o [plano de documentação](plan/documentacao.md).
+- [Planos](plan/): trabalho interno em andamento. O [plano do ciclo do pedido](plan/ciclo-do-pedido.md). Um plano concluído sai da pasta e fica no histórico do git.
 
 ## Como escrever uma página
 

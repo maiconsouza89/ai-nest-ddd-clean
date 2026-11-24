@@ -11,7 +11,7 @@ type: reference
 - Não atualize um pacote da tabela sem conferir o gatilho registrado.
 - Prefira as bibliotecas oficiais e as recomendadas pela documentação do framework (por exemplo, os pacotes `@nestjs/*`) a alternativas de terceiros, salvo justificativa explícita.
 - Ao propor uma dependência, informe a versão consultada e por que ela é a recomendada.
-- Pacotes pré-1.0 sem histórico ficam de fora. Por exemplo, `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09. O gatilho para reavaliá-los está no [passo 18 do plano de evolução](../plan/evolucao.md#passo-18-evoluções-sob-demanda).
+- Pacotes pré-1.0 sem histórico ficam de fora. Por exemplo, `@nestjs/authentication` 0.1.7 e `@nestjs/authorization` 0.1.4, lançados em 2026-09. O gatilho para reavaliá-los está em [Evoluções com gatilho](evolucoes-com-gatilho.md).
 
 `npm outdated` deve listar só os pacotes da tabela, mais o `prettier` quando sai uma versão nova dele ([Versão exata](#versão-exata)).
 

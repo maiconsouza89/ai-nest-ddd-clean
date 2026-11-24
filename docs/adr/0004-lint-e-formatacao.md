@@ -24,7 +24,7 @@ O config parte do `recommendedTypeChecked`. Duas famílias de regras ficam desli
 - **`no-unsafe-*` nos testes** (`*.spec.ts`, `*.int-spec.ts` e `test/`): o supertest devolve `res.body` como `any`, os matchers do Vitest (`expect.objectContaining`) também, e `ds.query` cru idem. No código de produção as regras continuam ligadas.
 - **`require-await` nos testes, nos repositórios em memória (`in-memory/`) e nos adaptadores simulados (`simulated-payment.gateway.ts`, `logging-email-sender.ts`)**: eles implementam portas que devolvem `Promise`. O `async` sem `await` é intencional, porque uma exceção síncrona vira rejeição, como no adaptador real. As regras que pegam bug de verdade (`no-floating-promises`, `no-misused-promises`, `await-thenable`) continuam ligadas.
 
-Não se usa `warn`: com `--max-warnings 0` ele é só um erro adiado. As duas famílias acima são reavaliadas no passo 18 do [plano de evolução](../plan/evolucao.md).
+Não se usa `warn`: com `--max-warnings 0` ele é só um erro adiado. As duas famílias acima são reavaliadas pelos gatilhos de [Evoluções com gatilho](../reference/evolucoes-com-gatilho.md).
 
 Reavaliação de 2026-11-23: as duas continuam desligadas. Religadas, as `no-unsafe-*` dariam 109 erros nos testes, todos vindos de `res.body`, `ds.query` e matchers, e o `require-await` daria 46, todos em fakes que implementam portas assíncronas. O override do `unbound-method` nos testes saiu: com o Vitest, ele não dispara mais.
 
