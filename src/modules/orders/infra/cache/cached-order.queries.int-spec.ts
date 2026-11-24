@@ -143,7 +143,9 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
   it('com o Redis parado, a listagem continua respondendo e o health check falha', async () => {
     await seed('down');
-    expect(await health.pingCheck('redis', { timeout: 1000 })).toEqual({ redis: { status: 'up' } });
+    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
+      redis: { status: 'up' },
+    });
 
     await redis.stop();
     const spy = vi.spyOn(inner, 'listByCustomer');
@@ -153,7 +155,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
     expect(page.items).toHaveLength(1);
     expect(spy).toHaveBeenCalledTimes(2); // sem cache, cada leitura vai ao banco
-    expect(await health.pingCheck('redis', { timeout: 1000 })).toMatchObject({
+    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
       redis: { status: 'down' },
     });
     // a escrita e a invalidação também não derrubam nada

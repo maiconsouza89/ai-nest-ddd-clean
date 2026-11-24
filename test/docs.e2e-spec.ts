@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
-import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
@@ -12,10 +11,7 @@ describe('Docs (e2e)', () => {
   let document: ReturnType<typeof setupSwagger>;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(TypeOrmHealthIndicator)
-      .useValue({ pingCheck: async (key: string) => ({ [key]: { status: 'up' } }) })
-      .compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(moduleRef.createNestApplication());
     document = setupSwagger(app);
     await app.init();

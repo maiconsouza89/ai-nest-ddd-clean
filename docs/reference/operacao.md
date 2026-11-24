@@ -47,7 +47,7 @@ O plugin roda no `nest build` e no `nest start`. Os testes do Vitest compilam co
 | Rota | Confere | Responde |
 | --- | --- | --- |
 | `GET /health/live` | Nada: o processo responde | 200 |
-| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s | 200 com todos `up`, 503 com algum `down` |
+| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`, 503 com algum `down`. Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
 
 As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL`), fora do rate limit (`@SkipThrottle()`), sem log de acesso e sem span.
 
