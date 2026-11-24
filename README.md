@@ -1,4 +1,4 @@
-# ddd-clean-nest
+# ai-nest-ddd-clean
 
 API em NestJS organizada como monólito modular, com DDD e Clean Architecture. Os módulos de negócio (`orders`, `catalog`, `inventory`, `identity` e `notifications`) ficam em `src/modules/`, cada um com as regras de negócio no centro e o framework restrito à infraestrutura. O `src/shared/` guarda o kernel compartilhado e a infraestrutura transversal: banco, cache, filas, autenticação, observabilidade e jobs. Um módulo fala com outro só pelo `contracts/` dele e por eventos de integração, publicados pela outbox, e declara de quem depende em `imports` ([ADR 0003](docs/adr/0003-imports-explicitos-entre-modulos.md)). O `src/app.module.ts` compõe os módulos, e o `src/main.ts` carrega o tracing antes do app.
 

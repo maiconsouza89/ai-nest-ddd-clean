@@ -1,5 +1,5 @@
 {
-  "name": "ddd-clean-nest",
+  "name": "ai-nest-ddd-clean",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -37,8 +37,8 @@
     "github:setup": "node scripts/setup-github.mjs"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Maicon Souza",
+  "license": "MIT",
   "type": "module",
   "imports": {
     "#shared/*": {

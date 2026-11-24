@@ -133,6 +133,6 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 ## Baixar o ambiente
 
-`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `ddd-clean-nest_*`. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
+`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 
 Nunca use `docker volume prune` nem `docker system prune`, e não remova volumes, containers ou redes de outros projetos.

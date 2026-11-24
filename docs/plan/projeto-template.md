@@ -45,7 +45,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | --- | --- | --- |
 | 1. CI | GitHub Actions com `check`, `unit` em matriz e `integration`, rodando só o que o PR afeta | ✅ |
 | 2. Verificação de e-mail | Código de verificação, login bloqueado até verificar, e-mails de código e de boas-vindas por SMTP, Mailpit no compose | ✅ |
-| 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | ⬜ |
+| 3. Template | README com badges, LICENSE MIT, nome novo, how-to de remoção dos exemplos e ADR 0008 | 🟡 |
 
 A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem por último para descrever a base como ela ficou.
 
@@ -343,9 +343,9 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 
 ## Fase 3: template
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 11: licença e nome do projeto
+> - [x] Passo 11: licença e nome do projeto
 > - [ ] Passo 12: how-to para remover os módulos de exemplo
 > - [ ] Passo 13: ADR 0008 e AGENTS.md
 > - [ ] Passo 14: README com badges
@@ -362,6 +362,14 @@ A ordem importa: o CI vem primeiro para validar os PRs seguintes, e o README vem
 - Em `docs/reference/comandos.md` e `docs/how-to/resetar-o-ambiente-local.md`, os volumes passam de `ddd-clean-nest_*` para `<pasta>_*`, explicando que o Compose usa o nome da pasta.
 
 **Pronto quando:** `grep -rn "ddd-clean-nest" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git .` não encontra nada, e `npm run ci` passa.
+
+**Como ficou:**
+
+- `LICENSE` MIT com "2026 Maicon Souza" (o nome do autor no git). `"license": "MIT"` e `"name": "ai-nest-ddd-clean"` no `package.json`; o `package-lock.json` veio do `npm install --package-lock-only`, que só trocou o nome e a licença. O `author` do `package.json` também ficou "Maicon Souza", com o ok do dono.
+- O título do README já virou `ai-nest-ddd-clean` aqui, porque o `grep` do critério o pegava. O resto do README fica para o passo 14.
+- Volumes: `comandos.md` diz `<pasta>_*` e por quê; `resetar-o-ambiente-local.md` já explicava o nome da pasta e ganhou o exemplo `ai-nest-ddd-clean_*`.
+- O `grep` só encontra este plano, que descreve a própria troca e é apagado no fim da fase. O `.env` local do dono não define o `OTEL_SERVICE_NAME`, então não precisou mudar.
+- `npm run ci` passa (43 arquivos, 240 testes unitários).
 
 ### Passo 12: how-to para remover os módulos de exemplo
 
