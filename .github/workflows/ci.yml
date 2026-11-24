@@ -91,7 +91,8 @@ jobs:
       - run: npm run test:int -- ${{ env.VITEST_ARGS }}
 
   # O check obrigatório do PR. Tem nome fixo, e um job pulado (PR só de docs) conta como aprovado:
-  # a matriz do unit pulada não expande, e o nome dela não serve como check obrigatório.
+  # a matriz do unit pulada não expande, e o nome dela não serve como check obrigatório. O ruleset de
+  # scripts/setup-github.mjs exige este nome: ao renomear o job, mude lá e rode npm run github:setup.
   ci:
     if: always()
     needs: [changes, check, unit, integration]
