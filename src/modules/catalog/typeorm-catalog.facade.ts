@@ -22,3 +22,4 @@ export class TypeOrmCatalogFacade implements CatalogFacade {
     return rows.map((p) => ({ productId: p.id, priceCents: p.priceCents, currency: p.currency }));
   }
 }
+// teste do CI: PR só do catalog
