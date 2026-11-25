@@ -79,7 +79,7 @@ Se o e2e passar de 2 min e virar o caminho crítico, a otimização dele vai par
 
 | Fase | O que entrega | Issue | Status |
 | --- | --- | --- | --- |
-| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | 🟡 |
+| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | ✅ |
 | 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | ⬜ |
 | 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | ⬜ |
 
@@ -89,12 +89,12 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 ## Fase 1: Integração
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
 > - [x] Passo 1: `globalSetup` com Postgres, templates e Redis
 > - [x] Passo 2: helpers clonam o template e usam o banco lógico do worker
 > - [x] Passo 3: arquivos em paralelo
-> - [ ] Passo 4: documentação e medição
+> - [x] Passo 4: documentação e medição
 
 ### Passo 1: `globalSetup` com Postgres, templates e Redis
 
@@ -177,6 +177,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - `npm run ci` passa, incluindo o `docs:check`.
 - Na primeira run da `main` depois do merge: Vitest do `test:int` ≤ 30 s e job `integration` ≤ 1m.
 - A issue #27 está fechada pelo PR.
+
+**Como ficou:** além das páginas do "Faça", mudaram `comandos.md` (descrição do `test:int`) e `gerar-uma-migration.md` (os testes montam o template do módulo). A frase do `AGENTS.md` continua certa. Primeira run da `main` depois do merge do PR #30 (run `45533732641`): Vitest do `test:int` em 21,87 s com os 20 arquivos (antes, 70,35 s), job `integration` em 48 s (antes, 1m39s) e workflow inteiro em 57 s (antes, 1m48s). Números também na descrição do PR. A #27 fechou com o merge.
 
 ---
 
