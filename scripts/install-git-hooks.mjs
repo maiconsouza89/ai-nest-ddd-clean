@@ -23,16 +23,17 @@ function skipReason() {
   return undefined;
 }
 
+const MANUAL = 'Rode à mão: npx lefthook install';
 const reason = skipReason();
 if (reason) {
   log(reason);
+} else if (!existsSync(LEFTHOOK)) {
+  // o npm install --omit=dev
+  log(`o lefthook não está instalado. ${MANUAL}`);
 } else {
-  const { status, error } = existsSync(LEFTHOOK)
-    ? spawnSync(process.execPath, [LEFTHOOK, 'install'], { stdio: 'inherit' })
-    : { error: new Error(`${LEFTHOOK} não existe`) };
-  if (error || status !== 0) {
-    log(
-      `não consegui instalar os hooks (${error?.message ?? `saída ${status}`}). Rode à mão: npx lefthook install`,
-    );
-  }
+  const { status, error } = spawnSync(process.execPath, [LEFTHOOK, 'install'], {
+    stdio: 'inherit',
+  });
+  if (error || status !== 0)
+    log(`não consegui instalar os hooks (${error?.message ?? `saída ${status}`}). ${MANUAL}`);
 }

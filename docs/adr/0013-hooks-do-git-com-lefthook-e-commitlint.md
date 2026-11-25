@@ -12,7 +12,7 @@ O projeto usa o **lefthook** para os três hooks, num `lefthook.yml`, e o **comm
 - **`commit-msg`:** o commitlint, com as regras do `commitlint.config.mjs`: os nove tipos do CONTRIBUTING, sem a `subject-case` (um nome próprio abre o assunto com maiúscula) e sem limite de linha no corpo (um parágrafo por linha).
 - **`pre-push`:** o `typecheck` e o `arch`, que olham o projeto inteiro, em paralelo.
 - **Job `pr-title`** (`.github/workflows/pr-title.yml`): o mesmo commitlint sobre o título do PR, check obrigatório no ruleset do `scripts/setup-github.mjs`.
-- **Instalação:** o `prepare` do npm roda o `scripts/install-git-hooks.mjs`, que roda o `lefthook install` só no checkout principal, fora do CI. O `postinstall` do lefthook fica negado no `allowScripts` do `package.json`.
+- **Instalação:** o `prepare` do npm roda o `scripts/install-git-hooks.mjs`, que roda o `lefthook install` só no checkout principal. O `postinstall` do lefthook fica negado no `allowScripts` do `package.json`.
 
 O lefthook grava os hooks no diretório comum do git (`git rev-parse --git-path hooks`), e eles valem em todo worktree desde a criação, com a config da branch do worktree ([ADR 0011](0011-worktrees-compartilham-o-stack-do-checkout-principal.md)).
 
@@ -30,9 +30,5 @@ Como usar: [Comandos → Hooks do git](../reference/comandos.md#hooks-do-git) e 
 ## Consequences
 
 - O `Dockerfile` roda o `npm ci` com `--ignore-scripts` nos dois estágios: o script do `prepare` não está no contexto do build. Os scripts de instalação das dependências também deixam de rodar na imagem; o `argon2` carrega o binário pronto do pacote.
-- O `prepare` nunca quebra o `npm install`: sem `.git`, no CI, num worktree ou com uma falha do `lefthook install`, ele só avisa.
-- Os hooks são comuns ao checkout principal e a todos os worktrees, e apontam para o binário do lefthook de quem os instalou. Numa branch sem `lefthook.yml`, o hook avisa que não achou a config e deixa o commit passar.
-- Antes do `worktree:setup`, sem `node_modules`, o commit num worktree falha no hook.
-- Os commits da branch seguem o Conventional Commits, como o título do PR.
-- Um agente de código vê o arquivo mudar no disco depois do commit, pela correção do Prettier, e não pode pular os hooks sem o ok do dono (`AGENTS.md`).
-- O `pr-title` só vira obrigatório depois do `npm run github:setup`.
+- O `prepare` nunca quebra o `npm install`: onde não instala, ou quando o `lefthook install` falha, ele só avisa.
+- Os hooks apontam para o binário do lefthook de quem os instalou. Numa branch sem `lefthook.yml`, o hook avisa que não achou a config e deixa o commit passar.
