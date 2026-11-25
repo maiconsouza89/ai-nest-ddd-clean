@@ -44,9 +44,29 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar: as migration
 4. Suba a app com o comando padrão da imagem (`node dist/main.js`, porta `3000`) e configure as probes:
 
    - liveness em `GET /health/live`, que só confere se o processo responde;
-   - readiness em `GET /health/ready`, que confere o Postgres e o Redis.
+   - readiness em `GET /health/ready`, que confere o Postgres e o Redis, e responde 503 enquanto a app desliga.
 
    A imagem não tem `HEALTHCHECK`: as plataformas usam as próprias probes. O que cada rota responde está em [Operação](../reference/operacao.md#health).
+
+5. Defina `SHUTDOWN_GRACE_MS` para a instância sair da rota antes de parar de aceitar conexões, e ajuste o prazo de término da plataforma (`terminationGracePeriodSeconds` no Kubernetes) para caber o atraso. Com a readiness a cada 5 s e duas falhas para tirar a instância:
+
+   ```yaml
+   spec:
+     terminationGracePeriodSeconds: 45
+     containers:
+       - name: app
+         env:
+           - name: SHUTDOWN_GRACE_MS
+             value: '15000'
+         readinessProbe:
+           httpGet: { path: /health/ready, port: 3000 }
+           periodSeconds: 5
+           failureThreshold: 2
+   ```
+
+   Evite `failureThreshold: 1`: a readiness consulta o Postgres e o Redis, que todas as instâncias compartilham, e um único ping lento tiraria todas da rota ao mesmo tempo.
+
+   A regra de cada valor está em [Operação](../reference/operacao.md#atraso-do-desligamento). Com o padrão `0`, a app fecha o servidor HTTP logo após o `SIGTERM`, e requisições que o balanceador ainda mandar caem.
 
 O desligamento já está pronto na imagem, com o `tini` como PID 1: ver [Operação](../reference/operacao.md#desligamento).
 
@@ -123,7 +143,7 @@ O projeto isolado (`-p ai-nest-deploy-check`) tem volumes próprios: as migratio
   ```
 
 - `GET /health/ready` responde 200, com `database` e `redis` em `up`.
-- `docker compose -p ai-nest-deploy-check stop app` termina em menos de 1 s, e `docker inspect -f '{{.State.ExitCode}}' ai-nest-deploy-check-app-1` mostra `143` (término por `SIGTERM`), e não `137` (`SIGKILL`).
+- `docker compose -p ai-nest-deploy-check stop app` termina em menos de 1 s (com `SHUTDOWN_GRACE_MS` no padrão, `0`), e `docker inspect -f '{{.State.ExitCode}}' ai-nest-deploy-check-app-1` mostra `143` (término por `SIGTERM`), e não `137` (`SIGKILL`).
 
 ## Antes do primeiro deploy
 

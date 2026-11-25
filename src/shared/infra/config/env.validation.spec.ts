@@ -62,6 +62,17 @@ describe('validateEnv', () => {
     );
   });
 
+  it('usa 0 como atraso padrão do desligamento e recusa valor negativo ou acima de 10 minutos', () => {
+    expect(validateEnv(REQUIRED).SHUTDOWN_GRACE_MS).toBe(0);
+    expect(validateEnv({ ...REQUIRED, SHUTDOWN_GRACE_MS: '10000' }).SHUTDOWN_GRACE_MS).toBe(10000);
+    expect(() => validateEnv({ ...REQUIRED, SHUTDOWN_GRACE_MS: '-1' })).toThrow(
+      /SHUTDOWN_GRACE_MS/,
+    );
+    expect(() => validateEnv({ ...REQUIRED, SHUTDOWN_GRACE_MS: '600001' })).toThrow(
+      /SHUTDOWN_GRACE_MS/,
+    );
+  });
+
   it('falha com PORT inválida', () => {
     expect(() => validateEnv({ ...REQUIRED, PORT: 'abc' })).toThrow(/PORT/);
   });

@@ -48,8 +48,8 @@ O plugin roda no `nest build` e no `nest start`. Os testes do Vitest compilam co
 
 | Rota | Confere | Responde |
 | --- | --- | --- |
-| `GET /health/live` | Nada: o processo responde | 200 |
-| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`, 503 com algum `down`. Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
+| `GET /health/live` | Nada: o processo responde. Não passa pelo `HealthCheckService` | 200, inclusive durante o [atraso do desligamento](#atraso-do-desligamento) |
+| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`. 503 com algum `down` (`status: 'error'`) ou com a app desligando (`status: 'shutting_down'`). Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
 
 O 503 é o corpo do Terminus (`{ status, info, error, details }`), em `application/json`, e não Problem Details: o `HealthController` responde o resultado direto, e a falha não passa pelo `ProblemDetailsFilter`. O Terminus loga a falha.
 
@@ -103,7 +103,8 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | Fase | Quem | O que faz |
 | --- | --- | --- |
 | 1. `onModuleDestroy` | Workers das filas de eventos, `ScheduledJobProcessor` e `OutboxWorker` | Param de pegar trabalho e esperam o job ou o lote em andamento, com as conexões ainda abertas |
-| 2. `beforeApplicationShutdown` | `BullMqPublisher` | Fecha as filas em que enfileira |
+| 2. `beforeApplicationShutdown` | `BullMqPublisher` | Fecha as filas em que enfileira. Só o worker da outbox publica, e ele já parou na fase 1 |
+| | Terminus | Só no `SIGTERM`: espera `SHUTDOWN_GRACE_MS`, com o `/health/ready` em 503. Ver [Atraso do desligamento](#atraso-do-desligamento) |
 | | `RedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
 | 3. Servidor HTTP | Nest | Para de aceitar conexões e espera as requisições em andamento |
 | 4. `onApplicationShutdown` | `BullMqConnection` | Desconecta o `producer` e o `worker` |
@@ -111,7 +112,26 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | | TypeORM | Fecha o `DataSource` |
 | | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans pendentes |
 
-Até a fase 3, o servidor aceita requisições e o `/health/ready` responde 200. Não há atraso de desligamento: o `gracefulShutdownTimeoutMs` do Terminus fica no padrão, `0`.
+Até a fase 3, o servidor aceita requisições. Os módulos rodam cada hook em sequência, os mais próximos do `AppModule` primeiro e os `@Global` por último, então o `RedisConnection` só age depois do atraso do Terminus.
+
+### Atraso do desligamento
+
+O `HealthModule` registra o `TerminusModule.forRootAsync` com `gracefulShutdownTimeoutMs` igual a `SHUTDOWN_GRACE_MS` ([Variáveis de ambiente](variaveis-de-ambiente.md#aplicação)). Com valor maior que `0`, ao receber o `SIGTERM`:
+
+1. Os workers e os jobs param (fase 1). A instância deixa de processar filas e outbox, e as outras instâncias seguem processando.
+2. O `/health/ready` passa a responder 503 com `status: 'shutting_down'`, e o `/health/live` segue em 200.
+3. Durante `SHUTDOWN_GRACE_MS`, a app atende as requisições que chegarem, com o banco e o Redis abertos. O Terminus loga `Awaiting <ms>ms before shutdown`.
+4. Passado o atraso, o servidor HTTP fecha (fase 3) e o resto do desligamento segue.
+
+Outros sinais, como o `SIGINT` do Ctrl+C, não esperam. O padrão é `0`: sem atraso, como no desenvolvimento.
+
+| Ajuste | Regra |
+| --- | --- |
+| `SHUTDOWN_GRACE_MS` | No mínimo o tempo para a readiness ser marcada como falha (`periodSeconds` × `failureThreshold` da readiness probe), mais a margem para o balanceador propagar a remoção. Com `periodSeconds: 5` e `failureThreshold: 2`, `15000` |
+| `terminationGracePeriodSeconds` do Kubernetes (padrão 30 s) | Maior que `SHUTDOWN_GRACE_MS` somado ao tempo das fases 1, 3 e 4 (o job em andamento, as requisições em andamento e o fechamento das conexões). Se não couber, a plataforma manda o `SIGKILL` e o container sai com 137 |
+| Outras plataformas | O mesmo prazo tem outro nome: o `stop_grace_period` do Compose (padrão 10 s) e o `stopTimeout` do ECS (padrão 30 s) |
+
+Teste: `test/shutdown.e2e-spec.ts`.
 
 Na imagem Docker, o PID 1 é o `tini` (`ENTRYPOINT` do `Dockerfile`), que repassa o sinal ao node. Com o node como PID 1, o kernel ignora o sinal que o Nest reenvia a si mesmo no fim, porque o PID 1 não tem handler padrão. Se sobrar um handle aberto, o container só sai no `SIGKILL` da plataforma, com código 137. Com o `tini`, ele sai com 143, término por `SIGTERM`. O passo a passo está em [Como fazer o deploy](../how-to/fazer-o-deploy.md).
 
