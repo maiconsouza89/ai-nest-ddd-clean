@@ -27,6 +27,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Injeção de dependência:** uma classe injetada pelo construtor entra com import de valor (`import { X }`). Com `import type`, ela some da decorator metadata e o Nest quebra em tempo de execução, sem aviso do `tsc`. Por isso a regra `consistent-type-imports` fica desligada.
 - **oxc nos testes:** "can't resolve dependencies" num construtor costuma ser um parâmetro tipado com type alias ou utility type. O oxc emite `Object` para eles. Tipe o parâmetro com a classe.
 - **Condição `@app/source`:** um script que roda o TypeScript direto (migrations, seeds) precisa de `--conditions=@app/source`. Sem ela, os aliases `#...` carregam o `dist/`, talvez velho, sem erro. O `plop module` já gera os scripts com ela.
+- **OpenAPI:** mudou controller, DTO ou decorator do Swagger, rode `npm run openapi:generate` e commite o `openapi.json`. Nunca o edite à mão.
 - **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
 - **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
 - **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.

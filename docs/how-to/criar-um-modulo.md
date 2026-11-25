@@ -31,6 +31,7 @@ Use este guia para um módulo de negócio com regras próprias. O gerador cria u
    - **Erro novo:** acrescente o `code` e o status HTTP no `<NOME>_ERROR_STATUSES` do `infra/http/error-statuses.ts`. Um `code` fora do mapa responde 422 ([Respostas de erro](../reference/respostas-de-erro.md)). Uma resposta de erro nova da rota entra no Swagger com `@ApiProblemResponse(status, descrição)`.
    - **Rota:** o controller sai com `@Controller('<nome>')`, no singular. Troque o caminho se o recurso pedir outro (`orders`, `products`).
    - **Schema:** cada mudança numa ORM entity segue [Como gerar uma migration](gerar-uma-migration.md).
+   - **Contrato:** depois de criar o controller e os DTOs, rode `npm run openapi:generate` e commite o `openapi.json` ([Operação → Swagger](../reference/operacao.md#swagger)).
 
 4. Se outro módulo vai usar este, crie a facade em `contracts/<nome>.facade.ts`, ligue-a no módulo Nest e exporte só ela. Quem consome declara o `<Nome>Module` no `imports` ([ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)). Para avisar outros módulos de um fato, siga [Como publicar um evento de integração](publicar-um-evento-de-integracao.md).
 
@@ -38,7 +39,7 @@ Use este guia para um módulo de negócio com regras próprias. O gerador cria u
 
 ## Como verificar
 
-- `npm run ci` passa ([Verificação](../reference/comandos.md#verificação)). O `docs:check` falha enquanto sobrar comentário de template na página do módulo.
+- `npm run ci` passa ([Verificação](../reference/comandos.md#verificação)). O `docs:check` falha enquanto sobrar comentário de template na página do módulo, e o `openapi:check`, enquanto o `openapi.json` não tiver as rotas novas.
 - `npm run test:int -- <nome>` passa.
 - Com a app no ar (`npm run start:dev`), as rotas respondem:
   - `POST /v1/<nome>` sem token: 401;

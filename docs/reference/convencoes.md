@@ -42,10 +42,10 @@ Como os aliases resolvem para `src/` ou `dist/`, e a condição `@app/source` qu
 
 ## Versionamento da API HTTP
 
-A versão vai no início do caminho (`/v1/orders`), pelo versionamento nativo do Nest, ligado no `configureApp` (`src/app.setup.ts`):
+A versão vai no início do caminho (`/v1/orders`), pelo versionamento nativo do Nest. A opção fica na constante `API_VERSIONING` do `src/app.setup.ts`, usada pelo `configureApp` e pelo gerador do `openapi.json` (`src/openapi.ts`):
 
 ```ts
-app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+export const API_VERSIONING: VersioningOptions = { type: VersioningType.URI, defaultVersion: '1' };
 ```
 
 | Regra | Detalhe |
@@ -53,8 +53,8 @@ app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 | Versão padrão | Um controller sem `version` responde em `/v1/...`. A app não tem prefixo global. Se tiver, a versão vem depois dele |
 | Rotas técnicas sem versão | `@Controller({ path: 'health', version: VERSION_NEUTRAL })` |
 | A versão é da infra | Uma v2 tem controller e DTOs HTTP próprios (`@Controller({ path: 'orders', version: '2' })`) e chama os mesmos casos de uso da v1 |
-| Mudança aditiva | Um campo opcional novo na resposta fica na mesma versão |
-| Mudança que quebra | Versão nova, mantendo a anterior até os clientes migrarem. As respostas da antiga avisam o fim com os headers `Deprecation` (RFC 9745) e `Sunset` (RFC 8594) |
+| Mudança aditiva | Um campo opcional novo na resposta fica na mesma versão. Um campo obrigatório novo na requisição não é aditivo: quebra o cliente que não o manda, e o CI acusa |
+| Mudança que quebra | Versão nova, mantendo a anterior até os clientes migrarem. As respostas da antiga avisam o fim com os headers `Deprecation` (RFC 9745) e `Sunset` (RFC 8594). O CI acusa a quebra pelo `oasdiff` ([Comandos → CI](comandos.md#ci)). Uma rota `deprecated` removida sem `x-sunset` passa como `INFO`; com o `x-sunset` no futuro, falha |
 
 ## TypeORM
 

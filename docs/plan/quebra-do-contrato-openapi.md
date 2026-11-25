@@ -112,7 +112,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-25, ant
 | 2 | Gerador e `openapi.json` guardado | ✅ |
 | 3 | Config do `oasdiff` e teste local | ✅ |
 | 4 | Job `openapi` no CI | ✅ |
-| 5 | Documentação | ⬜ |
+| 5 | Documentação | ✅ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
 ### Passo 1: worktree, branch e roadmap
