@@ -1,6 +1,6 @@
 // Carregado pelo main.ts antes do app: a auto-instrumentação só enxerga módulos carregados depois
-// dela. O exporter vem das variáveis padrão do OpenTelemetry
-// (OTEL_TRACES_EXPORTER=otlp|console|none, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_SERVICE_NAME).
+// dela. Os exporters vêm das variáveis padrão do OpenTelemetry (OTEL_TRACES_EXPORTER=otlp|console|none,
+// OTEL_METRICS_EXPORTER=otlp|prometheus|console|none, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_SERVICE_NAME).
 // Mantenha os imports daqui mínimos: tudo o que for importado neste arquivo carrega antes do hook ESM
 // e não é instrumentado.
 import { register } from 'import-in-the-middle/register-hooks.mjs';
