@@ -30,6 +30,8 @@ Mudanças adiadas de propósito, cada uma com a condição que a destrava. Os pa
 | Um cliente precisar saber quando tentar de novo depois de um 503 (`PAYMENT_UNAVAILABLE`, ou rate limit com o Redis fora do ar) | Cabeçalho `Retry-After` no 503. O `ProblemDetailsFilter` não põe nenhum hoje: o prazo teria de vir do erro ou do registro de status | [Respostas de erro](respostas-de-erro.md) |
 | O pipeline de deploy precisar barrar uma versão com migration pendente | Um `db:status:prod` com `typeorm migration:show` sobre o data source do `dist/` de cada módulo, como o `db:migrate:prod` faz com o `migration:run` | [Como fazer o deploy](../how-to/fazer-o-deploy.md) |
 | O passo de migration rodar com um usuário de banco próprio ou com menos secrets que a app | Os data sources validam só o `DATABASE_URL`, e não o ambiente inteiro. Hoje eles chamam o `validateEnv`, que exige todas as variáveis obrigatórias, então o passo recebe o mesmo ambiente da app | [Como fazer o deploy](../how-to/fazer-o-deploy.md) |
+| Uma migration esperar lock e travar o tráfego da app, ou uma tabela crescer a ponto de um `ALTER TABLE` demorar | `lock_timeout` nas migrations (`SET lock_timeout` no início da migration, ou no `extra` da `postgresOptions` com `migrations: true`): a migration desiste do lock em vez de enfileirar as queries da app atrás dela, e o passo roda de novo | [Persistência](../explanation/persistencia.md#pool-e-timeouts) |
+| Um cliente precisar distinguir sobrecarga do banco de erro interno | Traduzir os timeouts do banco (pool cheio, `timeout exceeded when trying to connect`, e query cancelada, SQLSTATE `57014`) para 503 com `code` próprio. Hoje respondem 500 pelo filtro genérico | [Persistência](../explanation/persistencia.md#pool-e-timeouts) |
 
 ## CI
 

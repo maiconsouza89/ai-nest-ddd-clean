@@ -44,7 +44,7 @@ O adapter de um fornecedor real só traduz chamadas e erros, e a política de ti
 
 ### Timeout em toda chamada
 
-Sem timeout, um fornecedor lento prende a requisição, a conexão com o banco e, no pagamento, a trava da linha do pedido, que fica aberta durante a cobrança ([Consistência e eventos](consistencia-e-eventos.md#trava-pessimista-quando-o-efeito-não-se-desfaz)). Algumas requisições lentas ao mesmo tempo esgotam o pool de conexões e derrubam a API inteira. Por isso o pior caso do pagamento é curto de propósito, cerca de 6 segundos.
+Sem timeout, um fornecedor lento prende a requisição, a conexão com o banco e, no pagamento, a trava da linha do pedido, que fica aberta durante a cobrança ([Consistência e eventos](consistencia-e-eventos.md#trava-pessimista-quando-o-efeito-não-se-desfaz)). Algumas requisições lentas ao mesmo tempo esgotam o [pool de conexões](persistencia.md#pool-e-timeouts) e derrubam a API inteira. Por isso o pior caso do pagamento é curto de propósito, cerca de 6 segundos.
 
 O `withTimeout` desiste de esperar, mas não cancela a chamada, que pode terminar depois, do lado do fornecedor. No pagamento, isso é seguro pelo mesmo motivo do retry.
 

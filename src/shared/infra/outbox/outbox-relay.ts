@@ -13,6 +13,8 @@ export type OutboxOptions = {
   maxDelayMs: number;
   /** Quanto tempo os eventos já publicados ficam antes da limpeza. */
   retentionMs: number;
+  /** Linhas por DELETE na limpeza; cada lote fica bem abaixo do `statement_timeout`. */
+  cleanupBatchSize: number;
 };
 
 export const DEFAULT_OUTBOX_OPTIONS: OutboxOptions = {
@@ -21,6 +23,7 @@ export const DEFAULT_OUTBOX_OPTIONS: OutboxOptions = {
   baseDelayMs: 1_000,
   maxDelayMs: 5 * 60_000,
   retentionMs: 7 * 24 * 60 * 60_000,
+  cleanupBatchSize: 10_000,
 };
 
 /** Espera após a n-ésima falha: base, 2x, 4x... limitada a `maxDelayMs`. */
@@ -97,14 +100,24 @@ export class OutboxRelay {
     });
   }
 
-  /** Apaga os eventos publicados há mais que o tempo de retenção. */
+  /**
+   * Apaga os eventos publicados há mais que o tempo de retenção, em lotes: um DELETE só, sobre um
+   * acúmulo grande, passaria do `statement_timeout` e seria cancelado a cada rodada sem apagar nada.
+   */
   async cleanup(): Promise<number> {
     const limit = new Date(this.clock.now().getTime() - this.options.retentionMs);
-    const [, deleted] = await this.dataSource.query<[unknown, number]>(
-      `DELETE FROM shared.outbox WHERE "publishedAt" < $1`,
-      [limit],
-    );
-    return deleted;
+    const { cleanupBatchSize } = this.options;
+    let total = 0;
+    for (;;) {
+      const [, deleted] = await this.dataSource.query<[unknown, number]>(
+        `DELETE FROM shared.outbox WHERE id IN (
+           SELECT id FROM shared.outbox WHERE "publishedAt" < $1 LIMIT $2
+         )`,
+        [limit, cleanupBatchSize],
+      );
+      total += deleted;
+      if (deleted < cleanupBatchSize) return total;
+    }
   }
 
   private async recordFailure(em: EntityManager, row: PendingRow, error: unknown, now: Date) {

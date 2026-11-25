@@ -73,6 +73,42 @@ describe('validateEnv', () => {
     );
   });
 
+  it('usa os padrões do projeto para o pool e os timeouts do Postgres', () => {
+    const env = validateEnv(REQUIRED);
+    expect(env.DATABASE_POOL_MAX).toBe(10);
+    expect(env.DATABASE_CONNECT_TIMEOUT_MS).toBe(5000);
+    expect(env.DATABASE_STATEMENT_TIMEOUT_MS).toBe(30_000);
+    expect(env.DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS).toBe(60_000);
+  });
+
+  it.each(['DATABASE_STATEMENT_TIMEOUT_MS', 'DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS'] as const)(
+    'aceita 0 em %s',
+    (key) => {
+      expect(validateEnv({ ...REQUIRED, [key]: '0' })[key]).toBe(0);
+    },
+  );
+
+  it.each([
+    ['DATABASE_POOL_MAX', '-1'],
+    ['DATABASE_POOL_MAX', 'abc'],
+    ['DATABASE_POOL_MAX', '0'],
+    ['DATABASE_CONNECT_TIMEOUT_MS', '-1'],
+    ['DATABASE_CONNECT_TIMEOUT_MS', 'abc'],
+    ['DATABASE_CONNECT_TIMEOUT_MS', '0'],
+    ['DATABASE_STATEMENT_TIMEOUT_MS', '-1'],
+    ['DATABASE_STATEMENT_TIMEOUT_MS', 'abc'],
+    ['DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS', '-1'],
+    ['DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS', '1.5'],
+    // vazio viraria 0, que desliga o limite
+    ['DATABASE_STATEMENT_TIMEOUT_MS', ''],
+    ['DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS', ' '],
+    // acima do que o setTimeout do Node e o Postgres aceitam
+    ['DATABASE_CONNECT_TIMEOUT_MS', '2147483648'],
+    ['DATABASE_STATEMENT_TIMEOUT_MS', '2147483648'],
+  ])('recusa %s=%s', (key, value) => {
+    expect(() => validateEnv({ ...REQUIRED, [key]: value })).toThrow(new RegExp(key));
+  });
+
   it('falha com PORT inválida', () => {
     expect(() => validateEnv({ ...REQUIRED, PORT: 'abc' })).toThrow(/PORT/);
   });
