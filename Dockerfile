@@ -8,9 +8,10 @@ ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-slim AS build
 WORKDIR /app
 # o npm ci vem antes do código: uma mudança no src/ não reinstala as dependências. O cache do npm fica
-# fora da camada e sobrevive a uma mudança no package.json, que só baixa o que mudou
+# fora da camada e sobrevive a uma mudança no package.json, que só baixa o que mudou. O --ignore-scripts
+# pula o `prepare`, que instala os hooks do git e cujo script não está no contexto do build
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
 RUN npm run build
@@ -31,8 +32,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 # O ts-node é peer opcional do typeorm e devDependency nossa: o lockfile o marca `devOptional`, e só o
 # --omit=dev o manteria, com o typescript. O --omit=optional tira os dois; das dependências de produção,
-# sai só a aceleração nativa do msgpackr (msgpackr-extract), que cai para JavaScript puro.
-RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --omit=optional
+# sai só a aceleração nativa do msgpackr (msgpackr-extract), que cai para JavaScript puro. O
+# --ignore-scripts pula o `prepare`, que instala os hooks do git e cujo script não está no contexto do build,
+# e os scripts de instalação das dependências: o argon2 carrega o binário pronto do pacote, sem compilar.
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --omit=optional --ignore-scripts
 # o db:migrate:prod chama o run-scripts.mjs para rodar os mig:<módulo>:run:prod
 COPY scripts/run-scripts.mjs ./scripts/
 COPY --from=build /app/dist ./dist
