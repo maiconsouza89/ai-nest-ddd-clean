@@ -31,6 +31,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
 - **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.
 - **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz do checkout principal; apaga também os dados dos worktrees. Num worktree, `npm run worktree:down`. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
+- **Hooks do git:** o pre-commit reformata com o Prettier e põe a correção no stage, então o arquivo no disco muda: releia-o antes de editá-lo de novo. Quando um hook barra o commit, corrija o que ele aponta e faça um commit novo; não pule os hooks (`--no-verify`, `LEFTHOOK=0`) sem o ok do dono.
 - **Actions:** depois de adicionar ou mudar um `uses:`, rode `gh actions-lock` (extensão `github/gh-actions-lock`) e commite o `actions.lock`. Nunca edite o lockfile à mão.
 - **Instruções de agente:** ficam só neste arquivo. Não crie `CLAUDE.md`: com ele na raiz, o Claude Code deixa de ler o `AGENTS.md` (`docs/adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md`).
 

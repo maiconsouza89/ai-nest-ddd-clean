@@ -53,7 +53,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 
 ## Referência
 
-- [Comandos](reference/comandos.md): setup do zero, verificação, testes, worktrees, migrations, seeds, geradores e como baixar o ambiente.
+- [Comandos](reference/comandos.md): setup do zero, verificação, hooks do git, testes, worktrees, migrations, seeds, geradores e como baixar o ambiente.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Evoluções com gatilho](reference/evolucoes-com-gatilho.md): mudanças adiadas de propósito, com a condição que destrava cada uma.
@@ -92,6 +92,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0010: Respostas de erro em Problem Details, com `type` `about:blank` e um `code`](adr/0010-erros-em-problem-details-com-code.md)
 - [0011: Worktrees compartilham o stack do checkout principal, isolados por slot](adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)
 - [0012: Cadeia de suprimentos do CI: Dependabot, CodeQL, dependency review e lockfile das actions](adr/0012-cadeia-de-suprimentos-do-ci.md)
+- [0013: Hooks do git com lefthook e commitlint no título do PR](adr/0013-hooks-do-git-com-lefthook-e-commitlint.md)
 
 ## Fora dos quadrantes
 
