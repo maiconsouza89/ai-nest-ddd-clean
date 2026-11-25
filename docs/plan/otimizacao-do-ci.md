@@ -79,8 +79,8 @@ Se o e2e passar de 2 min e virar o caminho crítico, a otimização dele vai par
 
 | Fase | O que entrega | Issue | Status |
 | --- | --- | --- | --- |
-| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | 🟡 |
-| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | ⬜ |
+| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | ✅ |
+| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | 🟡 |
 | 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | ⬜ |
 
 A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 prova se o cache cumpre o critério de reversão, e o job e2e já nasce com o setup rápido.
@@ -89,12 +89,12 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 ## Fase 1: Integração
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-24
 >
 > - [x] Passo 1: `globalSetup` com Postgres, templates e Redis
 > - [x] Passo 2: helpers clonam o template e usam o banco lógico do worker
 > - [x] Passo 3: arquivos em paralelo
-> - [ ] Passo 4: documentação e medição
+> - [x] Passo 4: documentação e medição
 
 ### Passo 1: `globalSetup` com Postgres, templates e Redis
 
@@ -178,13 +178,15 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Na primeira run da `main` depois do merge: Vitest do `test:int` ≤ 30 s e job `integration` ≤ 1m.
 - A issue #27 está fechada pelo PR.
 
+**Como ficou:** além das páginas do "Faça", mudaram `comandos.md` (descrição do `test:int`) e `gerar-uma-migration.md` (os testes montam o template do módulo). A frase do `AGENTS.md` continua certa. Primeira run da `main` depois do merge do PR #30 (run `45533732641`): Vitest do `test:int` em 21,87 s com os 20 arquivos (antes, 70,35 s), job `integration` em 48 s (antes, 1m39s) e workflow inteiro em 57 s (antes, 1m48s). Números também na descrição do PR. A #27 fechou com o merge.
+
 ---
 
 ## Fase 2: Setup do CI
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 5: composite action com o `node_modules` em cache
+> - [x] Passo 5: composite action com o `node_modules` em cache
 > - [ ] Passo 6: documentação e medição
 
 ### Passo 5: composite action com o `node_modules` em cache
@@ -207,6 +209,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Numa segunda run do mesmo lockfile, o step de cache mostra acerto, e o `npm ci` aparece como pulado em todos os jobs.
 - Mudar o `package-lock.json` gera cache novo, e os testes passam com ele.
 - `npm run ci` passa.
+
+**Como ficou:** `.github/actions/setup/action.yml` com `actions/setup-node@v7` e `actions/cache@v6`, versões conferidas nos releases e a API do `cache-hit` no Context7. Sem `cache: npm`: com o `node_modules` em cache, restaurar o `~/.npm` em todo job só custaria tempo; ele serviria só na troca de lockfile, que já paga o `npm ci` inteiro. A chave usa a saída `node-version` do `setup-node`. Conferido no PR #31: a primeira run criou um cache por versão do Node (`v22.22.3` e `v24.22.3`, 56 MiB cada), com o setup em 20 a 30 s por job; no re-run, o cache acertou nos 4 jobs, o `npm ci` saiu como `skipped` e o setup levou de 4 a 8 s. Um commit temporário que mudou o `package-lock.json` gerou chave nova, `npm ci` nos 4 jobs, cache salvo e testes verdes; o commit foi revertido no mesmo PR.
 
 ### Passo 6: documentação e medição
 
