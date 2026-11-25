@@ -229,7 +229,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
   - um alerta de código `high` ou `critical` é corrigido aqui, se for pequeno, ou vira issue;
   - um falso positivo fica anotado para ser dispensado no passo 12.
 
-**Como ficou:** —
+**Como ficou:** fonte: o starter oficial (`actions/starter-workflows`, `code-scanning/codeql.yml`, lido pela API). Fora do starter: a matriz só com `language` e o `build-mode: none` fixo no `init`, sem o step de build manual, o `persist-credentials: false` e o `schedule` em `0 3 * * 0` (domingo, 03:00 UTC). O `gh actions-lock` estreitou o `codeql-action` de `@v4` para `@v4.39.5` (`owner_id` 9919, o da organização `github`, e `repo_id` 259445878, conferidos pela API) e avisou que a v4.39.5 saiu há 1 dia, dentro do cooldown de 3 dias (só aviso). O default setup segue `not-configured`. `gh actions-lock --verify` e `actionlint` passam. **Pendente:** os dois `Analyze` no PR, a aba Security e a triagem dos alertas da primeira análise (dependem de push).
 
 ### Passo 5: dependency review
 
