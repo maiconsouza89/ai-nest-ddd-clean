@@ -1,0 +1,32 @@
+name: Melhoria
+description: Uma lacuna do template, ou uma mudança de comportamento, de ferramenta ou de documentação.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: O que existe hoje e o que falta, com os arquivos ou as páginas de `docs/` envolvidos.
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta
+      description: O que mudar. Alternativas descartadas também ajudam.
+    validations:
+      required: true
+  - type: textarea
+    id: pronto-quando
+    attributes:
+      label: Pronto quando
+      description: Como conferir que a mudança está feita.
+      placeholder: |
+        - npm run ci passa.
+    validations:
+      required: true
+  - type: textarea
+    id: referencias
+    attributes:
+      label: Referências
+      description: Documentação oficial, issues ou ADRs relacionados.
