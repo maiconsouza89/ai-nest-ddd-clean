@@ -80,8 +80,8 @@ Se o e2e passar de 2 min e virar o caminho crítico, a otimização dele vai par
 | Fase | O que entrega | Issue | Status |
 | --- | --- | --- | --- |
 | 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | ✅ |
-| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | 🟡 |
-| 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | ⬜ |
+| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | ✅ |
+| 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | 🟡 |
 
 A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 prova se o cache cumpre o critério de reversão, e o job e2e já nasce com o setup rápido.
 
@@ -184,10 +184,10 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 ## Fase 2: Setup do CI
 
-> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
+> **Status:** ✅ Concluída · **Início:** 2026-11-24 · **Conclusão:** 2026-11-25
 >
 > - [x] Passo 5: composite action com o `node_modules` em cache
-> - [ ] Passo 6: documentação e medição
+> - [x] Passo 6: documentação e medição
 
 ### Passo 5: composite action com o `node_modules` em cache
 
@@ -224,11 +224,13 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Step de instalação com o cache acertando ≤ 10 s na `main`, ou a fase revertida com o número registrado.
 - A issue #28 está fechada pelo PR.
 
+**Como ficou:** a linha do `comandos.md` entrou no PR #31. Medido na run `45537114583` da `main`: a tentativa 1 criou o cache da `main` (o cache do PR não vale nela, é isolado por branch), com setup de 16 a 30 s por job. Nas tentativas 2 a 4, com o cache acertando, o setup inteiro levou de 3 a 9 s por job, média de 5,9 s, contra 18 a 33 s do `npm ci` de antes: ganho de 12 a 27 s por job, acima do critério de 10 s, e a fase fica. O job `integration` levou de 29 a 38 s e o workflow de 38 a 49 s. Números também na descrição do PR. A #28 fechou com o merge.
+
 ---
 
 ## Fase 3: E2E no CI
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-25 · **Conclusão:** —
 >
 > - [ ] Passo 7: job `e2e` com `services:`
 > - [ ] Passo 8: documentação e medição
@@ -257,6 +259,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Num PR só de `.md`, o `e2e` aparece como pulado e o `ci` passa.
 - Num PR que muda só um `*.spec.ts` unitário, o `e2e` termina com "No affected test files found" e código 0.
 - `npm run ci` passa.
+
+**Como ficou:** o GitHub Actions passou a aceitar `command` em `services:` (documentação atual, pelo Context7): os parâmetros do Postgres e o `noeviction` do Redis vão nele, sem os steps de `ALTER SYSTEM` e `CONFIG SET`. O actionlint 1.7.12 ainda não conhece a chave; `.github/actionlint.yaml` ignora só esse erro. O job ganhou um step `cp .env.example .env`, fora do "Faça": os data sources do `db:setup` validam o ambiente, e a primeira run falhou sem ele. Os `services:` não sobem durante a instalação, como o "Por quê" supunha: o "Initialize containers" leva uns 15 s antes do primeiro step. Conferido no PR #32: o job passou com os 10 arquivos (Vitest em 70 s, job em 1m39s a 1m45s); um commit descartável com `expect(418)` no `health.e2e-spec.ts` fez o `e2e` e o `ci` falharem, e foi revertido. Falta conferir, depois do merge, o PR só de `.md` (`e2e` pulado) e o PR que muda só um unitário ("No affected test files found"): este PR muda o `vitest.config.ts` e o workflow, que estão no `forceRerunTriggers`, então roda a suíte inteira.
 
 ### Passo 8: documentação e medição
 
