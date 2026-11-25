@@ -171,7 +171,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - O `actionlint` passa, com ou sem a exceção nova.
 - No CI do PR, o `ci` e o `verify-lockfile` passam. Isso prova que o runner aceita o `$/` e o lockfile.
 
-**Como ficou:** —
+**Como ficou:** fontes: o README da extensão, o `verify-lockfile.yml` de referência dela (lido pela API; o de referência usa `--pin v0.4.1` e um job `verify`, aqui `v0.5.1` e `verify-lockfile`), o how-to "Lock workflow dependencies" e o "Enforce workflow lockfiles". O `--migrate-local-actions` trocou os 4 `uses: ./.github/actions/setup` do `ci.yml` por `$/` e estreitou o `checkout` para `@v7.0.1`. Como a extensão não edita arquivos de action, o `setup-node@v7` e o `cache@v6` da composite foram estreitados à mão para `@v7.1.0` e `@v6.1.0` (mesmo commit das tags `v7` e `v6`), e o `gh actions-lock` rodou de novo. Conferido pela API: `owner_id` 44036562 (`actions`) e os `repo_id` de `actions/checkout`, `actions/setup-node` e `actions/cache` batem com o lockfile. O actionlint 1.7.12 (a latest) recusa o `$/`: exceção nova no `.github/actionlint.yaml`. A extensão avisa que as imagens dos `services:` do e2e não estão fixadas por digest; é só aviso (o `--verify` passa sem `--fail-on-warning`) e fica fora do plano. O `CODEOWNERS` já cobre o `actions.lock` pelo `*`. `gh actions-lock --verify`, `--verify-local` e `actionlint` passam. **Pendente:** o CI do PR (depende de push).
 
 ### Passo 3: `.github/dependabot.yml`
 
