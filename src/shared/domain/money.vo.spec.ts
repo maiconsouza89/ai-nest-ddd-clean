@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+// TEMPORÁRIO: PR descartável que confere o e2e com "No affected test files found"
 import { CurrencyMismatchError, InvalidMoneyError, Money } from './money.vo.js';
 
 describe('Money', () => {
