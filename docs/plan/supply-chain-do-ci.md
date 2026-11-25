@@ -202,7 +202,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - Os quatro pacotes do Nest estão no grupo `nestjs`, e o `ignore` deles é só a `12.6.1`.
 - Na aba do PR, o GitHub não acusa erro de config no `dependabot.yml`. Se acusar, a mensagem aparece no arquivo e no Insights → Dependency graph → Dependabot depois do merge; volte a este passo.
 
-**Como ficou:** —
+**Como ficou:** fonte: a referência de opções do `dependabot.yml`. Ela confirma `docker-compose` como ecossistema, `directories` com `*`, o `cooldown` com `semver-*-days` só no npm (actions e compose só com `default-days`), o `update-types` do `ignore` no formato `version-update:semver-*` e o `open-pull-requests-limit` padrão de 5. Nos `groups`, o `update-types` ficou de fora: sem ele, o grupo junta todos os tipos de update, como a decisão pede. O cabeçalho aponta para a seção "Atualização automática" do `versoes-e-excecoes.md`, que o passo 8 cria, e para a tabela de exceções. Validado contra o schema do SchemaStore com o `ajv` 8.20 e o `ajv-formats` da árvore, por um script no scratchpad, sem erro; uma chave errada de propósito no `cooldown` foi recusada, então o schema confere as chaves. **Pendente:** a conferência na aba do PR (depende de push).
 
 ### Passo 4: CodeQL
 
