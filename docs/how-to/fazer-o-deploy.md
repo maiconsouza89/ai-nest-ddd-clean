@@ -30,7 +30,7 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar: as migration
 
    - `TRUST_PROXY` com o número de proxies na frente da API, se houver um load balancer ([por quê](../reference/variaveis-de-ambiente.md#aplicação)).
    - `JWT_SECRET` gerado para produção, com 32 caracteres ou mais, e diferente do `.env.example`.
-   - `OTEL_TRACES_EXPORTER=otlp` e `OTEL_EXPORTER_OTLP_ENDPOINT` para enviar os traces a um coletor. A imagem traz `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` e `OTEL_LOGS_EXPORTER` em `none`, então sem coletor não há nada a definir ([por quê](../reference/variaveis-de-ambiente.md#tracing-opentelemetry)).
+   - `OTEL_TRACES_EXPORTER=otlp` e `OTEL_EXPORTER_OTLP_ENDPOINT` para enviar os traces a um coletor, e `OTEL_METRICS_EXPORTER=otlp` para mandar as métricas ao mesmo coletor. A imagem traz `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` e `OTEL_LOGS_EXPORTER` em `none`, então sem coletor não há nada a definir ([por quê](../reference/variaveis-de-ambiente.md#opentelemetry)).
    - `QUEUE_WORKERS_ENABLED`, `OUTBOX_WORKER_ENABLED` e `JOBS_ENABLED` em `false` nas instâncias que só atendem HTTP, se você separar instâncias de API e de workers ([Workers e jobs](../reference/variaveis-de-ambiente.md#workers-e-jobs)).
 
 3. Rode as migrations antes de a versão nova subir, com a mesma imagem e o mesmo ambiente da app, trocando só o comando:

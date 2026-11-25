@@ -49,7 +49,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Serviços externos](explanation/servicos-externos.md): port e adapter para cada fornecedor, a tradução de erros, timeout em toda chamada, retry só no que é idempotente e o circuit breaker que ainda não existe.
 - [Shared kernel](explanation/shared-kernel.md): por que o `shared` guarda só blocos técnicos e por que, na dúvida, o tipo fica duplicado.
 - [Autenticação e ownership](explanation/autenticacao.md): autenticação na infra e ownership no caso de uso, o ator carregado a cada requisição, o refresh token rotativo e a corrida da renovação.
-- [Observabilidade](explanation/observabilidade.md): por que o tracing carrega antes da app, o trace que atravessa a outbox e as filas, os logs com o id do trace e o que fica sem span.
+- [Observabilidade](explanation/observabilidade.md): por que o tracing carrega antes da app, o trace que atravessa a outbox e as filas, os logs com o id do trace, as métricas de HTTP, pool, runtime, outbox e filas, e o que fica sem span.
 
 ## Referência
 

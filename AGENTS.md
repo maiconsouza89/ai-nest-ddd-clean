@@ -90,7 +90,7 @@ Leia a página antes de agir no assunto.
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md` e `docs/explanation/modelagem-do-dominio.md` |
 | Escrever ou mudar um teste | `docs/reference/testes.md` |
-| Mexer no tracing, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
+| Mexer no tracing, nas métricas, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |

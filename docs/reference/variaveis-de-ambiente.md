@@ -75,7 +75,7 @@ Os quatro interruptores aceitam `true` ou `false`. Desligue os workers e os jobs
 | `JOBS_ENABLED` | `true` | Jobs agendados. Com várias instâncias, só uma executa cada job por vez |
 | `ORDER_EXPIRATION_MINUTES` | `1440` | Minutos sem alteração até um pedido em `DRAFT` ou `PLACED` ser cancelado pelo job de expiração |
 
-## Tracing (OpenTelemetry)
+## OpenTelemetry
 
 São as variáveis padrão do SDK do OpenTelemetry. As mais usadas:
 
@@ -83,12 +83,15 @@ São as variáveis padrão do SDK do OpenTelemetry. As mais usadas:
 | --- | --- | --- |
 | `OTEL_TRACES_EXPORTER` | `none` | `otlp` envia a um coletor, `console` imprime cada span no terminal (muito ruído) e `none` não exporta. Sem spans, os logs saem sem `trace_id` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | não definida | Endereço do coletor, com `otlp` |
-| `OTEL_METRICS_EXPORTER` | `none` | Métricas do SDK. O padrão do SDK, sem a variável, é `otlp`: sem coletor, o desligamento espera uns 8 s pelo timeout da exportação. O projeto não usa métricas |
+| `OTEL_METRICS_EXPORTER` | `none` | Métricas de HTTP, do pool do Postgres, do runtime do Node, da outbox e das filas de eventos ([Observabilidade](../explanation/observabilidade.md#métricas)). `otlp` envia ao coletor, `prometheus` sobe um servidor para o Prometheus ler, `console` imprime no terminal a cada 60 s e `none` não exporta. O padrão do SDK, sem a variável, é `otlp`: sem coletor, o desligamento espera uns 8 s pelo timeout da exportação |
+| `OTEL_METRIC_EXPORT_INTERVAL` | não definida | Intervalo da exportação das métricas com `otlp`, em ms. Padrão `60000`. O `console` não lê a variável e exporta a cada 60 s |
+| `OTEL_EXPORTER_PROMETHEUS_HOST` | não definida | Endereço do servidor do `prometheus`. Padrão `localhost`: num container, inalcançável de fora sem `0.0.0.0`. O `/metrics` não tem autenticação, então não o exponha fora da rede interna |
+| `OTEL_EXPORTER_PROMETHEUS_PORT` | não definida | Porta do servidor do `prometheus`. Padrão `9464`. Dois worktrees com `prometheus` disputam a porta: defina uma por worktree. A imagem Docker não a expõe |
 | `OTEL_LOGS_EXPORTER` | `none` | Logs pelo SDK. Mesmo padrão e mesmo atraso do `OTEL_METRICS_EXPORTER`. Os logs da app saem pelo pino, não por aqui |
-
-A imagem Docker define as três `OTEL_*_EXPORTER` como `none`. Com um coletor, defina `OTEL_TRACES_EXPORTER=otlp` e o endpoint no ambiente da plataforma.
-| `OTEL_SERVICE_NAME` | `ai-nest-ddd-clean` | Nome do serviço nos spans |
+| `OTEL_SERVICE_NAME` | `ai-nest-ddd-clean` | Nome do serviço nos spans e nas métricas |
 | `OTEL_SDK_DISABLED` | não definida | `true` desliga a instrumentação por completo |
+
+A imagem Docker define as três `OTEL_*_EXPORTER` como `none`. Com um coletor, defina `OTEL_TRACES_EXPORTER=otlp`, `OTEL_METRICS_EXPORTER=otlp` e o endpoint no ambiente da plataforma.
 
 Fora do `.env.example`, a app também lê o `OTEL_RESOURCE_ATTRIBUTES`, atributos do recurso em `chave=valor` separados por vírgula. Num worktree, o `worktree:setup` acrescenta `deployment.environment.name=wt<N>` aos que o `.env` do principal tiver, para separar os traces de cada worktree.
 
