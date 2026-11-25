@@ -80,7 +80,7 @@ Se o e2e passar de 2 min e virar o caminho crítico, a otimização dele vai par
 | Fase | O que entrega | Issue | Status |
 | --- | --- | --- | --- |
 | 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | ✅ |
-| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | ⬜ |
+| 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | 🟡 |
 | 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | ⬜ |
 
 A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 prova se o cache cumpre o critério de reversão, e o job e2e já nasce com o setup rápido.
@@ -184,7 +184,7 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 ## Fase 2: Setup do CI
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
 > - [ ] Passo 5: composite action com o `node_modules` em cache
 > - [ ] Passo 6: documentação e medição

@@ -1,0 +1,34 @@
+# Node e node_modules em cache para os jobs do ci.yml: docs/reference/comandos.md#ci
+name: Setup
+description: Instala o Node e restaura o node_modules do cache, com npm ci só quando o cache não acerta
+
+inputs:
+  node-version:
+    description: Versão do Node. Vazia, vale o node-version-file
+    required: false
+  node-version-file:
+    description: Arquivo com a versão do Node, como o .nvmrc
+    required: false
+
+runs:
+  using: composite
+  steps:
+    # Sem cache: npm. O ~/.npm só serviria quando o node_modules não vem do cache, e restaurá-lo em
+    # todo job custaria mais do que o download que ele poupa numa troca de lockfile.
+    - id: node
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        node-version-file: ${{ inputs.node-version-file }}
+
+    # A versão resolvida, não a entrada, entra na chave: o .nvmrc e a matriz seguem a mesma regra.
+    # Sem restore-keys: um node_modules de outro lockfile não serve.
+    - id: cache
+      uses: actions/cache@v6
+      with:
+        path: node_modules
+        key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci
