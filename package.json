@@ -1,6 +1,6 @@
 {
   "name": "ai-nest-ddd-clean",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Template de API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeORM, Postgres, Redis e BullMQ.",
   "scripts": {
     "test": "vitest run --project unit",
