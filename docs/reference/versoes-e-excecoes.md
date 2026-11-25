@@ -34,3 +34,26 @@ Consultadas em 2026-11-21, e a linha do Nest em 2026-11-25.
 ## Combinações que quebram
 
 - `@nestjs/typeorm` 10 e 11.0.0 quebram na inicialização com o TypeORM 1.x. Use o `@nestjs/typeorm` 12 ou superior.
+
+## Atualização automática
+
+O Dependabot (`.github/dependabot.yml`) abre os PRs de atualização. O porquê das escolhas está na [ADR 0012](../adr/0012-cadeia-de-suprimentos-do-ci.md).
+
+| Ecossistema | Onde | Título do PR | Grupos | Cooldown |
+| --- | --- | --- | --- | --- |
+| `npm` | `package.json` e `package-lock.json`, com `versioning-strategy: increase` (a faixa do `package.json` sobe junto) e até 10 PRs abertos | `build(deps)` e `build(deps-dev)` | `nestjs` (`@nestjs/*`), `opentelemetry` (`@opentelemetry/*`), `testcontainers` (`testcontainers`, `@testcontainers/*`), `typescript-eslint` (`typescript-eslint`, `@typescript-eslint/*`) e `vitest` (`vitest`, `@vitest/*`), com todos os tipos de update. O resto vem avulso | 3 dias para patch e minor, 7 para major |
+| `github-actions` | Os workflows de `.github/workflows/` e a composite `.github/actions/setup`, até 5 PRs abertos | `ci(deps)` | `actions`, com todas | 3 dias |
+| `docker-compose` | As imagens do `docker-compose.yml`, até 5 PRs abertos | `build(deps)` | Nenhum: uma imagem por PR | 3 dias |
+
+- **Agenda:** toda segunda-feira, às 06:00 de `America/Sao_Paulo`, nos três.
+- **Cooldown:** o Dependabot só propõe uma versão publicada há pelo menos esse tempo. Não vale para os security updates, que saem na hora.
+- **Exceções:** o `ignore` do `.github/dependabot.yml` espelha a [tabela de exceções](#exceções), na mesma faixa: a versão quebrada do Nest, o TypeScript de 6.1 em diante e as majors de `keyv`, `@keyv/redis` e `ioredis`. O `argon2` não tem `ignore`. Uma linha nova, mudada ou removida na tabela muda o `ignore` no mesmo PR.
+- **Actions:** o PR do Dependabot atualiza também o `.github/workflows/actions.lock` ([Comandos → CI](comandos.md#ci)).
+- **Imagens:** o PR do Dependabot muda só o `docker-compose.yml`. Quem o fecha completa as outras ocorrências na mesma branch:
+  - `postgres:19`: `.github/workflows/ci.yml` (`services:`) e `test/global-setup/int.ts`;
+  - `redis:8`: `.github/workflows/ci.yml` e `test/helpers/redis.ts`;
+  - `axllent/mailpit:v1`: `.github/workflows/ci.yml` e `src/modules/notifications/infra/adapters/smtp-email-sender.int-spec.ts`.
+
+  Numa major do Postgres, o volume de dados não abre na versão nova e precisa ser recriado: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
+- **Node:** o `.nvmrc`, o `ARG NODE_VERSION` do `Dockerfile` e o `engines` do `package.json` ficam fora do Dependabot e são conferidos à mão.
+- **Conferência manual:** o `npm outdated` continua valendo, com o resultado descrito na [Regra](#regra).

@@ -114,8 +114,8 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 > - [ ] Passo 4: CodeQL
 > - [ ] Passo 5: dependency review
 > - [ ] Passo 6: `audit:signatures`
-> - [ ] Passo 7: `setup-github.mjs`
-> - [ ] Passo 8: documentação
+> - [x] Passo 7: `setup-github.mjs`
+> - [x] Passo 8: documentação
 > - [ ] Passo 9: verificação, entrega e PR
 
 ### Passo 1: branch, plano e roadmap
@@ -363,7 +363,7 @@ Idempotência conferida com um `gh` falso no scratchpad (sem tocar no GitHub): a
 - Cada decisão da tabela do plano aparece numa página de `docs/` ou na ADR. O plano vai ser apagado.
 - O "Pronto quando" da issue que dá para conferir antes do merge está atendido: `versoes-e-excecoes.md` e `comandos.md` (seção CI) descrevem o fluxo.
 
-**Como ficou:** —
+**Como ficou:** o `plop doc` não tem tipo `adr`, então a ADR 0012 seguiu o formato da 0011 (`status: accepted`, "Considered Options" e "Consequences"), com as oito alternativas do "Faça". No `comandos.md`, além do pedido, uma linha "Dependabot" na seção CI aponta para a seção nova do `versoes-e-excecoes.md`, e o `npm run ci` da tabela de verificação diz que não roda o `audit:signatures`. A linha do zizmor entrou na seção CI do `evolucoes-com-gatilho.md`, com o gatilho da tabela "Fora do plano". Cada decisão da tabela do plano está na ADR, no `versoes-e-excecoes.md` (ecossistemas, agenda, cooldown, grupos, limite de PRs, `increase`, `ignore`, imagens, título dos PRs), no `comandos.md` (workflows, CodeQL, regra `code_scanning`, dependency review, lockfile, `sha_pinning_required`, "Require lockfile", `audit:signatures`, `github:setup`), no `CONTRIBUTING.md` (título em inglês) ou no `AGENTS.md` (rota, frase de "Versões" e armadilha); "Entrega" e "Fechamento da issue" são do processo e ficam no registro da #13. `npm run docs:check` passa, e a rota nova com `#ci` passa na regra de caminhos do `AGENTS.md`.
 
 ### Passo 9: verificação, entrega e PR
 

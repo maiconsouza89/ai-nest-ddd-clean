@@ -91,6 +91,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0009: Verificação do e-mail com o código no evento](adr/0009-verificacao-de-email-com-codigo-no-evento.md)
 - [0010: Respostas de erro em Problem Details, com `type` `about:blank` e um `code`](adr/0010-erros-em-problem-details-com-code.md)
 - [0011: Worktrees compartilham o stack do checkout principal, isolados por slot](adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)
+- [0012: Cadeia de suprimentos do CI: Dependabot, CodeQL, dependency review e lockfile das actions](adr/0012-cadeia-de-suprimentos-do-ci.md)
 
 ## Fora dos quadrantes
 

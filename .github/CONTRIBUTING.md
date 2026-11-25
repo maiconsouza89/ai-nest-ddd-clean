@@ -22,6 +22,8 @@ O título do PR segue o [Conventional Commits 1.0.0](https://www.conventionalcom
 - **Descrição:** em português, no imperativo ou no presente, sem ponto final.
 - **Quebra:** `!` depois do tipo ou do escopo (`feat(identity)!: …`) e um parágrafo `BREAKING CHANGE: …` na descrição do PR, dizendo o que quem usa precisa mudar.
 
+Os PRs do Dependabot ficam com o título que ele gera, em inglês: `build(deps): bump …`, `build(deps-dev): bump …` ou `ci(deps): bump …`. O tipo e o escopo seguem o Conventional Commits. Uma major que quebre quem usa o template (ver [Versão](#versão)) ganha o `!` à mão no título do squash.
+
 Quando o PR resolve uma issue, o título termina com o número dela, e o GitHub acrescenta o do PR no squash: `feat(deploy): imagem Docker, migrations a partir do dist/ e how-to de deploy (#10) (#24)`.
 
 ## Versão

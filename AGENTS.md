@@ -31,11 +31,12 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
 - **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.
 - **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz do checkout principal; apaga também os dados dos worktrees. Num worktree, `npm run worktree:down`. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
+- **Actions:** depois de adicionar ou mudar um `uses:`, rode `gh actions-lock` (extensão `github/gh-actions-lock`) e commite o `actions.lock`. Nunca edite o lockfile à mão.
 - **Instruções de agente:** ficam só neste arquivo. Não crie `CLAUDE.md`: com ele na raiz, o Claude Code deixa de ler o `AGENTS.md` (`docs/adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md`).
 
 ## Versões
 
-Sempre a latest estável, menos as exceções de `docs/reference/versoes-e-excecoes.md`. Confira o gatilho registrado antes de atualizar um pacote da tabela.
+Sempre a latest estável, menos as exceções de `docs/reference/versoes-e-excecoes.md`. Confira o gatilho registrado antes de atualizar um pacote da tabela. Uma exceção nova ou removida muda também o `ignore` do `.github/dependabot.yml`.
 
 ## Context7
 
@@ -69,6 +70,7 @@ Leia a página antes de agir no assunto.
 | Criar ou limpar um worktree, ou rodar dois ambientes em paralelo | `docs/how-to/trabalhar-com-worktrees-em-paralelo.md` |
 | Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` e `docs/how-to/adicionar-uma-variavel-de-ambiente.md` |
 | Adicionar ou atualizar dependência | `docs/reference/versoes-e-excecoes.md` |
+| Mexer num workflow ou action do CI, no Dependabot, no CodeQL ou no dependency review | `docs/reference/comandos.md#ci` e `docs/adr/0012-cadeia-de-suprimentos-do-ci.md` |
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
 | Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md` e `docs/explanation/autenticacao.md` |
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
