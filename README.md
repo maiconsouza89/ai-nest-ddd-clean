@@ -46,7 +46,7 @@ A base não depende deles. Para ficar só com ela, siga [Como remover os módulo
 
 ## Requisitos
 
-- Node 22.22.3 ou superior. O `.nvmrc` recomenda o 24.
+- Node 22.22.3 ou superior na linha 22, ou 24.11.1 ou superior. O `.nvmrc` recomenda o 24.
 - Docker.
 
 Detalhes em [Comandos → Requisitos](docs/reference/comandos.md#requisitos).

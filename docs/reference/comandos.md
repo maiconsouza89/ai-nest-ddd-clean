@@ -8,7 +8,7 @@ Todos os comandos rodam na raiz do repositório.
 
 ## Requisitos
 
-- Node 22.22.3 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
+- Node 22.22.3 ou superior na linha 22, ou 24.11.1 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
 - Docker, para o Postgres, o Redis e o Mailpit do `docker-compose.yml` e para os testes de integração.
 
 ## Setup do zero
