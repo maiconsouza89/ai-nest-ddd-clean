@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { metrics } from '@opentelemetry/api';
-import type { BatchObservableCallback } from '@opentelemetry/api';
+import type { BatchObservableCallback, BatchObservableResult } from '@opentelemetry/api';
 import { MetricNames, TelemetryAttributes } from 'bullmq';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
@@ -41,18 +41,11 @@ export class QueueMetrics implements OnApplicationBootstrap, OnModuleDestroy {
       description: 'Jobs por estado em cada fila de eventos.',
       unit: '{job}',
     });
-    const callback: BatchObservableCallback = async (result) => {
-      let counts: PromiseSettledResult<Record<string, number>>[];
-      try {
-        counts = await withTimeout(
-          () => Promise.allSettled(queues.map((q) => q.getJobCounts(...STATES))),
-          COLLECT_TIMEOUT_MS,
-        );
-      } catch (err) {
-        this.logger.warn({ err }, 'queue metrics collection failed');
-        return;
-      }
-      // uma fila que falha não esconde as outras: fica sem ponto nesta coleta
+    const collect = async (result: BatchObservableResult) => {
+      // um prazo por fila: uma fila lenta ou com falha não esconde as outras, e fica sem ponto nesta coleta
+      const counts = await Promise.allSettled(
+        queues.map((q) => withTimeout(() => q.getJobCounts(...STATES), COLLECT_TIMEOUT_MS)),
+      );
       counts.forEach((count, i) => {
         const queue = queues[i].name;
         if (count.status === 'rejected') {
@@ -67,9 +60,13 @@ export class QueueMetrics implements OnApplicationBootstrap, OnModuleDestroy {
         }
       });
     };
+    let collecting: Promise<void> | undefined;
+    const callback: BatchObservableCallback = (result) => (collecting = collect(result));
     meter.addBatchObservableCallback(callback, [gauge]);
     this.shutdown = async () => {
       meter.removeBatchObservableCallback(callback, [gauge]);
+      // fechar a fila no meio de um getJobCounts faria a coleta em andamento falhar
+      await collecting;
       await Promise.all(queues.map((q) => q.close()));
     };
   }
