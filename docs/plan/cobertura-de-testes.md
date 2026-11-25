@@ -106,7 +106,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
 | 2 | `@vitest/coverage-v8` e `test:coverage` | ✅ |
-| 3 | Meta em `domain/` e `application/` | ⬜ |
+| 3 | Meta em `domain/` e `application/` | ✅ |
 | 4 | Resumo da cobertura no job `unit` | ⬜ |
 | 5 | Documentação | ⬜ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
@@ -162,6 +162,8 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 7. Commit: `build(test): piso de cobertura em domain e application (#21)`.
 
 **Pronto quando:** a meta falha com 100 e passa com 90, e o `npm run ci` passa.
+
+**Como ficou:** como planejado. Com `lines: 100` no glob do `domain/` e a pasta `coverage/` apagada antes, o `npm run test:coverage` saiu com código 1 e `ERROR: Coverage for lines (96.8%) does not meet "src/**/domain/**" threshold (100%)`, e o `coverage/coverage-summary.json` foi gravado na mesma execução, antes da falha. Com 90, passa. O `npm run test:coverage -- money.vo` falha as quatro métricas do `domain/`, como diz o comentário. O `npm run ci` passou, com os unitários em 16 s com cobertura (a máquina dividida com outras trilhas).
 
 ### Passo 4: resumo da cobertura no job `unit`
 

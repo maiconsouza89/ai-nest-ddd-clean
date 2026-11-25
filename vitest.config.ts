@@ -59,6 +59,13 @@ export default defineConfig({
       ],
       // terminal e log do CI, HTML local e a entrada do resumo do job (scripts/coverage-summary.mjs)
       reporter: ['text-summary', 'html', 'json-summary'],
+      // Piso contra regressão, só onde a cobertura reflete regra de negócio (issue #21), sem meta global.
+      // Um `npm run test:coverage -- <padrão>` falha a meta, porque mede só parte da suíte: para um
+      // arquivo, use `npm test -- <padrão>`.
+      thresholds: {
+        'src/**/domain/**': { lines: 90, statements: 90, branches: 90, functions: 90 },
+        'src/**/application/**': { lines: 90, statements: 90, branches: 90, functions: 90 },
+      },
     },
     // Os projetos herdam o setupFiles da raiz por padrão desde o Vitest 5.
     projects: [
