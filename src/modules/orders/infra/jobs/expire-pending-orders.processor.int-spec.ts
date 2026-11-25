@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import 'reflect-metadata';
 import { ConfigService } from '@nestjs/config';
-import { StartedRedisContainer } from '@testcontainers/redis';
 import { Queue } from 'bullmq';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startRedis } from '#test/helpers/redis';
@@ -16,7 +15,7 @@ import {
 } from './expire-pending-orders.processor.js';
 
 describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () => {
-  let redis: StartedRedisContainer;
+  let redisUrl: string;
   let probe: Queue;
   let instances: {
     processor: ExpirePendingOrdersProcessor;
@@ -27,7 +26,7 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
   const boot = async (jobsEnabled = 'true') => {
     const logger = new FakeLogger();
     const config = new ConfigService({
-      REDIS_URL: redis.getConnectionUrl(),
+      REDIS_URL: redisUrl,
       JOBS_ENABLED: jobsEnabled,
     }) as unknown as ConfigService<EnvironmentVariables, true>;
     const connection = new BullMqConnection(config, logger);
@@ -42,11 +41,11 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
   };
 
   beforeAll(async () => {
-    redis = await startRedis();
+    redisUrl = await startRedis();
     probe = new Queue(ORDERS_JOBS_QUEUE, {
-      connection: { url: redis.getConnectionUrl() },
+      connection: { url: redisUrl },
     });
-  }, 180_000);
+  });
 
   afterEach(async () => {
     for (const { processor, connection } of instances) {
@@ -60,8 +59,7 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
 
   afterAll(async () => {
     await probe?.close();
-    await redis?.stop();
-  }, 60_000);
+  });
 
   it('duas instâncias registram um único agendador', async () => {
     await boot();

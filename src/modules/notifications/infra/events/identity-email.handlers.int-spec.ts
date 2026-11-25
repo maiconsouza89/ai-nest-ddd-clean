@@ -26,7 +26,7 @@ describe('E-mails do identity com a marca de processado no Postgres (integraçã
       new TypeOrmProcessedEvents(ds),
       new FakeLogger(),
     );
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

@@ -48,7 +48,7 @@ As pastas `migrations/` ficam fora do Prettier e do ESLint. O arquivo gerado ent
 ## Como verificar
 
 - `npm run mig:<módulo>:gen` de novo responde "No changes in database schema were found": o banco bate com as entidades.
-- `npm run test:int -- <módulo>` passa. Os testes de integração sobem um Postgres próprio e aplicam do zero as migrations listadas no helper do passo 5.
+- `npm run test:int -- <módulo>` passa. Os testes de integração montam o template do módulo aplicando do zero as migrations listadas no helper do passo 5.
 
 Para desfazer a última migration aplicada no banco local, antes do commit:
 

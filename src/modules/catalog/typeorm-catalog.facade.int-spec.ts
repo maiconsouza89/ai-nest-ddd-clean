@@ -13,7 +13,7 @@ describe('TypeOrmCatalogFacade (integração)', () => {
   beforeAll(async () => {
     ({ ds, stop } = await startCatalogDatabase());
     facade = new TypeOrmCatalogFacade(ds.getRepository(ProductOrmEntity));
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

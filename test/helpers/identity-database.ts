@@ -6,20 +6,22 @@ import { CreateIdentityUsers1795238176955 } from '#modules/identity/infra/databa
 import { AddUserName1795238354345 } from '#modules/identity/infra/database/typeorm/migrations/1795238354345-add-user-name';
 import { CreateIdentityRefreshTokens1795438796292 } from '#modules/identity/infra/database/typeorm/migrations/1795438796292-create-identity-refresh-tokens';
 import { AddEmailVerification1795545972474 } from '#modules/identity/infra/database/typeorm/migrations/1795545972474-add-email-verification';
-import { startDatabase } from './database.js';
+import { ModuleDatabase, startDatabase } from './database.js';
 import { outboxEntities, outboxMigrations } from './outbox-database.js';
 
-export const startIdentityDatabase = () =>
-  startDatabase({
-    // o identity também grava na outbox compartilhada
-    entities: [UserOrmEntity, RefreshTokenOrmEntity, VerificationCodeOrmEntity, ...outboxEntities],
-    migrations: [
-      CreateIdentitySchema1795238174857,
-      CreateIdentityUsers1795238176955,
-      AddUserName1795238354345,
-      CreateIdentityRefreshTokens1795438796292,
-      AddEmailVerification1795545972474,
-      ...outboxMigrations,
-    ],
-    migrationsTableName: 'identity_migrations',
-  });
+export const identityDatabase: ModuleDatabase = {
+  template: 'identity',
+  // o identity também grava na outbox compartilhada
+  entities: [UserOrmEntity, RefreshTokenOrmEntity, VerificationCodeOrmEntity, ...outboxEntities],
+  migrations: [
+    CreateIdentitySchema1795238174857,
+    CreateIdentityUsers1795238176955,
+    AddUserName1795238354345,
+    CreateIdentityRefreshTokens1795438796292,
+    AddEmailVerification1795545972474,
+    ...outboxMigrations,
+  ],
+  migrationsTableName: 'identity_migrations',
+};
+
+export const startIdentityDatabase = () => startDatabase(identityDatabase);

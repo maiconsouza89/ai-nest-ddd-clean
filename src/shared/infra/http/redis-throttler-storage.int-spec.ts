@@ -1,7 +1,6 @@
-import { describe, it, expect, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import 'reflect-metadata';
 import { ServiceUnavailableException } from '@nestjs/common';
-import { StartedRedisContainer } from '@testcontainers/redis';
 import { Redis } from 'ioredis';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startRedis } from '#test/helpers/redis';
@@ -10,13 +9,13 @@ import { RedisThrottlerStorage } from './redis-throttler-storage.js';
 const TTL = 60_000;
 
 describe('RedisThrottlerStorage (integração: Redis)', () => {
-  let redis: StartedRedisContainer;
+  let redisUrl: string;
   let clients: Redis[] = [];
   const logger = new FakeLogger();
 
   // cada "instância" da aplicação tem a sua conexão e o seu storage
   const instance = async () => {
-    const client = new Redis(redis.getConnectionUrl(), { enableOfflineQueue: false });
+    const client = new Redis(redisUrl, { enableOfflineQueue: false });
     clients.push(client);
     // sem fila offline, um comando enviado antes da conexão falha
     if (client.status !== 'ready') await new Promise((resolve) => client.once('ready', resolve));
@@ -24,20 +23,16 @@ describe('RedisThrottlerStorage (integração: Redis)', () => {
   };
 
   beforeAll(async () => {
-    redis = await startRedis();
-  }, 180_000);
+    redisUrl = await startRedis();
+  });
 
   afterEach(async () => {
-    const admin = new Redis(redis.getConnectionUrl());
-    await admin.flushall();
+    const admin = new Redis(redisUrl);
+    await admin.flushdb();
     admin.disconnect();
     clients.forEach((c) => c.disconnect());
     clients = [];
   });
-
-  afterAll(async () => {
-    await redis?.stop();
-  }, 60_000);
 
   it('o limite vale para a soma de duas instâncias', async () => {
     const a = await instance();

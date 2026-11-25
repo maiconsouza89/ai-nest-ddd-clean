@@ -21,7 +21,7 @@ describe('TypeOrmIdempotencyStore (integração)', () => {
     ({ ds, stop } = await startOrdersDatabase());
     store = new TypeOrmIdempotencyStore(ds);
     tx = new TypeOrmTransactionManager(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

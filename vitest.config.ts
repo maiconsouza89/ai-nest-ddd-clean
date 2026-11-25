@@ -1,9 +1,23 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 
+// Ativa a condição `@app/source` dos aliases `#...` (ADR 0005). Não acrescente `import` nem `default`
+// à lista: o `require('pg')` do TypeORM passaria a resolver o build ESM e falharia.
+const conditions = ['@app/source', 'module', 'node', 'development|production'];
+
 export default defineConfig({
-  // Ativa a condição `@app/source` dos aliases `#...` (ADR 0005). Não acrescente `import` nem `default`
-  // à lista: o `require('pg')` do TypeORM passaria a resolver o build ESM e falharia.
-  ssr: { resolve: { conditions: ['@app/source', 'module', 'node', 'development|production'] } },
+  // Em todo ambiente do Node, não só no `ssr` dos arquivos de teste: o Vitest carrega o globalSetup no
+  // processo principal, num ambiente próprio. Sem a condição nele, as migrations dos templates viriam do
+  // dist/, sem erro. `resolve.conditions` na raiz não serve: o Vite a aplica só ao `client`.
+  plugins: [
+    {
+      name: 'app-source-condition',
+      configEnvironment(name, env) {
+        if (name === 'client') return;
+        env.resolve ??= {};
+        env.resolve.conditions = conditions;
+      },
+    },
+  ],
   // O oxc, transformador padrão do Vite 8, emite a decorator metadata que o Nest usa para injetar
   // por classe. experimentalDecorators e emitDecoratorMetadata vêm do tsconfig.json.
   test: {
@@ -31,9 +45,12 @@ export default defineConfig({
         test: {
           name: 'int',
           include: ['src/**/*.int-spec.ts'],
-          fileParallelism: false, // cada arquivo sobe seus containers; em paralelo estouram os timeouts
+          // um Postgres (com um template migrado por módulo) e um Redis para a execução inteira
+          globalSetup: ['./test/global-setup/int.ts'],
+          // Os arquivos rodam em paralelo: cada um tem o próprio banco clonado e cada worker o seu banco
+          // lógico no Redis. Um teste instável se corrige na espera dele, sem voltar ao modo serial.
           testTimeout: 60_000,
-          hookTimeout: 120_000,
+          hookTimeout: 30_000, // os containers sobem no globalSetup; só os dois arquivos com container próprio passam disso
         },
       },
       {

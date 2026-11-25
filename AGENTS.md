@@ -91,5 +91,6 @@ Leia a página antes de agir no assunto.
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
 | Entender o porquê de uma decisão | `docs/adr/` |
+| Continuar um plano em andamento | `docs/plan/` |
 | Escrever ou mover documentação | `docs/README.md` |
 | Mexer no `Dockerfile`, no `.dockerignore`, no profile `prod` do compose ou nos scripts `:run:prod` | `docs/how-to/fazer-o-deploy.md` |

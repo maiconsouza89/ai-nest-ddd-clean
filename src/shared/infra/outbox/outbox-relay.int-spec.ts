@@ -16,7 +16,7 @@ describe('OutboxRelay (integração)', () => {
   beforeAll(async () => {
     ({ ds, stop } = await startOutboxDatabase());
     outbox = new TypeOrmOutbox(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

@@ -31,7 +31,7 @@ describe('PayOrderUseCase com Postgres (integração)', () => {
     ({ ds, stop } = await startOrdersDatabase());
     repo = new TypeOrmOrderRepository(ds);
     outbox = new TypeOrmOutbox(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

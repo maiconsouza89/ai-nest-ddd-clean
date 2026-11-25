@@ -15,7 +15,7 @@ describe('TypeOrmUserRepository (integração)', () => {
   beforeAll(async () => {
     ({ ds, stop } = await startIdentityDatabase());
     repo = new TypeOrmUserRepository(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

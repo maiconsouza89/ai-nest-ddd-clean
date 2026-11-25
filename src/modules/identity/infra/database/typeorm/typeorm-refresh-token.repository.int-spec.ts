@@ -45,7 +45,7 @@ describe('Refresh token rotativo (integração)', () => {
     );
     refresh = new RefreshSessionUseCase(repo, secrets, sessions, clock, tx);
     logout = new LogoutUseCase(repo, secrets, clock, tx);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

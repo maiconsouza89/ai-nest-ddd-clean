@@ -14,7 +14,7 @@ describe('TypeOrm{{pascalCase name}}Repository (integração)', () => {
   beforeAll(async () => {
     ({ ds, stop } = await start{{pascalCase name}}Database());
     repo = new TypeOrm{{pascalCase name}}Repository(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

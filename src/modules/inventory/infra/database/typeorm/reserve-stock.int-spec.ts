@@ -24,7 +24,7 @@ describe('ReserveStockUseCase com Postgres (integração)', () => {
       new UuidV7Generator(),
       new TypeOrmTransactionManager(ds),
     );
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

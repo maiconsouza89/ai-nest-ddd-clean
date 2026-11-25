@@ -22,7 +22,7 @@ describe('IdempotentConsumer (integração)', () => {
       new FakeLogger(),
     );
     await ds.query(`CREATE TABLE IF NOT EXISTS shared.effects (event_id text, note text)`);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 
