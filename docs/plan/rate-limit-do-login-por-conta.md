@@ -79,7 +79,7 @@ As decisões abaixo foram fechadas com o dono do repositório antes do plano. Mu
 | 1 | Worktree, branch e roadmap | ✅ |
 | 2 | Throttlers por conta e `Retry-After` no `shared` | ✅ |
 | 3 | Limite por conta no login | ✅ |
-| 4 | E2E de IPs diferentes contra a mesma conta | ⬜ |
+| 4 | E2E de IPs diferentes contra a mesma conta | ✅ |
 | 5 | Documentação | ⬜ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
