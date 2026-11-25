@@ -59,8 +59,9 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run arch` | Regras de camadas e de fronteiras entre módulos, com o dependency-cruiser (`.dependency-cruiser.js`) |
 | `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
 | `npm run docs:links` | Links externos, com o lychee via Docker. Pula os endereços locais (`localhost`), que só respondem com a app ou o compose no ar. Fora do CI, porque depende da rede |
-| `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check` e `arch`, nessa ordem. É o job `check` do CI |
-| `npm run ci` | `ci:static` e depois `test`. **Não** roda integração nem e2e |
+| `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check` e `arch`, nessa ordem. O job `check` do CI roda o `ci:static` e o `audit:signatures` |
+| `npm run ci` | `ci:static` e depois `test`. **Não** roda integração nem e2e, nem o `audit:signatures` |
+| `npm run audit:signatures` | `npm audit signatures`: confere a assinatura do registry e as attestations de cada pacote instalado. Precisa da rede. Não olha advisories: eles ficam com os Dependabot alerts e o dependency review ([CI](#ci)) |
 
 ## Testes
 
@@ -99,12 +100,21 @@ Cada `git worktree` ganha a sua porta, o seu banco, o seu banco lógico do Redis
 
 ## CI
 
-O GitHub Actions roda o `.github/workflows/ci.yml` em todo PR e em todo push na `main`. Num PR, um push novo cancela a execução anterior do mesmo PR. Na `main`, cada push roda até o fim, sem fila com os outros.
+O porquê das escolhas de segurança está na [ADR 0012](../adr/0012-cadeia-de-suprimentos-do-ci.md).
+
+| Workflow | Quando roda | O que faz |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | Todo PR e todo push na `main` | Verificação estática, assinaturas do registry, unitários, integração e e2e. Jobs na tabela abaixo |
+| `.github/workflows/codeql.yml` | PR para a `main`, push na `main` e todo domingo às 03:00 UTC | CodeQL em advanced setup, com a suíte `default`, sem build (`build-mode: none`): um job `Analyze (javascript-typescript)` para o código e um `Analyze (actions)` para os workflows. Os alertas vão para a aba Security → Code scanning |
+| `.github/workflows/dependency-review.yml` | Todo PR | Job `dependency-review`: falha se o PR traz uma dependência com vulnerabilidade `high` ou acima, ou com licença fora do `allow-licenses`. Uma exceção de licença por pacote vai no `allow-dependencies-licenses`, com o motivo num comentário. Comenta o resumo no PR quando falha |
+| `.github/workflows/verify-lockfile.yml` | Todo PR e todo push na `main` | Job `verify-lockfile`: `gh actions-lock --verify`, que falha se o `.github/workflows/actions.lock` não bate com os workflows ou se um commit travado não confere mais com o upstream |
+
+O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `main`, cada push roda até o fim, sem fila com os outros.
 
 | Job | Em PR | Na `main` | Node |
 | --- | --- | --- | --- |
 | `changes` | Compara o PR com a branch de destino e diz se ele muda código | Roda sem checkout e diz que muda: a `main` sempre testa | — |
-| `check` | `npm run ci:static`, no projeto inteiro | O mesmo | `.nvmrc` |
+| `check` | `npm run ci:static`, no projeto inteiro, e depois `npm run audit:signatures`, num step próprio | O mesmo | `.nvmrc` |
 | `unit` | `npm test -- --changed HEAD^1 --passWithNoTests` | `npm test` | `22.22.3` e `.nvmrc`, em matriz |
 | `integration` | `npm run test:int -- --changed HEAD^1 --passWithNoTests` | `npm run test:int` | `.nvmrc` |
 | `e2e` | Copia o `.env.example` para `.env` e roda `npm run db:setup`, depois `npm run test:e2e -- --changed HEAD^1 --passWithNoTests`, contra Postgres, Redis e Mailpit em `services:` | O mesmo, com `npm run test:e2e` | `.nvmrc` |
@@ -116,7 +126,18 @@ O GitHub Actions roda o `.github/workflows/ci.yml` em todo PR e em todo push na 
 - **Sem fail-fast:** os jobs rodam em paralelo, a matriz do `unit` não cancela a outra versão quando uma falha, e o Vitest não para no primeiro erro. Todos os resultados saem de uma vez. Quando rever: [Evoluções com gatilho](evolucoes-com-gatilho.md#ci).
 - **E2E:** os `services:` usam as imagens do `docker-compose.yml`, nas portas que o `test/setup-env.ts` espera, com o Postgres sem durabilidade e em tmpfs, como o da integração. Sobem e esperam o healthcheck antes do primeiro step, o que custa uns 15 s ao job. Localmente, o e2e continua no docker-compose.
 - **Fora do CI:** o `docs:links`, que depende da rede.
-- **Check obrigatório:** só o `ci`. A matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão. `npm run github:setup` (`scripts/setup-github.mjs`) cria, ou atualiza, um ruleset na branch padrão do repositório do `origin` que exige o `ci` do GitHub Actions, inclusive em push direto, e bloqueia force push e exclusão. Ao atualizar, mantém o bypass e as regras de outros tipos acrescentados pela interface. Também deixa o squash como único merge de PR, com o título e a descrição do PR como mensagem do commit (o título segue o Conventional Commits, ver [Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)), e apaga o branch do PR depois do merge. Num repositório público, liga o relato privado de vulnerabilidade, o canal do `.github/SECURITY.md`. Num privado ou interno, o GitHub não oferece esse relato, e o script só avisa. Pede o `gh` autenticado com admin no repositório. Num repositório privado, o GitHub pode exigir plano pago para rulesets.
+- **Checks obrigatórios:** o `ci`, o `dependency-review` e o `verify-lockfile`, todos do GitHub Actions. O nome de cada um é o do job: renomear um job exige mudar o `scripts/setup-github.mjs` e rodar o `npm run github:setup`. A matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão, por isso o `ci` junta os jobs do `ci.yml`.
+- **Regra do CodeQL:** a regra `code_scanning` do ruleset barra o merge enquanto a análise do CodeQL do PR não termina e quando ela acha, nas linhas que o PR muda, um alerta de segurança `high` ou acima ou um alerta de severidade `error`. Os alertas antigos não barram, mas ficam abertos na aba Security.
+- **Falso positivo do CodeQL:** na aba Security → Code scanning, abra o alerta e use "Dismiss alert", com o motivo ("False positive", "Used in tests" ou "Won't fix") e um comentário que explique. Não desligue a regra nem tire o arquivo da análise.
+- **Lockfile das actions:** o `.github/workflows/actions.lock` guarda o commit, o `owner_id` e o `repo_id` de cada action, inclusive as transitivas e as da composite `.github/actions/setup`, que os workflows chamam por `$/.github/actions/setup` (a própria action no commit do workflow). O runner confere o lockfile no início do job.
+  - Instale a extensão uma vez: `gh extension install github/gh-actions-lock --pin v0.5.1`.
+  - Depois de adicionar ou mudar um `uses:`, num workflow ou na composite, rode `gh actions-lock` na raiz, revise o diff inteiro e commite o `actions.lock`. Uma troca de `commit` é uma troca de código; uma troca de `owner_id` ou `repo_id` indica outro repositório atrás do nome e precisa de investigação. Nunca edite o lockfile à mão.
+  - Para conferir sem rede se cada `uses:` tem entrada no lockfile: `gh actions-lock --verify-local`. O `gh actions-lock --verify` faz a conferência completa do CI.
+  - Numa action do próprio repositório, use `$/` e não `./`: o `./` não entra no lockfile.
+  - O actionlint local não conhece o `$/`: a exceção fica no `.github/actionlint.yaml`.
+- **`npm run github:setup`** (`scripts/setup-github.mjs`): cria, ou atualiza, um ruleset na branch padrão do repositório do `origin` que exige os três checks obrigatórios, inclusive em push direto, tem a regra do CodeQL e bloqueia force push e exclusão. Ao atualizar, mantém o bypass e as regras de outros tipos acrescentados pela interface. Também deixa o squash como único merge de PR, com o título e a descrição do PR como mensagem do commit (o título segue o Conventional Commits, ver [Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)), e apaga o branch do PR depois do merge. Liga os Dependabot alerts, os Dependabot security updates e a exigência de action fixada por SHA (`sha_pinning_required`), mantendo o resto das permissões do GitHub Actions. Num repositório público, liga o relato privado de vulnerabilidade, o canal do `.github/SECURITY.md`. Num privado ou interno, o GitHub não oferece esse relato, e o script só avisa. A regra do CodeQL entra num repositório público, ou num privado ou interno com o GitHub Code Security; sem ele, o script avisa e segue sem a regra. Não liga o secret scanning. Pede o `gh` autenticado com admin no repositório. Num repositório privado, o GitHub pode exigir plano pago para rulesets.
+- **Dependabot:** abre os PRs de atualização do npm, das actions e das imagens, que passam pelos mesmos checks. A agenda, os grupos e o `ignore` estão em [Versões e exceções → Atualização automática](versoes-e-excecoes.md#atualização-automática).
+- **"Require lockfile", à mão:** a política que bloqueia um workflow sem lockfile não tem API. Depois do `npm run github:setup`, ligue-a em Settings → Actions → Policies, mirando todos os workflows, com o enforcement `Active`.
 
 ## Migrations
 

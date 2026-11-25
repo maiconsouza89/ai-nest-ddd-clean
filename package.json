@@ -9,6 +9,7 @@
     "arch": "depcruise src --output-type err-long",
     "ci:static": "npm run typecheck && npm run lint && npm run format:check && npm run docs:check && npm run arch",
     "ci": "npm run ci:static && npm test",
+    "audit:signatures": "npm audit signatures",
     "build": "nest build",
     "prestart:dev": "node scripts/worktree-guard.mjs",
     "start:dev": "nest start --watch",

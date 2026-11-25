@@ -1,0 +1,24 @@
+# Confere o .github/workflows/actions.lock contra os workflows e o upstream: docs/reference/comandos.md#ci
+# O ruleset de scripts/setup-github.mjs exige o check verify-lockfile: ao renomear o job, mude lá e
+# rode npm run github:setup.
+name: verify-lockfile
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-lockfile:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: gh extension install github/gh-actions-lock --pin v0.5.1
+      - run: gh actions-lock --verify

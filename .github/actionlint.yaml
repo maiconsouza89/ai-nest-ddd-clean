@@ -1,6 +1,10 @@
 # O GitHub Actions aceita `command` em `services:`, mas o actionlint 1.7.12 ainda não conhece a chave.
-# Tire esta exceção quando ele conhecer.
+# Também não conhece o `$/`, a referência do lockfile (`gh actions-lock`) a uma action do próprio
+# repositório. Tire cada exceção quando ele conhecer.
 paths:
   .github/workflows/ci.yml:
     ignore:
       - 'unexpected key "command" for "services" section'
+  .github/workflows/*.yml:
+    ignore:
+      - 'specifying action "\$/[^"]*" in invalid format'

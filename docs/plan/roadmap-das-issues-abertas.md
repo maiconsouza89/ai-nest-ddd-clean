@@ -12,14 +12,14 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | Prioridade | A do rótulo da issue (`prioridade: alta`, `média`, `baixa`), com a #13 primeiro por ser a única alta e reescrever o `ci.yml` |
 | Paralelismo | Cada trilha num worktree próprio, com `npm run worktree:setup` ([Como trabalhar com worktrees em paralelo](../how-to/trabalhar-com-worktrees-em-paralelo.md)). Uma issue por PR |
 | #15 e #17 | Em sequência: as duas mexem no `tracing.ts` e no `observabilidade.md` |
-| #21 e #23 | Depois do merge da #13, que fixa as actions do `ci.yml` por SHA |
+| #21 e #23 | Depois do merge da #13, que põe as actions no lockfile (`.github/workflows/actions.lock`) |
 | Dependabot da #13 | O `ignore` cobre os pacotes da tabela de exceções, inclusive `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express` e `@nestjs/testing` em 12.6.0 |
 
 ## Mapa
 
 | Onda | Trilha | Issue | Prioridade | Depende de | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | A | #13 Dependabot, CodeQL, dependency review e actions fixadas por SHA | alta | — | ⬜ |
+| 1 | A | #13 Dependabot, CodeQL, dependency review e lockfile das actions | alta | — | 🟡 |
 | 1 | B | #19 Rate limit do login também por conta | média | — | ⬜ |
 | 1 | C | #15 Troca do `module.register` (DEP0205) | média | — | ⬜ |
 | 1 | D | #16 Gatilho de `@nestjs/outbox`, `@nestjs/webhooks` e `@nestjs/http-client` | média | — | ⬜ |
@@ -39,6 +39,8 @@ O conflito esperado entre trilhas, para resolver no rebase:
 | Arquivo | Issues | Conflito |
 | --- | --- | --- |
 | `.github/workflows/ci.yml` | #13, #21, #23 | A #13 reescreve cada `uses:`. As outras entram depois dela |
+| `.github/workflows/actions.lock` | #13, #21, #23 | Quem muda um `uses:` roda `gh actions-lock` depois do rebase |
+| `scripts/setup-github.mjs` | #13; a #21 se usar a regra `code_coverage` | A #21 acrescenta a regra no ruleset da #13 |
 | `src/tracing.ts`, `docs/explanation/observabilidade.md` | #15, #17 | Em sequência, na mesma trilha |
 | `docs/reference/evolucoes-com-gatilho.md` | #15, #16 | Uma linha cada |
 | `docs/reference/versoes-e-excecoes.md` | #13, #16 | Seções diferentes |

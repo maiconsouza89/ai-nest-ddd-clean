@@ -28,7 +28,7 @@ jobs:
       code: ${{ github.event_name != 'pull_request' || steps.filter.outputs.code }}
     steps:
       - if: github.event_name == 'pull_request'
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
       - id: filter
@@ -44,11 +44,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
+      - uses: actions/checkout@v7.0.1
+      - uses: $/.github/actions/setup
         with:
           node-version-file: .nvmrc
       - run: npm run ci:static
+      - run: npm run audit:signatures
 
   unit:
     name: unit (Node ${{ matrix.node-version || '.nvmrc' }})
@@ -62,10 +63,10 @@ jobs:
           - node-version: '22.22.3' # mínimo do engines.node
           - node-version-file: .nvmrc
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
-      - uses: ./.github/actions/setup
+      - uses: $/.github/actions/setup
         with:
           node-version: ${{ matrix.node-version }}
           node-version-file: ${{ matrix.node-version-file }}
@@ -76,10 +77,10 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
-      - uses: ./.github/actions/setup
+      - uses: $/.github/actions/setup
         with:
           node-version-file: .nvmrc
       - run: npm run test:int -- ${{ env.VITEST_ARGS }}
@@ -119,10 +120,10 @@ jobs:
           --health-cmd "/mailpit readyz"
           --health-interval 2s --health-timeout 3s --health-retries 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 2
-      - uses: ./.github/actions/setup
+      - uses: $/.github/actions/setup
         with:
           node-version-file: .nvmrc
       # O mesmo setup do ambiente local: as URLs do .env.example apontam para as portas dos services
@@ -130,9 +131,11 @@ jobs:
       - run: npm run db:setup
       - run: npm run test:e2e -- ${{ env.VITEST_ARGS }}
 
-  # O check obrigatório do PR. Tem nome fixo, e um job pulado (PR só de docs) conta como aprovado:
-  # a matriz do unit pulada não expande, e o nome dela não serve como check obrigatório. O ruleset de
-  # scripts/setup-github.mjs exige este nome: ao renomear o job, mude lá e rode npm run github:setup.
+  # Um dos três checks obrigatórios do PR, com o dependency-review e o verify-lockfile; a regra
+  # code_scanning do ruleset também espera o CodeQL. Tem nome fixo, e um job pulado (PR só de docs)
+  # conta como aprovado: a matriz do unit pulada não expande, e o nome dela não serve como check
+  # obrigatório. O ruleset de scripts/setup-github.mjs exige este nome: ao renomear o job, mude lá e
+  # rode npm run github:setup.
   ci:
     if: always()
     needs: [changes, check, unit, integration, e2e]
