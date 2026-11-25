@@ -104,7 +104,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 
 | Passo | Entrega | Status |
 | --- | --- | --- |
-| 1 | Worktree, branch e roadmap | ⬜ |
+| 1 | Worktree, branch e roadmap | ✅ |
 | 2 | `@vitest/coverage-v8` e `test:coverage` | ⬜ |
 | 3 | Meta em `domain/` e `application/` | ⬜ |
 | 4 | Resumo da cobertura no job `unit` | ⬜ |
@@ -122,6 +122,8 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 5. Commit: `docs(plan): plano do relatório de cobertura de testes (#21)`. Confira o formato em `.github/CONTRIBUTING.md`.
 
 **Pronto quando:** o `docs:check` passa.
+
+**Como ficou:** o plano já estava na `main` (PR #50), então a branch o trouxe ao nascer da `main`. No roadmap, a #21 ficou 🟡 e saiu das linhas do `actions.lock` e do `setup-github.mjs`; a do `setup-github.mjs` ficou só com a #13 e sem conflito. O `docs:check` passou.
 
 ### Passo 2: `@vitest/coverage-v8` e `test:coverage`
 
