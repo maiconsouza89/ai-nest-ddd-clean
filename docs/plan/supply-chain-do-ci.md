@@ -99,16 +99,16 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 
 | Fase | O que entrega | Status |
 | --- | --- | --- |
-| 1. PR | Lockfile, Dependabot, CodeQL, dependency review, `audit:signatures`, `setup-github.mjs` e documentação | ⬜ |
+| 1. PR | Lockfile, Dependabot, CodeQL, dependency review, `audit:signatures`, `setup-github.mjs` e documentação | 🟡 |
 | 2. Depois do merge | Configuração do repo, "Require lockfile", triagem do CodeQL, primeira rodada do Dependabot e fechamento da issue | ⬜ |
 
 ---
 
 ## Fase 1: PR
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-25 · **Conclusão:** —
 >
-> - [ ] Passo 1: branch, plano e roadmap
+> - [x] Passo 1: branch, plano e roadmap
 > - [ ] Passo 2: lockfile das actions e `verify-lockfile.yml`
 > - [ ] Passo 3: `.github/dependabot.yml`
 > - [ ] Passo 4: CodeQL
@@ -138,7 +138,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - `npm run docs:check` passa.
 - O roadmap não fala mais em SHA para a #13.
 
-**Como ficou:** —
+**Como ficou:** num worktree próprio (`npm run worktree:setup`, slot 3), porque as trilhas B, C e D rodam em paralelo. A branch local `ci/dependabot-codeql-e-lockfile-das-actions` que sobrou do PR #42 (o deste plano, mesmo commit `3b48866`) foi recriada a partir da `main`. O plano já estava na `main` pelo PR #42, então não há commit dele aqui. No roadmap, a coluna "Conflito" das duas linhas novas de "Arquivos em comum" ficou com o texto do plano e, para o `setup-github.mjs`, "A #21 acrescenta a regra no ruleset da #13". `npm run docs:check` passa.
 
 ### Passo 2: lockfile das actions e `verify-lockfile.yml`
 
