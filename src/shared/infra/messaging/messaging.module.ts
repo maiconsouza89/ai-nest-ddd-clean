@@ -5,6 +5,7 @@ import { BullMqConnection } from './bullmq-connection.js';
 import { BullMqPublisher } from './bullmq-publisher.js';
 import { EventSubscriptions } from './event-subscriptions.js';
 import { EventWorkers } from './event-workers.js';
+import { QueueMetrics } from './queue-metrics.js';
 
 /** Transporte dos eventos de integração: uma fila BullMQ por consumidor. */
 @Module({
@@ -13,6 +14,7 @@ import { EventWorkers } from './event-workers.js';
     BullMqConnection,
     EventSubscriptions,
     EventWorkers,
+    QueueMetrics,
     BullMqPublisher,
     { provide: EventPublisher, useExisting: BullMqPublisher },
   ],
