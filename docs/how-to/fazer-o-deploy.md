@@ -104,7 +104,9 @@ O primeiro aplica as migrations no banco externo; o segundo sobe a app, e o `htt
 
 O profile `prod` do `docker-compose.yml` repete a ordem do deploy: o serviço `migrate` roda o `db:migrate:prod` e termina, e o `app` só sobe depois de ele terminar com sucesso. O ambiente dos dois vem da âncora `x-app-env`, com valores só para uso local. Os dois ficam fora do `docker compose up -d postgres redis mailpit` de sempre.
 
-O projeto isolado (`-p ai-nest-deploy-check`) tem volumes próprios: as migrations rodam num banco vazio, e o banco de desenvolvimento não muda. Ele publica as mesmas portas do ambiente de desenvolvimento, então pare o de desenvolvimento antes. Não deixe `start:dev` nem o e2e rodando: o `app` usa a porta 3000, e uma segunda instância consumiria as filas do BullMQ.
+Só no checkout principal. O passo 1 para o stack de desenvolvimento, que é também o de todos os worktrees, e num worktree o `docker compose` sem `-p` mira o projeto do principal (o `COMPOSE_PROJECT_NAME` do `.env` gerado): um `--profile prod up` sem o `-p` recriaria o `migrate` e o `app` do principal com o código da branch e aplicaria as migrations dela no banco `app`.
+
+O projeto isolado (`-p ai-nest-deploy-check`) tem volumes próprios: as migrations rodam num banco vazio, e o banco de desenvolvimento não muda. Ele publica as mesmas portas do ambiente de desenvolvimento, então pare o de desenvolvimento antes. Não deixe `start:dev` nem o e2e rodando, nem nos worktrees: o `app` usa a porta 3000, e uma segunda instância consumiria as filas do BullMQ.
 
 1. Pare o ambiente de desenvolvimento, sem apagar os volumes:
 

@@ -90,11 +90,28 @@ A imagem Docker define as três `OTEL_*_EXPORTER` como `none`. Com um coletor, d
 | `OTEL_SERVICE_NAME` | `ai-nest-ddd-clean` | Nome do serviço nos spans |
 | `OTEL_SDK_DISABLED` | não definida | `true` desliga a instrumentação por completo |
 
+Fora do `.env.example`, a app também lê o `OTEL_RESOURCE_ATTRIBUTES`, atributos do recurso em `chave=valor` separados por vírgula. Num worktree, o `worktree:setup` acrescenta `deployment.environment.name=wt<N>` aos que o `.env` do principal tiver, para separar os traces de cada worktree.
+
+## Worktree
+
+Escritas pelo `npm run worktree:setup` no `.env` de um `git worktree` ([Como trabalhar com worktrees em paralelo](../how-to/trabalhar-com-worktrees-em-paralelo.md)). O checkout principal não tem nenhuma. A app não lê as duas primeiras, e elas ficam fora da validação.
+
+| Variável | No worktree | O que faz |
+| --- | --- | --- |
+| `WORKTREE_SLOT` | `1` a `15` | O slot do worktree. A trava dos comandos (`scripts/worktree-guard.mjs`) exige a variável num worktree, e o setup a usa para não reservar o slot de novo |
+| `MAILPIT_TAG` | `wt<N>` | A tag dos e-mails do worktree no Mailpit. O e2e filtra por ela |
+| `COMPOSE_PROJECT_NAME` | O nome do projeto do principal | Variável do Docker Compose, lida do `.env`: aponta o `docker compose` do worktree para o stack do principal |
+| `OTEL_RESOURCE_ATTRIBUTES` | Os do principal, mais `deployment.environment.name=wt<N>` | Os atributos dos traces, com o ambiente do worktree |
+
+O setup também reescreve `PORT` (`3000 + N`), o banco da `DATABASE_URL` (`app_wt<N>`), o banco lógico do `REDIS_URL` (`/N`) e o usuário do `SMTP_URL` (`wt<N>:x`, que o Mailpit vira tag). Um `.env.local` copiado do principal sai sem essas chaves, para não vencer o `.env` gerado.
+
 ## Testes
 
-O `test/setup-env.ts` define o mínimo para os testes que sobem o `AppModule`, sem sobrescrever o que já estiver no ambiente:
+Antes dos valores de teste, o `test/setup-env.ts` copia do `.env.local` e do `.env` do checkout, na precedência da app e sem vencer o ambiente, só `DATABASE_URL`, `REDIS_URL`, `SMTP_URL`, `MAILPIT_API_URL` e `MAILPIT_TAG`. Num worktree, o e2e usa assim o banco, o Redis e a tag dele. Com `NODE_ENV=production` no ambiente, os arquivos não são lidos. As outras chaves do `.env` não entram, para o `THROTTLE_ENABLED`, o `LOG_LEVEL` e os workers não vazarem para os testes.
 
-- `NODE_ENV=test`, mais `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` apontando para o `docker-compose.yml`, `EMAIL_FROM` e um `JWT_SECRET` fixo, só de teste;
+Depois, define o mínimo para os testes que sobem o `AppModule`, sem sobrescrever o que já estiver no ambiente:
+
+- `NODE_ENV=test`, mais `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` apontando para o `docker-compose.yml` quando os arquivos não as definem, `EMAIL_FROM` e um `JWT_SECRET` fixo, só de teste;
 - `OUTBOX_WORKER_ENABLED`, `QUEUE_WORKERS_ENABLED`, `JOBS_ENABLED` e `THROTTLE_ENABLED` em `false`;
 - `LOG_LEVEL=silent` e `OTEL_SDK_DISABLED=true`.
 

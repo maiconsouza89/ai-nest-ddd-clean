@@ -34,6 +34,12 @@ O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redi
 
 Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão vira exceção não tratada e derruba o processo.
 
+### Um banco lógico por worktree
+
+Os worktrees compartilham o Redis do checkout principal ([ADR 0011](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)), e cada um usa o banco lógico do slot dele, pela URL: `redis://localhost:6379/<N>`. As filas do BullMQ, os jobs agendados, o rate limit, o cache e o health leem o mesmo `REDIS_URL`, e o `ioredis` e o cliente `redis` aceitam o `/N`, então nada muda na app. Um `FLUSHDB` no banco `N` limpa um worktree sem tocar nos outros.
+
+Um prefixo de chave por worktree também separaria os dados, mas teria de entrar em quatro pontos do `src/shared` (o `prefix` do BullMQ, o throttler, o cache e o health) por um problema só de desenvolvimento, e o `keyPrefix` do `ioredis` não serve: o BullMQ o recusa. O custo do banco lógico é o teto de 15 worktrees, dos 16 bancos do padrão, e ele não existe no Redis Cluster, que não é usado localmente.
+
 ### Redis fora do ar: cada uso falha do seu jeito
 
 Nenhum uso espera o Redis voltar segurando uma requisição. O que acontece com cada um, conferido com o Redis parado e a app no ar:

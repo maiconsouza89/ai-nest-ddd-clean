@@ -24,7 +24,7 @@ A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transf
 | Evento de integração, lado de quem publica | Contrato (unitário) | `application/events/to-integration-event.contract.spec.ts` | O evento gerado a partir do agregado, comparado com o exemplo `contracts/events/*.v<N>.example.ts` | `orders`, `identity` |
 | Evento de integração, lado de quem consome | Contrato (unitário) | O spec do handler | O mesmo exemplo do contrato como entrada, inclusive entregue duas vezes | `on-order-cancelled.handler.spec.ts` |
 | Adapter de fornecedor real | Integração | `*.int-spec.ts` ao lado do adapter | O serviço num `GenericContainer` do Testcontainers | `smtp-email-sender.int-spec.ts`, com o Mailpit |
-| Fluxo crítico pela API | E2E | `test/*.e2e-spec.ts` | O `AppModule` inteiro, contra o Postgres, o Redis e o Mailpit do `docker-compose.yml` | `auth.e2e-spec.ts`, `outbox.e2e-spec.ts` |
+| Fluxo crítico pela API | E2E | `test/*.e2e-spec.ts` | O `AppModule` inteiro, contra o Postgres, o Redis e o Mailpit do `docker-compose.yml`, no banco e no banco lógico do checkout (num worktree, os do slot dele) | `auth.e2e-spec.ts`, `outbox.e2e-spec.ts` |
 
 As facades não têm teste de contrato: o `npm run typecheck` confere a assinatura dos dois lados.
 
@@ -42,7 +42,7 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 | `test/helpers/guard-probe.controller.ts` | `GuardProbeController`: uma rota autenticada (`GET /v1/guard-probe`) e uma só de admin (`POST /v1/guard-probe/admin`), registradas só no `TestingModule` do `auth.e2e-spec.ts`. Os testes do guard e das roles não dependem das rotas dos módulos de exemplo |
 | `test/helpers/error-probe.controller.ts` | `ErrorProbeController`: rotas públicas em `/v1/error-probe` que lançam um erro inesperado, um erro de domínio com código registrado só pelo teste (`ERROR_PROBE_STATUSES`), um com código fora do mapa, e uma que valida um corpo com campo aninhado. Registrado só no `TestingModule` do `problem-details.e2e-spec.ts`, junto com `provideErrorStatuses(ERROR_PROBE_STATUSES)` |
 | `test/helpers/problem.ts` | `expectProblemJson(res)`: confere o `Content-Type: application/problem+json` de uma resposta de erro |
-| `test/helpers/mailpit.ts` | Lê os e-mails pela API do Mailpit: `emailsTo`, `waitForEmail` e `verificationCodeFor`. Os e2e não trocam o `EmailSender` por um fake: o e-mail sai por SMTP, como em produção |
+| `test/helpers/mailpit.ts` | Lê os e-mails pela API do Mailpit: `emailsTo`, `waitForEmail` e `verificationCodeFor`. Com `MAILPIT_TAG` (num worktree), a busca filtra pela tag, além do destinatário. Os e2e não trocam o `EmailSender` por um fake: o e-mail sai por SMTP, como em produção |
 | `test/helpers/contract.ts` | `incompatibilities(exemplo, real)`: lista os campos do exemplo que faltam ou mudaram de tipo, em qualquer profundidade. Campo a mais é aceito (mudança aditiva) |
 
 ## Só os testes afetados

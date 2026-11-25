@@ -18,7 +18,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - `npm run typecheck`, `npm run lint` e `npm run arch` (camadas e fronteiras entre módulos).
 - `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- register-user` e `npm run test:e2e -- auth`.
 - `npm run test:int` sobe Postgres e Redis descartáveis pelo Testcontainers, isolados do docker-compose. Só precisa do Docker.
-- `npm run test:e2e` sobe a app inteira contra o Postgres, o Redis e o Mailpit do docker-compose (ver a armadilha do E2E abaixo).
+- `npm run test:e2e` sobe a app inteira contra o Postgres, o Redis e o Mailpit do docker-compose, no banco do checkout (ver a armadilha do E2E abaixo).
 - `npm run ci` roda typecheck, lint, format:check, docs:check, unitários e arch. Integração e e2e ficam fora: rode-os quando a mudança tocar banco, Redis, filas ou HTTP.
 
 ## Armadilhas
@@ -28,8 +28,9 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **oxc nos testes:** "can't resolve dependencies" num construtor costuma ser um parâmetro tipado com type alias ou utility type. O oxc emite `Object` para eles. Tipe o parâmetro com a classe.
 - **Condição `@app/source`:** um script que roda o TypeScript direto (migrations, seeds) precisa de `--conditions=@app/source`. Sem ela, os aliases `#...` carregam o `dist/`, talvez velho, sem erro. O `plop module` já gera os scripts com ela.
 - **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
-- **E2E:** grava no banco do docker-compose. Encerre qualquer `start:dev` antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
-- **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz deste repo. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
+- **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
+- **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.
+- **Baixar o ambiente:** só `docker compose down -v --remove-orphans`, na raiz do checkout principal; apaga também os dados dos worktrees. Num worktree, `npm run worktree:down`. Nunca `docker volume prune` nem `docker system prune`, e nada de remover volumes, containers ou redes de outros projetos.
 - **Instruções de agente:** ficam só neste arquivo. Não crie `CLAUDE.md`: com ele na raiz, o Claude Code deixa de ler o `AGENTS.md` (`docs/adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md`).
 
 ## Versões
@@ -65,6 +66,7 @@ Leia a página antes de agir no assunto.
 | Vai fazer | Leia |
 | --- | --- |
 | Rodar, testar, migrar, semear, gerar módulo ou página, subir ou baixar o ambiente | `docs/reference/comandos.md` |
+| Criar ou limpar um worktree, ou rodar dois ambientes em paralelo | `docs/how-to/trabalhar-com-worktrees-em-paralelo.md` |
 | Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` e `docs/how-to/adicionar-uma-variavel-de-ambiente.md` |
 | Adicionar ou atualizar dependência | `docs/reference/versoes-e-excecoes.md` |
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |

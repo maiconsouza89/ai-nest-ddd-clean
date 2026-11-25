@@ -34,6 +34,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como fazer o deploy](how-to/fazer-o-deploy.md): a imagem Docker, as migrations num passo antes da app, as variáveis e as probes, e o teste local com o profile `prod`.
 - [Como rodar um teste específico](how-to/rodar-um-teste-especifico.md): o script por tipo de teste, o filtro por caminho, por nome e por linha.
 - [Como resetar o ambiente local](how-to/resetar-o-ambiente-local.md): apagar o Postgres e o Redis deste projeto e subir tudo do zero.
+- [Como trabalhar com worktrees em paralelo](how-to/trabalhar-com-worktrees-em-paralelo.md): o `worktree:setup`, a porta, o banco, o Redis e a tag do Mailpit de cada worktree, e como limpar sem apagar os dados dos outros.
 - [Como remover os módulos de exemplo](how-to/remover-os-modulos-de-exemplo.md): tirar o orders, o catalog e o inventory e ficar só com a base, com a lista das páginas que ainda citam os exemplos.
 
 ## Explicação
@@ -52,7 +53,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 
 ## Referência
 
-- [Comandos](reference/comandos.md): setup do zero, verificação, testes, migrations, seeds, geradores e como baixar o ambiente.
+- [Comandos](reference/comandos.md): setup do zero, verificação, testes, worktrees, migrations, seeds, geradores e como baixar o ambiente.
 - [Variáveis de ambiente](reference/variaveis-de-ambiente.md): cada variável, com padrão, valores aceitos e efeito.
 - [Versões e exceções](reference/versoes-e-excecoes.md): a regra de versões e os pacotes fora da latest, com o gatilho para atualizar.
 - [Evoluções com gatilho](reference/evolucoes-com-gatilho.md): mudanças adiadas de propósito, com a condição que destrava cada uma.
@@ -89,10 +90,11 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0008: Projeto template com módulos de exemplo](adr/0008-projeto-template-com-modulos-de-exemplo.md)
 - [0009: Verificação do e-mail com o código no evento](adr/0009-verificacao-de-email-com-codigo-no-evento.md)
 - [0010: Respostas de erro em Problem Details, com `type` `about:blank` e um `code`](adr/0010-erros-em-problem-details-com-code.md)
+- [0011: Worktrees compartilham o stack do checkout principal, isolados por slot](adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)
 
 ## Fora dos quadrantes
 
-- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Nenhum em andamento. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue: o de pool e timeouts do Postgres, concluído, está no [registro da issue #18](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/18#issuecomment-7153307296); o da otimização do CI, concluído, está em `git show 01f32ac:docs/plan/otimizacao-do-ci.md` (fases 1 e 2) e no [registro da issue #14](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/14#issuecomment-7152733280) (fase 3); o das respostas de erro em Problem Details, concluído, está no [registro da issue #11](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/11#issuecomment-7148591899); o do deploy com Docker, concluído, está no [registro da issue #10](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/10#issuecomment-7147612651); o do projeto template (CI, verificação de e-mail e README), concluído, em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
+- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Nenhum em andamento. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue: o dos ambientes isolados por git worktree, concluído, está no [registro da issue #35](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/35#issuecomment-7160950165); o de pool e timeouts do Postgres, concluído, está no [registro da issue #18](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/18#issuecomment-7153307296); o da otimização do CI, concluído, está em `git show 01f32ac:docs/plan/otimizacao-do-ci.md` (fases 1 e 2) e no [registro da issue #14](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/14#issuecomment-7152733280) (fase 3); o das respostas de erro em Problem Details, concluído, está no [registro da issue #11](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/11#issuecomment-7148591899); o do deploy com Docker, concluído, está no [registro da issue #10](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/10#issuecomment-7147612651); o do projeto template (CI, verificação de e-mail e README), concluído, em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
 
 ## Como escrever uma página
 

@@ -53,6 +53,8 @@ export default defineConfig(
     // Scripts de ferramenta em JS puro, sem tipos.
     files: ['scripts/**/*.mjs'],
     extends: [js.configs.recommended],
+    // os globais do Node que os scripts usam sem import (o `process` vem de `node:process`)
+    languageOptions: { globals: { URL: 'readonly', fetch: 'readonly' } },
   },
   {
     // Testes: supertest, matchers do Vitest e `ds.query` cru devolvem `any`, e o `?.` do `afterAll` e o `!`
