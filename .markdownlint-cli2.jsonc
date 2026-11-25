@@ -10,8 +10,9 @@
   },
   "overrides": [
     {
-      // Um CLAUDE.md ou CLAUDE.local.md começa com `@AGENTS.md` na primeira linha, antes do título (ADR 0007).
-      "filter": ["**/CLAUDE.md", "**/CLAUDE.local.md"],
+      // Sem título na primeira linha: um CLAUDE.md ou CLAUDE.local.md começa com `@AGENTS.md` (ADR 0007),
+      // e o template de PR vira a descrição do PR, que já tem o título como cabeçalho.
+      "filter": ["**/CLAUDE.md", "**/CLAUDE.local.md", "**/pull_request_template.md"],
       "config": { "MD041": false },
       "combine": "merge",
     },
