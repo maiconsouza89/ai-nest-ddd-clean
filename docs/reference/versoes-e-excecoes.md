@@ -21,13 +21,14 @@ O `prettier` fica na latest, com a versão exata no `package.json` (sem `^`). O 
 
 ## Exceções
 
-Consultadas em 2026-11-21.
+Consultadas em 2026-11-21, e a linha do Nest em 2026-11-25.
 
 | Pacote | Fica em | Latest | Motivo | Atualize quando |
 | --- | --- | --- | --- | --- |
 | `typescript` | `~6.0` | 7.0.2 | O TS 7 não expõe a API do compilador. O `@nestjs/cli` 12.0.15 depende de `typescript ~6.0.2` e o `typescript-eslint` 8.74 aceita só `>=4.8.4 <6.1.0`. O `dependency-cruiser` 18.9 já aceita o TS `>=7.1` (o 7.0 não). Conferido em 2026-11-23. | O `@nestjs/cli` e o `typescript-eslint` aceitarem o TS 7.1 ou superior. Para o TS 6.1, basta o `typescript-eslint` aceitar |
 | `keyv`, `@keyv/redis` | `^5.6`, `^5.1` | 6.1.0 | O `cache-manager` 7.2.9 depende de `keyv ^5.6`. Misturar as linhas 5 e 6 deixa duas Keyv no projeto. | O `cache-manager` depender da `keyv` 6 |
 | `ioredis` | `^5.11` | 6.1.0 | O `typeorm` 1.1.3 (latest, `dev` e `beta` também) declara `ioredis ^5.0.4` como peer opcional, e o `npm install` falha com ERESOLVE. O TypeORM só usa o ioredis no cache de queries, que o projeto não usa, mas o override esconderia a incompatibilidade. O ioredis 6 também passa a usar RESP3 por padrão. | O `typeorm` aceitar o ioredis 6 (issue typeorm/typeorm#12823, PR #12830). Revise então `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle: `protocol: 2` mantém o formato do 5 |
+| `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/testing` | `12.6.0` (exata) | 12.6.1 | Na 12.6.1, o tipo do `applyDecorators` virou uma assinatura só, que retorna `TFunction \| TypedPropertyDescriptor \| undefined`. O `tsc` dá TS1270 onde o `ApiProblemResponse` decora um método que devolve valor (`auth.controller.ts`). Regressão registrada em nestjs/nest#18709. A versão fica exata para um `npm update` não trazer a 12.6.1. Conferido em 2026-11-25. | Sair a correção (PR nestjs/nest#18710). Volte então ao `^` na latest dos quatro, juntos |
 | `argon2` | `^0.45` | 0.45.2 | É 0.x, mas tem anos de produção. O Argon2id é o algoritmo nº 1 do OWASP para senhas. | — (exceção à regra "≥ 1.0") |
 
 ## Combinações que quebram
