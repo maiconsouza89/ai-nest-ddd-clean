@@ -23,7 +23,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 1 | B | #19 Rate limit do login também por conta | média | — | ✅ (#47) |
 | 1 | C | #15 Troca do `module.register` (DEP0205) | média | — | ✅ (#46) |
 | 1 | D | #16 Gatilho de `@nestjs/outbox`, `@nestjs/webhooks` e `@nestjs/http-client` | média | — | ✅ (#45) |
-| 2 | C | #17 Métricas com OpenTelemetry | média | #15 | ⬜ |
+| 2 | C | #17 Métricas com OpenTelemetry | média | #15 | 🟡 |
 | 2 | E | #21 Relatório de cobertura de testes | baixa | #13 | ⬜ |
 | 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | ⬜ |
 | 2 | G | #23 Mudanças do OpenAPI que quebram clientes | baixa | #13 | ⬜ |
