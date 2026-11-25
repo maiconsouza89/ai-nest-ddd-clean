@@ -13,6 +13,7 @@ import { OnOrderCancelledHandler } from '#modules/inventory/infra/events/on-orde
 import { IntegrationEvent } from '#shared/application/integration-event';
 import { emailsWith, waitForEmail } from './helpers/mailpit.js';
 import { waitFor } from './helpers/wait-for.js';
+import { expectProblemJson } from './helpers/problem.js';
 
 type Session = Awaited<ReturnType<typeof registerAndLogin>>;
 
@@ -54,12 +55,18 @@ describe('Orders (e2e)', () => {
     const list = await request(server()).get('/v1/orders').set(user.auth).expect(200);
     expect(list.body.items[0]).toMatchObject({ itemCount: 1, totalCents: 2000 });
 
+    const missing = crypto.randomUUID();
     const res = await request(server())
       .post('/v1/orders')
       .set(user.auth)
-      .send({ items: [{ productId: crypto.randomUUID(), qty: 1 }] })
+      .send({ items: [{ productId: missing, qty: 1 }] })
       .expect(404);
-    expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+    expectProblemJson(res);
+    expect(res.body).toMatchObject({
+      status: 404,
+      code: 'PRODUCT_NOT_FOUND',
+      detail: `Product not found: ${missing}`,
+    });
   });
 
   describe('estoque ao fechar o pedido', () => {
@@ -94,11 +101,15 @@ describe('Orders (e2e)', () => {
 
   it('rejeita corpo com campo extra', async () => {
     const user = await registerAndLogin(app);
-    await request(server())
+    const res = await request(server())
       .post('/v1/orders')
       .set(user.auth)
       .send({ items: [{ productId, qty: 1 }], extra: true })
       .expect(400);
+    expect(res.body).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      errors: [{ pointer: '#/extra', detail: 'property extra should not exist' }],
+    });
   });
 
   it('rejeita productId que não é uuid (400)', async () => {

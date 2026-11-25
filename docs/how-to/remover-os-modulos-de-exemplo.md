@@ -111,8 +111,9 @@ As páginas com "sim" têm links para as páginas de referência apagadas. As co
 | `how-to/rodar-um-teste-especifico.md` | não | Trocar os exemplos de filtro (`order`, `order-item`) por arquivos da base e recontar |
 | `reference/camadas.md` | sim | Reescrever, sem os links, os itens do módulo CRUD (catalog) e do módulo sem entidade (inventory) |
 | `reference/convencoes.md` | não | Trocar o exemplo de rota versionada (`/v1/orders`) |
-| `reference/evolucoes-com-gatilho.md` | não | Tirar a `orders.idempotency_keys` da linha da limpeza de tabelas |
+| `reference/evolucoes-com-gatilho.md` | não | Tirar a `orders.idempotency_keys` da linha da limpeza de tabelas e o `PAYMENT_UNAVAILABLE` da linha do `Retry-After` |
 | `reference/operacao.md` | não | Trocar as tags (`orders`, `products`) e a linha de log de exemplo (`GET /v1/orders`) |
+| `reference/respostas-de-erro.md` | não | Trocar os exemplos de corpo (`ORDER_ALREADY_PAID`, `POST /v1/orders`, `GET /v1/products/:id`) por rotas da base, como o `/v1/auth` |
 | `reference/testes.md` | não | Trocar os arquivos de exemplo de cada tipo de teste (`order.entity.spec.ts`, `cached-order.queries.int-spec.ts` e outros) por arquivos da base |
 | `reference/glossario.md` | sim | Apagar as linhas e os termos do orders, do catalog e do inventory. Reescrever "Idempotency key" e "Usuário, ator e cliente" sem o pedido |
 

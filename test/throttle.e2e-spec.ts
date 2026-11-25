@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 import request from 'supertest';
 import { configureApp } from '../src/app.setup.js';
+import { expectProblemJson } from './helpers/problem.js';
 
 describe('Rate limiting (e2e)', () => {
   let app: TestApp;
@@ -39,15 +40,23 @@ describe('Rate limiting (e2e)', () => {
   });
 
   it('devolve 429 após vários logins seguidos', async () => {
-    const statuses: number[] = [];
+    const responses = [];
     for (let i = 0; i < 7; i++) {
-      const res = await request(app.getHttpServer())
-        .post('/v1/auth/login')
-        .send({ email: 'nobody@example.com', password: 'wrong-password' });
-      statuses.push(res.status);
+      responses.push(
+        await request(app.getHttpServer())
+          .post('/v1/auth/login')
+          .send({ email: 'nobody@example.com', password: 'wrong-password' }),
+      );
     }
-    expect(statuses.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);
-    expect(statuses.slice(5)).toEqual([429, 429]);
+    expect(responses.map((r) => r.status)).toEqual([401, 401, 401, 401, 401, 429, 429]);
+    const limited = responses[5];
+    expectProblemJson(limited);
+    expect(limited.body).toMatchObject({
+      title: 'Too Many Requests',
+      status: 429,
+      code: 'TOO_MANY_REQUESTS',
+      instance: '/v1/auth/login',
+    });
   });
 
   it('envia os cabeçalhos do helmet', async () => {

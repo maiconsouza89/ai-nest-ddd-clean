@@ -49,4 +49,5 @@ Fontes externas consultadas no desenho do projeto, em novembro de 2026.
 - [Martin Fowler: Quantity e Money](https://www.martinfowler.com/eaaDev/Quantity.html)
 - [Markus Winand: No offset (keyset pagination)](https://use-the-index-luke.com/no-offset)
 - [RFC 9562: UUIDs](https://www.rfc-editor.org/rfc/rfc9562.html)
+- [RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457.html)
 - [IETF draft: The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/)

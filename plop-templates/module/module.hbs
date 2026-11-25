@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '#shared/application/ports/id-generator';
+import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { Create{{pascalCase name}}UseCase } from '../application/use-cases/create-{{kebabCase name}}.use-case.js';
 import { Get{{pascalCase name}}UseCase } from '../application/use-cases/get-{{kebabCase name}}.use-case.js';
@@ -8,11 +9,13 @@ import { {{pascalCase name}}Repository } from '../domain/repositories/{{kebabCas
 import { {{pascalCase name}}OrmEntity } from './database/typeorm/entities/{{kebabCase name}}.orm-entity.js';
 import { TypeOrm{{pascalCase name}}Repository } from './database/typeorm/typeorm-{{kebabCase name}}.repository.js';
 import { {{pascalCase name}}Controller } from './http/controllers/{{kebabCase name}}.controller.js';
+import { {{constantCase name}}_ERROR_STATUSES } from './http/error-statuses.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([{{pascalCase name}}OrmEntity])],
   controllers: [{{pascalCase name}}Controller],
   providers: [
+    provideErrorStatuses({{constantCase name}}_ERROR_STATUSES),
     { provide: {{pascalCase name}}Repository, useClass: TypeOrm{{pascalCase name}}Repository },
     { provide: IdGenerator, useClass: UuidV7Generator },
     {

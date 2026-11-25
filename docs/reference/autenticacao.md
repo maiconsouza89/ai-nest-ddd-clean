@@ -8,7 +8,7 @@ O porquê do desenho está em [Autenticação e ownership](../explanation/autent
 
 ## Rotas
 
-Todas são `POST`, públicas e com rate limit próprio, por IP. Um erro de domínio responde `{ code, message }`.
+Todas são `POST`, públicas e com rate limit próprio, por IP. Um erro responde em Problem Details, com o `code` ([Respostas de erro](respostas-de-erro.md)). A validação do corpo responde 400 `VALIDATION_FAILED`.
 
 | Rota | Corpo | Sucesso | Erros | Limite |
 | --- | --- | --- | --- | --- |

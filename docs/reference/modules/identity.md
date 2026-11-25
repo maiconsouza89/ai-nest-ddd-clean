@@ -41,7 +41,7 @@ Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta pág
 
 **Port do shared:** `ActorResolver.resolve(userId)` devolve `{ id, roles }`, ou `null` para um usuário que não existe. Só o guard de autenticação o usa.
 
-**HTTP:** `POST /v1/auth/register`, `/verify-email`, `/resend-verification-code`, `/login`, `/refresh` e `/logout`. Corpos, respostas, erros e limites em [Autenticação](../autenticacao.md#rotas).
+**HTTP:** `POST /v1/auth/register`, `/verify-email`, `/resend-verification-code`, `/login`, `/refresh` e `/logout`. Corpos, respostas, erros e limites em [Autenticação](../autenticacao.md#rotas). Os status dos códigos de erro vêm do `IDENTITY_ERROR_STATUSES` (`infra/http/error-statuses.ts`), e a resposta sai em Problem Details ([Respostas de erro](../respostas-de-erro.md)).
 
 ## Eventos publicados
 

@@ -22,7 +22,7 @@ O caso de uso declara o que precisa num port (`PaymentGateway`, `EmailSender`), 
 
 ### O adapter traduz o erro
 
-O SDK de um fornecedor lança erros no formato dele: códigos HTTP, classes próprias, mensagens que mudam de versão para versão. O adapter os converte num erro do módulo. No pagamento, qualquer falha do fornecedor, inclusive o timeout, vira `PaymentUnavailableError`, que o filter do orders responde como 503. O caso de uso e o filter conhecem um erro só, e a causa real vai para o log, sem chegar ao cliente.
+O SDK de um fornecedor lança erros no formato dele: códigos HTTP, classes próprias, mensagens que mudam de versão para versão. O adapter os converte num erro do módulo. No pagamento, qualquer falha do fornecedor, inclusive o timeout, vira `PaymentUnavailableError`, que o mapa de status do orders responde como 503. O caso de uso e o mapa conhecem um erro só, e a causa real vai para o log, sem chegar ao cliente.
 
 ### Resiliência num decorator
 
@@ -67,7 +67,7 @@ Com um fornecedor fora do ar, cada requisição ainda gasta o timeout inteiro an
 - **Resiliência dentro de cada adapter:** um arquivo a menos por fornecedor. Em troca, a política se mistura com a tradução de chamadas, se repete em cada adapter e é perdida numa troca de fornecedor.
 - **Retry no caso de uso:** o caso de uso saberia que a chamada falhou e poderia decidir o que fazer. Em troca, ele passaria a conhecer timeout e backoff, que são detalhe de infraestrutura, e cada caso de uso repetiria o laço.
 - **Uma biblioteca de resiliência (`cockatiel`, `opossum`):** timeout, retry, circuit breaker e bulkhead prontos e combináveis. O projeto precisa só de timeout e retry, que cabem em duas funções curtas e testadas. A biblioteca entra junto com o circuit breaker.
-- **Lançar o erro do fornecedor:** dispensa a tradução. Em troca, o filter teria de conhecer cada SDK, e trocar de fornecedor mudaria as respostas da API.
+- **Lançar o erro do fornecedor:** dispensa a tradução. Em troca, o mapa de status teria de conhecer cada SDK, e trocar de fornecedor mudaria as respostas da API.
 
 ## Decisões relacionadas
 

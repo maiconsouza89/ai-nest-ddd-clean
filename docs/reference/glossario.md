@@ -72,6 +72,10 @@ O value object `Money`: um inteiro em centavos e uma moeda, `BRL` por padrão. S
 
 Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop module`, guarda a versão lida. A gravação confere se ela não mudou. Se outra requisição gravou antes, a segunda falha com `CONCURRENCY_CONFLICT` e precisa reler.
 
+### Código de erro
+
+O identificador estável de um erro, em maiúsculas com `_`, como `ORDER_ALREADY_PAID`. O cliente decide o que fazer pelo código, e não pela mensagem, que é para leitura e pode mudar. Um código não muda de sentido depois de publicado. Cada erro de domínio declara o seu, e os erros que não são de domínio também têm um, como `VALIDATION_FAILED`.
+
 ## Mesmo termo, sentidos diferentes
 
 | Termo | Sentido | Onde vale |
@@ -88,6 +92,7 @@ Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop modul
 | Ator | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Cancelar | [orders](modules/orders.md#linguagem-ubíqua) |
 | Chave de idempotência | [Idempotency key](#idempotency-key) |
+| Código de erro | [Código de erro](#código-de-erro) |
 | Código de verificação | [identity](modules/identity.md#linguagem-ubíqua) |
 | Cliente | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Concorrência otimista | [Concorrência otimista](#concorrência-otimista) |

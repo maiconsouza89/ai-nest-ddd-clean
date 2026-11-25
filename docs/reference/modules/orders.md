@@ -39,7 +39,7 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 ## Contrato público
 
 - **Facade:** nenhuma. Nenhum módulo chama o orders. Os outros reagem aos [eventos publicados](#eventos-publicados).
-- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro de domínio responde `{ code, message }`.
+- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)). Os status da tabela abaixo vêm do `ORDERS_ERROR_STATUSES` (`infra/http/error-statuses.ts`), menos o `CONCURRENCY_CONFLICT`, o `INVALID_MONEY` e o `CURRENCY_MISMATCH`, que o `shared` registra.
 
 | Rota | Corpo | Sucesso |
 | --- | --- | --- |
@@ -64,10 +64,12 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 | `INSUFFICIENT_STOCK` | 409 | Fechar sem saldo para um produto, ou com um produto sem estoque cadastrado |
 | `CONCURRENCY_CONFLICT` | 409 | O pedido mudou entre a leitura e a gravação |
 | `EMPTY_ORDER` | 422 | Fechar um pedido sem itens |
+| `INVALID_QUANTITY` | 422 | Quantidade que não é inteira e positiva. Pelo HTTP, o DTO barra antes, com 400 de validação |
+| `INVALID_MONEY`, `CURRENCY_MISMATCH` | 422 | Erros do `Money`: preço inválido vindo do catalog, ou itens em moedas diferentes |
 | `IDEMPOTENCY_KEY_REUSED` | 422 | O mesmo ator já usou a `Idempotency-Key` para pagar outro pedido |
 | `INVALID_IDEMPOTENCY_KEY` | 400 | `Idempotency-Key` vazia ou com mais de 255 caracteres |
 | `PAYMENT_UNAVAILABLE` | 503 | O fornecedor de pagamento falhou ou estourou o tempo em todas as tentativas |
-| Outro erro de domínio | 422 | Por exemplo `INVALID_QUANTITY` ou `CURRENCY_MISMATCH` |
+| Outro erro de domínio | 422 | Código fora do mapa, com um `warn` no log |
 
 ## Eventos publicados
 

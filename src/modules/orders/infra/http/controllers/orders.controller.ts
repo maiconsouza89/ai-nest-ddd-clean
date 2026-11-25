@@ -8,7 +8,6 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
-  UseFilters,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Actor } from '#shared/application/actor';
@@ -21,12 +20,10 @@ import { GetOrderUseCase } from '../../../application/use-cases/get-order.use-ca
 import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case.js';
 import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case.js';
 import { CreateOrderRequest } from '../dtos/create-order.request.js';
-import { OrdersDomainErrorFilter } from '../filters/domain-error.filter.js';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
-@UseFilters(OrdersDomainErrorFilter)
 export class OrdersController {
   constructor(
     private readonly createOrder: CreateOrderUseCase,

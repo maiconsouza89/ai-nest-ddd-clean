@@ -56,7 +56,7 @@ src/
 │       │   ├── http/
 │       │   │   ├── controllers/         orders.controller.ts
 │       │   │   ├── dtos/                create-order.request.ts
-│       │   │   └── filters/             domain-error.filter.ts
+│       │   │   └── error-statuses.ts    (status HTTP de cada código de erro)
 │       │   ├── cache/                   cached-order.queries.ts
 │       │   ├── events/                  invalidate-order-list-cache.handler.ts
 │       │   ├── jobs/                    expire-pending-orders.processor.ts
@@ -108,7 +108,7 @@ src/
 | Nest module auxiliar | `infra/<nome>.module.ts` | Um segundo Nest module, quando o módulo liga um port do `shared` que não deve sair pelo Nest module principal. O `identity/infra/identity-auth.module.ts` liga o `ActorResolver` do shared, e o `AppModule` só o repassa para o `AuthModule.forRoot` |
 | Controller | `infra/http/controllers/` | Converte o DTO HTTP no DTO da application e repassa o `Actor` como dado |
 | DTO HTTP | `infra/http/dtos/` | `class-validator` e Swagger ficam aqui. Valida o formato da entrada |
-| Filter | `infra/http/filters/domain-error.filter.ts` | Um por módulo, com uma tabela de `code` para status HTTP |
+| Mapa de status | `infra/http/error-statuses.ts` | `<MÓDULO>_ERROR_STATUSES`: o status HTTP de cada `code` do módulo, registrado nos `providers` do Nest module com `provideErrorStatuses(...)`. O módulo não monta resposta de erro: o filtro global do `shared` monta ([Respostas de erro](respostas-de-erro.md)) |
 | Job | `infra/jobs/` | Estende o `ScheduledJobProcessor` do `shared` e chama um caso de uso no `run()` |
 | Handler de evento | `infra/events/` | Marcado com `@IntegrationEventHandler`, recebe um evento de `contracts/events/` e chama um caso de uso pelo `IdempotentConsumer`. Um efeito idempotente por natureza, como trocar a geração do cache, dispensa o `IdempotentConsumer` |
 | Persistência | `infra/database/typeorm/` | ORM entities em `entities/`, repositório concreto, mapper e DataSource da CLI. O mapper converte nos dois sentidos |
@@ -146,6 +146,6 @@ O `src/shared/` segue as mesmas camadas e guarda só blocos técnicos com a mesm
 | Domínio: `AggregateRoot`, `DomainEvent`, `DomainError`, `ConcurrencyError` e `Money`. Os erros do `Money` (`InvalidMoneyError`, `CurrencyMismatchError`) ficam dentro do `money.vo.ts`, e não numa pasta `domain/errors/` | Conceito de negócio (`Customer`, `Product`) |
 | Aplicação: `Actor`, `Page`, `IntegrationEvent` e `IdempotentConsumer` | Erro de domínio de um módulo, em `domain/errors/` |
 | Ports técnicos: `Clock`, `IdGenerator`, `TransactionManager`, `Logger`, `ActorResolver`, `Outbox`, `EventPublisher` e `ProcessedEvents` | Value object usado por um módulo só, mesmo que pareça genérico (o `Email` do identity) |
-| Infra comum: auth, outbox, filas, cache, banco, configuração | Repositórios, entidades e o filter de erros de cada módulo |
+| Infra comum: auth, outbox, filas, cache, banco, configuração e o filtro das respostas de erro | Repositórios, entidades e o mapa de status dos códigos de erro de cada módulo |
 
 Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`. O porquê está em [Shared kernel](../explanation/shared-kernel.md).

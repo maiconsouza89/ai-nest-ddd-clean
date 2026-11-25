@@ -18,6 +18,7 @@ import { DatabaseModule } from '#shared/infra/database/database.module';
 import { ObservabilityModule } from '#shared/infra/observability/observability.module';
 import { Logger } from '#shared/application/ports/logger';
 import { ENV_FILES, ignoresEnvFiles } from '#shared/infra/config/load-env-files';
+import { ProblemDetailsModule } from '#shared/infra/http/problem-details.module';
 import { RedisThrottlerStorage } from '#shared/infra/http/redis-throttler-storage';
 import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
 import { MessagingModule } from '#shared/infra/messaging/messaging.module';
@@ -47,6 +48,7 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
       }),
     }),
     ObservabilityModule,
+    ProblemDetailsModule,
     JwtConfigModule,
     AuthModule.forRoot({ imports: [IdentityAuthModule] }),
     ClockModule,

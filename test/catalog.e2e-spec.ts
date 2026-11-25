@@ -8,6 +8,7 @@ import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { registerAndLogin } from './helpers/auth.js';
 import { registerAdmin, seedProduct } from './helpers/catalog.js';
+import { expectProblemJson } from './helpers/problem.js';
 
 describe('Catalog (e2e)', () => {
   let app: TestApp;
@@ -71,7 +72,16 @@ describe('Catalog (e2e)', () => {
       .send({ name: '   ', priceCents: 100 })
       .expect(400);
     await request(server()).get('/v1/products/nao-e-uuid').set(admin).expect(400);
-    await request(server()).get(`/v1/products/${crypto.randomUUID()}`).set(admin).expect(404);
+    const notFound = await request(server())
+      .get(`/v1/products/${crypto.randomUUID()}`)
+      .set(admin)
+      .expect(404);
+    expectProblemJson(notFound);
+    expect(notFound.body).toMatchObject({
+      status: 404,
+      code: 'NOT_FOUND',
+      detail: 'Product not found',
+    });
   });
 
   it('rejeita nome só de espaços e campos nulos na atualização (400)', async () => {
