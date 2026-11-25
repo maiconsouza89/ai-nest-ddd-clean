@@ -16,7 +16,8 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | Headers de segurança | `helmet()`, com as opções padrão | Em toda resposta |
 | CORS | `enableCors({ origin })`, com as origens de `CORS_ORIGINS` | Vazio não liga o CORS |
 | Versão na URL | `VersioningType.URI`, `defaultVersion: '1'` | Rotas em `/v1/...` ([Convenções](convencoes.md#versionamento-da-api-http)) |
-| Validação da entrada | `ValidationPipe` global com `whitelist`, `forbidNonWhitelisted` e `transform` | Campo fora do DTO responde 400. Query e parâmetros chegam convertidos para o tipo do DTO |
+| Validação da entrada | `ValidationPipe` global com `whitelist`, `forbidNonWhitelisted`, `transform` e `errorFormat: 'grouped'` | Campo fora do DTO responde 400 `VALIDATION_FAILED`, com um item em `errors` por mensagem. Query e parâmetros chegam convertidos para o tipo do DTO |
+| Respostas de erro | `ProblemDetailsFilter` global (`APP_FILTER` no `ProblemDetailsModule`) | Todo erro sai em Problem Details, com `code` e o `traceId` do span ativo ([Respostas de erro](respostas-de-erro.md)) |
 | Desligamento | `enableShutdownHooks()` | Ver [Desligamento](#desligamento) |
 
 ## Swagger
@@ -28,7 +29,8 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | Montagem | `setupSwagger` (`src/shared/infra/http/swagger.setup.ts`), com `addBearerAuth()` |
 | Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
 | Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
-| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa |
+| Respostas de erro | Schema `ProblemDetailsResponse`, em `application/problem+json`. Cada rota documenta os próprios erros com `@ApiProblemResponse(status, descrição)`, e o `setupSwagger` acrescenta o 429 e o 500 em toda operação |
+| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa. O schema de erro existe, e toda operação documenta o 429 e o 500 com ele |
 
 O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs e as respostas das rotas.
 
@@ -49,6 +51,8 @@ O plugin roda no `nest build` e no `nest start`. Os testes do Vitest compilam co
 | `GET /health/live` | Nada: o processo responde | 200 |
 | `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`, 503 com algum `down`. Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
 
+O 503 é o corpo do Terminus (`{ status, info, error, details }`), em `application/json`, e não Problem Details: o `HealthController` responde o resultado direto, e a falha não passa pelo `ProblemDetailsFilter`. O Terminus loga a falha.
+
 As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL`), fora do rate limit (`@SkipThrottle()`), sem log de acesso e sem span.
 
 ## Rate limit
@@ -60,7 +64,7 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 | Limite padrão | 100 requisições por minuto, por IP. O IP vem do `trust proxy` |
 | Limites próprios | Rotas de autenticação, com `@Throttle` ([Autenticação](autenticacao.md#rotas)) |
 | Bloqueio | Passado o limite, a chave fica bloqueada pelo mesmo prazo da janela (o `blockDuration` padrão é o `ttl`) |
-| Resposta bloqueada | 429, com `Retry-After` |
+| Resposta bloqueada | 429 `TOO_MANY_REQUESTS` em Problem Details, com `Retry-After` |
 | Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida |
 | Contadores | No Redis, pelo `RedisThrottlerStorage` (`src/shared/infra/http/`): janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
 | Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)) |
@@ -76,6 +80,7 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 | Nível | `LOG_LEVEL` |
 | Formato | JSON. Em `NODE_ENV=development`, `pino-pretty` em uma linha, sem `pid`, `hostname`, `req` e `res` |
 | Mensagem | `GET /v1/orders 200 12ms` no sucesso, `GET /v1/orders 500 failed` no erro |
+| Erro 5xx | Além da linha de acesso, o `ProblemDetailsFilter` loga um `error` com `err` (a stack), `method` e `path`. O corpo da resposta leva o `traceId`, o mesmo `trace_id` do log ([Respostas de erro](respostas-de-erro.md#log)) |
 | `req` | `id`, `method` e `url` |
 | `res` | `statusCode` |
 | Trace | `trace_id` e `span_id` da requisição ([Observabilidade](../explanation/observabilidade.md)) |

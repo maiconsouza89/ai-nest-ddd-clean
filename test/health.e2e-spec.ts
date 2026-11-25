@@ -1,4 +1,4 @@
-import { describe, it, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
 import { HealthIndicatorService, TypeOrmHealthIndicator } from '@nestjs/terminus';
@@ -41,7 +41,10 @@ describe('Health (e2e)', () => {
 
   it('com o banco indisponível, ready falha e live continua respondendo', async () => {
     dbUp = false;
-    await request(app.getHttpServer()).get('/health/ready').expect(503);
+    const res = await request(app.getHttpServer()).get('/health/ready').expect(503);
+    // o 503 do health fica fora do Problem Details: a resposta mostra qual indicador caiu
+    expect(res.headers['content-type']).toMatch(/^application\/json/);
+    expect(res.body).toMatchObject({ status: 'error', error: { database: { status: 'down' } } });
     await request(app.getHttpServer()).get('/health/live').expect(200);
   });
 

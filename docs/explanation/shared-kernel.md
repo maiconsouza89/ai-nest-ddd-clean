@@ -30,7 +30,7 @@ Mesmo quando o conceito é o mesmo, um value object usado por um módulo só fic
 
 O `Money` é a exceção. Só o orders o usa no domínio, mas ele está no `shared` desde o começo do projeto, porque a regra dele não depende de módulo nenhum: valor em centavos inteiros, e somar moedas diferentes é erro. Já a normalização e a validação do `Email` do identity são regras de conta.
 
-O exception filter segue a mesma lógica: o `shared` tem a base `DomainError`, e cada módulo tem o seu filter, com a tabela dos próprios códigos de erro para status HTTP.
+As respostas de erro seguem a mesma lógica: o `shared` tem a base `DomainError` e o filtro que monta toda resposta de erro, mas não conhece código de módulo nenhum. Cada módulo registra o mapa dos próprios códigos de erro para status HTTP ([Respostas de erro](../reference/respostas-de-erro.md)).
 
 ### Na dúvida, duplique
 

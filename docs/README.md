@@ -59,6 +59,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Convenções](reference/convencoes.md): imports ESM, aliases `#...`, `import type`, versão da API HTTP e as regras das ORM entities do TypeORM.
 - [Testes](reference/testes.md): o tipo de teste de cada camada, onde fica, com que fakes e containers, e o teste de contrato dos eventos.
 - [Operação](reference/operacao.md): configuração HTTP, Swagger, health check, rate limit, logs de acesso e a ordem de desligamento.
+- [Respostas de erro](reference/respostas-de-erro.md): o formato Problem Details, o `code` de cada erro, o mapa de status dos módulos, a validação e o log.
 - [Camadas](reference/camadas.md): o que fica em domain, application, infra, contracts e shared, em qual pasta, e as regras entre módulos.
 - [Autenticação](reference/autenticacao.md): rotas, access token, refresh token e rotas protegidas.
 - [Glossário](reference/glossario.md): termos comuns aos módulos, termos com mais de um sentido e o índice da linguagem ubíqua.
@@ -87,10 +88,11 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0007: `AGENTS.md` como único arquivo de instruções](adr/0007-agents-md-como-unico-arquivo-de-instrucoes.md)
 - [0008: Projeto template com módulos de exemplo](adr/0008-projeto-template-com-modulos-de-exemplo.md)
 - [0009: Verificação do e-mail com o código no evento](adr/0009-verificacao-de-email-com-codigo-no-evento.md)
+- [0010: Respostas de erro em Problem Details, com `type` `about:blank` e um `code`](adr/0010-erros-em-problem-details-com-code.md)
 
 ## Fora dos quadrantes
 
-- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue: o do deploy com Docker, concluído, está no [registro da issue #10](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/10#issuecomment-7147612651); o do projeto template (CI, verificação de e-mail e README), concluído, em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
+- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue: o das respostas de erro em Problem Details, concluído, está no [registro da issue #11](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/11#issuecomment-7148591899); o do deploy com Docker, concluído, está no [registro da issue #10](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/10#issuecomment-7147612651); o do projeto template (CI, verificação de e-mail e README), concluído, em `git show 3a6d4dd:docs/plan/projeto-template.md`, até o passo 14; o do ciclo do pedido, descartado antes de começar, em `git show 5f4df0c:docs/plan/ciclo-do-pedido.md`.
 
 ## Como escrever uma página
 

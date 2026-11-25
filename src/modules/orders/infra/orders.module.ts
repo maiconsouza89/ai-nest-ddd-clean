@@ -9,6 +9,7 @@ import { Outbox } from '#shared/application/ports/outbox';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
+import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { CatalogModule } from '#modules/catalog/catalog.module';
 import { CatalogFacade } from '#modules/catalog/contracts/catalog.facade';
@@ -40,6 +41,7 @@ import { ResilientPaymentGateway } from './gateways/resilient-payment.gateway.js
 import { SimulatedPaymentGateway } from './gateways/simulated-payment.gateway.js';
 import { ExpirePendingOrdersProcessor } from './jobs/expire-pending-orders.processor.js';
 import { OrdersController } from './http/controllers/orders.controller.js';
+import { ORDERS_ERROR_STATUSES } from './http/error-statuses.js';
 
 // pedidos tratados por execução do job; o excedente fica para a próxima
 const EXPIRATION_BATCH_SIZE = 100;
@@ -61,6 +63,7 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
   ],
   controllers: [OrdersController],
   providers: [
+    provideErrorStatuses(ORDERS_ERROR_STATUSES),
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
     TypeOrmOrderQueries,
     {

@@ -6,6 +6,7 @@ import { Clock } from '#shared/application/ports/clock';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
+import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { MessagingModule } from '#shared/infra/messaging/messaging.module';
 import { Outbox } from '#shared/application/ports/outbox';
@@ -37,6 +38,7 @@ import { TypeOrmRefreshTokenRepository } from './database/typeorm/typeorm-refres
 import { TypeOrmUserRepository } from './database/typeorm/typeorm-user.repository.js';
 import { TypeOrmVerificationCodeRepository } from './database/typeorm/typeorm-verification-code.repository.js';
 import { AuthController } from './http/controllers/auth.controller.js';
+import { IDENTITY_ERROR_STATUSES } from './http/error-statuses.js';
 import { PurgeExpiredRefreshTokensProcessor } from './jobs/purge-expired-refresh-tokens.processor.js';
 import { TypeOrmUserDirectoryFacade } from './adapters/typeorm-user-directory.facade.js';
 
@@ -49,6 +51,7 @@ type Config = ConfigService<EnvironmentVariables, true>;
   ],
   controllers: [AuthController],
   providers: [
+    provideErrorStatuses(IDENTITY_ERROR_STATUSES),
     { provide: UserRepository, useClass: TypeOrmUserRepository },
     { provide: RefreshTokenRepository, useClass: TypeOrmRefreshTokenRepository },
     { provide: VerificationCodeRepository, useClass: TypeOrmVerificationCodeRepository },

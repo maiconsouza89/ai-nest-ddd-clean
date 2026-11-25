@@ -84,6 +84,7 @@ Leia a página antes de agir no assunto.
 | Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` |
 | Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
+| Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md` e `docs/explanation/modelagem-do-dominio.md` |
 | Escrever ou mudar um teste | `docs/reference/testes.md` |
 | Mexer no tracing, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |

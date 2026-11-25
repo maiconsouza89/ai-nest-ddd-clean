@@ -37,7 +37,7 @@ O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as 
 | `POST /v1/products` | `admin` | `name` (1 a 120), `priceCents` (inteiro de 0 a 1.000.000.000) | 201 com o produto |
 | `PATCH /v1/products/:id` | `admin` | `name` e `priceCents`, os dois opcionais, com os mesmos limites. Um campo enviado como `null` dá 400 | 200 com o produto |
 
-O produto tem `id`, `name`, `priceCents`, `currency`, `createdAt` e `updatedAt`. Um `:id` que não é uuid dá 400, e um produto inexistente dá 404 no formato padrão do Nest (`{ statusCode, message, error }`), não `{ code, message }`.
+O produto tem `id`, `name`, `priceCents`, `currency`, `createdAt` e `updatedAt`. Um `:id` que não é uuid dá 400, e um produto inexistente dá 404 com `code: NOT_FOUND`, em Problem Details ([Respostas de erro](../respostas-de-erro.md)). O catalog não tem erro de domínio nem mapa de status: usa a `NotFoundException` do Nest.
 
 ## Eventos publicados
 

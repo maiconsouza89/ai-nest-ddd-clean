@@ -23,7 +23,13 @@ export function configureApp(app: INestApplication) {
   if (origins.length) app.enableCors({ origin: origins });
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      // erros por campo: o ProblemDetailsFilter os converte no `errors` com o pointer de cada um
+      errorFormat: 'grouped',
+    }),
   );
   app.enableShutdownHooks();
   return app;

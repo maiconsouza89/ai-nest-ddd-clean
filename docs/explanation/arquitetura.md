@@ -139,7 +139,6 @@ O DTO HTTP tem `class-validator` e fica na infra. O controller valida o formato,
 
 ```ts
 @Controller('orders')
-@UseFilters(OrdersDomainErrorFilter)
 export class OrdersController {
   constructor(private readonly createOrder: CreateOrderUseCase /* ... */) {}
 
@@ -150,7 +149,7 @@ export class OrdersController {
 }
 ```
 
-No caminho de volta, o domain lança erros próprios, com um `code`. Um exception filter na infra traduz o `code` para o status HTTP, assim o domain nunca conhece `HttpException`.
+No caminho de volta, o domain lança erros próprios, com um `code`. A infra do módulo registra o status HTTP de cada `code`, e um filtro global do `shared` monta a resposta em Problem Details ([Respostas de erro](../reference/respostas-de-erro.md)), assim o domain nunca conhece `HttpException`.
 
 ### Cada módulo é dono dos seus dados
 

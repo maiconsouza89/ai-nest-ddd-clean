@@ -1,14 +1,8 @@
-import { Body, Controller, HttpCode, Post, UseFilters } from '@nestjs/common';
-import {
-  ApiAcceptedResponse,
-  ApiBadRequestResponse,
-  ApiForbiddenResponse,
-  ApiNoContentResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { ApiAcceptedResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 import { seconds, Throttle } from '@nestjs/throttler';
 import { Public } from '#shared/infra/auth/public.decorator';
+import { ApiProblemResponse } from '#shared/infra/http/problem-details.response';
 import { LoginUseCase } from '../../../application/use-cases/login.use-case.js';
 import { LogoutUseCase } from '../../../application/use-cases/logout.use-case.js';
 import { RefreshSessionUseCase } from '../../../application/use-cases/refresh-session.use-case.js';
@@ -22,12 +16,10 @@ import {
   ResendVerificationCodeRequest,
   VerifyEmailRequest,
 } from '../dtos/identity.requests.js';
-import { IdentityDomainErrorFilter } from '../filters/domain-error.filter.js';
 
 @ApiTags('auth')
 @Public()
 @Controller('auth')
-@UseFilters(IdentityDomainErrorFilter)
 export class AuthController {
   constructor(
     private readonly registerUser: RegisterUserUseCase,
@@ -53,10 +45,10 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @HttpCode(204)
   @ApiNoContentResponse({ description: 'E-mail verificado.' })
-  @ApiBadRequestResponse({
-    description:
-      'Corpo inválido, ou INVALID_VERIFICATION_CODE: código errado, vencido, já usado, esgotado ou e-mail desconhecido.',
-  })
+  @ApiProblemResponse(
+    400,
+    'Corpo inválido, ou INVALID_VERIFICATION_CODE: código errado, vencido, já usado, esgotado ou e-mail desconhecido.',
+  )
   async verifyEmail(@Body() body: VerifyEmailRequest) {
     await this.verifyEmailCode.execute(body);
   }
@@ -77,8 +69,8 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @HttpCode(200)
-  @ApiUnauthorizedResponse({ description: 'INVALID_CREDENTIALS: e-mail ou senha errados.' })
-  @ApiForbiddenResponse({ description: 'EMAIL_NOT_VERIFIED: senha certa, e-mail por verificar.' })
+  @ApiProblemResponse(401, 'INVALID_CREDENTIALS: e-mail ou senha errados.')
+  @ApiProblemResponse(403, 'EMAIL_NOT_VERIFIED: senha certa, e-mail por verificar.')
   signIn(@Body() body: LoginRequest) {
     return this.login.execute(body);
   }
@@ -90,9 +82,7 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @HttpCode(200)
-  @ApiUnauthorizedResponse({
-    description: 'Refresh token desconhecido, vencido, revogado ou reusado.',
-  })
+  @ApiProblemResponse(401, 'Refresh token desconhecido, vencido, revogado ou reusado.')
   refresh(@Body() body: RefreshTokenRequest) {
     return this.refreshSession.execute(body.refreshToken);
   }

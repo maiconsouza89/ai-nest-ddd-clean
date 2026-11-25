@@ -1,5 +1,6 @@
 import {
   context,
+  isSpanContextValid,
   propagation,
   ROOT_CONTEXT,
   SpanKind,
@@ -12,6 +13,12 @@ export function currentTraceparent(): string | undefined {
   const carrier: Record<string, string> = {};
   propagation.inject(context.active(), carrier);
   return carrier.traceparent;
+}
+
+/** Id do trace do span ativo. Sem span ativo (tracing desligado), `undefined`. */
+export function currentTraceId(): string | undefined {
+  const spanContext = trace.getActiveSpan()?.spanContext();
+  return spanContext && isSpanContextValid(spanContext) ? spanContext.traceId : undefined;
 }
 
 /**

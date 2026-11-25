@@ -19,7 +19,7 @@ const FILES = [
   ['module.hbs', 'infra/{{kebabCase name}}.module.ts'],
   ['controller.hbs', 'infra/http/controllers/{{kebabCase name}}.controller.ts'],
   ['request.hbs', 'infra/http/dtos/create-{{kebabCase name}}.request.ts'],
-  ['filter.hbs', 'infra/http/filters/domain-error.filter.ts'],
+  ['error-statuses.hbs', 'infra/http/error-statuses.ts'],
   [
     'in-memory.repository.hbs',
     'infra/database/in-memory/in-memory-{{kebabCase name}}.repository.ts',

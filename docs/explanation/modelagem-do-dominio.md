@@ -69,9 +69,9 @@ export abstract class DomainError extends Error {
 }
 ```
 
-O domínio não conhece HTTP. O filter de cada módulo traduz o `code` para o status numa tabela só, a `STATUS` de `infra/http/filters/domain-error.filter.ts`, e devolve `{ code, message }`. Um `code` que não está na tabela responde 422. O cliente pode depender do `code`. A mensagem é para leitura e pode mudar.
+O domínio não conhece HTTP. Cada módulo declara o status de cada `code` num mapa, o `<MÓDULO>_ERROR_STATUSES` de `infra/http/error-statuses.ts`, e o registra ao subir. Um filtro global do `shared` monta a resposta em Problem Details, com o `code` como extensão ([Respostas de erro](../reference/respostas-de-erro.md)). Um `code` fora do mapa responde 422. O cliente pode depender do `code`. A mensagem, que sai no `detail`, é para leitura e pode mudar.
 
-A exception interrompe o caso de uso no primeiro erro, sem que cada chamada confira um retorno. Um erro lançado dentro do `tx.run` também desfaz a transação ([Consistência e eventos](consistencia-e-eventos.md#a-transação-vai-pelo-contexto-e-não-pelos-parâmetros)). O custo é que o erro não aparece na assinatura do método. Quem lê descobre os erros possíveis pela tabela do filter e pelos testes.
+A exception interrompe o caso de uso no primeiro erro, sem que cada chamada confira um retorno. Um erro lançado dentro do `tx.run` também desfaz a transação ([Consistência e eventos](consistencia-e-eventos.md#a-transação-vai-pelo-contexto-e-não-pelos-parâmetros)). O custo é que o erro não aparece na assinatura do método. Quem lê descobre os erros possíveis pelo mapa de status do módulo e pelos testes.
 
 Entre módulos vale o contrário: a facade devolve um resultado (`{ ok: false, reason }`), porque a classe de erro do domínio de um módulo não faz parte do contrato público dele ([Comunicação entre módulos](comunicacao-entre-modulos.md)).
 

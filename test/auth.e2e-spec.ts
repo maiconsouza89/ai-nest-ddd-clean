@@ -12,6 +12,7 @@ import { configureApp } from '../src/app.setup.js';
 import { deleteUser, registerAndLogin, setRoles, uniqueEmail } from './helpers/auth.js';
 import { GuardProbeController } from './helpers/guard-probe.controller.js';
 import { emailsTo, emailsWith, verificationCodeFor, waitForEmail } from './helpers/mailpit.js';
+import { expectProblemJson } from './helpers/problem.js';
 
 describe('Auth (e2e)', () => {
   let app: TestApp;
@@ -48,7 +49,13 @@ describe('Auth (e2e)', () => {
       .post('/v1/auth/verify-email')
       .send({ email, code: wrongCode })
       .expect(400);
-    expect(wrong.body.code).toBe('INVALID_VERIFICATION_CODE');
+    expectProblemJson(wrong);
+    expect(wrong.body).toMatchObject({
+      status: 400,
+      code: 'INVALID_VERIFICATION_CODE',
+      detail: 'Invalid verification code',
+      instance: '/v1/auth/verify-email',
+    });
 
     await request(server()).post('/v1/auth/verify-email').send({ email, code }).expect(204);
 

@@ -28,7 +28,7 @@ Use este guia para um módulo de negócio com regras próprias. O gerador cria u
    ```
 
 3. Troque o CRUD gerado pelo modelo do módulo: entidade e value objects com as invariantes, erros de domínio, casos de uso e ports, cada peça na pasta indicada em [Camadas](../reference/camadas.md).
-   - **Erro novo:** acrescente o `code` e o status HTTP na tabela `STATUS` do `infra/http/filters/domain-error.filter.ts` ([Modelagem do domínio](../explanation/modelagem-do-dominio.md)).
+   - **Erro novo:** acrescente o `code` e o status HTTP no `<NOME>_ERROR_STATUSES` do `infra/http/error-statuses.ts`. Um `code` fora do mapa responde 422 ([Respostas de erro](../reference/respostas-de-erro.md)). Uma resposta de erro nova da rota entra no Swagger com `@ApiProblemResponse(status, descrição)`.
    - **Rota:** o controller sai com `@Controller('<nome>')`, no singular. Troque o caminho se o recurso pedir outro (`orders`, `products`).
    - **Schema:** cada mudança numa ORM entity segue [Como gerar uma migration](gerar-uma-migration.md).
 
