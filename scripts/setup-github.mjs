@@ -107,7 +107,8 @@ if (existingId) {
   if (!current.ok)
     fail(`não foi possível ler o ruleset ${existingId} de ${repo}:\n${current.stderr}`);
   const ruleset = json(current.stdout, 'ler o ruleset');
-  const ours = new Set(rules.map((r) => r.type));
+  // O code_scanning é do script mesmo quando fica de fora: some do ruleset quando deixa de valer.
+  const ours = new Set([...rules.map((r) => r.type), codeScanningRule.type]);
   bypassActors = ruleset.bypass_actors ?? [];
   otherRules = (ruleset.rules ?? []).filter((r) => !ours.has(r.type));
 }
