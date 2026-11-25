@@ -57,15 +57,16 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 
 ## Rate limit
 
-`@nestjs/throttler`, com o `ThrottlerGuard` global (`APP_GUARD` no `AppModule`).
+`@nestjs/throttler`, com o `AppThrottlerGuard` global (`APP_GUARD` no `AppModule`), uma subclasse do `ThrottlerGuard` em `src/shared/infra/http/`.
 
 | Item | Valor |
 | --- | --- |
 | Limite padrão | 100 requisições por minuto, por IP. O IP vem do `trust proxy` |
 | Limites próprios | Rotas de autenticação, com `@Throttle` ([Autenticação](autenticacao.md#rotas)) |
+| Limites por conta | Opt-in por rota, com `@ThrottleByAccount(tracker)` (`throttle-by-account.decorator.ts`): o `tracker` do módulo tira a chave da requisição. As entradas `account-minute` (5 por minuto) e `account-hour` (20 por hora) ficam no `forRoot`, e o `skipIf` delas as pula fora das rotas marcadas, quando o `tracker` devolve `undefined` e com `THROTTLE_ENABLED=false`. Só o login usa |
 | Bloqueio | Passado o limite, a chave fica bloqueada pelo mesmo prazo da janela (o `blockDuration` padrão é o `ttl`) |
-| Resposta bloqueada | 429 `TOO_MANY_REQUESTS` em Problem Details, com `Retry-After` |
-| Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida |
+| Resposta bloqueada | 429 `TOO_MANY_REQUESTS` em Problem Details, com `Retry-After` sem sufixo, seja qual for o throttler que bloqueou |
+| Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida. Cada throttler nomeado tem os seus, com o nome no fim: `X-RateLimit-Limit-account-minute`, `X-RateLimit-Remaining-account-hour` |
 | Contadores | No Redis, pelo `RedisThrottlerStorage` (`src/shared/infra/http/`): janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
 | Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)) |
 | Desligar | `THROTTLE_ENABLED=false` |
