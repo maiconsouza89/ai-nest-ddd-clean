@@ -3,12 +3,14 @@ import { ApiAcceptedResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swag
 import { seconds, Throttle } from '@nestjs/throttler';
 import { Public } from '#shared/infra/auth/public.decorator';
 import { ApiProblemResponse } from '#shared/infra/http/problem-details.response';
+import { ThrottleByAccount } from '#shared/infra/http/throttle-by-account.decorator';
 import { LoginUseCase } from '../../../application/use-cases/login.use-case.js';
 import { LogoutUseCase } from '../../../application/use-cases/logout.use-case.js';
 import { RefreshSessionUseCase } from '../../../application/use-cases/refresh-session.use-case.js';
 import { RegisterUserUseCase } from '../../../application/use-cases/register-user.use-case.js';
 import { ResendVerificationCodeUseCase } from '../../../application/use-cases/resend-verification-code.use-case.js';
 import { VerifyEmailUseCase } from '../../../application/use-cases/verify-email.use-case.js';
+import { loginAccountTracker } from '../login-account.tracker.js';
 import {
   LoginRequest,
   RefreshTokenRequest,
@@ -68,6 +70,7 @@ export class AuthController {
   /** Devolve o access token, a validade dele em segundos e o refresh token. */
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: seconds(60) } })
+  @ThrottleByAccount(loginAccountTracker)
   @HttpCode(200)
   @ApiProblemResponse(401, 'INVALID_CREDENTIALS: e-mail ou senha errados.')
   @ApiProblemResponse(403, 'EMAIL_NOT_VERIFIED: senha certa, e-mail por verificar.')
