@@ -19,7 +19,7 @@ O título do PR e cada commit da branch seguem o [Conventional Commits 1.0.0](ht
 
 - **Tipo:** `feat` (comportamento novo), `fix` (correção), `docs`, `refactor`, `test`, `perf`, `build` (dependências, `Dockerfile`), `ci` (workflows) ou `chore` (o resto).
 - **Escopo:** o módulo (`identity`, `orders`) ou a área (`http`, `deploy`, `ci`), opcional.
-- **Descrição:** em português, no imperativo ou no presente, sem ponto final. Começa com minúscula, menos quando a primeira palavra é um nome próprio (`ci: Dependabot …`).
+- **Descrição:** em português, no imperativo ou no presente, sem ponto final. Pode começar com maiúscula quando a primeira palavra é um nome próprio (`ci: Dependabot …`).
 - **Tamanho:** o cabeçalho tem até 100 caracteres, sem contar o `(#<PR>)` que o squash acrescenta.
 - **Quebra:** `!` depois do tipo ou do escopo (`feat(identity)!: …`) e um parágrafo `BREAKING CHANGE: …` na descrição do PR, dizendo o que quem usa precisa mudar.
 
