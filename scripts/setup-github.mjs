@@ -1,7 +1,8 @@
 // Cria o ruleset da branch padrão no repositório do remote `origin`, pelo `gh`. O que ele exige está
 // em docs/reference/comandos.md#ci. Rodar de novo atualiza o mesmo ruleset, achado pelo nome, e mantém
 // o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos. Também deixa
-// o squash como único jeito de fazer merge de PR e apaga o branch do PR depois do merge.
+// o squash como único jeito de fazer merge de PR, com o título e a descrição do PR no commit, apaga o
+// branch do PR depois do merge e, em repositório público, liga o relato privado de vulnerabilidade.
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
@@ -49,18 +50,10 @@ if (!run('gh', ['auth', 'status', '--hostname', 'github.com']).ok)
 const origin = run('git', ['remote', 'get-url', 'origin']);
 if (!origin.ok)
   fail('este clone não tem o remote `origin` apontando para o repositório no GitHub.');
-const view = run('gh', [
-  'repo',
-  'view',
-  origin.stdout,
-  '--json',
-  'nameWithOwner',
-  '--jq',
-  '.nameWithOwner',
-]);
+const view = run('gh', ['repo', 'view', origin.stdout, '--json', 'nameWithOwner,visibility']);
 if (!view.ok)
   fail(`não achei no GitHub o repositório do origin (${origin.stdout}):\n${view.stderr}`);
-const repo = view.stdout;
+const { nameWithOwner: repo, visibility } = json(view.stdout, 'ler o repositório');
 
 // Só os rulesets do próprio repositório, de todas as páginas: um da organização com o mesmo nome não conta.
 const list = run('gh', [
@@ -109,6 +102,8 @@ process.stdout.write(
 );
 
 // Merge de PR só por squash (um commit por PR na branch padrão), e o branch do PR some depois dele.
+// O commit leva o título do PR, em Conventional Commits (.github/CONTRIBUTING.md), mesmo num PR de
+// um commit só.
 const merge = run('gh', [
   'api',
   '--method',
@@ -122,6 +117,29 @@ const merge = run('gh', [
   'allow_rebase_merge=false',
   '-F',
   'delete_branch_on_merge=true',
+  '-f',
+  'squash_merge_commit_title=PR_TITLE',
+  '-f',
+  'squash_merge_commit_message=PR_BODY',
 ]);
 if (!merge.ok) fail(`não foi possível configurar o merge de PR em ${repo}:\n${merge.stderr}`);
-process.stdout.write(`Merge de PR em ${repo} só por squash, apagando o branch depois.\n`);
+process.stdout.write(
+  `Merge de PR em ${repo} só por squash, com o título e a descrição do PR, apagando o branch depois.\n`,
+);
+
+// O canal do .github/SECURITY.md. O GitHub só oferece o relato privado em repositório público.
+if (visibility === 'PUBLIC') {
+  const pvr = run('gh', [
+    'api',
+    '--method',
+    'PUT',
+    `repos/${repo}/private-vulnerability-reporting`,
+  ]);
+  if (!pvr.ok)
+    fail(`não foi possível ligar o relato privado de vulnerabilidade em ${repo}:\n${pvr.stderr}`);
+  process.stdout.write(`Relato privado de vulnerabilidade ligado em ${repo}.\n`);
+} else {
+  process.stdout.write(
+    'Repositório privado ou interno: o private vulnerability reporting não está disponível. Ajuste o canal no .github/SECURITY.md.\n',
+  );
+}

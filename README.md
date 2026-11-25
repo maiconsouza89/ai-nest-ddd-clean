@@ -39,9 +39,10 @@ A base não depende deles. Para ficar só com ela, siga [Como remover os módulo
 ## Usar como template
 
 1. Crie o seu repositório pelo botão **Use this template**, no topo da página do GitHub.
-2. Renomeie o projeto: o `name` do `package.json` (depois rode `npm install`, para o `package-lock.json` acompanhar) e o `OTEL_SERVICE_NAME` do `.env.example` e de [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md). O título do Swagger fica em `src/shared/infra/http/swagger.setup.ts`, e o `maiconsouza89/ai-nest-ddd-clean` dos badges, no topo deste README. Troque também o `author` do `package.json`. O `LICENSE` mantém o aviso do template, como pede a MIT, e pode ganhar a sua linha de copyright.
-3. Exija o check `ci` na branch padrão: `npm run github:setup`, com o `gh` autenticado e admin no repositório ([Comandos → CI](docs/reference/comandos.md#ci)).
-4. Remova os exemplos, se não forem servir de modelo, e crie o primeiro módulo seu: [Como criar um módulo](docs/how-to/criar-um-modulo.md).
+2. Renomeie o projeto: o `name` do `package.json` (depois rode `npm install`, para o `package-lock.json` acompanhar) e o `OTEL_SERVICE_NAME` do `.env.example` e de [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md). O título do Swagger fica em `src/shared/infra/http/swagger.setup.ts`, e o `maiconsouza89/ai-nest-ddd-clean` dos badges, no topo deste README. Troque também o `author` e o `description` do `package.json`, e a descrição do repositório no GitHub (About). O `LICENSE` mantém o aviso do template, como pede a MIT, e pode ganhar a sua linha de copyright.
+3. Troque o dono do `.github/CODEOWNERS` e, no `.github/SECURITY.md`, o escopo. Num repositório privado, o GitHub não oferece o relato privado de vulnerabilidade: ponha outro canal, como um e-mail.
+4. Configure o repositório: `npm run github:setup`, com o `gh` autenticado e admin no repositório. Ele exige o check `ci` na branch padrão, deixa o merge só por squash com o título do PR no commit e, em repositório público, liga o relato privado de vulnerabilidade ([Comandos → CI](docs/reference/comandos.md#ci)).
+5. Remova os exemplos, se não forem servir de modelo, e crie o primeiro módulo seu: [Como criar um módulo](docs/how-to/criar-um-modulo.md).
 
 ## Requisitos
 
@@ -75,11 +76,9 @@ O passo a passo completo, com os endereços da app, está em [Comandos → Setup
 
 A imagem Docker, as migrations num passo antes da app e o teste local com o profile `prod`: [Como fazer o deploy](docs/how-to/fazer-o-deploy.md).
 
-## Antes de abrir um PR
+## Contribuir
 
-`npm run ci` roda typecheck, lint, formatação, documentação, testes unitários e regras de arquitetura. Integração e e2e ficam fora. Ver [Comandos → Verificação](docs/reference/comandos.md#verificação) e [Testes](docs/reference/comandos.md#testes).
-
-Uma mudança de comportamento atualiza a página afetada em `docs/`, ou o PR diz por que não precisa.
+O fluxo, o formato dos commits, a versão e o que conferir antes do PR estão em [Como contribuir](.github/CONTRIBUTING.md).
 
 ## Documentação
 
@@ -92,3 +91,5 @@ Uma mudança de comportamento atualiza a página afetada em `docs/`, ou o PR diz
 | [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, testes, operação, autenticação, glossário e uma página por módulo |
 | [docs/adr/](docs/README.md#decisões-adr) | As decisões de arquitetura e o porquê de cada uma |
 | [AGENTS.md](AGENTS.md) | Instruções para agentes de código: armadilhas e rotas para `docs/` |
+| [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) | Como contribuir: fluxo, commits, versão e verificação |
+| [.github/SECURITY.md](.github/SECURITY.md) | Como reportar uma vulnerabilidade |
