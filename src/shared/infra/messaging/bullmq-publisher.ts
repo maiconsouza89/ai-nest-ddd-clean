@@ -1,10 +1,10 @@
 import { Injectable, BeforeApplicationShutdown } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 import { IntegrationEvent } from '../../application/integration-event.js';
 import { Logger } from '../../application/ports/logger.js';
 import { EventPublisher } from '../../application/ports/event-publisher.js';
 import { BullMqConnection } from './bullmq-connection.js';
-import { EventSubscriptions, queueNameOf } from './event-subscriptions.js';
+import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
 
 const QUEUE_JOB_OPTIONS = {
   // 10 tentativas com 2s, 4s, 8s...: cerca de 17 min até o job ir para `failed`
@@ -58,9 +58,7 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
   private queueFor(consumer: string) {
     let queue = this.queues.get(consumer);
     if (!queue) {
-      queue = new Queue(queueNameOf(consumer), { connection: this.connection.producer });
-      // erro de conexão sem listener derrubaria o processo
-      queue.on('error', (err) => this.logger.warn({ err, consumer }, 'event queue error'));
+      queue = openEventQueue(consumer, this.connection.producer, this.logger);
       this.queues.set(consumer, queue);
     }
     return queue;

@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { metrics } from '@opentelemetry/api';
-import type { BatchObservableCallback, Meter, Observable } from '@opentelemetry/api';
+import type { BatchObservableCallback } from '@opentelemetry/api';
 import { DataSource } from 'typeorm';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
@@ -26,11 +26,7 @@ type Row = { pending: string; oldestAge: string | null; dead: string };
  */
 @Injectable()
 export class OutboxMetrics implements OnApplicationBootstrap, OnModuleDestroy {
-  private registration?: {
-    meter: Meter;
-    callback: BatchObservableCallback;
-    observables: Observable[];
-  };
+  private unregister?: () => void;
 
   constructor(
     private readonly ds: DataSource,
@@ -67,15 +63,13 @@ export class OutboxMetrics implements OnApplicationBootstrap, OnModuleDestroy {
     };
     const observables = [events, oldestAge];
     meter.addBatchObservableCallback(callback, observables);
-    this.registration = { meter, callback, observables };
+    this.unregister = () => meter.removeBatchObservableCallback(callback, observables);
   }
 
   // fase 1 do desligamento: a última exportação do SDK (TracingShutdown, fase 4) roda com o DataSource
   // já fechado, e o callback falharia no fim de todo desligamento
   onModuleDestroy() {
-    if (!this.registration) return;
-    const { meter, callback, observables } = this.registration;
-    meter.removeBatchObservableCallback(callback, observables);
-    this.registration = undefined;
+    this.unregister?.();
+    this.unregister = undefined;
   }
 }
