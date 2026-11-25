@@ -30,7 +30,7 @@ describe('Health (e2e)', () => {
     dbUp = true;
     redisUp = true;
     await request(app.getHttpServer()).get('/health/live').expect(200);
-    await request(app.getHttpServer()).get('/health/ready').expect(200);
+    await request(app.getHttpServer()).get('/health/ready').expect(418);
   });
 
   it('com o banco indisponível, ready falha e live continua respondendo', async () => {
