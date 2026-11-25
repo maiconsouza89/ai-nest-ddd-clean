@@ -42,10 +42,10 @@ Como os aliases resolvem para `src/` ou `dist/`, e a condição `@app/source` qu
 
 ## Versionamento da API HTTP
 
-A versão vai no início do caminho (`/v1/orders`), pelo versionamento nativo do Nest. A opção fica na constante `API_VERSIONING` do `src/app.setup.ts`, usada pelo `configureApp` e pelo gerador do `openapi.json` (`src/openapi.ts`):
+A versão vai no início do caminho (`/v1/orders`), pelo versionamento nativo do Nest. Ela é ligada no `configureRoutes` (`src/app.setup.ts`), que o `configureApp` e o gerador do `openapi.json` (`src/openapi.ts`) chamam. O que mudar as rotas, como um prefixo global, entra nele:
 
 ```ts
-export const API_VERSIONING: VersioningOptions = { type: VersioningType.URI, defaultVersion: '1' };
+app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 ```
 
 | Regra | Detalhe |

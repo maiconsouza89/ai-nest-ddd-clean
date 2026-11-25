@@ -6,7 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { NestFactory } from '@nestjs/core';
 import { loadEnvFiles } from '#shared/infra/config/load-env-files';
 import { createSwaggerDocument } from '#shared/infra/http/swagger.setup';
-import { API_VERSIONING } from './app.setup.js';
+import { configureRoutes } from './app.setup.js';
 
 const OUTPUT = 'openapi.json';
 
@@ -22,8 +22,8 @@ const app = await NestFactory.create(AppModule, {
   abortOnError: false,
   logger: false,
 });
-// o configureApp lê o ConfigService, que não existe no preview; só a versão na URL muda as rotas
-app.enableVersioning(API_VERSIONING);
+// o configureApp lê o ConfigService, que não existe no preview; as rotas saem do configureRoutes
+configureRoutes(app);
 
 const document = createSwaggerDocument(app);
 // Sem ordenar, as chaves seguem a ordem dos imports do AppModule, e reordenar um módulo mexeria no arquivo.
