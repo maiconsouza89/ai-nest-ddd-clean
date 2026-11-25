@@ -20,7 +20,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | Onda | Trilha | Issue | Prioridade | Depende de | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | A | #13 Dependabot, CodeQL, dependency review e lockfile das actions | alta | — | 🟡 |
-| 1 | B | #19 Rate limit do login também por conta | média | — | 🟡 |
+| 1 | B | #19 Rate limit do login também por conta | média | — | ✅ (#47) |
 | 1 | C | #15 Troca do `module.register` (DEP0205) | média | — | ✅ (#46) |
 | 1 | D | #16 Gatilho de `@nestjs/outbox`, `@nestjs/webhooks` e `@nestjs/http-client` | média | — | ✅ (#45) |
 | 2 | C | #17 Métricas com OpenTelemetry | média | #15 | ⬜ |
