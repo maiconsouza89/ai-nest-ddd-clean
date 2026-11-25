@@ -34,6 +34,7 @@ Consultadas em 2026-11-21, e a linha do Nest em 2026-11-25.
 ## Combinações que quebram
 
 - `@nestjs/typeorm` 10 e 11.0.0 quebram na inicialização com o TypeORM 1.x. Use o `@nestjs/typeorm` 12 ou superior.
+- O `@vitest/coverage-v8` declara o `vitest` como peer na versão exata (o 5.1.2 pede `vitest: 5.1.2`). Os dois sobem juntos, pelo grupo `vitest` do Dependabot ([Atualização automática](#atualização-automática)).
 
 ## Atualização automática
 

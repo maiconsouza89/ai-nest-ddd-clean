@@ -108,7 +108,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 | 2 | `@vitest/coverage-v8` e `test:coverage` | ✅ |
 | 3 | Meta em `domain/` e `application/` | ✅ |
 | 4 | Resumo da cobertura no job `unit` | 🟡 |
-| 5 | Documentação | ⬜ |
+| 5 | Documentação | ✅ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
 ### Passo 1: worktree, branch e roadmap
@@ -223,6 +223,8 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 7. Commit: `docs: cobertura de testes (#21)`.
 
 **Pronto quando:** cada decisão da tabela aparece numa página de `docs/` ou num comentário do código (o plano vai ser apagado), o pronto da issue sobre o `testes.md` e o `comandos.md` está atendido, e o `docs:check` passa.
+
+**Como ficou:** como planejado. O `testes.md` ganhou a seção "Cobertura" (relatórios, o que é medido, o `exclude` numa tabela, a meta, o `test:coverage` filtrado, a medida com a integração e o CI). O `comandos.md` ganhou a linha do `test:coverage` em Testes, o `ci` com o `test:coverage` em Verificação, a linha do `unit` por entrada da matriz e o item "Cobertura" em CI. O `versoes-e-excecoes.md` ganhou o peer exato; o `evolucoes-com-gatilho.md`, as três linhas de CI (comentário no PR, integração e e2e no CI, regra `code_coverage`); o `AGENTS.md`, o `npm run ci` com a meta. As alternativas descartadas da tabela de decisões que não viraram evolução (a action de terceiro para o resumo, o reporter `text` colado no resumo, o `--changed` na entrada com cobertura) ficam para o registro na issue. O `docs:check` passou.
 
 ### Passo 6: verificação, revisão, registro e PR
 

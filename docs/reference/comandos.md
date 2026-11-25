@@ -60,7 +60,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
 | `npm run docs:links` | Links externos, com o lychee via Docker. Pula os endereços locais (`localhost`), que só respondem com a app ou o compose no ar. Fora do CI, porque depende da rede |
 | `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check` e `arch`, nessa ordem. O job `check` do CI roda o `ci:static` e o `audit:signatures` |
-| `npm run ci` | `ci:static` e depois `test`. **Não** roda integração nem e2e, nem o `audit:signatures` |
+| `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures` |
 | `npm run audit:signatures` | `npm audit signatures`: confere a assinatura do registry e as attestations de cada pacote instalado. Precisa da rede. Não olha advisories: eles ficam com os Dependabot alerts e o dependency review ([CI](#ci)) |
 
 ## Testes
@@ -69,6 +69,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | --- | --- |
 | `npm test` | Unitários (`*.spec.ts`), sem banco |
 | `npm run test:watch` | Os unitários em modo watch |
+| `npm run test:coverage` | Os unitários com cobertura, sobre o `src/`: resumo no terminal, HTML em `coverage/index.html` e `coverage/coverage-summary.json`. Falha se `domain/` ou `application/` ficar abaixo do piso ([Testes](testes.md#cobertura)) |
 | `npm run test:int` | Integração (`*.int-spec.ts`). Sobe um Postgres e um Redis descartáveis com o Testcontainers para a execução inteira, então exige Docker. Os arquivos rodam em paralelo, cada um no seu banco ([Testes](testes.md#convenções)) |
 | `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL`, o Redis de `REDIS_URL` e o SMTP de `SMTP_URL` do checkout, e lê os e-mails pela API do Mailpit |
 
@@ -115,13 +116,14 @@ O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `
 | --- | --- | --- | --- |
 | `changes` | Compara o PR com a branch de destino e diz se ele muda código | Roda sem checkout e diz que muda: a `main` sempre testa | — |
 | `check` | `npm run ci:static`, no projeto inteiro, e depois `npm run audit:signatures`, num step próprio | O mesmo | `.nvmrc` |
-| `unit` | `npm test -- --changed HEAD^1 --passWithNoTests` | `npm test` | `22.22.3` e `.nvmrc`, em matriz |
+| `unit` | No `22.22.3`, `npm test -- --changed HEAD^1 --passWithNoTests`. No `.nvmrc`, `npm run test:coverage`, com a suíte inteira, e a tabela de cobertura no resumo do job | No `22.22.3`, `npm test`. No `.nvmrc`, `npm run test:coverage` e a tabela | `22.22.3` e `.nvmrc`, em matriz |
 | `integration` | `npm run test:int -- --changed HEAD^1 --passWithNoTests` | `npm run test:int` | `.nvmrc` |
 | `e2e` | Copia o `.env.example` para `.env` e roda `npm run db:setup`, depois `npm run test:e2e -- --changed HEAD^1 --passWithNoTests`, contra Postgres, Redis e Mailpit em `services:` | O mesmo, com `npm run test:e2e` | `.nvmrc` |
 | `ci` | Falha se um dos outros falhou ou foi cancelado. Um job pulado conta como aprovado. É o check obrigatório do PR | O mesmo | — |
 
 - **PR só de Markdown:** quando todos os arquivos do PR são `*.md` ou estão em `docs/`, o `unit`, o `integration` e o `e2e` são pulados, e o `ci` passa. O filtro fica num job, e não no gatilho do workflow, para o check obrigatório continuar aparecendo no PR.
 - **Só os testes afetados:** em PR, o checkout é o merge do PR na branch de destino, e `HEAD^1` é a ponta da branch de destino. O `--changed HEAD^1` roda os testes ligados por import aos arquivos do PR, ou a suíte inteira quando o PR muda um arquivo do `forceRerunTriggers` do `vitest.config.ts`. Um PR verde pode não ter rodado um teste que o grafo de imports não liga à mudança. A `main` roda tudo e pega o que escapou. O que o `--changed` enxerga: [Testes](testes.md#só-os-testes-afetados).
+- **Cobertura:** só a entrada `.nvmrc` do `unit` mede, e roda os unitários inteiros também em PR: com o `--changed`, o relatório e a meta ficariam só com os arquivos do diff. Um step com `if: always() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''` roda o `node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"`, que acrescenta a tabela por camada (`domain`, `application`, `contracts`, infra e o resto, e o total) ao resumo dos testes que o reporter `github-actions` do Vitest já escreve. A tabela aparece também quando a meta falha, porque o Vitest grava o relatório antes de conferir a meta, e não aparece quando um teste falha, que não gera relatório. O que é medido e a meta: [Testes](testes.md#cobertura).
 - **Instalação em cache:** os jobs `check`, `unit`, `integration` e `e2e` usam a composite action `.github/actions/setup`. Ela instala o Node e restaura o `node_modules` do `actions/cache`, com a chave `node-modules-<SO>-<versão do Node resolvida>-<hash do package-lock.json>`, e roda `npm ci` só quando o cache não acerta. Mudar o lockfile ou a versão do Node gera um cache novo.
 - **Sem fail-fast:** os jobs rodam em paralelo, a matriz do `unit` não cancela a outra versão quando uma falha, e o Vitest não para no primeiro erro. Todos os resultados saem de uma vez. Quando rever: [Evoluções com gatilho](evolucoes-com-gatilho.md#ci).
 - **E2E:** os `services:` usam as imagens do `docker-compose.yml`, nas portas que o `test/setup-env.ts` espera, com o Postgres sem durabilidade e em tmpfs, como o da integração. Sobem e esperam o healthcheck antes do primeiro step, o que custa uns 15 s ao job. Localmente, o e2e continua no docker-compose.
