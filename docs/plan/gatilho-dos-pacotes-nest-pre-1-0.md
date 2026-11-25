@@ -46,7 +46,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | Passo | Entrega | Status |
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
-| 2 | Regra de pré-1.0 em `versoes-e-excecoes.md` | ⬜ |
+| 2 | Regra de pré-1.0 em `versoes-e-excecoes.md` | ✅ |
 | 3 | Três linhas em `evolucoes-com-gatilho.md` | ⬜ |
 | 4 | Verificação, registro e PR | ⬜ |
 
