@@ -259,7 +259,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - O comentário `on-failure` aparece no PR durante o teste.
 - `gh actions-lock --verify` passa.
 
-**Como ficou:** —
+**Como ficou:** fontes: o README da action e o código dela (`src/config.ts`: as listas são separadas por vírgula, então o `>-` do YAML serve; `src/licenses.ts` e `src/purl.ts`: a exceção casa pelo tipo e nome do purl, sem versão e sem curinga; a expressão SPDX passa pelo `satisfies`, então `(MIT OR CC0-1.0)` basta ter uma das duas na lista). As licenças vieram do `npm query '*' --json` e do campo `license` do `package-lock.json` (que tem também os binários de outras plataformas). No `allow-licenses`: MIT, MIT-0, ISC, Apache-2.0, BSD-2-Clause, BSD-3-Clause, 0BSD, BlueOak-1.0.0, CC0-1.0, CC-BY-3.0 (`spdx-exceptions`, dev), PSF-2.0 (`argparse`) e Unlicense (`tweetnacl`, dev). No `allow-dependencies-licenses`: o `lightningcss` e os 11 binários por plataforma, MPL-2.0 (copyleft fraca, por arquivo), só em desenvolvimento, pelo `vite`. Nenhuma GPL ou AGPL na árvore. Seis pacotes sem `license` no lockfile (`busboy`, `streamsearch`, `ssh2`, `buildcheck`, `cpu-features`, `format`) são MIT no `package.json` deles; a action lê a licença do ClearlyDefined, e uma não detectada não falha. O lockfile ganhou a `dependency-review-action@v5.0.1` (`owner_id` 44036562, `repo_id` 476372928, conferidos pela API). `gh actions-lock --verify` e `actionlint` passam. **Pendente:** o check no PR e o teste do bloqueio com o commit temporário (dependem de push).
 
 ### Passo 6: `audit:signatures`
 
