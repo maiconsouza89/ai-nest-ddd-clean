@@ -125,6 +125,8 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           node-version-file: .nvmrc
+      # O mesmo setup do ambiente local: as URLs do .env.example apontam para as portas dos services
+      - run: cp .env.example .env
       - run: npm run db:setup
       - run: npm run test:e2e -- ${{ env.VITEST_ARGS }}
 

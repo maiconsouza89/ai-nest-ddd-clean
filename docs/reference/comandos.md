@@ -93,7 +93,7 @@ O GitHub Actions roda o `.github/workflows/ci.yml` em todo PR e em todo push na 
 | `check` | `npm run ci:static`, no projeto inteiro | O mesmo | `.nvmrc` |
 | `unit` | `npm test -- --changed HEAD^1 --passWithNoTests` | `npm test` | `22.22.3` e `.nvmrc`, em matriz |
 | `integration` | `npm run test:int -- --changed HEAD^1 --passWithNoTests` | `npm run test:int` | `.nvmrc` |
-| `e2e` | `npm run db:setup`, depois `npm run test:e2e -- --changed HEAD^1 --passWithNoTests`, contra Postgres, Redis e Mailpit em `services:` | `npm run db:setup` e `npm run test:e2e` | `.nvmrc` |
+| `e2e` | Copia o `.env.example` para `.env` e roda `npm run db:setup`, depois `npm run test:e2e -- --changed HEAD^1 --passWithNoTests`, contra Postgres, Redis e Mailpit em `services:` | O mesmo, com `npm run test:e2e` | `.nvmrc` |
 | `ci` | Falha se um dos outros falhou ou foi cancelado. Um job pulado conta como aprovado. É o check obrigatório do PR | O mesmo | — |
 
 - **PR só de Markdown:** quando todos os arquivos do PR são `*.md` ou estão em `docs/`, o `unit`, o `integration` e o `e2e` são pulados, e o `ci` passa. O filtro fica num job, e não no gatilho do workflow, para o check obrigatório continuar aparecendo no PR.
