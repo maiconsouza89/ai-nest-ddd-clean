@@ -81,7 +81,7 @@ As decisões abaixo foram fechadas com o dono do repositório antes do plano. Mu
 | 3 | Limite por conta no login | ✅ |
 | 4 | E2E de IPs diferentes contra a mesma conta | ✅ |
 | 5 | Documentação | ✅ |
-| 6 | Verificação, revisão, registro e PR | ⬜ |
+| 6 | Verificação, revisão, registro e PR | 🟡 |
 
 ### Passo 1: worktree, branch e roadmap
 

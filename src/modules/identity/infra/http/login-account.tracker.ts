@@ -1,3 +1,4 @@
+import type { AccountTracker } from '#shared/infra/http/throttle-by-account.decorator';
 import { Email } from '../../domain/value-objects/email.vo.js';
 
 /**
@@ -5,7 +6,7 @@ import { Email } from '../../domain/value-objects/email.vo.js';
  * O guard roda antes do `ValidationPipe`, então o corpo chega cru. Sem um e-mail válido, devolve
  * `undefined`, o limite por conta não conta, e o `ValidationPipe` responde 400.
  */
-export function loginAccountTracker(req: Record<string, unknown>) {
+export const loginAccountTracker: AccountTracker = (req) => {
   const email = (req.body as { email?: unknown } | undefined)?.email;
   return typeof email === 'string' ? Email.tryCreate(email)?.value : undefined;
-}
+};

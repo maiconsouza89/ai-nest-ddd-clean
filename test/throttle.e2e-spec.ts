@@ -32,14 +32,17 @@ describe('Rate limiting (e2e)', () => {
       .send({ email, password: 'wrong-password' });
   }
 
+  async function loginsFrom(email: string, attempts: number) {
+    const responses = [];
+    for (let i = 0; i < attempts; i++) responses.push(await loginFrom(email));
+    return responses;
+  }
+
   async function statusesOf(email: string, attempts: number) {
-    const statuses = [];
-    for (let i = 0; i < attempts; i++) statuses.push((await loginFrom(email)).status);
-    return statuses;
+    return (await loginsFrom(email, attempts)).map((r) => r.status);
   }
 
   beforeAll(async () => {
-    await clearThrottleKeys();
     for (const name of env) previous[name] = process.env[name];
     process.env.THROTTLE_ENABLED = 'true';
     process.env.TRUST_PROXY = '1';
@@ -82,8 +85,7 @@ describe('Rate limiting (e2e)', () => {
   });
 
   it('limita a mesma conta vinda de IPs diferentes', async () => {
-    const responses = [];
-    for (let i = 0; i < 6; i++) responses.push(await loginFrom('victim@example.com'));
+    const responses = await loginsFrom('victim@example.com', 6);
     expect(responses.map((r) => r.status)).toEqual([401, 401, 401, 401, 401, 429]);
     const limited = responses[5];
     expectProblemJson(limited);
