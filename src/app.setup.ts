@@ -1,8 +1,17 @@
-import { INestApplication, Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  Logger,
+  ValidationPipe,
+  VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
+
+/** Versão na URL (`/v1/...`). Exportada para o gerador do openapi.json, que não chama o configureApp. */
+export const API_VERSIONING: VersioningOptions = { type: VersioningType.URI, defaultVersion: '1' };
 
 export function configureApp(app: INestApplication) {
   const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);
@@ -21,7 +30,7 @@ export function configureApp(app: INestApplication) {
     .map((o) => o.trim())
     .filter(Boolean);
   if (origins.length) app.enableCors({ origin: origins });
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+  app.enableVersioning(API_VERSIONING);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

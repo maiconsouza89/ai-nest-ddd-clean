@@ -2,3 +2,5 @@ plop-templates/
 **/migrations/
 package-lock.json
 *.md
+# gerado pelo src/openapi.ts (npm run openapi:generate), não se edita à mão
+openapi.json
