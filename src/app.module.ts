@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { seconds, ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { seconds, ThrottlerModule } from '@nestjs/throttler';
 import { CatalogModule } from '#modules/catalog/catalog.module';
 import { IdentityAuthModule } from '#modules/identity/infra/identity-auth.module';
 import { IdentityModule } from '#modules/identity/infra/identity.module';
@@ -20,6 +20,8 @@ import { Logger } from '#shared/application/ports/logger';
 import { ENV_FILES, ignoresEnvFiles } from '#shared/infra/config/load-env-files';
 import { ProblemDetailsModule } from '#shared/infra/http/problem-details.module';
 import { RedisThrottlerStorage } from '#shared/infra/http/redis-throttler-storage';
+import { accountThrottlers } from '#shared/infra/http/throttle-by-account.decorator';
+import { AppThrottlerGuard } from '#shared/infra/http/throttler.guard';
 import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
 import { MessagingModule } from '#shared/infra/messaging/messaging.module';
 import { OutboxModule } from '#shared/infra/outbox/outbox.module';
@@ -40,12 +42,15 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
         config: ConfigService<EnvironmentVariables, true>,
         connection: BullMqConnection,
         logger: Logger,
-      ) => ({
-        throttlers: [{ ttl: seconds(60), limit: 100 }],
-        // contadores no Redis: com N instâncias, o limite vale para a soma, e não para cada uma
-        storage: new RedisThrottlerStorage(connection.producer, logger),
-        skipIf: () => config.get('THROTTLE_ENABLED', { infer: true }) === 'false',
-      }),
+      ) => {
+        const enabled = () => config.get('THROTTLE_ENABLED', { infer: true }) !== 'false';
+        return {
+          throttlers: [{ ttl: seconds(60), limit: 100 }, ...accountThrottlers(enabled)],
+          // contadores no Redis: com N instâncias, o limite vale para a soma, e não para cada uma
+          storage: new RedisThrottlerStorage(connection.producer, logger),
+          skipIf: () => !enabled(),
+        };
+      },
     }),
     ObservabilityModule,
     ProblemDetailsModule,
@@ -62,6 +67,6 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
     OrdersModule,
     NotificationsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: AppThrottlerGuard }],
 })
 export class AppModule {}
