@@ -49,6 +49,7 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: npm run ci:static
+      - run: npm run audit:signatures
 
   unit:
     name: unit (Node ${{ matrix.node-version || '.nvmrc' }})

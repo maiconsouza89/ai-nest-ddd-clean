@@ -276,7 +276,7 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - No PR, o job `check` mostra o step separado, verde.
 - `npm run ci` local não roda o `audit:signatures`.
 
-**Como ficou:** —
+**Como ficou:** como no "Faça". `npm run audit:signatures` passa localmente: 1015 pacotes com assinatura verificada e 235 com attestation, em uns 27 s. O `ci` e o `ci:static` do `package.json` não mudaram, então o `npm run ci` local não roda o `audit:signatures`. **Pendente:** o step separado, verde, no job `check` do PR (depende de push).
 
 ### Passo 7: `setup-github.mjs`
 
