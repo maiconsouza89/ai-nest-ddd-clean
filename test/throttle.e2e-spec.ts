@@ -62,15 +62,19 @@ describe('Rate limiting (e2e)', () => {
     }
   });
 
-  beforeEach(() => clearThrottleKeys());
+  beforeEach(async () => {
+    nextIp = 0;
+    await clearThrottleKeys();
+  });
 
   it('devolve 429 após vários logins seguidos', async () => {
     const responses = [];
+    // um e-mail por requisição: só o limite por IP pode barrar
     for (let i = 0; i < 7; i++) {
       responses.push(
         await request(app.getHttpServer())
           .post('/v1/auth/login')
-          .send({ email: 'nobody@example.com', password: 'wrong-password' }),
+          .send({ email: `nobody-${i}@example.com`, password: 'wrong-password' }),
       );
     }
     expect(responses.map((r) => r.status)).toEqual([401, 401, 401, 401, 401, 429, 429]);
