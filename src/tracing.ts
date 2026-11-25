@@ -3,7 +3,7 @@
 // (OTEL_TRACES_EXPORTER=otlp|console|none, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_SERVICE_NAME).
 // Mantenha os imports daqui mínimos: tudo o que for importado neste arquivo carrega antes do hook ESM
 // e não é instrumentado.
-import { register } from 'node:module';
+import { register } from 'import-in-the-middle/register-hooks.mjs';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { loadEnvFiles } from '#shared/infra/config/load-env-files';
@@ -15,9 +15,11 @@ loadEnvFiles();
 
 if (process.env.OTEL_SDK_DISABLED !== 'true') {
   // Em ESM, o `require` não é interceptado: o hook do import-in-the-middle é o que permite instrumentar
-  // o que o código importa direto (como o `ioredis`). Precisa vir antes de carregar o app.
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- DEP0205: a troca exige um Node acima do `engines` (ver docs/reference/evolucoes-com-gatilho.md)
-  register('@opentelemetry/instrumentation/hook.mjs', import.meta.url);
+  // o que o código importa direto (como o `ioredis`). Precisa vir antes de carregar o app. Roda na
+  // thread da app, pelo `module.registerHooks`, e só vê os `Hook()` das instrumentações se for a
+  // mesma cópia do pacote que o @opentelemetry/instrumentation usa. Fora das versões do `engines`,
+  // lança erro.
+  register();
   const sdk = new NodeSDK({
     instrumentations: [
       getNodeAutoInstrumentations({
