@@ -186,7 +186,7 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 > **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 5: composite action com o `node_modules` em cache
+> - [x] Passo 5: composite action com o `node_modules` em cache
 > - [ ] Passo 6: documentação e medição
 
 ### Passo 5: composite action com o `node_modules` em cache
@@ -209,6 +209,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Numa segunda run do mesmo lockfile, o step de cache mostra acerto, e o `npm ci` aparece como pulado em todos os jobs.
 - Mudar o `package-lock.json` gera cache novo, e os testes passam com ele.
 - `npm run ci` passa.
+
+**Como ficou:** `.github/actions/setup/action.yml` com `actions/setup-node@v7` e `actions/cache@v6`, versões conferidas nos releases e a API do `cache-hit` no Context7. Sem `cache: npm`: com o `node_modules` em cache, restaurar o `~/.npm` em todo job só custaria tempo; ele serviria só na troca de lockfile, que já paga o `npm ci` inteiro. A chave usa a saída `node-version` do `setup-node`. Conferido no PR #31: a primeira run criou um cache por versão do Node (`v22.22.3` e `v24.22.3`, 56 MiB cada), com o setup em 20 a 30 s por job; no re-run, o cache acertou nos 4 jobs, o `npm ci` saiu como `skipped` e o setup levou de 4 a 8 s. Um commit temporário que mudou o `package-lock.json` gerou chave nova, `npm ci` nos 4 jobs, cache salvo e testes verdes; o commit foi revertido no mesmo PR.
 
 ### Passo 6: documentação e medição
 
