@@ -19,8 +19,8 @@ A decorator metadata que o Nest usa para injetar por classe vem do oxc, o transf
 | Entidade e value object | Unitário | `*.spec.ts` ao lado do arquivo | Nada além da classe: sem fakes nem mocks | `order.entity.spec.ts`, `money.vo.spec.ts` |
 | Caso de uso | Unitário | `*.spec.ts` ao lado do arquivo | Repositório em memória (`infra/database/in-memory/`) e fakes de `#test/fakes` para os outros ports | `create-order.use-case.spec.ts` |
 | Adapter, gateway, guard, handler de evento, decorator de cache | Unitário | `*.spec.ts` ao lado do arquivo | Fakes do port que ele chama | `resilient-payment.gateway.spec.ts`, `on-order-paid.handler.spec.ts` |
-| Repositório, query, transação, idempotência no Postgres | Integração | `*.int-spec.ts` ao lado do arquivo, em geral em `infra/database/typeorm/` | Postgres descartável com as migrations reais do módulo | `typeorm-order.repository.int-spec.ts`, `transaction.int-spec.ts` |
-| Cache, filas, jobs agendados e rate limit no Redis | Integração | `*.int-spec.ts` ao lado do arquivo | Redis descartável | `cached-order.queries.int-spec.ts`, `expire-pending-orders.processor.int-spec.ts` |
+| Repositório, query, transação, idempotência no Postgres | Integração | `*.int-spec.ts` ao lado do arquivo, em geral em `infra/database/typeorm/` | Um banco só do arquivo, com as migrations reais do módulo ([Convenções](#convenções)) | `typeorm-order.repository.int-spec.ts`, `transaction.int-spec.ts` |
+| Cache, filas, jobs agendados e rate limit no Redis | Integração | `*.int-spec.ts` ao lado do arquivo | Um banco lógico do Redis só do worker ([Convenções](#convenções)) | `cached-order.queries.int-spec.ts`, `expire-pending-orders.processor.int-spec.ts` |
 | Evento de integração, lado de quem publica | Contrato (unitário) | `application/events/to-integration-event.contract.spec.ts` | O evento gerado a partir do agregado, comparado com o exemplo `contracts/events/*.v<N>.example.ts` | `orders`, `identity` |
 | Evento de integração, lado de quem consome | Contrato (unitário) | O spec do handler | O mesmo exemplo do contrato como entrada, inclusive entregue duas vezes | `on-order-cancelled.handler.spec.ts` |
 | Adapter de fornecedor real | Integração | `*.int-spec.ts` ao lado do adapter | O serviço num `GenericContainer` do Testcontainers | `smtp-email-sender.int-spec.ts`, com o Mailpit |
@@ -35,8 +35,9 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 | Onde | O que tem |
 | --- | --- |
 | `test/fakes/` | Um fake por port, para os unitários |
-| `test/helpers/<módulo>-database.ts` | As entidades e a lista de migrations de cada módulo, para o `startDatabase`. O helper não lê a pasta de migrations: uma migration nova entra na lista ([Como gerar uma migration](../how-to/gerar-uma-migration.md)) |
-| `test/helpers/redis.ts` | `startRedis`, com a política de memória do `docker-compose.yml` ([Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)) |
+| `test/global-setup/int.ts` | O `globalSetup` do projeto `int`: sobe o Postgres e o Redis da execução, monta um template por `test/helpers/<módulo>-database.ts` (achados por glob) e passa as URLs aos testes por `provide`/`inject` |
+| `test/helpers/<módulo>-database.ts` | O conjunto do módulo (`ModuleDatabase`: nome do template, entidades e lista de migrations) e o `start<Módulo>Database`, que devolve `{ ds, stop }` sobre um banco clonado do template. O helper não lê a pasta de migrations: uma migration nova entra na lista ([Como gerar uma migration](../how-to/gerar-uma-migration.md)) |
+| `test/helpers/redis.ts` | `startRedis` devolve a URL do banco lógico do worker, já limpo. `startRedisContainer` sobe um container só do arquivo, com a política de memória do `docker-compose.yml` ([Redis](../explanation/redis.md#uma-instância-para-filas-e-cache-só-em-desenvolvimento)) |
 | `test/helpers/auth.ts` | `registerUser` só cadastra. `registerAndLogin` cadastra, verifica o e-mail com o código que chega ao Mailpit e faz login. O código sai por evento, então o arquivo de e2e que o usa importa o `test/helpers/enable-outbox-worker.ts` antes do `AppModule` |
 | `test/helpers/guard-probe.controller.ts` | `GuardProbeController`: uma rota autenticada (`GET /v1/guard-probe`) e uma só de admin (`POST /v1/guard-probe/admin`), registradas só no `TestingModule` do `auth.e2e-spec.ts`. Os testes do guard e das roles não dependem das rotas dos módulos de exemplo |
 | `test/helpers/error-probe.controller.ts` | `ErrorProbeController`: rotas públicas em `/v1/error-probe` que lançam um erro inesperado, um erro de domínio com código registrado só pelo teste (`ERROR_PROBE_STATUSES`), um com código fora do mapa, e uma que valida um corpo com campo aninhado. Registrado só no `TestingModule` do `problem-details.e2e-spec.ts`, junto com `provideErrorStatuses(ERROR_PROBE_STATUSES)` |
@@ -53,7 +54,7 @@ Em PR, o CI roda os unitários e os de integração com `vitest run --changed <b
 | Enxerga | Os arquivos do diff contra a base (`<base>...HEAD`), os modificados e os novos ainda sem commit. Roda cada teste que importa um deles, direta ou indiretamente, por caminho relativo ou por alias `#...` |
 | Não enxerga | O que é carregado por glob ou por caminho, e não por import. Exemplo: os data sources carregam as migrations por glob (`migrations/*.{ts,js}`) |
 | Não enxerga | Um import usado só como tipo, que some na compilação. Mudar `catalog/contracts/catalog.facade.ts` não roda o `catalog-price.adapter.spec.ts` do orders, que só anota tipos com a `CatalogFacade`. Uma mudança de tipo quebra no `typecheck`, que o job `check` roda no projeto inteiro |
-| Roda tudo | Quando o diff tem um arquivo do `forceRerunTriggers` do `vitest.config.ts`, ou o arquivo do `setupFiles` |
+| Roda tudo | Quando o diff tem um arquivo do `forceRerunTriggers` do `vitest.config.ts`, o arquivo do `setupFiles` ou o do `globalSetup` (e o que ele importa, como os helpers de banco) |
 
 Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o padrão dele ao `forceRerunTriggers`, começando por `**/` (o Vitest compara com o caminho absoluto), com um comentário dizendo por quê. Sem isso, um PR que muda só esse arquivo passa sem rodar os testes que dependem dele.
 
@@ -61,6 +62,9 @@ Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o 
 
 | Convenção | Detalhe |
 | --- | --- |
-| Um container por arquivo de integração | Cada `*.int-spec.ts` sobe o seu no `beforeAll` e o derruba no `afterAll` |
+| Um Postgres e um Redis por execução da integração | O `globalSetup` sobe os dois uma vez, e os arquivos rodam em paralelo. O Postgres roda sem durabilidade (`fsync`, `synchronous_commit` e `full_page_writes` desligados, dados em tmpfs): ele é descartado no fim |
+| Um banco por arquivo, clonado de template | O `start<Módulo>Database` faz `CREATE DATABASE ... TEMPLATE tpl_<módulo>` no `beforeAll`, e o `stop` o apaga. Um template por conjunto de migrations, para a migration de um módulo continuar sem poder depender do schema de outro. Schema por arquivo não serve (as migrations criam schemas fixos), rollback por teste quebra os testes de transação, concorrência e outbox, que abrem conexões próprias, e `TRUNCATE` entre arquivos obrigaria a rodar em série |
+| Um banco lógico do Redis por worker | `redis://host:port/<VITEST_POOL_ID>`, limpo com `FLUSHDB` no `startRedis`. O Redis sobe com `--databases 128`, porque os 16 do padrão colidiriam em máquinas com mais de 16 workers. Os arquivos de um mesmo worker rodam um depois do outro. Um teste que limpa o Redis usa `FLUSHDB`, nunca `FLUSHALL` |
+| Container próprio só quando o teste mexe nele | O `cached-order.queries.int-spec.ts` derruba o Redis no meio (`startRedisContainer`), e o `smtp-email-sender.int-spec.ts` sobe o Mailpit. Um hook que sobe container passa o prazo dele; os outros ficam no `hookTimeout` de 30 s |
 | Imports nos testes | Os specs ficam fora do `npm run arch`, então a convenção de imports depende de revisão ([Convenções](convencoes.md#relativos-e-aliases)) |
 | Lint nos testes | Algumas regras com tipos ficam desligadas. Quais e por quê: [ADR 0004](../adr/0004-lint-e-formatacao.md#regras-desligadas-na-adoção) |

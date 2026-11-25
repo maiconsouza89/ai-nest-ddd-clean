@@ -79,7 +79,7 @@ Se o e2e passar de 2 min e virar o caminho crítico, a otimização dele vai par
 
 | Fase | O que entrega | Issue | Status |
 | --- | --- | --- | --- |
-| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | ⬜ |
+| 1. Integração | `globalSetup` com Postgres e Redis compartilhados, banco por arquivo clonado de template, arquivos em paralelo | #27 | 🟡 |
 | 2. Setup do CI | Composite action com `node_modules` em cache nos jobs | #28 | ⬜ |
 | 3. E2E no CI | Job `e2e` com `services:`, no `needs` do `ci` | #14 | ⬜ |
 
@@ -89,11 +89,11 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 
 ## Fase 1: Integração
 
-> **Status:** ⬜ Não iniciada · **Início:** — · **Conclusão:** —
+> **Status:** 🟡 Em andamento · **Início:** 2026-11-24 · **Conclusão:** —
 >
-> - [ ] Passo 1: `globalSetup` com Postgres, templates e Redis
-> - [ ] Passo 2: helpers clonam o template e usam o banco lógico do worker
-> - [ ] Passo 3: arquivos em paralelo
+> - [x] Passo 1: `globalSetup` com Postgres, templates e Redis
+> - [x] Passo 2: helpers clonam o template e usam o banco lógico do worker
+> - [x] Passo 3: arquivos em paralelo
 > - [ ] Passo 4: documentação e medição
 
 ### Passo 1: `globalSetup` com Postgres, templates e Redis
@@ -117,6 +117,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Com o `globalSetup` falhando (por exemplo, uma migration quebrada), a execução para com o erro da migration, sem esperar o timeout de cada arquivo.
 - `npm run typecheck` aceita `inject('...')` com o tipo declarado.
 
+**Como ficou:** `test/global-setup/int.ts`. Os conjuntos não vêm de uma lista: o `globalSetup` acha os `test/helpers/*-database.ts` por `import.meta.glob`, e cada um exporta um `ModuleDatabase` (`template`, entidades, migrations e tabela de migrations). Assim o `plop module` (template `test-database.hbs` atualizado) não precisa registrar nada, e remover um módulo de exemplo não deixa import quebrado; conferido gerando um módulo num worktree descartável. O Vitest carrega o `globalSetup` no processo principal, num ambiente do Vite que não recebia o `ssr.resolve.conditions`: as migrations vinham do `dist/`, sem erro. O `vitest.config.ts` ganhou um plugin com `configEnvironment` que aplica a condição `@app/source` a todo ambiente do Node. Conferido: `docker ps` durante a execução mostrou um `postgres:19`, dois `redis:8` (o compartilhado e o do `cached-order.queries`) e os dois Mailpit do `smtp-email-sender`; com uma migration quebrada, a execução para em uns 5 s com o erro dela. Context7 consultado para `provide`/`inject`, `globalSetup` e `withTmpFs`.
+
 ### Passo 2: helpers clonam o template e usam o banco lógico do worker
 
 **Por quê:** a mudança fica nos helpers, para nenhum spec ter que saber se o container é compartilhado.
@@ -136,6 +138,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Uma migration nova num módulo, sem entrar no helper do módulo, não é aplicada no template, o mesmo comportamento de hoje (ver a linha "lista única de migrations" em `evolucoes-com-gatilho.md`).
 - `npm run ci` passa.
 
+**Como ficou:** o `startDatabase` recebe o `ModuleDatabase` inteiro (precisa das entidades além do nome do template). O banco de cada arquivo se chama `<template>_<VITEST_POOL_ID>_<8 hex>`; os comandos de administração usam um `DataSource` de uma conexão no banco `postgres`, sem dependência nova (o projeto não tem `@types/pg`). O `startDedicatedRedis` virou `startRedisContainer`, usado também pelo `globalSetup`. O Redis sobe com `--databases 128` e o `startRedis` usa o `VITEST_POOL_ID` direto, sem o `% 16`: o `/code-review` mostrou que, com 18 threads ou mais, o Vitest abre mais de 16 workers e dois cairiam no mesmo banco (decisão aceita pelo dono). Os 20 arquivos passaram em série em 31,6 s (antes, 70 s no CI); no teardown, só os templates sobravam no Postgres.
+
 ### Passo 3: arquivos em paralelo
 
 **Por quê:** com banco e Redis isolados por arquivo e por worker, a única razão do `fileParallelism: false` (timeouts com vários containers subindo) deixa de existir.
@@ -152,6 +156,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Mudar só o arquivo do `globalSetup` seleciona os 20 arquivos com `--changed`.
 - Mudar só `src/modules/catalog/typeorm-catalog.facade.ts` seleciona só o `typeorm-catalog.facade.int-spec.ts`, como hoje.
 - `npm run ci` passa.
+
+**Como ficou:** além do `hookTimeout`, saíram os prazos de 120 s e 180 s dos `beforeAll` e `afterAll` dos specs que não sobem mais container (e do template `typeorm.repository.int-spec.hbs`); ficaram só no `cached-order.queries` e no `smtp-email-sender`. O `forceRerunTriggers` não precisou mudar: conferido com commits num worktree descartável, mudar o `globalSetup` ou o `test/helpers/database.ts` seleciona os 20 arquivos, e mudar só a facade do catalog seleciona só o spec dela. Localmente, com 4 threads, a suíte levou de 13 a 18 s com a máquina livre e de 23 a 48 s com o docker-compose no ar, com pico de 12 conexões no Postgres. Cinco execuções seguidas passaram. Em cerca de 25 execuções anteriores, 3 falharam no `globalSetup` com "Port ... not bound after 120000ms": no Docker Desktop com WSL, a porta que o Docker escolhe para o container às vezes coincide com uma porta efêmera em `TIME-WAIT` no WSL (conferido com `ss`), e a porta não abre. É do ambiente local, não dos testes, e não acontece no runner do CI, que usa Docker nativo.
 
 ### Passo 4: documentação e medição
 

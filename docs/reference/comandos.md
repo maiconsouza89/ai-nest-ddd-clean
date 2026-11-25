@@ -66,7 +66,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | --- | --- |
 | `npm test` | Unitários (`*.spec.ts`), sem banco |
 | `npm run test:watch` | Os unitários em modo watch |
-| `npm run test:int` | Integração (`*.int-spec.ts`). Sobe Postgres e Redis descartáveis com o Testcontainers, então exige Docker. Leva alguns minutos: cada arquivo sobe os containers de que precisa |
+| `npm run test:int` | Integração (`*.int-spec.ts`). Sobe um Postgres e um Redis descartáveis com o Testcontainers para a execução inteira, então exige Docker. Os arquivos rodam em paralelo, cada um no seu banco ([Testes](testes.md#convenções)) |
 | `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL`, o Redis de `REDIS_URL` e o SMTP de `SMTP_URL`, e lê os e-mails pela API do Mailpit |
 
 O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).

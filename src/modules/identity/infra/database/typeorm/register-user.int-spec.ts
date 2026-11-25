@@ -31,7 +31,7 @@ describe('RegisterUserUseCase com Postgres (integração)', () => {
 
   beforeAll(async () => {
     ({ ds, stop } = await startIdentityDatabase());
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

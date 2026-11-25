@@ -17,7 +17,7 @@ describe('TypeOrmTransactionManager (integração)', () => {
     ({ ds, stop } = await startOrdersDatabase());
     repo = new TypeOrmOrderRepository(ds);
     tx = new TypeOrmTransactionManager(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

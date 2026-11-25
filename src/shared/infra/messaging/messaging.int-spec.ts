@@ -3,7 +3,6 @@ import 'reflect-metadata';
 import { Global, Injectable, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StartedRedisContainer } from '@testcontainers/redis';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
@@ -50,7 +49,7 @@ class AlwaysFailsHandler {
 
 describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
   let stopDb: () => Promise<void>;
-  let redis: StartedRedisContainer;
+  let redisUrl: string;
   let app: TestingModule;
   let publisher: EventPublisher;
 
@@ -62,13 +61,13 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
       new TypeOrmProcessedEvents(ds),
       logger,
     );
-    redis = await startRedis();
+    redisUrl = await startRedis();
     app = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
           ignoreEnvFile: true,
-          load: [() => ({ REDIS_URL: redis.getConnectionUrl(), QUEUE_WORKERS_ENABLED: 'true' })],
+          load: [() => ({ REDIS_URL: redisUrl, QUEUE_WORKERS_ENABLED: 'true' })],
         }),
         TestLoggerModule,
         MessagingModule,
@@ -77,13 +76,12 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
     }).compile();
     await app.init();
     publisher = app.get(EventPublisher);
-  }, 180_000);
+  });
 
   afterAll(async () => {
     await app?.close();
-    await redis?.stop();
     await stopDb?.();
-  }, 60_000);
+  });
 
   const event = (): IntegrationEvent => ({
     eventId: crypto.randomUUID(),

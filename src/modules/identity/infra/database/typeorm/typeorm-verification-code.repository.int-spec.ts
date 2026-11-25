@@ -28,7 +28,7 @@ describe('Código de verificação (integração)', () => {
     ({ ds, stop } = await startIdentityDatabase());
     repo = new TypeOrmVerificationCodeRepository(ds);
     tx = new TypeOrmTransactionManager(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

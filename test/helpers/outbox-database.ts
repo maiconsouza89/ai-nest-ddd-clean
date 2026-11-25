@@ -5,7 +5,7 @@ import { AddOutboxMetadata1795243000000 } from '#shared/infra/outbox/migrations/
 import { OutboxMessageOrmEntity } from '#shared/infra/outbox/outbox-message.orm-entity';
 import { CreateProcessedEventsTable1795242000000 } from '#shared/infra/outbox/migrations/1795242000000-create-processed-events-table';
 import { ProcessedEventOrmEntity } from '#shared/infra/outbox/processed-event.orm-entity';
-import { startDatabase } from './database.js';
+import { ModuleDatabase, startDatabase } from './database.js';
 
 export const outboxEntities = [OutboxMessageOrmEntity, ProcessedEventOrmEntity];
 export const outboxMigrations = [
@@ -16,9 +16,11 @@ export const outboxMigrations = [
   AddOutboxMetadata1795243000000,
 ];
 
-export const startOutboxDatabase = () =>
-  startDatabase({
-    entities: outboxEntities,
-    migrations: outboxMigrations,
-    migrationsTableName: 'shared_migrations',
-  });
+export const outboxDatabase: ModuleDatabase = {
+  template: 'outbox',
+  entities: outboxEntities,
+  migrations: outboxMigrations,
+  migrationsTableName: 'shared_migrations',
+};
+
+export const startOutboxDatabase = () => startDatabase(outboxDatabase);

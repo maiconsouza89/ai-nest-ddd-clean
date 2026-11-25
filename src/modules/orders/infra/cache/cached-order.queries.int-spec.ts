@@ -9,7 +9,7 @@ import { StartedRedisContainer } from '@testcontainers/redis';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startOrdersDatabase } from '#test/helpers/orders-database';
-import { startRedis } from '#test/helpers/redis';
+import { startRedisContainer } from '#test/helpers/redis';
 import { Logger } from '#shared/application/ports/logger';
 import { Money } from '#shared/domain/money.vo';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
@@ -43,7 +43,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
   beforeAll(async () => {
     ({ ds, stop: stopDb } = await startOrdersDatabase());
-    redis = await startRedis();
+    redis = await startRedisContainer();
     repo = new TypeOrmOrderRepository(ds);
     inner = new TypeOrmOrderQueries(ds);
 

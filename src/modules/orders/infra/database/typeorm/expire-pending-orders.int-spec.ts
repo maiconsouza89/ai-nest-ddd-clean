@@ -30,7 +30,7 @@ describe('Jobs de pedidos com Postgres (integração)', () => {
       new FakeLogger(),
       { maxIdleMs: 60 * 60_000, batchSize: 100 },
     );
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

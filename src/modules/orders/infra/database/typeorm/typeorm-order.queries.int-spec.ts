@@ -17,7 +17,7 @@ describe('TypeOrmOrderQueries (integração)', () => {
     ({ ds, stop } = await startOrdersDatabase());
     repo = new TypeOrmOrderRepository(ds);
     queries = new TypeOrmOrderQueries(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 

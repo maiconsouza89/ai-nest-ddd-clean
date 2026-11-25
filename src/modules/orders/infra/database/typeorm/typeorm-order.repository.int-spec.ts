@@ -16,7 +16,7 @@ describe('TypeOrmOrderRepository (integração)', () => {
   beforeAll(async () => {
     ({ ds, stop } = await startOrdersDatabase());
     repo = new TypeOrmOrderRepository(ds);
-  }, 120_000);
+  });
 
   afterAll(() => stop?.());
 
