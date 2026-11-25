@@ -21,6 +21,8 @@ updates:
       semver-minor-days: 3
       semver-major-days: 7
     groups:
+      commitlint:
+        patterns: ['@commitlint/*']
       nestjs:
         patterns: ['@nestjs/*']
       opentelemetry:

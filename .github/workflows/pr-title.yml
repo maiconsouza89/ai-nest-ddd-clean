@@ -1,0 +1,31 @@
+# Confere o título do PR, que vira o commit da main no squash, com o commitlint: docs/reference/comandos.md#ci
+# O ruleset de scripts/setup-github.mjs exige o check pr-title: ao renomear o job, mude lá e
+# rode npm run github:setup.
+name: pr-title
+
+on:
+  pull_request:
+    # o synchronize publica o check em cada commit novo: o check obrigatório vale por commit
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+        with:
+          node-version-file: .nvmrc
+      # O título entra pelo env, nunca interpolado no script: interpolado, ele vira comando no shell
+      - env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npx --no -- commitlint --verbose
