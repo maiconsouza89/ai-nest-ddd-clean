@@ -97,6 +97,7 @@
     "vitest": "^5.1.2"
   },
   "dependencies": {
+    "@dhtmlx/kanban": "1.7.3",
     "@keyv/redis": "^5.1.6",
     "@nestjs/cache-manager": "^12.0.5",
     "@nestjs/common": "12.6.0",
@@ -121,6 +122,7 @@
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "keyv": "^5.6.0",
+    "lodash": "4.17.20",
     "nestjs-pino": "^5.3.2",
     "nodemailer": "^10.6.1",
     "pg": "^8.23.1",
