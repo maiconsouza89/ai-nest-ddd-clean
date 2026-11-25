@@ -1,18 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { TestApp } from './helpers/test-app.js';
 import { Test } from '@nestjs/testing';
-import { HealthIndicatorService, TypeOrmHealthIndicator } from '@nestjs/terminus';
+import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
 import { configureApp } from '../src/app.setup.js';
-
-// devolve o builder real do terminus: qualquer encadeamento do controller (`.withTimeout()` etc.) funciona
-const indicators = new HealthIndicatorService();
-const fakePing = (key: string, isUp: () => boolean) =>
-  indicators.check(key).attempt(() => {
-    if (!isUp()) throw new Error(`${key} down`);
-  });
+import { fakePing } from './helpers/health.js';
 
 describe('Health (e2e)', () => {
   let app: TestApp;
@@ -22,9 +16,9 @@ describe('Health (e2e)', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(TypeOrmHealthIndicator)
-      .useValue({ pingCheck: (key: string) => fakePing(key, () => dbUp) })
+      .useValue({ pingCheck: fakePing(() => dbUp) })
       .overrideProvider(RedisHealthIndicator)
-      .useValue({ pingCheck: (key: string) => fakePing(key, () => redisUp) })
+      .useValue({ pingCheck: fakePing(() => redisUp) })
       .compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();

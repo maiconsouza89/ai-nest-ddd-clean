@@ -24,6 +24,7 @@ O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-
 | `CORS_ORIGINS` | vazio | Origens separadas por vírgula | Vazio desliga o CORS |
 | `TRUST_PROXY` | `0` | Inteiro ≥ 0 | Quantos proxies confiáveis estão na frente da API. Atrás de um proxy, com `0` todos os clientes compartilham o IP do proxy e o mesmo limite do rate limit |
 | `THROTTLE_ENABLED` | `true` | `true`, `false` | Rate limit (100 requisições por minuto por IP, com limites menores nas rotas de [autenticação](autenticacao.md)). Os contadores ficam no Redis, então o limite vale para a soma das instâncias |
+| `SHUTDOWN_GRACE_MS` | `0` | 0 a 600000 (10 minutos), em ms | Atraso do desligamento no `SIGTERM`: o `/health/ready` responde 503 e a app segue atendendo, antes de o servidor HTTP fechar. `0` desliga. Como escolher o valor está em [Operação](operacao.md#atraso-do-desligamento) |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent` | Nível do log (pino) |
 
 ## Infraestrutura

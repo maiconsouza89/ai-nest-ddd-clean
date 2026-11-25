@@ -79,6 +79,12 @@ export class EnvironmentVariables {
   @Min(0)
   TRUST_PROXY: number = 0;
 
+  // atraso do desligamento no SIGTERM, em ms: o /health/ready responde 503 e a app segue atendendo
+  @IsInt()
+  @Min(0)
+  @Max(600_000)
+  SHUTDOWN_GRACE_MS: number = 0;
+
   @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
   LOG_LEVEL: string = 'info';
 
