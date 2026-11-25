@@ -7,9 +7,13 @@ export type EmailSummary = { id: string; subject: string; from: string };
 
 type Summary = { messages: { ID: string; Subject: string; From: { Address: string } }[] };
 
+// Num worktree, a tag do usuário SMTP dele (`npm run worktree:setup`): o Mailpit é compartilhado entre checkouts.
+const TAG = process.env.MAILPIT_TAG;
+
 /** Os e-mails recebidos pelo endereço, do mais recente para o mais antigo, sem o corpo. */
 export async function emailsTo(address: string, api = MAILPIT_API): Promise<EmailSummary[]> {
-  const query = encodeURIComponent(`to:"${address}"`);
+  const search = TAG ? `tag:"${TAG}" to:"${address}"` : `to:"${address}"`;
+  const query = encodeURIComponent(search);
   const res = await fetch(`${api}/api/v1/search?query=${query}`);
   if (!res.ok)
     throw new Error(

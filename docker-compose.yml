@@ -26,7 +26,8 @@ services:
         condition: service_healthy
 
   # Mesma porta do start:dev, de propósito: com ele no ar, este não sobe, em vez de duas instâncias
-  # disputarem as filas do BullMQ no mesmo Redis
+  # disputarem as filas do BullMQ no mesmo Redis. O profile só roda no checkout principal: o stack de
+  # desenvolvimento é o de todos os worktrees (docs/how-to/fazer-o-deploy.md#testar-a-imagem-localmente)
   app:
     profiles: [prod]
     image: ai-nest-ddd-clean:local
@@ -43,8 +44,10 @@ services:
       mailpit:
         condition: service_healthy
 
+  # Os worktrees compartilham este Postgres, um banco por worktree (docs/how-to/trabalhar-com-worktrees-em-paralelo.md)
   postgres:
     image: postgres:19
+    command: ['postgres', '-c', 'max_connections=200']
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -77,6 +80,12 @@ services:
   # SMTP de desenvolvimento: guarda os e-mails e os mostra em http://localhost:8025, sem enviar para fora
   mailpit:
     image: axllent/mailpit:v1
+    # Aceita envio sem autenticação (o checkout principal e o CI) e marca cada e-mail com o usuário SMTP:
+    # cada worktree envia como `wt<N>` e o filtra por `tag:wt<N>`
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_TAGS_USERNAME: 1
     ports:
       - '127.0.0.1:1025:1025'
       - '127.0.0.1:8025:8025'

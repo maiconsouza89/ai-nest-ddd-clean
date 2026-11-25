@@ -17,7 +17,7 @@ Nesta ordem:
 
 1. `npm install`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
 2. `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](variaveis-de-ambiente.md).
-3. `docker compose up -d postgres redis mailpit`. Sobe o Postgres 19 em `127.0.0.1:5432`, o Redis 8 em `127.0.0.1:6379` e o Mailpit 1, o SMTP de desenvolvimento, em `127.0.0.1:1025`.
+3. `docker compose up -d postgres redis mailpit`. Sobe o Postgres 19 em `127.0.0.1:5432`, com `max_connections=200` para caber os worktrees, o Redis 8 em `127.0.0.1:6379` e o Mailpit 1, o SMTP de desenvolvimento, em `127.0.0.1:1025`. O Mailpit aceita envio com ou sem usuário SMTP e marca cada e-mail com o usuário, que vira a tag de um [worktree](#worktrees).
 4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
 
    ```sh
@@ -26,6 +26,8 @@ Nesta ordem:
    ```
 
 5. `npm run start:dev`.
+
+Num `git worktree`, o setup é outro: [Worktrees](#worktrees).
 
 Com a app no ar:
 
@@ -67,7 +69,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm test` | Unitários (`*.spec.ts`), sem banco |
 | `npm run test:watch` | Os unitários em modo watch |
 | `npm run test:int` | Integração (`*.int-spec.ts`). Sobe um Postgres e um Redis descartáveis com o Testcontainers para a execução inteira, então exige Docker. Os arquivos rodam em paralelo, cada um no seu banco ([Testes](testes.md#convenções)) |
-| `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL`, o Redis de `REDIS_URL` e o SMTP de `SMTP_URL`, e lê os e-mails pela API do Mailpit |
+| `npm run test:e2e` | E2E (`test/*.e2e-spec.ts`). Sobe o app inteiro contra o banco de `DATABASE_URL`, o Redis de `REDIS_URL` e o SMTP de `SMTP_URL` do checkout, e lê os e-mails pela API do Mailpit |
 
 O runner, o `test/setup-env.ts`, a decorator metadata e qual tipo de teste cobre cada camada estão em [Testes](testes.md).
 
@@ -79,9 +81,21 @@ Para rodar um arquivo só, passe um padrão de caminho depois do `--`. O filtro 
 
 Cuidados com o e2e:
 
-- Por padrão, `DATABASE_URL`, `REDIS_URL` e `SMTP_URL` apontam para o Postgres, o Redis e o Mailpit do `docker-compose.yml`. Os três precisam estar no ar. O endereço da API do Mailpit muda com `MAILPIT_API_URL` (padrão `http://127.0.0.1:8025`).
-- O e2e **grava dados** nesse banco.
-- Encerre qualquer `start:dev` antes. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes.
+- O e2e lê `DATABASE_URL`, `REDIS_URL`, `SMTP_URL`, `MAILPIT_API_URL` e `MAILPIT_TAG` do ambiente, do `.env.local` e do `.env` do checkout, nessa precedência. Sem elas, apontam para o Postgres, o Redis e o Mailpit do `docker-compose.yml`, que precisam estar no ar. O endereço da API do Mailpit padrão é `http://127.0.0.1:8025`.
+- O e2e **grava dados** no banco do checkout: o `app` no principal, o `app_wt<N>` num worktree.
+- Encerre antes o `start:dev` deste checkout. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. O `start:dev` e o e2e de outro worktree com `worktree:setup` não interferem.
+
+## Worktrees
+
+Cada `git worktree` ganha a sua porta, o seu banco, o seu banco lógico do Redis e a sua tag no Mailpit, sobre o stack do checkout principal ([ADR 0011](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)). Passo a passo: [Como trabalhar com worktrees em paralelo](../how-to/trabalhar-com-worktrees-em-paralelo.md).
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run worktree:setup` | Só num worktree. Reserva o slot `N` (de 1 a 15), gera o `.env` a partir do `.env` do principal (porta `3000 + N`, banco `app_wt<N>`, banco lógico `N` do Redis, usuário SMTP `wt<N>`), copia o `.env.local` do principal sem essas chaves, roda o `npm ci` se falta `node_modules` (`-- --install` força), sobe o stack do principal, cria o banco e roda o `db:setup` e o `db:seed`. Na primeira reserva, apaga o que um worktree removido deixou no slot. Rodado de novo, mantém o slot e os dados (`scripts/worktree.mjs`) |
+| `npm run worktree:down` | Só num worktree com slot. Apaga o banco `app_wt<N>`, esvazia o banco lógico `N` do Redis e as mensagens da tag `wt<N>`. Não toca em containers nem volumes. O slot fica reservado até o `git worktree remove` |
+
+- **Trava:** o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` rodam antes o `scripts/worktree-guard.mjs`. Num worktree (o `.git` da raiz é um arquivo) sem `WORKTREE_SLOT` no ambiente, no `.env.local` ou no `.env`, ele para com "rode `npm run worktree:setup`". No principal e no CI, não faz nada.
+- **Compose num worktree:** o `.env` gerado tem o `COMPOSE_PROJECT_NAME` do principal, então o `docker compose up -d` mira o stack compartilhado e não faz nada se ele já estiver no ar. Ele usa o `docker-compose.yml` da branch: se a branch muda um serviço, o Compose o recria para todos. O `worktree:setup` sobe o stack pelo `docker-compose.yml` do principal, e não pelo da branch. Nunca `docker compose down -v` nem `stop` num worktree: alcançam o stack de todos.
 
 ## CI
 
@@ -144,6 +158,6 @@ O profile `prod` do `docker-compose.yml` gera a imagem, roda as migrations dela 
 
 ## Baixar o ambiente
 
-`docker compose down -v --remove-orphans`, na raiz do repositório. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
+`docker compose down -v --remove-orphans`, só na raiz do checkout principal. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Apaga também os dados de todos os worktrees, que usam esse stack. Num worktree, use o `npm run worktree:down` ([Worktrees](#worktrees)). Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 
 Nunca use `docker volume prune` nem `docker system prune`, e não remova volumes, containers ou redes de outros projetos.

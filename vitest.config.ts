@@ -59,7 +59,7 @@ export default defineConfig({
         test: {
           name: 'e2e',
           include: ['test/**/*.e2e-spec.ts'],
-          fileParallelism: false, // grava no banco do docker-compose
+          fileParallelism: false, // grava no banco deste checkout, no Postgres do docker-compose
           testTimeout: 30_000,
           hookTimeout: 30_000, // o beforeAll sobe o AppModule inteiro
         },

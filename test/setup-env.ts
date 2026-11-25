@@ -1,4 +1,16 @@
 import 'reflect-metadata';
+import { ignoresEnvFiles, loadEnvFiles } from '#shared/infra/config/load-env-files';
+
+// Num worktree (`npm run worktree:setup`), os e2e usam o banco, o banco lógico do Redis e a tag do Mailpit
+// do checkout: só estas chaves vêm do .env.local e do .env, na precedência da app, e o ambiente vence. O resto
+// fica nos valores de teste abaixo, para o THROTTLE_ENABLED, o LOG_LEVEL e os workers do .env não vazarem.
+const CONNECTION_KEYS = ['DATABASE_URL', 'REDIS_URL', 'SMTP_URL', 'MAILPIT_API_URL', 'MAILPIT_TAG'];
+if (!ignoresEnvFiles()) {
+  const fromFiles: NodeJS.ProcessEnv = {};
+  loadEnvFiles(fromFiles);
+  for (const key of CONNECTION_KEYS)
+    if (fromFiles[key] !== undefined) process.env[key] ??= fromFiles[key];
+}
 
 // Variáveis mínimas para os testes que sobem o AppModule (validadas por validateEnv).
 process.env.NODE_ENV ??= 'test';
