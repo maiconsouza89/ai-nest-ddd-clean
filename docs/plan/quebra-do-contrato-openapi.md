@@ -108,7 +108,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-25, ant
 
 | Passo | Entrega | Status |
 | --- | --- | --- |
-| 1 | Worktree, branch e roadmap | ⬜ |
+| 1 | Worktree, branch e roadmap | ✅ |
 | 2 | Gerador e `openapi.json` guardado | ⬜ |
 | 3 | Config do `oasdiff` e teste local | ⬜ |
 | 4 | Job `openapi` no CI | ⬜ |
