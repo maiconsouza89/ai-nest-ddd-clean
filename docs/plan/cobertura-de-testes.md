@@ -107,7 +107,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 | 1 | Worktree, branch e roadmap | ✅ |
 | 2 | `@vitest/coverage-v8` e `test:coverage` | ✅ |
 | 3 | Meta em `domain/` e `application/` | ✅ |
-| 4 | Resumo da cobertura no job `unit` | ⬜ |
+| 4 | Resumo da cobertura no job `unit` | 🟡 |
 | 5 | Documentação | ⬜ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
@@ -199,6 +199,8 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 - o spec passa e o script imprime a tabela local;
 - o `actionlint` e o `gh actions-lock --verify-local` passam, e o `actions.lock` não muda;
 - no CI do PR (passo 6), o resumo do `unit (Node .nvmrc)` mostra o resumo dos testes e a tabela de cobertura, e o `unit (Node 22.22.3)` só o dos testes. Anote no **Como ficou** a duração do `unit (Node .nvmrc)` no PR, contra os 10 s da run `45671463163` da `main`.
+
+**Como ficou:** um arquivo só, `scripts/coverage-summary.mjs`: a função pura `coverageSummary` e a entrada sob `import.meta.main` (Node 22.18 e 24.2 em diante, dentro do `engines`), que não roda quando o spec importa o módulo. A porcentagem sai com vírgula, como nas páginas. O piso de 90% fica numa constante, com comentário apontando para o `vitest.config.ts`. O spec (5 testes) passa, e o script imprime a tabela local; sem o JSON, sai com código 1 e `coverage-summary: <caminho> não existe; rode npm run test:coverage antes.`. O `actionlint` e o `gh actions-lock --verify-local` ("All 4 workflows have complete lockfile coverage.") passaram, e o `actions.lock` não mudou. Pendente, no CI do PR: o resumo dos dois `unit` e a duração do `unit (Node .nvmrc)`.
 
 ### Passo 5: documentação
 
