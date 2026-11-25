@@ -97,7 +97,6 @@
     "vitest": "^5.1.2"
   },
   "dependencies": {
-    "@dhtmlx/kanban": "1.7.3",
     "@keyv/redis": "^5.1.6",
     "@nestjs/cache-manager": "^12.0.5",
     "@nestjs/common": "12.6.0",
