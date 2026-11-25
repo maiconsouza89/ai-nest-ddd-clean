@@ -40,6 +40,26 @@ export default defineConfig({
       '**/docker-compose.yml',
       '**/.github/workflows/**',
     ],
+    // Ligada só pelo `--coverage` do `npm run test:coverage`, que roda só os unitários: a integração e o e2e
+    // rodam em jobs próprios no CI, e juntar a cobertura deles pediria artefatos entre jobs
+    // (docs/reference/testes.md#cobertura).
+    coverage: {
+      provider: 'v8',
+      // Todo o src/, para um arquivo sem teste aparecer com 0%, e não sumir do relatório
+      include: ['src/**/*.ts'],
+      exclude: [
+        // rodam pela CLI do TypeORM ou por script, e não dentro da aplicação
+        '**/migrations/**',
+        '**/*.data-source.ts',
+        '**/seeds/**',
+        // apoio aos testes: repositórios em memória, exemplos dos testes de contrato e utilitários
+        '**/in-memory/**',
+        'src/**/contracts/events/*.example.ts',
+        'src/shared/testing/**',
+      ],
+      // terminal e log do CI, HTML local e a entrada do resumo do job (scripts/coverage-summary.mjs)
+      reporter: ['text-summary', 'html', 'json-summary'],
+    },
     // Os projetos herdam o setupFiles da raiz por padrão desde o Vitest 5.
     projects: [
       { test: { name: 'unit', include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'] } },

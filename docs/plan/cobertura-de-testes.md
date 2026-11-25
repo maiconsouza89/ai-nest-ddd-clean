@@ -105,7 +105,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 | Passo | Entrega | Status |
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
-| 2 | `@vitest/coverage-v8` e `test:coverage` | ⬜ |
+| 2 | `@vitest/coverage-v8` e `test:coverage` | ✅ |
 | 3 | Meta em `domain/` e `application/` | ⬜ |
 | 4 | Resumo da cobertura no job `unit` | ⬜ |
 | 5 | Documentação | ⬜ |
@@ -146,6 +146,8 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 8. Commit: `build(test): @vitest/coverage-v8 e script test:coverage (#21)`.
 
 **Pronto quando:** `npm run test:coverage` gera os três relatórios, e o `npm run ci` passa com a pasta `coverage/` presente.
+
+**Como ficou:** o `vitest` continua em 5.1.2, a latest, e o `@vitest/coverage-v8` entrou em `^5.1.2` (peer `vitest: 5.1.2`); o lockfile ganhou só o provider e as dependências dele. Conferido no Context7 (`/vitest-dev/vitest`, documentação atual, sem a 5.1.2 indexada): `provider`, `include`, `exclude`, `reporter` e `thresholds` por glob. O relatório tem 222 arquivos, nenhum de teste nem do `exclude`. Os números batem com os medidos: `domain/` (43 arquivos) 96,8% das linhas, 96,1% dos statements, 96,2% dos branches e 95,7% das funções; `application/` (54) 99,3%, 98,1%, 93,1% e 100%. Com o `exclude`, a infra e o resto ficam em 29,3% das linhas (116 arquivos), o `contracts/` (9 arquivos, só tipos) não tem nada a medir, e o total em 51,4%. Com a pasta `coverage/` presente, o `format:check`, o `lint`, o `docs:check` e o `npm run ci` passaram.
 
 ### Passo 3: meta em `domain/` e `application/`
 
