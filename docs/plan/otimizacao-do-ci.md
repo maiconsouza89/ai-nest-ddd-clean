@@ -260,6 +260,8 @@ A ordem importa: cada fase mede o próprio ganho sem misturar efeitos, a fase 2 
 - Num PR que muda só um `*.spec.ts` unitário, o `e2e` termina com "No affected test files found" e código 0.
 - `npm run ci` passa.
 
+**Como ficou:** o GitHub Actions passou a aceitar `command` em `services:` (documentação atual, pelo Context7): os parâmetros do Postgres e o `noeviction` do Redis vão nele, sem os steps de `ALTER SYSTEM` e `CONFIG SET`. O actionlint 1.7.12 ainda não conhece a chave; `.github/actionlint.yaml` ignora só esse erro. O job ganhou um step `cp .env.example .env`, fora do "Faça": os data sources do `db:setup` validam o ambiente, e a primeira run falhou sem ele. Os `services:` não sobem durante a instalação, como o "Por quê" supunha: o "Initialize containers" leva uns 15 s antes do primeiro step. Conferido no PR #32: o job passou com os 10 arquivos (Vitest em 70 s, job em 1m39s a 1m45s); um commit descartável com `expect(418)` no `health.e2e-spec.ts` fez o `e2e` e o `ci` falharem, e foi revertido. Falta conferir, depois do merge, o PR só de `.md` (`e2e` pulado) e o PR que muda só um unitário ("No affected test files found"): este PR muda o `vitest.config.ts` e o workflow, que estão no `forceRerunTriggers`, então roda a suíte inteira.
+
 ### Passo 8: documentação e medição
 
 **Faça:**
