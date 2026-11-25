@@ -5,4 +5,6 @@ paths:
   .github/workflows/ci.yml:
     ignore:
       - 'unexpected key "command" for "services" section'
-      - 'specifying action "\$/\.github/actions/setup" in invalid format'
+  .github/workflows/*.yml:
+    ignore:
+      - 'specifying action "\$/[^"]*" in invalid format'

@@ -47,7 +47,7 @@ O Dependabot (`.github/dependabot.yml`) abre os PRs de atualização. O porquê 
 
 - **Agenda:** toda segunda-feira, às 06:00 de `America/Sao_Paulo`, nos três.
 - **Cooldown:** o Dependabot só propõe uma versão publicada há pelo menos esse tempo. Não vale para os security updates, que saem na hora.
-- **Exceções:** o `ignore` do `.github/dependabot.yml` espelha a [tabela de exceções](#exceções), na mesma faixa: a versão quebrada do Nest, o TypeScript de 6.1 em diante e as majors de `keyv`, `@keyv/redis` e `ioredis`. O `argon2` não tem `ignore`. Uma linha nova, mudada ou removida na tabela muda o `ignore` no mesmo PR.
+- **Exceções:** o `ignore` do `.github/dependabot.yml` espelha a [tabela de exceções](#exceções), na mesma faixa de cada linha. O `argon2` não tem `ignore`. Uma linha nova, mudada ou removida na tabela muda o `ignore` no mesmo PR.
 - **Actions:** o PR do Dependabot atualiza também o `.github/workflows/actions.lock` ([Comandos → CI](comandos.md#ci)).
 - **Imagens:** o PR do Dependabot muda só o `docker-compose.yml`. Quem o fecha completa as outras ocorrências na mesma branch:
   - `postgres:19`: `.github/workflows/ci.yml` (`services:`) e `test/global-setup/int.ts`;

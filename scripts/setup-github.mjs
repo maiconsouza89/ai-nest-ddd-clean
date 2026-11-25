@@ -74,18 +74,16 @@ if (!view.ok)
   fail(`não achei no GitHub o repositório do origin (${origin.stdout}):\n${view.stderr}`);
 const { nameWithOwner: repo, visibility } = json(view.stdout, 'ler o repositório');
 
-// O code scanning existe em todo repositório público. Num privado ou interno, só com o GitHub Code
-// Security ou o Advanced Security ligado.
-let codeScanning = visibility === 'PUBLIC';
-if (!codeScanning) {
+// Num privado ou interno, o code scanning só existe com o GitHub Code Security ou o Advanced Security.
+function hasCodeSecurity() {
   const details = run('gh', ['api', `repos/${repo}`]);
   if (!details.ok) fail(`não foi possível ler ${repo}:\n${details.stderr}`);
   const analysis = json(details.stdout, 'ler o repositório').security_and_analysis ?? {};
-  codeScanning = [analysis.code_security, analysis.advanced_security].some(
+  return [analysis.code_security, analysis.advanced_security].some(
     (feature) => feature?.status === 'enabled',
   );
 }
-if (codeScanning) rules.push(codeScanningRule);
+if (visibility === 'PUBLIC' || hasCodeSecurity()) rules.push(codeScanningRule);
 else
   process.stdout.write(
     'Repositório privado ou interno sem o GitHub Code Security: o ruleset fica sem a regra do CodeQL.\n',
