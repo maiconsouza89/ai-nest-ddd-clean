@@ -55,7 +55,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 2 | `import-in-the-middle` no `package.json` e `engines` | ✅ |
 | 3 | Troca no `tracing.ts` e conferência dos spans | 🟡 |
 | 4 | `evolucoes-com-gatilho.md` e `observabilidade.md` | ✅ |
-| 5 | Verificação, revisão, registro e PR | ⬜ |
+| 5 | Verificação, revisão, registro e PR | 🟡 |
 
 ### Passo 1: worktree, branch e roadmap
 
