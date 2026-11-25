@@ -1,0 +1,6 @@
+# O GitHub Actions aceita `command` em `services:`, mas o actionlint 1.7.12 ainda não conhece a chave.
+# Tire esta exceção quando ele conhecer.
+paths:
+  .github/workflows/ci.yml:
+    ignore:
+      - 'unexpected key "command" for "services" section'

@@ -47,7 +47,7 @@ Os arquivos de `test/fakes/` e `test/helpers/` que não são óbvios pelo nome e
 
 ## Só os testes afetados
 
-Em PR, o CI roda os unitários e os de integração com `vitest run --changed <base>` ([Comandos](comandos.md#ci)). Localmente, o mesmo vale com `npx vitest run --project unit --changed main`.
+Em PR, o CI roda os unitários, os de integração e os e2e com `vitest run --changed <base>` ([Comandos](comandos.md#ci)). Todo e2e importa o `AppModule`, que importa quase todo o `src/`: quase toda mudança em `src/` roda a suíte e2e inteira. Localmente, o mesmo vale com `npx vitest run --project unit --changed main`.
 
 | O `--changed` | Detalhe |
 | --- | --- |

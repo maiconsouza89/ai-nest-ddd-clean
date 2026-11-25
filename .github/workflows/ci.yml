@@ -84,12 +84,56 @@ jobs:
           node-version-file: .nvmrc
       - run: npm run test:int -- ${{ env.VITEST_ARGS }}
 
+  # Os services sobem antes dos steps e ficam prontos durante o checkout e a instalação. Imagens do
+  # docker-compose.yml e portas que o test/setup-env.ts espera; o Postgres sem durabilidade e em tmpfs,
+  # como o da integração (test/global-setup/int.ts).
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:19
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        command: -c fsync=off -c synchronous_commit=off -c full_page_writes=off
+        ports: ['5432:5432']
+        options: >-
+          --tmpfs /var/lib/postgresql
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+      # noeviction: o BullMQ exige
+      redis:
+        image: redis:8
+        command: redis-server --maxmemory-policy noeviction
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+      mailpit:
+        image: axllent/mailpit:v1
+        ports: ['1025:1025', '8025:8025']
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: ./.github/actions/setup
+        with:
+          node-version-file: .nvmrc
+      - run: npm run db:setup
+      - run: npm run test:e2e -- ${{ env.VITEST_ARGS }}
+
   # O check obrigatório do PR. Tem nome fixo, e um job pulado (PR só de docs) conta como aprovado:
   # a matriz do unit pulada não expande, e o nome dela não serve como check obrigatório. O ruleset de
   # scripts/setup-github.mjs exige este nome: ao renomear o job, mude lá e rode npm run github:setup.
   ci:
     if: always()
-    needs: [changes, check, unit, integration]
+    needs: [changes, check, unit, integration, e2e]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

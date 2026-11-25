@@ -33,6 +33,8 @@ export default defineConfig({
       '**/tsconfig*.json',
       // os data sources carregam as migrations por glob
       '**/migrations/**',
+      // o db:setup do job e2e aplica as migrations por ele, sem import que o grafo enxergue
+      '**/scripts/run-scripts.mjs',
       // ambiente que os testes e o CI usam (o setupFiles o Vitest já trata como gatilho)
       '**/.env.example',
       '**/docker-compose.yml',
