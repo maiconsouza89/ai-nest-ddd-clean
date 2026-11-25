@@ -96,7 +96,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-25, ant
 | 2 | Conferência do que a auto-instrumentação já emite | ✅ |
 | 3 | Comentários do `tracing.ts`, do `.env.example`, do `Dockerfile` e do compose | ✅ |
 | 4 | Índice parcial das linhas mortas da outbox | ✅ |
-| 5 | Métricas da outbox | ⬜ |
+| 5 | Métricas da outbox | ✅ |
 | 6 | Métricas das filas de eventos | ⬜ |
 | 7 | Documentação | ⬜ |
 | 8 | Verificação, revisão, registro e PR | ⬜ |
