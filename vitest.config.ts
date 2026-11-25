@@ -1,8 +1,17 @@
 import { configDefaults, defineConfig } from 'vitest/config';
+import { COVERAGE_FLOOR } from './scripts/coverage-summary.mjs';
 
 // Ativa a condição `@app/source` dos aliases `#...` (ADR 0005). Não acrescente `import` nem `default`
 // à lista: o `require('pg')` do TypeORM passaria a resolver o build ESM e falharia.
 const conditions = ['@app/source', 'module', 'node', 'development|production'];
+
+// O mesmo piso nas quatro métricas; o resumo do CI (scripts/coverage-summary.mjs) lê a mesma constante.
+const coverageFloor = {
+  lines: COVERAGE_FLOOR,
+  statements: COVERAGE_FLOOR,
+  branches: COVERAGE_FLOOR,
+  functions: COVERAGE_FLOOR,
+};
 
 export default defineConfig({
   // Em todo ambiente do Node, não só no `ssr` dos arquivos de teste: o Vitest carrega o globalSetup no
@@ -63,8 +72,8 @@ export default defineConfig({
       // Um `npm run test:coverage -- <padrão>` falha a meta, porque mede só parte da suíte: para um
       // arquivo, use `npm test -- <padrão>`.
       thresholds: {
-        'src/**/domain/**': { lines: 90, statements: 90, branches: 90, functions: 90 },
-        'src/**/application/**': { lines: 90, statements: 90, branches: 90, functions: 90 },
+        'src/**/domain/**': coverageFloor,
+        'src/**/application/**': coverageFloor,
       },
     },
     // Os projetos herdam o setupFiles da raiz por padrão desde o Vitest 5.

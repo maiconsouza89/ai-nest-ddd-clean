@@ -7,8 +7,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-/** O piso dos globs de `domain/` e `application/` no `coverage.thresholds` do vitest.config.ts. */
-const FLOOR = 90;
+/** O piso de `domain/` e `application/`: o `coverage.thresholds` do vitest.config.ts o importa daqui. */
+export const COVERAGE_FLOOR = 90;
 
 const LAYERS = ['domain', 'application', 'contracts'];
 const OTHER = 'infra e o resto';
@@ -40,12 +40,10 @@ export function coverageSummary(summary, root) {
       { files: 0, ...Object.fromEntries(METRICS.map((m) => [m, { covered: 0, total: 0 }])) },
     ]),
   );
-  let files = 0;
   for (const [file, metrics] of Object.entries(summary)) {
     if (file === 'total') continue;
     const group = groups.get(layerOf(file, root));
     group.files += 1;
-    files += 1;
     for (const m of METRICS) {
       group[m].covered += metrics[m].covered;
       group[m].total += metrics[m].total;
@@ -57,9 +55,9 @@ export function coverageSummary(summary, root) {
     '| Camada | Linhas | Statements | Branches | Funções | Arquivos |',
     '| --- | --- | --- | --- | --- | --- |',
     ...[...groups].map(([name, group]) => row(name, group, group.files)),
-    row('**Total**', summary.total, files),
+    row('**Total**', summary.total, Object.keys(summary).length - 1),
     '',
-    `Piso de ${FLOOR}% nas quatro métricas em \`domain/\` e \`application/\`, sem meta global.`,
+    `Piso de ${COVERAGE_FLOOR}% nas quatro métricas em \`domain/\` e \`application/\`, sem meta global.`,
     '',
     'Só os unitários são medidos: a infra é coberta pela integração e pelo e2e (docs/reference/testes.md#cobertura).',
     '',

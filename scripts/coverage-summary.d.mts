@@ -9,6 +9,8 @@ export type FileCoverage = Record<
   CoverageMetric
 >;
 
+export declare const COVERAGE_FLOOR: number;
+
 export declare function coverageSummary(
   summary: Record<string, FileCoverage>,
   root: string,
