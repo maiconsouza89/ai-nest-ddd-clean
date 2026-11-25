@@ -20,19 +20,18 @@ As migrations também são por módulo. Cada módulo tem um DataSource usado só
 
 ```ts
 // DataSource usado só pela CLI de migrations (não passa pelo Nest).
-config({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 const env = validateEnv(process.env);
 
 export default new DataSource({
-  type: 'postgres',
-  url: env.DATABASE_URL,
+  ...postgresOptions(env, { migrations: true }),
   entities: [OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity],
   migrations: [import.meta.dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'orders_migrations',
 });
 ```
 
-Como o DataSource conhece só as entidades do módulo, o `migration:generate` do orders não enxerga as tabelas do inventory e não propõe mexer nelas. A CLI não passa pelo Nest, então o DataSource carrega e valida o `.env` por conta própria.
+Como o DataSource conhece só as entidades do módulo, o `migration:generate` do orders não enxerga as tabelas do inventory e não propõe mexer nelas. A CLI não passa pelo Nest, então o DataSource carrega e valida o `.env` por conta própria. A conexão vem da `postgresOptions`, a mesma da app, sem os timeouts de query ([Persistência](persistencia.md#pool-e-timeouts)).
 
 Com os dados separados, vêm três proibições, e todas têm o mesmo motivo: cada uma amarraria o schema de um módulo ao do outro.
 

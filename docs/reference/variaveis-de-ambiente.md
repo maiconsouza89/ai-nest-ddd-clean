@@ -36,6 +36,22 @@ O `.env.example` traz todas as variáveis com valores de desenvolvimento. Copie-
 | `SMTP_URL` | obrigatória, inclusive nos scripts de migration e de seed | Servidor SMTP dos e-mails do notifications, `smtp://` ou `smtps://`, com usuário e senha na URL se houver (`smtps://usuario:senha@smtp.exemplo.com:465`). No `.env.example`, o Mailpit do `docker-compose.yml` (`smtp://127.0.0.1:1025`) |
 | `EMAIL_FROM` | obrigatória, inclusive nos scripts de migration e de seed | Remetente dos e-mails, como `no-reply@example.com` ou `App <no-reply@example.com>` |
 
+## Postgres
+
+Pool e timeouts da conexão, todos opcionais. Sem a variável, vale o padrão do projeto, não o do driver `pg` (que deixa as três esperas sem limite). Por que cada limite existe está em [Persistência](../explanation/persistencia.md#pool-e-timeouts).
+
+| Variável | Padrão | Valores | O que faz |
+| --- | --- | --- | --- |
+| `DATABASE_POOL_MAX` | `10` | Inteiro ≥ 1 | Conexões no pool de cada processo. Instâncias × este valor tem que caber no `max_connections` do banco ([deploy](../how-to/fazer-o-deploy.md#postgres-externo)) |
+| `DATABASE_CONNECT_TIMEOUT_MS` | `5000` | 1 a 2147483647, em ms | Prazo para conseguir uma conexão: abrir uma nova ou esperar na fila do pool cheio. Passado, a operação falha com `timeout exceeded when trying to connect` |
+| `DATABASE_STATEMENT_TIMEOUT_MS` | `30000` | 0 a 2147483647, em ms | `statement_timeout` da sessão: o servidor cancela a query mais longa que isso (SQLSTATE `57014`). `0` não manda o parâmetro, e vale o do servidor ou do role |
+| `DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS` | `60000` | 0 a 2147483647, em ms | `idle_in_transaction_session_timeout` da sessão: o servidor encerra a sessão com transação aberta e ociosa por mais que isso. `0` não manda o parâmetro, e vale o do servidor ou do role |
+
+- Definir um dos dois timeouts de query vazio (`DATABASE_STATEMENT_TIMEOUT_MS=`) barra a subida: vazio não vale como `0`.
+- O SSL não tem variável: vai no `sslmode` e no `sslrootcert` da `DATABASE_URL` ([deploy](../how-to/fazer-o-deploy.md#postgres-externo)).
+- As migrations e os seeds usam o mesmo pool e o mesmo `DATABASE_CONNECT_TIMEOUT_MS`, mas rodam sem os dois timeouts de query.
+- A app e os DataSources da CLI montam a conexão pela mesma função, `postgresOptions` (`src/shared/infra/database/postgres-options.ts`).
+
 ## Autenticação
 
 | Variável | Padrão | O que faz |

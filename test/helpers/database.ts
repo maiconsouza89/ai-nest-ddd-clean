@@ -23,19 +23,26 @@ export function databaseUrl(serverUrl: string, database: string) {
   return url.toString();
 }
 
-/** Roda comandos no banco `postgres`, que não é template de nada, por isso CREATE e DROP DATABASE vão por ele. */
-export async function withAdmin(serverUrl: string, run: (ds: DataSource) => Promise<unknown>) {
-  const admin = new DataSource({
-    type: 'postgres',
-    url: databaseUrl(serverUrl, 'postgres'),
-    poolSize: 1,
-  });
-  await admin.initialize();
+/** Abre um DataSource só para o `run` e o fecha no fim, mesmo se o `run` falhar. */
+export async function withDataSource(
+  options: DataSourceOptions,
+  run: (ds: DataSource) => Promise<unknown>,
+) {
+  const ds = new DataSource(options);
+  await ds.initialize();
   try {
-    await run(admin);
+    await run(ds);
   } finally {
-    await admin.destroy();
+    await ds.destroy();
   }
+}
+
+/** Roda comandos no banco `postgres`, que não é template de nada, por isso CREATE e DROP DATABASE vão por ele. */
+export function withAdmin(serverUrl: string, run: (ds: DataSource) => Promise<unknown>) {
+  return withDataSource(
+    { type: 'postgres', url: databaseUrl(serverUrl, 'postgres'), poolSize: 1 },
+    run,
+  );
 }
 
 /**

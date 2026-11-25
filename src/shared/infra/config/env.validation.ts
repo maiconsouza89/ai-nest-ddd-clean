@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsEnum,
   IsIn,
@@ -12,6 +12,19 @@ import {
   validateSync,
 } from 'class-validator';
 
+// O `enableImplicitConversion` transforma '' em 0. Num timeout em que 0 desliga o limite, uma variável
+// definida vazia (ex.: `X=${X}` no compose, com X ausente) o desligaria sem aviso; assim ela é recusada.
+const RejectBlank = () =>
+  Transform(
+    ({ obj, key, value }: { obj: Record<string, unknown>; key: string; value: unknown }) => {
+      const raw = obj[key];
+      return typeof raw === 'string' && raw.trim() === '' ? undefined : value;
+    },
+  );
+
+// o maior prazo que o setTimeout do Node e os parâmetros de timeout do Postgres aceitam, em ms
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
 export class EnvironmentVariables {
   @IsEnum(['development', 'test', 'production'])
   NODE_ENV: string = 'development';
@@ -24,6 +37,31 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   DATABASE_URL!: string;
+
+  // conexões no pool de cada processo; instâncias × este valor tem que caber no max_connections
+  @IsInt()
+  @Min(1)
+  DATABASE_POOL_MAX: number = 10;
+
+  // espera por uma conexão (abrir uma nova ou aguardar na fila do pool cheio), em ms
+  @IsInt()
+  @Min(1)
+  @Max(MAX_TIMEOUT_MS)
+  DATABASE_CONNECT_TIMEOUT_MS: number = 5000;
+
+  // o servidor cancela a query que passar disso, em ms; 0 = vale o do servidor ou do role
+  @RejectBlank()
+  @IsInt()
+  @Min(0)
+  @Max(MAX_TIMEOUT_MS)
+  DATABASE_STATEMENT_TIMEOUT_MS: number = 30_000;
+
+  // o servidor encerra a sessão com transação aberta e ociosa por mais que isso, em ms; 0 = vale o do servidor
+  @RejectBlank()
+  @IsInt()
+  @Min(0)
+  @Max(MAX_TIMEOUT_MS)
+  DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS: number = 60_000;
 
   @IsString()
   @IsNotEmpty()

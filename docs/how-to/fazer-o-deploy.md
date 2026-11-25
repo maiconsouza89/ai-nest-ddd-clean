@@ -72,7 +72,7 @@ O desligamento já está pronto na imagem, com o `tini` como PID 1: ver [Operaç
 
 ## Postgres externo
 
-Num Postgres gerenciado ou em outro servidor, nada muda na imagem: a app e as migrations leem a conexão só do `DATABASE_URL`.
+Num Postgres gerenciado ou em outro servidor, nada muda na imagem: a app e as migrations leem o endereço, as credenciais e o SSL só do `DATABASE_URL`. O pool e os timeouts vêm das variáveis `DATABASE_*` de [Variáveis de ambiente](../reference/variaveis-de-ambiente.md#postgres), todas com padrão.
 
 - **URL:** `postgres://<usuário>:<senha>@<host>:5432/<banco>?sslmode=verify-full`. Codifique na senha os caracteres reservados de URL (`@` vira `%40`, `:` vira `%3A`, `/` vira `%2F`, `#` vira `%23`).
 - **SSL:** vai só na URL; o driver `pg` lê o `sslmode` dela.
@@ -81,7 +81,15 @@ Num Postgres gerenciado ou em outro servidor, nada muda na imagem: a app e as mi
   - O `pg` trata `require`, `prefer` e `verify-ca` como `verify-full`, com um aviso no log. O `sslmode=no-verify` cifra sem conferir o certificado, e deixa a conexão aberta a quem se passar pelo servidor.
 - **Permissões:** as migrations criam os schemas de cada módulo (`CREATE SCHEMA IF NOT EXISTS`), então o usuário do passo de migration precisa de `CREATE` no banco.
 - **Rede:** o firewall ou o security group do Postgres precisa aceitar a plataforma onde o container roda.
-- **Conexões:** cada instância abre até 10 conexões (o padrão do `pg`). Some as instâncias, mais uma para o passo de migration, e compare com o limite do plano do banco.
+- **Conexões:** cada instância abre até `DATABASE_POOL_MAX` conexões (padrão `10`). Mantenha `instâncias × DATABASE_POOL_MAX` abaixo do `max_connections` do banco (ou do limite do plano), com folga para o passo de migration, que usa o mesmo pool, e para o acesso administrativo. Com mais instâncias, baixe o `DATABASE_POOL_MAX` em vez de subir o `max_connections` ([Variáveis de ambiente](../reference/variaveis-de-ambiente.md#postgres)).
+- **PgBouncer em modo transaction:** o PgBouncer recusa os parâmetros de conexão que não acompanha, e a app manda o `statement_timeout` e o `idle_in_transaction_session_timeout` assim. Defina `DATABASE_STATEMENT_TIMEOUT_MS=0` e `DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS=0`, e ponha os limites no role do banco:
+
+  ```sql
+  ALTER ROLE <usuário> SET statement_timeout = '30s';
+  ALTER ROLE <usuário> SET idle_in_transaction_session_timeout = '60s';
+  ```
+
+  Use um role à parte para o passo de migration, sem o `statement_timeout`, para uma migration longa não ser cancelada ([Persistência](../explanation/persistencia.md#pool-e-timeouts)).
 
 Para conferir a conexão antes do deploy, rode a imagem com um arquivo de env fora do repositório (como `~/deploy/ai-nest.env`, com as variáveis obrigatórias e o `DATABASE_URL` externo):
 

@@ -188,4 +188,15 @@ describe('OutboxRelay (integração)', () => {
     expect(await row(recent.eventId)).toBeDefined();
     expect(await row(pending.eventId)).toBeDefined();
   });
+
+  it('a limpeza apaga em lotes até esgotar o que passou da retenção', async () => {
+    const relay = relayWith(new FakeEventPublisher(), { retentionMs: 60_000, cleanupBatchSize: 2 });
+    const old = await Promise.all(['d1', 'd2', 'd3', 'd4', 'd5'].map((id) => add(id)));
+    await relay.runOnce();
+    now = new Date(now.getTime() + 120_000);
+
+    expect(await relay.cleanup()).toBe(5);
+
+    for (const { eventId } of old) expect(await row(eventId)).toBeUndefined();
+  });
 });

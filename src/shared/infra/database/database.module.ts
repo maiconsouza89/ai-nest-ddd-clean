@@ -11,6 +11,7 @@ import { ProcessedEventOrmEntity } from '../outbox/processed-event.orm-entity.js
 import { TypeOrmProcessedEvents } from '../outbox/typeorm-processed-events.js';
 import { IdempotentConsumer } from '../../application/idempotent-consumer.js';
 import { TypeOrmOutbox } from '../outbox/typeorm-outbox.js';
+import { POSTGRES_ENV_KEYS, type PostgresEnv, postgresOptions } from './postgres-options.js';
 import { TypeOrmTransactionManager } from './typeorm-transaction-manager.js';
 
 @Global()
@@ -19,8 +20,11 @@ import { TypeOrmTransactionManager } from './typeorm-transaction-manager.js';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService<EnvironmentVariables, true>) => ({
-        type: 'postgres',
-        url: cfg.getOrThrow('DATABASE_URL'),
+        ...postgresOptions(
+          Object.fromEntries(
+            POSTGRES_ENV_KEYS.map((key) => [key, cfg.getOrThrow(key, { infer: true })]),
+          ) as PostgresEnv,
+        ),
         autoLoadEntities: true,
         synchronize: false,
         migrationsRun: false,
