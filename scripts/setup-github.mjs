@@ -1,8 +1,11 @@
 // Cria o ruleset da branch padrão no repositório do remote `origin`, pelo `gh`. O que ele exige está
-// em docs/reference/comandos.md#ci. Rodar de novo atualiza o mesmo ruleset, achado pelo nome, e mantém
-// o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos. Também deixa
-// o squash como único jeito de fazer merge de PR, com o título e a descrição do PR no commit, apaga o
-// branch do PR depois do merge e, em repositório público, liga o relato privado de vulnerabilidade.
+// em docs/reference/comandos.md#ci: os checks ci, dependency-review e verify-lockfile e, quando o code
+// scanning está disponível, a análise do CodeQL. Rodar de novo atualiza o mesmo ruleset, achado pelo
+// nome, e mantém o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos.
+// Também deixa o squash como único jeito de fazer merge de PR, com o título e a descrição do PR no
+// commit, apaga o branch do PR depois do merge e, em repositório público, liga o relato privado de
+// vulnerabilidade. Liga os Dependabot alerts, os security updates e a exigência de action fixada por
+// SHA. A política "Require lockfile" não tem API e fica à mão; o secret scanning fica desligado.
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
@@ -11,6 +14,9 @@ const RULESET_NAME = 'branch padrão';
 // com o mesmo nome criado pela API.
 const GITHUB_ACTIONS_APP_ID = 15368;
 
+// Os nomes dos jobs de .github/workflows/: ci.yml, dependency-review.yml e verify-lockfile.yml.
+const REQUIRED_CHECKS = ['ci', 'dependency-review', 'verify-lockfile'];
+
 const rules = [
   { type: 'deletion' },
   { type: 'non_fast_forward' },
@@ -18,10 +24,23 @@ const rules = [
     type: 'required_status_checks',
     parameters: {
       strict_required_status_checks_policy: false,
-      required_status_checks: [{ context: 'ci', integration_id: GITHUB_ACTIONS_APP_ID }],
+      required_status_checks: REQUIRED_CHECKS.map((context) => ({
+        context,
+        integration_id: GITHUB_ACTIONS_APP_ID,
+      })),
     },
   },
 ];
+
+// Barra o PR com alerta novo do CodeQL (.github/workflows/codeql.yml) nas linhas que ele muda.
+const codeScanningRule = {
+  type: 'code_scanning',
+  parameters: {
+    code_scanning_tools: [
+      { tool: 'CodeQL', alerts_threshold: 'errors', security_alerts_threshold: 'high_or_higher' },
+    ],
+  },
+};
 
 function fail(message) {
   process.stderr.write(`${message}\n`);
@@ -54,6 +73,23 @@ const view = run('gh', ['repo', 'view', origin.stdout, '--json', 'nameWithOwner,
 if (!view.ok)
   fail(`não achei no GitHub o repositório do origin (${origin.stdout}):\n${view.stderr}`);
 const { nameWithOwner: repo, visibility } = json(view.stdout, 'ler o repositório');
+
+// O code scanning existe em todo repositório público. Num privado ou interno, só com o GitHub Code
+// Security ou o Advanced Security ligado.
+let codeScanning = visibility === 'PUBLIC';
+if (!codeScanning) {
+  const details = run('gh', ['api', `repos/${repo}`]);
+  if (!details.ok) fail(`não foi possível ler ${repo}:\n${details.stderr}`);
+  const analysis = json(details.stdout, 'ler o repositório').security_and_analysis ?? {};
+  codeScanning = [analysis.code_security, analysis.advanced_security].some(
+    (feature) => feature?.status === 'enabled',
+  );
+}
+if (codeScanning) rules.push(codeScanningRule);
+else
+  process.stdout.write(
+    'Repositório privado ou interno sem o GitHub Code Security: o ruleset fica sem a regra do CodeQL.\n',
+  );
 
 // Só os rulesets do próprio repositório, de todas as páginas: um da organização com o mesmo nome não conta.
 const list = run('gh', [
@@ -143,3 +179,32 @@ if (visibility === 'PUBLIC') {
     'Repositório privado ou interno: o private vulnerability reporting não está disponível. Ajuste o canal no .github/SECURITY.md.\n',
   );
 }
+
+// Os Dependabot alerts antes dos security updates, que dependem deles.
+const alerts = run('gh', ['api', '--method', 'PUT', `repos/${repo}/vulnerability-alerts`]);
+if (!alerts.ok) fail(`não foi possível ligar os Dependabot alerts em ${repo}:\n${alerts.stderr}`);
+const fixes = run('gh', ['api', '--method', 'PUT', `repos/${repo}/automated-security-fixes`]);
+if (!fixes.ok)
+  fail(`não foi possível ligar os Dependabot security updates em ${repo}:\n${fixes.stderr}`);
+process.stdout.write(`Dependabot alerts e security updates ligados em ${repo}.\n`);
+
+// O PUT exige o enabled: reenvia o enabled e o allowed_actions como estão e só liga o SHA.
+const actions = run('gh', ['api', `repos/${repo}/actions/permissions`]);
+if (!actions.ok)
+  fail(`não foi possível ler as permissões do GitHub Actions em ${repo}:\n${actions.stderr}`);
+const { enabled, allowed_actions: allowedActions } = json(
+  actions.stdout,
+  'ler as permissões do GitHub Actions',
+);
+const pinning = run(
+  'gh',
+  ['api', '--method', 'PUT', `repos/${repo}/actions/permissions`, '--input', '-'],
+  JSON.stringify({ enabled, allowed_actions: allowedActions, sha_pinning_required: true }),
+);
+if (!pinning.ok)
+  fail(`não foi possível exigir action fixada por SHA em ${repo}:\n${pinning.stderr}`);
+process.stdout.write(`Actions fixadas por SHA exigidas em ${repo}.\n`);
+
+process.stdout.write(
+  'Falta à mão: ligue a política "Require lockfile" em Settings → Actions → Policies (docs/reference/comandos.md#ci). O script não liga o secret scanning.\n',
+);

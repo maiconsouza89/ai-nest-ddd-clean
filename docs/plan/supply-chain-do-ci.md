@@ -304,7 +304,16 @@ Versões conferidas em 2026-11-25. O `gh actions-lock` resolve os commits; não 
 - Os corpos das chamadas conferem com a doc da REST API (tabela de referências), campo por campo, anotados no **Como ficou**.
 - O script continua idempotente: rodado duas vezes, atualiza o mesmo ruleset e mantém o bypass e as regras de outros tipos.
 
-**Como ficou:** —
+**Como ficou:** os corpos conferidos com a doc da REST API, campo por campo:
+
+- `required_status_checks`: `strict_required_status_checks_policy` (obrigatório) e `required_status_checks[]` com `context` e `integration_id` (15368, o GitHub Actions), para `ci`, `dependency-review` e `verify-lockfile`.
+- `code_scanning`: `code_scanning_tools[]` com `tool` (`CodeQL`), `alerts_threshold` (`errors`, do enum `none`, `errors`, `errors_and_warnings`, `all`) e `security_alerts_threshold` (`high_or_higher`, do enum `none`, `critical`, `high_or_higher`, `medium_or_higher`, `all`), os três obrigatórios.
+- Disponibilidade do code scanning: repo público sempre; privado ou interno pelo `security_and_analysis.code_security.status` ou `security_and_analysis.advanced_security.status` igual a `enabled` no `GET repos/{repo}` (o bloco só aparece para admin, que o script já exige). Sem ele, avisa e segue sem a regra.
+- `PUT repos/{repo}/vulnerability-alerts` e `PUT repos/{repo}/automated-security-fixes`: sem corpo, 204, admin. Nessa ordem.
+- `PUT repos/{repo}/actions/permissions`: `enabled` (obrigatório), `allowed_actions` (opcional, reenviado como veio do `GET`) e `sha_pinning_required: true`; 204.
+- Avisos de saída: a "Require lockfile" à mão, com o link para o `comandos.md#ci`, e o secret scanning desligado.
+
+Idempotência conferida com um `gh` falso no scratchpad (sem tocar no GitHub): a primeira execução cria o ruleset; depois o falso acrescenta um bypass e uma regra `pull_request`, como a interface faria; a segunda execução faz `PUT` no mesmo id, mantém o bypass e a `pull_request`, e as regras do script (`deletion`, `non_fast_forward`, `required_status_checks` com os três checks, `code_scanning`) não se repetem. Num privado sem Code Security, a regra do CodeQL fica de fora com o aviso; com ele, entra. O script não rodou contra o repositório real. `npm run lint` passa.
 
 ### Passo 8: documentação
 
