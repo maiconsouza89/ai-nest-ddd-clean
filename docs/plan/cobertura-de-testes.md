@@ -109,7 +109,7 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
 | 3 | Meta em `domain/` e `application/` | ✅ |
 | 4 | Resumo da cobertura no job `unit` | 🟡 |
 | 5 | Documentação | ✅ |
-| 6 | Verificação, revisão, registro e PR | ⬜ |
+| 6 | Verificação, revisão, registro e PR | 🟡 |
 
 ### Passo 1: worktree, branch e roadmap
 
@@ -245,3 +245,5 @@ Conflitos com outras trilhas, pelo [roadmap](roadmap-das-issues-abertas.md#arqui
    - rode `npm run docs:check` de novo e faça push.
 
 **Pronto quando:** o `npm run ci` passa, o `ci`, o `dependency-review`, o `verify-lockfile` e o CodeQL passam no PR, o `/simplify` e o `/code-review` rodaram, e o registro está na #21, com o link no PR.
+
+**Como ficou (itens 1 a 3):** o `npm run ci` passou. O `/simplify` levou o piso para o `COVERAGE_FLOOR` exportado pelo script e importado pelo `vitest.config.ts`, e o total de arquivos da tabela passou a ser derivado do JSON; a verificação do arquivo ausente ficou, porque o passo 4 pede a mensagem clara, e o reporter `html` ficou, porque é decisão da tabela. O `/code-review` (nível medium) não achou bug; dos três nits, a porcentagem da tabela passou a ser truncada, e não arredondada (89,96% aparecia como 90,0% numa execução que falhava a meta), com um teste, e o `testes.md` deixou de citar "uns 260 arquivos". O terceiro, trocar o `always()` do step do resumo por `!cancelled()`, fica com o dono, porque o `if` é decisão da tabela. O rebase sobre a `main` local não mudou nada (a `main` continua em `cb8b761`), e o `npm run ci` passou de novo. Itens 4 a 7 aguardam o ok do dono.

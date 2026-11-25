@@ -68,7 +68,7 @@ Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o 
 | `html` | `coverage/index.html` | Navegar arquivo por arquivo, localmente |
 | `json-summary` | `coverage/coverage-summary.json` | A tabela por camada do resumo do job no CI (`scripts/coverage-summary.mjs`) |
 
-A pasta `coverage/` fica no `.gitignore`. Não há relatório `text` por arquivo, que encheria o log com uns 260 arquivos, nem `lcov` ou `cobertura`. Com um teste falhando, o Vitest não gera relatório: a cobertura de uma execução quebrada não é o número que se quer ler.
+A pasta `coverage/` fica no `.gitignore`. Não há relatório `text` por arquivo, que encheria o log com uma linha por arquivo do `src/`, nem `lcov` ou `cobertura`. Com um teste falhando, o Vitest não gera relatório: a cobertura de uma execução quebrada não é o número que se quer ler.
 
 **O que é medido.** Só os unitários, sobre todo o `src/**/*.ts`: um arquivo sem teste aparece com 0%, em vez de sumir. A integração e o e2e rodam em jobs próprios no CI, e juntar a cobertura deles pediria passar relatórios entre jobs como artefato ([Evoluções com gatilho](evolucoes-com-gatilho.md#ci)). Por isso a infra aparece baixa: quem a cobre é a integração e o e2e. Os arquivos de teste dos três projetos não entram no relatório.
 

@@ -55,6 +55,14 @@ describe('coverageSummary', () => {
     expect(cells(markdown, '**Total**')).toEqual(['50,0%', '50,0%', '50,0%', '50,0%', '5']);
   });
 
+  it('trunca a porcentagem, para um valor abaixo do piso não aparecer como 90,0%', () => {
+    const below = coverageSummary(
+      { total: cov(8996, 10_000), '/repo/src/a/domain/a.ts': cov(8996, 10_000) },
+      ROOT,
+    );
+    expect(cells(below, 'domain')?.[0]).toBe('89,9%');
+  });
+
   it('diz o piso e o que é medido', () => {
     expect(markdown).toContain('Piso de 90%');
     expect(markdown).toContain('docs/reference/testes.md#cobertura');

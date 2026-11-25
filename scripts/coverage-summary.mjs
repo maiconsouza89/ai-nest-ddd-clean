@@ -20,9 +20,13 @@ function layerOf(file, root) {
   return LAYERS.find((layer) => segments.includes(layer)) ?? OTHER;
 }
 
-/** Porcentagem com uma casa, ou "—" sem nada a medir. */
+/**
+ * Porcentagem com uma casa, truncada, ou "—" sem nada a medir. Truncada, e não arredondada: o Vitest compara o
+ * valor exato com o piso, e 89,96% arredondado mostraria 90,0% numa execução que falhou a meta.
+ */
 function percent({ covered, total }) {
-  return total === 0 ? '—' : `${((100 * covered) / total).toFixed(1).replace('.', ',')}%`;
+  if (total === 0) return '—';
+  return `${(Math.floor((1000 * covered) / total) / 10).toFixed(1).replace('.', ',')}%`;
 }
 
 const row = (name, metrics, files) =>
