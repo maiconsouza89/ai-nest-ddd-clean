@@ -12,7 +12,4 @@ export class SessionResponse {
   /** Validade do access token, em segundos. */
   @ApiProperty({ type: 'integer' })
   expiresIn!: number;
-
-  /** Token opaco para o `POST /v1/auth/refresh` e o `POST /v1/auth/logout`. Vale uma vez. */
-  refreshToken!: string;
 }

@@ -1473,16 +1473,11 @@
           "accessToken": {
             "type": "string",
             "description": "JWT do header `Authorization: Bearer`."
-          },
-          "refreshToken": {
-            "type": "string",
-            "description": "Token opaco para o `POST /v1/auth/refresh` e o `POST /v1/auth/logout`. Vale uma vez."
           }
         },
         "required": [
           "expiresIn",
-          "accessToken",
-          "refreshToken"
+          "accessToken"
         ]
       },
       "TerminusHealthCheckResult": {
