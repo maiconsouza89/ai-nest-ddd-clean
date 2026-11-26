@@ -27,7 +27,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 2 | E | #21 Relatório de cobertura de testes | baixa | #13 | ✅ (#52) |
 | 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | ✅ (#53) |
 | 2 | G | #23 Mudanças do OpenAPI que quebram clientes | baixa | #13 | ✅ (#54) |
-| 3 | H | #56 Respostas de sucesso no OpenAPI ([plano](respostas-de-sucesso-no-openapi.md)) | baixa | #23 | 🟡 |
+| 3 | H | #56 Respostas de sucesso no OpenAPI | baixa | #23 | ✅ (#59) |
 
 A #22 não depende de nenhuma e pode subir para a onda 1 se houver capacidade.
 
