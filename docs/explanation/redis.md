@@ -4,7 +4,7 @@ type: explanation
 
 # Redis
 
-Por que o projeto usa um Redis, como os três usos dividem a mesma instância, o que acontece quando ele cai, e por que o cache e os jobs agendados funcionam como funcionam. Os passos estão em [Como cachear uma leitura](../how-to/cachear-uma-leitura.md) e [Como agendar um job](../how-to/agendar-um-job.md). As filas de eventos estão em [Consistência e eventos](consistencia-e-eventos.md#uma-fila-por-consumidor).
+Por que o projeto usa um Redis, como os três usos dividem a mesma instância, o que acontece quando ele cai, e por que o cache e os jobs agendados funcionam como funcionam. Os passos estão em [Como cachear uma leitura](../how-to/cachear-uma-leitura.md) e [Como agendar um job](../how-to/agendar-um-job.md). As filas de eventos estão em [Entrega de eventos](entrega-de-eventos.md#uma-fila-por-consumidor).
 
 ## Contexto
 
@@ -28,36 +28,30 @@ O `docker-compose.yml` sobe uma instância só, com `noeviction` e AOF (`appendo
 
 O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, cada uma configurada para o seu papel:
 
-- **Worker do BullMQ** (`BullMqConnection.worker`): `maxRetriesPerRequest: null`, exigido pelo BullMQ nos workers. O BullMQ só define esse valor sozinho quando cria a conexão, e o projeto passa uma instância pronta.
-- **Quem enfileira e o rate limit** (`BullMqConnection.producer`): sem fila offline (`enableOfflineQueue: false`). Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera até 5 s por essa conexão e, sem ela, segue (`PRODUCER_READY_TIMEOUT_MS`, no `bullmq-connection.ts`).
-- **Cache e health check** (`RedisConnection`): também sem fila offline (`disableOfflineQueue: true`), com reconexão em segundo plano.
+- **Workers do BullMQ:** esperam o Redis voltar, sem limite de tentativas por comando, como o BullMQ exige. Ele só configura isso sozinho quando cria a conexão, e o projeto lhe passa uma conexão pronta.
+- **Quem enfileira e o rate limit:** sem fila offline. Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera um pouco por essa conexão e, sem ela, segue.
+- **Cache e health check:** também sem fila offline, com reconexão em segundo plano.
 
 Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão vira exceção não tratada e derruba o processo.
 
-### Um banco lógico por worktree
-
-Os worktrees compartilham o Redis do checkout principal ([ADR 0011](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)), e cada um usa o banco lógico do slot dele, pela URL: `redis://localhost:6379/<N>`. As filas do BullMQ, os jobs agendados, o rate limit, o cache e o health leem o mesmo `REDIS_URL`, e o `ioredis` e o cliente `redis` aceitam o `/N`, então nada muda na app. Um `FLUSHDB` no banco `N` limpa um worktree sem tocar nos outros.
-
-Um prefixo de chave por worktree também separaria os dados, mas teria de entrar em quatro pontos do `src/shared` (o `prefix` do BullMQ, o throttler, o cache e o health) por um problema só de desenvolvimento, e o `keyPrefix` do `ioredis` não serve: o BullMQ o recusa. O custo do banco lógico é o teto de 15 worktrees, dos 16 bancos do padrão, e ele não existe no Redis Cluster, que não é usado localmente.
+Cada worktree usa um banco lógico próprio do Redis do checkout principal, pela URL, então nada muda na app ([ADR 0011](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md) e [Como trabalhar com worktrees em paralelo](../how-to/trabalhar-com-worktrees-em-paralelo.md)).
 
 ### Redis fora do ar: cada uso falha do seu jeito
 
-Nenhum uso espera o Redis voltar segurando uma requisição. O que acontece com cada um, conferido com o Redis parado e a app no ar:
+Nenhum uso espera o Redis voltar segurando uma requisição. Cada um falha conforme o papel que tem:
 
-| Uso | Com o Redis fora | Por quê |
-| --- | --- | --- |
-| Cache | A leitura vai direto ao banco, e o log mostra os avisos `redis connection error` e `cache store error` | O cache é otimização. Perdê-lo deixa a API mais lenta, não errada |
-| Rate limit | 503 (`Rate limiting unavailable`) na hora, em todas as rotas limitadas. O `AppThrottlerGuard` é global, e só o health fica fora dele: com o rate limit ligado, a API inteira responde 503, antes de chegar ao cache ou à outbox | Falha fechada: deixar passar abriria o limite de tentativas de login quando não dá para contá-las |
-| Outbox | Os eventos ficam na tabela, e o relay tenta de novo com backoff. Depois de 8 falhas, o evento é marcado como morto (`deadAt`). Exceção: o primeiro envio a uma fila desde a subida não falha. A `Queue` do BullMQ espera a conexão ficar pronta, e o relay fica parado nesse lote, com a transação aberta, até o Redis voltar | A outbox existe para isso ([Consistência e eventos](consistencia-e-eventos.md#o-evento-sai-pela-outbox)) |
-| Workers | Esperam a reconexão, com avisos no log, e voltam a processar sozinhos | Não há requisição esperando por eles |
-| Agendador de jobs | A subida falha cerca de 15 s depois da primeira tentativa de conexão: até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro dos jobs agendados | Sem o agendador, o job nunca rodaria, e ninguém perceberia |
-| `/health/ready` | Responde 503, com o `redis` `down` (`The client is offline`), e volta a 200 quando o Redis volta | O orquestrador tira a instância do tráfego. O `/health/live` não depende do Redis |
+- **Cache:** a leitura vai direto ao banco. O cache é otimização: perdê-lo deixa a API mais lenta, não errada.
+- **Rate limit:** responde 503 em toda rota limitada, e o guard é global. Falha fechada: deixar passar abriria o limite de tentativas de login justo quando não dá para contá-las.
+- **Outbox:** os eventos ficam na tabela e o relay tenta de novo. A outbox existe para isso ([Entrega de eventos](entrega-de-eventos.md#o-evento-sai-pela-outbox)).
+- **Workers:** esperam a reconexão e voltam sozinhos. Não há requisição esperando por eles.
+- **Agendador de jobs:** a subida falha. Sem o agendador, o job nunca rodaria, e ninguém perceberia ([Jobs agendados](#jobs-agendados)).
+- **Readiness:** responde 503, e o orquestrador tira a instância do tráfego. A liveness não depende do Redis.
 
-A conexão do cache não bloqueia a subida. A app sobe sem cache, e o `/health/ready` acusa a falta. Já o registro dos jobs bloqueia, porque um job que não roda é um erro silencioso, e um cache ausente não é.
+A conexão do cache não bloqueia a subida. A app sobe sem cache, e a readiness acusa a falta. Já o registro dos jobs bloqueia, porque um job que não roda é um erro silencioso, e um cache ausente não é. As respostas, as mensagens de log e os prazos de cada uso estão em [Operação](../reference/operacao.md#redis-fora-do-ar).
 
 ### Cache da leitura
 
-O cache é um decorator em volta da query, ligado no módulo Nest no lugar dela. A application não sabe que ele existe. Fica só no lado da leitura, porque um agregado vindo do cache poderia estar velho na hora de ser alterado, e a [concorrência otimista](consistencia-e-eventos.md#concorrência-otimista-no-save) só pegaria o problema depois.
+O cache é um decorator em volta da query, ligado no módulo Nest no lugar dela. A application não sabe que ele existe. Fica só no lado da leitura, porque um agregado vindo do cache poderia estar velho na hora de ser alterado, e a [concorrência otimista](transacoes-e-concorrencia.md#concorrência-otimista-no-save) só pegaria o problema depois.
 
 **Invalidação por evento, com geração.** Uma escrita no pedido precisa descartar todas as páginas da listagem daquele cliente, em qualquer combinação de `page` e `limit`. A API do cache (`get`, `set`, `del`, `clear`) não apaga por padrão de chave, e o `clear` apaga tudo. Varrer o Redis com `SCAN` em toda escrita custaria caro. Por isso cada cliente tem uma geração, que entra na chave de cada página. Invalidar é gravar uma geração nova: as páginas antigas deixam de ser lidas e expiram pelo TTL. É uma escrita só, e repeti-la não faz mal, então o handler dispensa o consumidor idempotente.
 
@@ -73,11 +67,12 @@ Um job é uma porta de entrada, como um controller: só chama um caso de uso. O 
 
 O `@Cron` do `@nestjs/schedule` roda dentro de cada processo. Com três instâncias, a expiração de pedidos rodaria três vezes a cada disparo, disputando as mesmas linhas. Os Job Schedulers do BullMQ guardam o agendamento no Redis: cada disparo vira um job, e um worker só o pega. O `upsertJobScheduler` é idempotente, então todas as instâncias podem registrá-lo na subida. A API antiga de repeatable jobs foi removida na v6 do BullMQ.
 
+**A subida falha se o agendador não registra.** Com o Redis fora do ar, a chamada que registra o agendador não rejeita: fica pendente até a conexão voltar. Sem limite, a subida travaria calada. Por isso o registro tem um prazo, e estourá-lo derruba a subida, em vez de deixar a app no ar sem o job. A falha chega cerca de 15 s depois da primeira tentativa de conexão: até 5 s esperando a conexão das filas, mais os 10 s do prazo do registro.
+
 O ciclo comum (registrar o agendador, criar o worker, obedecer ao `JOBS_ENABLED`, parar no shutdown) fica numa base só no `shared`, o `ScheduledJobProcessor`. Algumas escolhas dele:
 
 - **Concorrência global de 1** (`setGlobalConcurrency(1)`): uma execução por vez somando todas as instâncias. Uma execução longa não ganha uma segunda por cima dela no próximo disparo.
 - **Uma fila por job:** o worker roda o mesmo `run()` para qualquer job da fila. Dois jobs na mesma fila rodariam um o caso de uso do outro.
-- **Histórico curto:** cada job agendado guarda as 20 últimas execuções concluídas e as 100 últimas com falha (`removeOnComplete` e `removeOnFail` no `scheduled-job.processor.ts`).
 - **Sem retry:** o template não tem `attempts`, então um job que falha não é repetido. O próximo disparo é a nova tentativa. Os dois jobs do projeto tratam o que estiver pendente quando rodam, e um disparo perdido não deixa nada para trás.
 
 ## Alternativas e trade-offs
@@ -91,3 +86,4 @@ O ciclo comum (registrar o agendador, criar o worker, obedecer ao `JOBS_ENABLED`
 ## Decisões relacionadas
 
 - [ADR 0003: Imports explícitos entre módulos, sem `@Global`](../adr/0003-imports-explicitos-entre-modulos.md): o cache e a conexão com o Redis são infraestrutura do `shared`, e por isso podem ser globais.
+- [ADR 0011: Worktrees compartilham o stack do checkout principal, isolados por slot](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md): um banco lógico do Redis por worktree, no lugar de um prefixo de chave.

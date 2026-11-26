@@ -8,7 +8,7 @@ Por que o `src/shared/` guarda só blocos técnicos e por que, na dúvida, um ti
 
 ## Contexto
 
-Alguns blocos têm a mesma regra em qualquer módulo: a raiz de agregado (`AggregateRoot`) e o evento de domínio (`DomainEvent`), a base dos erros de domínio (`DomainError`) e o conflito de versão (`ConcurrencyError`), o dinheiro (`Money`, com os erros dele no próprio `money.vo.ts`), o ator da requisição (`Actor`), a página (`Page`), o evento de integração (`IntegrationEvent`) e o consumidor idempotente (`IdempotentConsumer`). Também os ports de relógio, ids, transação e log, e os da entrega de eventos e da autenticação (`Outbox`, `EventPublisher`, `ProcessedEvents` e `ActorResolver`). O `src/shared/testing/` guarda um teste da toolchain: confere que a decorator metadata chega ao Nest e que a injeção por classe funciona nos testes. Reescrevê-los em cada módulo seria repetir a mesma regra cinco vezes, com o risco de as cópias divergirem. Eles ficam no [shared kernel](../reference/glossario.md#shared-kernel), em `src/shared/`, que segue as mesmas camadas de um módulo (`domain/`, `application/`, `infra/`) e não importa nada de `src/modules/`.
+Alguns blocos têm a mesma regra em qualquer módulo, como a raiz de agregado (`AggregateRoot`), o dinheiro (`Money`) e o port do relógio (`Clock`). A lista completa está em [Camadas](../reference/camadas.md#shared). Reescrevê-los em cada módulo seria repetir a mesma regra cinco vezes, com o risco de as cópias divergirem. Eles ficam no [shared kernel](../reference/glossario.md#shared-kernel), em `src/shared/`, que segue as mesmas camadas de um módulo (`domain/`, `application/`, `infra/`) e não importa nada de `src/modules/`.
 
 ## Por quê
 
@@ -30,7 +30,7 @@ Mesmo quando o conceito é o mesmo, um value object usado por um módulo só fic
 
 O `Money` é a exceção. Só o orders o usa no domínio, mas ele está no `shared` desde o começo do projeto, porque a regra dele não depende de módulo nenhum: valor em centavos inteiros, e somar moedas diferentes é erro. Já a normalização e a validação do `Email` do identity são regras de conta.
 
-As respostas de erro seguem a mesma lógica: o `shared` tem a base `DomainError` e o filtro que monta toda resposta de erro, mas não conhece código de módulo nenhum. Cada módulo registra o mapa dos próprios códigos de erro para status HTTP ([Respostas de erro](../reference/respostas-de-erro.md)).
+As respostas de erro seguem a mesma lógica: o `shared` tem a base dos erros de domínio e monta toda resposta de erro, mas não conhece código de módulo nenhum ([Modelagem do domínio](modelagem-do-dominio.md#erros-são-exceptions-com-um-code)).
 
 ### Na dúvida, duplique
 
