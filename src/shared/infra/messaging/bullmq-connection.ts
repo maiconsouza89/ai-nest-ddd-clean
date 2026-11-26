@@ -10,8 +10,8 @@ const PRODUCER_READY_TIMEOUT_MS = 5_000;
  * Duas conexões ioredis para o mesmo `REDIS_URL` (a do cache usa o cliente `redis`).
  *
  * - `producer`: usada por quem enfileira (o relay da outbox, o agendador de jobs) e pelo storage do rate
- *   limit. Sem fila offline, para falhar na hora com o Redis fora do ar; o relay então registra a falha e
- *   tenta de novo com backoff, e o rate limit responde 503.
+ *   limit. Sem fila offline, para falhar na hora com o Redis fora do ar; o relay então pausa, sem contar a
+ *   falha do evento, e tenta de novo quando o Redis volta, e o rate limit responde 503.
  * - `worker`: `maxRetriesPerRequest: null`, exigido pelo BullMQ nos workers, que esperam o Redis voltar.
  */
 @Injectable()

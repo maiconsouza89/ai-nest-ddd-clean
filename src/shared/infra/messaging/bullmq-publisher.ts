@@ -2,9 +2,13 @@ import { Injectable, BeforeApplicationShutdown } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { IntegrationEvent } from '../../application/integration-event.js';
 import { Logger } from '../../application/ports/logger.js';
-import { EventPublisher } from '../../application/ports/event-publisher.js';
+import {
+  EventPublisher,
+  EventTransportUnavailableError,
+} from '../../application/ports/event-publisher.js';
 import { BullMqConnection } from './bullmq-connection.js';
 import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
+import { isTransportFailure } from './transport-failure.js';
 
 const QUEUE_JOB_OPTIONS = {
   // 10 tentativas com 2s, 4s, 8s...: cerca de 17 min até o job ir para `failed`
@@ -21,7 +25,8 @@ const jobIdOf = (eventId: string, consumer: string) => `${eventId}__${consumer}`
 
 /**
  * Enfileira o evento em uma fila por consumidor assinante. A outbox continua sendo a fonte da verdade:
- * se enfileirar falha, o evento fica pendente e o relay repete (o `jobId` evita o job duplicado).
+ * se enfileirar falha, o evento fica pendente e o relay repete (o `jobId` evita o job duplicado). Com o Redis
+ * fora do ar, o publish rejeita com `EventTransportUnavailableError`, e o relay pausa sem contar a falha.
  * A ordem por agregado vale só até a fila: o retry com backoff pode reordenar dentro dela, então
  * nenhum consumidor pode depender da ordem.
  */
@@ -47,8 +52,16 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
         }),
       ),
     );
-    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
-    if (failed) throw failed.reason;
+    const failures = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map((r) => r.reason as unknown);
+    if (failures.length === 0) return;
+    // lido depois do allSettled: é o estado da conexão quando os erros chegaram
+    const status = this.connection.producer.status;
+    const transport = failures.find((error) => isTransportFailure(error, status));
+    // basta um consumidor fora por transporte: o relay repete o evento inteiro, e o `jobId` ignora o que entrou
+    if (transport !== undefined) throw new EventTransportUnavailableError(transport);
+    throw failures[0];
   }
 
   async beforeApplicationShutdown() {
