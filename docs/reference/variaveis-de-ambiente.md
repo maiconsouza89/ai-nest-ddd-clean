@@ -58,7 +58,7 @@ Pool e timeouts da conexão, todos opcionais. Sem a variável, vale o padrão do
 | Ausente ou `disable` | Sem SSL |
 | `verify-full` | SSL, conferindo o certificado e o nome do servidor |
 | `prefer`, `require`, `verify-ca` | Iguais ao `verify-full`, com um aviso `SECURITY WARNING` do Node (`process.emitWarning`) |
-| `no-verify` | SSL sem conferir o certificado |
+| `no-verify` | SSL sem conferir o certificado: a conexão fica aberta a quem se passar pelo servidor |
 | Qualquer um, com `uselibpqcompat=true` na URL | A semântica da libpq: `prefer` e `require` não conferem o certificado (`require` com `sslrootcert` confere a CA), `verify-ca` confere a CA sem o nome e falha sem `sslrootcert` |
 
 ## Autenticação

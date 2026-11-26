@@ -25,7 +25,7 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar numa platafor
 
    O nome tem o formato `<registry>/<imagem>:<tag>`, como `ghcr.io/<usuário>/ai-nest-ddd-clean:3d10305`. Use uma tag fixa por versão, como o hash do commit, e não `latest`: o passo de migration e a app rodam a mesma imagem, e voltar uma versão é trocar a tag. A tag `:local` do `docker-compose.yml` serve só para o teste local.
 
-   Um arquivo novo que o build precisa entra no `.dockerignore`. Para outra versão do Node que não a do `.nvmrc`, acrescente `--build-arg NODE_VERSION=<versão>` ao `docker build`.
+   Um arquivo novo que o build precisa entra no `.dockerignore`, que é uma lista de permitidos: acrescente uma linha `!<caminho>`. Para outra versão do Node que não a do `.nvmrc`, acrescente `--build-arg NODE_VERSION=<versão>` ao `docker build`.
 
 2. Defina o ambiente da plataforma. Além das obrigatórias:
 
@@ -42,7 +42,7 @@ Use este guia para gerar a imagem Docker da API e colocá-la no ar numa platafor
    npm run db:migrate:prod
    ```
 
-   Na plataforma, use um único Job, release command ou task one-shot por deploy, nunca um initContainer por réplica, e só faça o deploy da app depois de ele terminar com sucesso. Um módulo em dia responde "No migrations are pending", então o passo pode rodar de novo.
+   Na plataforma, use um único Job, release command ou task one-shot por deploy, nunca um initContainer por réplica, e só faça o deploy da app depois de ele terminar com sucesso. Rode uma cópia por vez: o `migration:run` não trava contra outra execução simultânea. Um módulo em dia responde "No migrations are pending", então o passo pode rodar de novo depois que o anterior terminar.
 
 4. Suba a app com o comando padrão da imagem (`node dist/main.js`, porta `3000`) e configure as probes:
 

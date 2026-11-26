@@ -103,8 +103,8 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0011: Worktrees compartilham o stack do checkout principal, isolados por slot](adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md)
 - [0012: Cadeia de suprimentos do CI: Dependabot, CodeQL, dependency review e lockfile das actions](adr/0012-cadeia-de-suprimentos-do-ci.md)
 - [0013: Hooks do git com lefthook e commitlint no título do PR](adr/0013-hooks-do-git-com-lefthook-e-commitlint.md)
-- [0014: Hook síncrono do tracing com `module.registerHooks`](adr/0014-hook-sincrono-do-tracing.md)
-- [0015: Eventos pela outbox e por uma fila do BullMQ por consumidor](adr/0015-outbox-e-filas-por-consumidor.md)
+- [0014: Hook síncrono do tracing](adr/0014-hook-sincrono-do-tracing.md)
+- [0015: Eventos de integração pela outbox, com uma fila por consumidor](adr/0015-outbox-e-filas-por-consumidor.md)
 
 ## Fora dos quadrantes
 
