@@ -51,6 +51,8 @@ jobs:
       - run: npm run ci:static
       - run: npm run audit:signatures
 
+  # Só a entrada .nvmrc mede a cobertura: medir nas duas repetiria o mesmo número. Ela roda os unitários
+  # inteiros também em PR, sem o --changed: com ele, o relatório e a meta ficariam só com os arquivos do diff.
   unit:
     name: unit (Node ${{ matrix.node-version || '.nvmrc' }})
     needs: changes
@@ -62,6 +64,7 @@ jobs:
         include:
           - node-version: '22.22.3' # mínimo do engines.node
           - node-version-file: .nvmrc
+            coverage: true
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -70,7 +73,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           node-version-file: ${{ matrix.node-version-file }}
-      - run: npm test -- ${{ env.VITEST_ARGS }}
+      - if: '!matrix.coverage'
+        run: npm test -- ${{ env.VITEST_ARGS }}
+      - if: matrix.coverage
+        run: npm run test:coverage
+      # Também quando a meta falha, que grava o relatório antes; sem relatório (um teste falhou) ou numa
+      # execução cancelada, não roda
+      - if: "!cancelled() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''"
+        run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
   integration:
     needs: changes

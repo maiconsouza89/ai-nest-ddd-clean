@@ -1,8 +1,17 @@
 import { configDefaults, defineConfig } from 'vitest/config';
+import { COVERAGE_FLOOR } from './scripts/coverage-summary.mjs';
 
 // Ativa a condição `@app/source` dos aliases `#...` (ADR 0005). Não acrescente `import` nem `default`
 // à lista: o `require('pg')` do TypeORM passaria a resolver o build ESM e falharia.
 const conditions = ['@app/source', 'module', 'node', 'development|production'];
+
+// O mesmo piso nas quatro métricas; o resumo do CI (scripts/coverage-summary.mjs) lê a mesma constante.
+const coverageFloor = {
+  lines: COVERAGE_FLOOR,
+  statements: COVERAGE_FLOOR,
+  branches: COVERAGE_FLOOR,
+  functions: COVERAGE_FLOOR,
+};
 
 export default defineConfig({
   // Em todo ambiente do Node, não só no `ssr` dos arquivos de teste: o Vitest carrega o globalSetup no
@@ -40,6 +49,33 @@ export default defineConfig({
       '**/docker-compose.yml',
       '**/.github/workflows/**',
     ],
+    // Ligada só pelo `--coverage` do `npm run test:coverage`, que roda só os unitários: a integração e o e2e
+    // rodam em jobs próprios no CI, e juntar a cobertura deles pediria artefatos entre jobs
+    // (docs/reference/testes.md#cobertura).
+    coverage: {
+      provider: 'v8',
+      // Todo o src/, para um arquivo sem teste aparecer com 0%, e não sumir do relatório
+      include: ['src/**/*.ts'],
+      exclude: [
+        // rodam pela CLI do TypeORM ou por script, e não dentro da aplicação
+        '**/migrations/**',
+        '**/*.data-source.ts',
+        '**/seeds/**',
+        // apoio aos testes: repositórios em memória, exemplos dos testes de contrato e utilitários
+        '**/in-memory/**',
+        'src/**/contracts/events/*.example.ts',
+        'src/shared/testing/**',
+      ],
+      // terminal e log do CI, HTML local e a entrada do resumo do job (scripts/coverage-summary.mjs)
+      reporter: ['text-summary', 'html', 'json-summary'],
+      // Piso contra regressão, só onde a cobertura reflete regra de negócio (issue #21), sem meta global.
+      // Um `npm run test:coverage -- <padrão>` falha a meta, porque mede só parte da suíte: para um
+      // arquivo, use `npm test -- <padrão>`.
+      thresholds: {
+        'src/**/domain/**': coverageFloor,
+        'src/**/application/**': coverageFloor,
+      },
+    },
     // Os projetos herdam o setupFiles da raiz por padrão desde o Vitest 5.
     projects: [
       { test: { name: 'unit', include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'] } },

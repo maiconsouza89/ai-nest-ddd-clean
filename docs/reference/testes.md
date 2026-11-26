@@ -58,6 +58,45 @@ Em PR, o CI roda os unitários, os de integração e os e2e com `vitest run --ch
 
 Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o padrão dele ao `forceRerunTriggers`, começando por `**/` (o Vitest compara com o caminho absoluto), com um comentário dizendo por quê. Sem isso, um PR que muda só esse arquivo passa sem rodar os testes que dependem dele.
 
+## Cobertura
+
+`npm run test:coverage` roda os unitários com a cobertura do `@vitest/coverage-v8`, configurada em `test.coverage` no `vitest.config.ts`. O `npm test` não mede. Cada relatório sai num lugar:
+
+| Relatório | Onde | Para quê |
+| --- | --- | --- |
+| `text-summary` | Terminal e log do CI | As quatro métricas do total |
+| `html` | `coverage/index.html` | Navegar arquivo por arquivo, localmente |
+| `json-summary` | `coverage/coverage-summary.json` | A tabela por camada do resumo do job no CI (`scripts/coverage-summary.mjs`) |
+
+A pasta `coverage/` fica no `.gitignore`. Não há relatório `text` por arquivo, que encheria o log com uma linha por arquivo do `src/`, nem `lcov` ou `cobertura`. Com um teste falhando, o Vitest não gera relatório: a cobertura de uma execução quebrada não é o número que se quer ler.
+
+**O que é medido.** Só os unitários, sobre todo o `src/**/*.ts`: um arquivo sem teste aparece com 0%, em vez de sumir. A integração e o e2e rodam em jobs próprios no CI, e juntar a cobertura deles pediria passar relatórios entre jobs como artefato ([Evoluções com gatilho](evolucoes-com-gatilho.md#ci)). Por isso a infra aparece baixa: quem a cobre é a integração e o e2e. Os arquivos de teste dos três projetos não entram no relatório.
+
+**O que fica fora do relatório** (`coverage.exclude`), por não ser código da aplicação em execução:
+
+| Padrão | Por quê |
+| --- | --- |
+| `**/migrations/**`, `**/*.data-source.ts`, `**/seeds/**` | Rodam pela CLI do TypeORM ou por script, e não dentro da aplicação |
+| `**/in-memory/**` | Repositórios em memória, só dos testes |
+| `src/**/contracts/events/*.example.ts` | Exemplos dos testes de contrato |
+| `src/shared/testing/**` | Utilitários dos testes |
+
+O `main.ts`, o `bootstrap.ts`, o `tracing.ts` e os `*.module.ts` ficam no relatório: rodam em produção, e o 0% deles é real.
+
+**Meta.** Piso de 90% nas quatro métricas (linhas, statements, branches e funções), só nos globs `src/**/domain/**` e `src/**/application/**`, onde a cobertura reflete regra de negócio. Não há meta global nem `thresholds.autoUpdate`. O piso barra uma regressão grande sem obrigar a subir a cobertura. Um arquivo novo em `domain/` ou `application/` sem teste pode derrubá-la. O `npm run ci` roda o `test:coverage`, então a falha aparece antes do push.
+
+Um `npm run test:coverage -- <padrão>` falha a meta, porque mede só parte da suíte. Para rodar um arquivo, use `npm test -- <padrão>`.
+
+**Com a integração.** Para medir também a integração, localmente, com Docker no ar:
+
+```sh
+npx vitest run --project unit --project int --coverage
+```
+
+A meta continua valendo, e o `domain/` sobe um pouco, porque a integração exercita classes de erro que os unitários não alcançam.
+
+**No CI.** A entrada `.nvmrc` do job `unit` roda o `npm run test:coverage`, com a suíte inteira também em PR, e acrescenta ao resumo do job uma tabela por camada (`domain`, `application`, `contracts`, infra e o resto, e o total). Os detalhes estão em [Comandos](comandos.md#ci).
+
 ## Convenções
 
 | Convenção | Detalhe |
