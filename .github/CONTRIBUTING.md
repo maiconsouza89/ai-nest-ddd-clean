@@ -11,7 +11,7 @@ O setup do ambiente está no [README](../README.md#quickstart). Uma vulnerabilid
 
 ## Commits e título do PR
 
-O título do PR segue o [Conventional Commits 1.0.0](https://www.conventionalcommits.org/pt-br/v1.0.0/), porque vira o commit da `main`. Os commits dentro da branch ficam livres.
+O título do PR e cada commit da branch seguem o [Conventional Commits 1.0.0](https://www.conventionalcommits.org/pt-br/v1.0.0/): o título vira o commit da `main` no squash. O hook `commit-msg` confere cada commit local, e o job `pr-title` do CI confere o título do PR ([Comandos → Hooks do git](../docs/reference/comandos.md#hooks-do-git)). As regras ficam no `commitlint.config.mjs`: uma mudança nos tipos abaixo muda os dois arquivos.
 
 ```text
 <tipo>(<escopo>): <descrição>
@@ -19,7 +19,8 @@ O título do PR segue o [Conventional Commits 1.0.0](https://www.conventionalcom
 
 - **Tipo:** `feat` (comportamento novo), `fix` (correção), `docs`, `refactor`, `test`, `perf`, `build` (dependências, `Dockerfile`), `ci` (workflows) ou `chore` (o resto).
 - **Escopo:** o módulo (`identity`, `orders`) ou a área (`http`, `deploy`, `ci`), opcional.
-- **Descrição:** em português, no imperativo ou no presente, sem ponto final.
+- **Descrição:** em português, no imperativo ou no presente, sem ponto final. Pode começar com maiúscula quando a primeira palavra é um nome próprio (`ci: Dependabot …`).
+- **Tamanho:** o cabeçalho tem até 100 caracteres, sem contar o `(#<PR>)` que o squash acrescenta.
 - **Quebra:** `!` depois do tipo ou do escopo (`feat(identity)!: …`) e um parágrafo `BREAKING CHANGE: …` na descrição do PR, dizendo o que quem usa precisa mudar.
 
 Os PRs do Dependabot ficam com o título que ele gera, em inglês: `build(deps): bump …`, `build(deps-dev): bump …` ou `ci(deps): bump …`. O tipo e o escopo seguem o Conventional Commits. Uma major que quebre quem usa o template (ver [Versão](#versão)) ganha o `!` à mão no título do squash.

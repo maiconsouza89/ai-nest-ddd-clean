@@ -25,7 +25,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 1 | D | #16 Gatilho de `@nestjs/outbox`, `@nestjs/webhooks` e `@nestjs/http-client` | média | — | ✅ (#45) |
 | 2 | C | #17 Métricas com OpenTelemetry | média | #15 | ✅ (#51) |
 | 2 | E | #21 Relatório de cobertura de testes | baixa | #13 | ✅ (#52) |
-| 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | ⬜ |
+| 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | 🟡 |
 | 2 | G | #23 Mudanças do OpenAPI que quebram clientes | baixa | #13 | ⬜ |
 
 A #22 não depende de nenhuma e pode subir para a onda 1 se houver capacidade.
@@ -39,13 +39,15 @@ O conflito esperado entre trilhas, para resolver no rebase:
 | Arquivo | Issues | Conflito |
 | --- | --- | --- |
 | `.github/workflows/ci.yml` | #13, #21, #23 | A #13 reescreve cada `uses:`. As outras entram depois dela |
-| `.github/workflows/actions.lock` | #13, #23 | Quem muda um `uses:` roda `gh actions-lock` depois do rebase |
-| `scripts/setup-github.mjs` | #13 | Nenhum |
+| `.github/workflows/actions.lock` | #13, #22, #23 | Quem muda um `uses:` roda `gh actions-lock` depois do rebase |
+| `scripts/setup-github.mjs` | #13, #22, #23 | A #22 acrescenta o `pr-title` aos checks obrigatórios |
 | `src/tracing.ts`, `docs/explanation/observabilidade.md` | #15, #17 | Em sequência, na mesma trilha |
 | `docs/reference/evolucoes-com-gatilho.md` | #15, #16 | Uma linha cada |
 | `docs/reference/versoes-e-excecoes.md` | #13, #16 | Seções diferentes |
 | `package.json`, `package-lock.json` | #13, #15, #17, #21, #22, #23 | O lockfile se refaz com `npm install` depois do rebase |
 | `docs/reference/comandos.md` | #13, #21, #22, #23 | Seções diferentes |
+| `.github/CONTRIBUTING.md` | #21, #22, #23 | Seções diferentes |
+| `Dockerfile` | #17, #22 | A #22 só acrescenta `--ignore-scripts` aos dois `npm ci` |
 | Auth (`auth.controller.ts`, throttler, docs de autenticação) | #19 | Nenhum |
 
 ## Como usar

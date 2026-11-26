@@ -15,7 +15,7 @@ Todos os comandos rodam na raiz do repositório.
 
 Nesta ordem:
 
-1. `npm install`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
+1. `npm install`. Instala também os [hooks do git](#hooks-do-git), pelo `prepare`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
 2. `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](variaveis-de-ambiente.md).
 3. `docker compose up -d postgres redis mailpit`. Sobe o Postgres 19 em `127.0.0.1:5432`, com `max_connections=200` para caber os worktrees, o Redis 8 em `127.0.0.1:6379` e o Mailpit 1, o SMTP de desenvolvimento, em `127.0.0.1:1025`. O Mailpit aceita envio com ou sem usuário SMTP e marca cada e-mail com o usuário, que vira a tag de um [worktree](#worktrees).
 4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
@@ -63,6 +63,20 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures` |
 | `npm run audit:signatures` | `npm audit signatures`: confere a assinatura do registry e as attestations de cada pacote instalado. Precisa da rede. Não olha advisories: eles ficam com os Dependabot alerts e o dependency review ([CI](#ci)) |
 
+## Hooks do git
+
+O lefthook roda os hooks do `lefthook.yml`, e o commitlint confere as mensagens pelas regras do `commitlint.config.mjs` ([ADR 0013](../adr/0013-hooks-do-git-com-lefthook-e-commitlint.md)).
+
+| Hook | O que roda | Em quais arquivos |
+| --- | --- | --- |
+| `pre-commit` | Em sequência, parando no primeiro erro: o Prettier com `--write`, que põe a correção no stage; o ESLint, sem `--fix`, com `--max-warnings 0`; o `markdownlint-cli2`. Não roda durante um merge nem um rebase | Os arquivos em stage: o Prettier em todos que ele formata, o ESLint nos `.ts`, `.mts`, `.cts`, `.js`, `.mjs` e `.cjs`, o markdownlint nos `.md`. Os que o `.prettierignore` e o `eslint.config.mjs` ignoram ficam de fora. Com um arquivo parcialmente em stage, a parte fora do stage fica guardada durante o hook e volta no fim |
+| `commit-msg` | O commitlint sobre a mensagem: o formato do [Conventional Commits](../../.github/CONTRIBUTING.md#commits-e-título-do-pr), com os tipos do projeto e o cabeçalho de até 100 caracteres. Os `fixup!`, `squash!`, `Merge …` e `Revert …` passam | A mensagem do commit |
+| `pre-push` | Em paralelo: `npm run typecheck` e `npm run arch` | O projeto inteiro, como está no disco: uma mudança fora do commit entra na conferência |
+
+- **Pular:** `git commit --no-verify` e `git push --no-verify` pulam o hook daquele comando; `LEFTHOOK=0` pula todos (`LEFTHOOK=0 git commit …`). `LEFTHOOK_EXCLUDE=<tag>` pula um job só; a tag de cada job é o nome dele (`LEFTHOOK_EXCLUDE=eslint git commit …`). Para um ajuste só na sua máquina, um `lefthook-local.yml` na raiz, fora do git, é mesclado ao `lefthook.yml`.
+- **Instalação:** o `prepare` do `npm install` roda o `scripts/install-git-hooks.mjs`, que roda o `lefthook install`. Ele não faz nada com `CI` ligado, com `LEFTHOOK=0`, sem `.git` na raiz e num worktree, e diz por quê. Uma falha vira aviso e não quebra o `npm install`. Os hooks ficam no diretório comum do git e valem no checkout principal e em todo worktree. Para reinstalar, no checkout principal: `npx lefthook install`. O hook guarda o caminho do lefthook de quem o instalou, e um worktree removido levaria o binário junto.
+- **O que fica com o CI:** os testes, o `format:check` e o `docs:check` do projeto inteiro e o título do PR, que vira o commit da `main` no squash ([CI](#ci)).
+
 ## Testes
 
 | Comando | O que roda |
@@ -97,6 +111,7 @@ Cada `git worktree` ganha a sua porta, o seu banco, o seu banco lógico do Redis
 | `npm run worktree:down` | Só num worktree com slot. Apaga o banco `app_wt<N>`, esvazia o banco lógico `N` do Redis e as mensagens da tag `wt<N>`. Não toca em containers nem volumes. O slot fica reservado até o `git worktree remove` |
 
 - **Trava:** o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` rodam antes o `scripts/worktree-guard.mjs`. Num worktree (o `.git` da raiz é um arquivo) sem `WORKTREE_SLOT` no ambiente, no `.env.local` ou no `.env`, ele para com "rode `npm run worktree:setup`". No principal e no CI, não faz nada.
+- **Hooks do git:** os do checkout principal valem no worktree desde a criação ([Hooks do git](#hooks-do-git)). Antes do `worktree:setup`, sem `node_modules`, o commit falha no hook.
 - **Compose num worktree:** o `.env` gerado tem o `COMPOSE_PROJECT_NAME` do principal, então o `docker compose up -d` mira o stack compartilhado e não faz nada se ele já estiver no ar. Ele usa o `docker-compose.yml` da branch: se a branch muda um serviço, o Compose o recria para todos. O `worktree:setup` sobe o stack pelo `docker-compose.yml` do principal, e não pelo da branch. Nunca `docker compose down -v` nem `stop` num worktree: alcançam o stack de todos.
 
 ## CI
@@ -108,6 +123,7 @@ O porquê das escolhas de segurança está na [ADR 0012](../adr/0012-cadeia-de-s
 | `.github/workflows/ci.yml` | Todo PR e todo push na `main` | Verificação estática, assinaturas do registry, unitários, integração e e2e. Jobs na tabela abaixo |
 | `.github/workflows/codeql.yml` | PR para a `main`, push na `main` e todo domingo às 03:00 UTC | CodeQL em advanced setup, com a suíte `default`, sem build (`build-mode: none`): um job `Analyze (javascript-typescript)` para o código e um `Analyze (actions)` para os workflows. Os alertas vão para a aba Security → Code scanning |
 | `.github/workflows/dependency-review.yml` | Todo PR | Job `dependency-review`: falha se o PR traz uma dependência com vulnerabilidade `high` ou acima, ou com licença fora do `allow-licenses`. Uma exceção de licença por pacote vai no `allow-dependencies-licenses`, com o motivo num comentário. Comenta o resumo no PR quando falha |
+| `.github/workflows/pr-title.yml` | PR aberto, editado, reaberto ou com push novo | Job `pr-title`: confere o título do PR, que vira o commit da `main` no squash, com o commitlint e o `commitlint.config.mjs`, as mesmas regras do hook `commit-msg` ([Hooks do git](#hooks-do-git)) |
 | `.github/workflows/verify-lockfile.yml` | Todo PR e todo push na `main` | Job `verify-lockfile`: `gh actions-lock --verify`, que falha se o `.github/workflows/actions.lock` não bate com os workflows ou se um commit travado não confere mais com o upstream |
 
 O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `main`, cada push roda até o fim, sem fila com os outros.
@@ -128,7 +144,7 @@ O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `
 - **Sem fail-fast:** os jobs rodam em paralelo, a matriz do `unit` não cancela a outra versão quando uma falha, e o Vitest não para no primeiro erro. Todos os resultados saem de uma vez. Quando rever: [Evoluções com gatilho](evolucoes-com-gatilho.md#ci).
 - **E2E:** os `services:` usam as imagens do `docker-compose.yml`, nas portas que o `test/setup-env.ts` espera, com o Postgres sem durabilidade e em tmpfs, como o da integração. Sobem e esperam o healthcheck antes do primeiro step, o que custa uns 15 s ao job. Localmente, o e2e continua no docker-compose.
 - **Fora do CI:** o `docs:links`, que depende da rede.
-- **Checks obrigatórios:** o `ci`, o `dependency-review` e o `verify-lockfile`, todos do GitHub Actions. O nome de cada um é o do job: renomear um job exige mudar o `scripts/setup-github.mjs` e rodar o `npm run github:setup`. A matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão, por isso o `ci` junta os jobs do `ci.yml`.
+- **Checks obrigatórios:** o `ci`, o `dependency-review`, o `verify-lockfile` e o `pr-title`, todos do GitHub Actions. O nome de cada um é o do job: renomear um job exige mudar o `scripts/setup-github.mjs` e rodar o `npm run github:setup`. A matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão, por isso o `ci` junta os jobs do `ci.yml`.
 - **Regra do CodeQL:** a regra `code_scanning` do ruleset barra o merge enquanto a análise do CodeQL do PR não termina e quando ela acha, nas linhas que o PR muda, um alerta de segurança `high` ou acima ou um alerta de severidade `error`. Os alertas antigos não barram, mas ficam abertos na aba Security.
 - **Falso positivo do CodeQL:** na aba Security → Code scanning, abra o alerta e use "Dismiss alert", com o motivo ("False positive", "Used in tests" ou "Won't fix") e um comentário que explique. Não desligue a regra nem tire o arquivo da análise.
 - **Lockfile das actions:** o `.github/workflows/actions.lock` guarda o commit, o `owner_id` e o `repo_id` de cada action, inclusive as transitivas e as da composite `.github/actions/setup`, que os workflows chamam por `$/.github/actions/setup` (a própria action no commit do workflow). O runner confere o lockfile no início do job.
@@ -137,7 +153,7 @@ O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `
   - Para conferir sem rede se cada `uses:` tem entrada no lockfile: `gh actions-lock --verify-local`. O `gh actions-lock --verify` faz a conferência completa do CI.
   - Numa action do próprio repositório, use `$/` e não `./`: o `./` não entra no lockfile.
   - O actionlint local não conhece o `$/`: a exceção fica no `.github/actionlint.yaml`.
-- **`npm run github:setup`** (`scripts/setup-github.mjs`): cria, ou atualiza, um ruleset na branch padrão do repositório do `origin` que exige os três checks obrigatórios, inclusive em push direto, tem a regra do CodeQL e bloqueia force push e exclusão. Ao atualizar, mantém o bypass e as regras de outros tipos acrescentados pela interface. Também deixa o squash como único merge de PR, com o título e a descrição do PR como mensagem do commit (o título segue o Conventional Commits, ver [Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)), e apaga o branch do PR depois do merge. Liga os Dependabot alerts, os Dependabot security updates e a exigência de action fixada por SHA (`sha_pinning_required`), mantendo o resto das permissões do GitHub Actions. Num repositório público, liga o relato privado de vulnerabilidade, o canal do `.github/SECURITY.md`. Num privado ou interno, o GitHub não oferece esse relato, e o script só avisa. A regra do CodeQL entra num repositório público, ou num privado ou interno com o GitHub Code Security; sem ele, o script avisa e segue sem a regra. Não liga o secret scanning. Pede o `gh` autenticado com admin no repositório. Num repositório privado, o GitHub pode exigir plano pago para rulesets.
+- **`npm run github:setup`** (`scripts/setup-github.mjs`): cria, ou atualiza, um ruleset na branch padrão do repositório do `origin` que exige os checks obrigatórios, inclusive em push direto, tem a regra do CodeQL e bloqueia force push e exclusão. Ao atualizar, mantém o bypass e as regras de outros tipos acrescentados pela interface. Também deixa o squash como único merge de PR, com o título e a descrição do PR como mensagem do commit (o título segue o Conventional Commits, ver [Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)), e apaga o branch do PR depois do merge. Liga os Dependabot alerts, os Dependabot security updates e a exigência de action fixada por SHA (`sha_pinning_required`), mantendo o resto das permissões do GitHub Actions. Num repositório público, liga o relato privado de vulnerabilidade, o canal do `.github/SECURITY.md`. Num privado ou interno, o GitHub não oferece esse relato, e o script só avisa. A regra do CodeQL entra num repositório público, ou num privado ou interno com o GitHub Code Security; sem ele, o script avisa e segue sem a regra. Não liga o secret scanning. Pede o `gh` autenticado com admin no repositório. Num repositório privado, o GitHub pode exigir plano pago para rulesets.
 - **Dependabot:** abre os PRs de atualização do npm, das actions e das imagens, que passam pelos mesmos checks. A agenda, os grupos e o `ignore` estão em [Versões e exceções → Atualização automática](versoes-e-excecoes.md#atualização-automática).
 - **"Require lockfile", à mão:** a política que bloqueia um workflow sem lockfile não tem API. Depois do `npm run github:setup`, ligue-a em Settings → Actions → Policies, mirando todos os workflows, com o enforcement `Active`.
 

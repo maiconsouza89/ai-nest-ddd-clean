@@ -1,7 +1,8 @@
 // Cria o ruleset da branch padrão no repositório do remote `origin`, pelo `gh`. O que ele exige está
-// em docs/reference/comandos.md#ci: os checks ci, dependency-review e verify-lockfile e, quando o code
-// scanning está disponível, a análise do CodeQL. Rodar de novo atualiza o mesmo ruleset, achado pelo
-// nome, e mantém o que foi acrescentado nele pela interface do GitHub: bypass e regras de outros tipos.
+// em docs/reference/comandos.md#ci: os checks ci, dependency-review, verify-lockfile e pr-title (o job do
+// pr-title.yml) e, quando o code scanning está disponível, a análise do CodeQL. Rodar de novo atualiza o
+// mesmo ruleset, achado pelo nome, e mantém o que foi acrescentado nele pela interface do GitHub: bypass
+// e regras de outros tipos.
 // Também deixa o squash como único jeito de fazer merge de PR, com o título e a descrição do PR no
 // commit, apaga o branch do PR depois do merge e, em repositório público, liga o relato privado de
 // vulnerabilidade. Liga os Dependabot alerts, os security updates e a exigência de action fixada por
@@ -14,8 +15,8 @@ const RULESET_NAME = 'branch padrão';
 // com o mesmo nome criado pela API.
 const GITHUB_ACTIONS_APP_ID = 15368;
 
-// Os nomes dos jobs de .github/workflows/: ci.yml, dependency-review.yml e verify-lockfile.yml.
-const REQUIRED_CHECKS = ['ci', 'dependency-review', 'verify-lockfile'];
+// Os nomes dos jobs de .github/workflows/: ci.yml, dependency-review.yml, verify-lockfile.yml e pr-title.yml.
+const REQUIRED_CHECKS = ['ci', 'dependency-review', 'verify-lockfile', 'pr-title'];
 
 const rules = [
   { type: 'deletion' },

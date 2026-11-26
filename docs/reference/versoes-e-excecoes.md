@@ -42,7 +42,7 @@ O Dependabot (`.github/dependabot.yml`) abre os PRs de atualização. O porquê 
 
 | Ecossistema | Onde | Título do PR | Grupos | Cooldown |
 | --- | --- | --- | --- | --- |
-| `npm` | `package.json` e `package-lock.json`, com `versioning-strategy: increase` (a faixa do `package.json` sobe junto) e até 10 PRs abertos | `build(deps)` e `build(deps-dev)` | `nestjs` (`@nestjs/*`), `opentelemetry` (`@opentelemetry/*`), `testcontainers` (`testcontainers`, `@testcontainers/*`), `typescript-eslint` (`typescript-eslint`, `@typescript-eslint/*`) e `vitest` (`vitest`, `@vitest/*`), com todos os tipos de update. O resto vem avulso | 3 dias para patch e minor, 7 para major |
+| `npm` | `package.json` e `package-lock.json`, com `versioning-strategy: increase` (a faixa do `package.json` sobe junto) e até 10 PRs abertos | `build(deps)` e `build(deps-dev)` | `commitlint` (`@commitlint/*`), `nestjs` (`@nestjs/*`), `opentelemetry` (`@opentelemetry/*`), `testcontainers` (`testcontainers`, `@testcontainers/*`), `typescript-eslint` (`typescript-eslint`, `@typescript-eslint/*`) e `vitest` (`vitest`, `@vitest/*`), com todos os tipos de update. O resto vem avulso | 3 dias para patch e minor, 7 para major |
 | `github-actions` | Os workflows de `.github/workflows/` e a composite `.github/actions/setup`, até 5 PRs abertos | `ci(deps)` | `actions`, com todas | 3 dias |
 | `docker-compose` | As imagens do `docker-compose.yml`, até 5 PRs abertos | `build(deps)` | Nenhum: uma imagem por PR | 3 dias |
 
