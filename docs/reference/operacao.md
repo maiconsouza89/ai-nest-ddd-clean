@@ -27,18 +27,20 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | Interface | `/docs`. O documento em `/docs-json` e `/docs-yaml` |
 | Quando existe | Fora de `NODE_ENV=production` (`src/bootstrap.ts`) |
 | Montagem | `createSwaggerDocument` (`src/shared/infra/http/swagger.setup.ts`) monta o documento, com `addBearerAuth()`. O `setupSwagger` o chama e serve o `/docs`. O `/docs-json` e o `openapi.json` saem da mesma configuração |
-| Documento guardado | `openapi.json` na raiz, gerado pelo `src/openapi.ts` a partir do `dist/` (`npm run openapi:generate`). Sobe o `AppModule` no modo preview do Nest, que monta o grafo de módulos sem chamar construtor nem hook de provider: nada conecta no Postgres nem no Redis. As variáveis obrigatórias que faltam vêm do `.env.example`. As chaves de `paths` e de `components.schemas` saem em ordem alfabética. O `npm run openapi:check` confere que o arquivo está atualizado, e o CI compara o do PR com o da base ([Comandos → CI](comandos.md#ci)) |
-| Fora do documento | O corpo das respostas de sucesso: os controllers devolvem o resultado do caso de uso sem tipo de resposta, e o documento traz `{ "type": "object" }`, um schema sem propriedades ou nenhuma resposta de sucesso. O que ele descreve: rotas, parâmetros, corpos de requisição, status e o `ProblemDetailsResponse` de toda resposta de erro |
+| Documento guardado | `openapi.json` na raiz, gerado pelo `src/openapi.ts` a partir do `dist/` (`npm run openapi:generate`). Sobe o `AppModule` no modo preview do Nest, que monta o grafo de módulos sem chamar construtor nem hook de provider: nada conecta no Postgres nem no Redis. As variáveis obrigatórias que faltam vêm do `.env.example`. As chaves de `paths` e de `components.schemas` saem em ordem alfabética. O `npm run openapi:check` confere que o arquivo está atualizado, e o CI compara o do PR com o da base ([Comandos → CI](comandos.md#ci)). O gerador falha, com a lista, se uma operação não tem resposta 2xx ou se um 200 ou 201 não descreve o corpo (`findUndocumentedSuccessResponses`, em `src/shared/infra/http/undocumented-success-responses.ts`) |
+| Respostas de sucesso | Toda rota com corpo documenta o schema com uma classe `*.response.ts` ou `*.responses.ts` e o decorator explícito: `@ApiOkResponse({ type })`, `@ApiCreatedResponse({ type })` ou, numa listagem, `@ApiPageResponse(Item)`. O `ApiPageResponse` (`src/shared/infra/http/page.response.ts`) monta um `allOf` do `PageResponse` (`total`, `page` e `limit`) com os `items` do modelo. A convenção da classe está em [Camadas → Infra](camadas.md#infra) |
+| Resposta pelo tipo de retorno | Não serve sozinha. O plugin só gera a resposta de sucesso quando a rota não tem decorator de sucesso, e trata como de sucesso todo `Api<X>Response` cujo `<X>` não é um status do `HttpStatus`: o `@ApiProblemResponse` desliga a inferência. Um tipo genérico, como o `Page<T>`, também sai como `{ "type": "object" }` |
+| `/health/live` | O schema `TerminusHealthCheckResult`, que o `@HealthCheck()` do ready registra |
 | Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
 | Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
 | Respostas de erro | Schema `ProblemDetailsResponse`, em `application/problem+json`. Cada rota documenta os próprios erros com `@ApiProblemResponse(status, descrição)`, e o `setupSwagger` acrescenta o 429 e o 500 em toda operação |
-| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa. O schema de erro existe, e toda operação documenta o 429 e o 500 com ele |
+| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa. O schema de erro existe, e toda operação documenta o 429 e o 500 com ele. Toda operação tem uma resposta 2xx, e o 200 e o 201 têm schema. Sem o plugin, os testes não veem as propriedades: quem confere que o schema descreve o corpo é o gerador |
 
-O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs e as respostas das rotas.
+O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs de requisição e de resposta.
 
 | Opção | Valor | Efeito |
 | --- | --- | --- |
-| `dtoFileNameSuffix` | `.request.ts`, `.requests.ts`, `.query.ts` | Arquivos lidos como DTO. O padrão do plugin é `.dto.ts` e `.entity.ts`, que o projeto não usa |
+| `dtoFileNameSuffix` | `.request.ts`, `.requests.ts`, `.query.ts`, `.response.ts`, `.responses.ts` | Arquivos lidos como DTO. O padrão do plugin é `.dto.ts` e `.entity.ts`, que o projeto não usa |
 | `classValidatorShim` | `true` | Os decorators do `class-validator` viram regras no schema (`minLength`, `maximum`) |
 | `introspectComments` | `true` | O comentário `/** */` da rota vira o resumo, e o da propriedade, a descrição |
 

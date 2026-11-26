@@ -86,7 +86,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | 2 | Envelope da paginação, guarda do gerador e health | ✅ |
 | 3 | Respostas dos módulos e template do plop | ✅ |
 | 4 | Testes e prova local com o `oasdiff` | ✅ |
-| 5 | Documentação | ⬜ |
+| 5 | Documentação | ✅ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
 ### Passo 1: worktree, branch e roadmap
@@ -141,6 +141,8 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 3. `docs/how-to/paginar-uma-listagem.md`: o passo do controller com o `@ApiPageResponse(Item)` e o tipo de retorno `Page<ItemResponse>`.
 4. `docs/how-to/criar-um-modulo.md`: a classe de resposta no item "Contrato".
 5. `docs/reference/modules/identity.md`, `orders.md` e `catalog.md`: só se descreverem o corpo das rotas.
+
+   **Feito.** As páginas dos módulos e a `docs/reference/autenticacao.md` já descreviam os corpos, que não mudaram, e ficaram como estavam. Entrou também o `flatten-allof` no `docs/reference/comandos.md` (CI → Quebra do contrato).
 6. `npm run docs:check`.
 7. Commit: `docs: convenção das respostas de sucesso no OpenAPI (#56)`.
 

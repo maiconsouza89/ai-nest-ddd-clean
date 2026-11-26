@@ -55,7 +55,7 @@ src/
 │       │   ├── gateways/                catalog-price.adapter.ts, inventory-stock.gateway.ts
 │       │   ├── http/
 │       │   │   ├── controllers/         orders.controller.ts
-│       │   │   ├── dtos/                create-order.request.ts
+│       │   │   ├── dtos/                create-order.request.ts, order.responses.ts
 │       │   │   └── error-statuses.ts    (status HTTP de cada código de erro)
 │       │   ├── cache/                   cached-order.queries.ts
 │       │   ├── events/                  invalidate-order-list-cache.handler.ts
@@ -108,6 +108,7 @@ src/
 | Nest module auxiliar | `infra/<nome>.module.ts` | Um segundo Nest module, quando o módulo liga um port do `shared` que não deve sair pelo Nest module principal. O `identity/infra/identity-auth.module.ts` liga o `ActorResolver` do shared, e o `AppModule` só o repassa para o `AuthModule.forRoot` |
 | Controller | `infra/http/controllers/` | Converte o DTO HTTP no DTO da application e repassa o `Actor` como dado |
 | DTO HTTP | `infra/http/dtos/` | `class-validator` e Swagger ficam aqui. Valida o formato da entrada |
+| Resposta HTTP | `infra/http/dtos/<nome>.response.ts` ou `<nome>.responses.ts` | Uma classe por corpo de sucesso, só para o OpenAPI: o plugin da CLI gera o schema pelos tipos, e o `/** */` vira a descrição. A rota a liga com `@ApiOkResponse({ type })`, `@ApiCreatedResponse({ type })` ou, numa listagem, `@ApiPageResponse(Item)`, e declara a classe no tipo de retorno (`Promise<OrderDetailsResponse>`, `Promise<Page<OrderListItemResponse>>`). O controller devolve o resultado do caso de uso sem converter: o `tsc` confere que ele tem todo campo da classe. O nome da classe é o nome do schema e não se repete entre módulos ([Operação → Swagger](operacao.md#swagger)) |
 | Mapa de status | `infra/http/error-statuses.ts` | `<MÓDULO>_ERROR_STATUSES`: o status HTTP de cada `code` do módulo, registrado nos `providers` do Nest module com `provideErrorStatuses(...)`. O módulo não monta resposta de erro: o filtro global do `shared` monta ([Respostas de erro](respostas-de-erro.md)) |
 | Job | `infra/jobs/` | Estende o `ScheduledJobProcessor` do `shared` e chama um caso de uso no `run()` |
 | Handler de evento | `infra/events/` | Marcado com `@IntegrationEventHandler`, recebe um evento de `contracts/events/` e chama um caso de uso pelo `IdempotentConsumer`. Um efeito idempotente por natureza, como trocar a geração do cache, dispensa o `IdempotentConsumer` |
@@ -146,6 +147,6 @@ O `src/shared/` segue as mesmas camadas e guarda só blocos técnicos com a mesm
 | Domínio: `AggregateRoot`, `DomainEvent`, `DomainError`, `ConcurrencyError` e `Money`. Os erros do `Money` (`InvalidMoneyError`, `CurrencyMismatchError`) ficam dentro do `money.vo.ts`, e não numa pasta `domain/errors/` | Conceito de negócio (`Customer`, `Product`) |
 | Aplicação: `Actor`, `Page`, `IntegrationEvent` e `IdempotentConsumer` | Erro de domínio de um módulo, em `domain/errors/` |
 | Ports técnicos: `Clock`, `IdGenerator`, `TransactionManager`, `Logger`, `ActorResolver`, `Outbox`, `EventPublisher` e `ProcessedEvents` | Value object usado por um módulo só, mesmo que pareça genérico (o `Email` do identity) |
-| Infra comum: auth, outbox, filas, cache, banco, configuração e o filtro das respostas de erro | Repositórios, entidades e o mapa de status dos códigos de erro de cada módulo |
+| Infra comum: auth, outbox, filas, cache, banco, configuração, o filtro das respostas de erro e o envelope da paginação no OpenAPI (`ApiPageResponse`) | Repositórios, entidades e o mapa de status dos códigos de erro de cada módulo |
 
 Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`. O porquê está em [Shared kernel](../explanation/shared-kernel.md).
