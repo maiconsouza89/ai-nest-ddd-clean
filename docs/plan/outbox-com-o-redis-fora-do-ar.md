@@ -87,7 +87,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 
 | Passo | Entrega | Status |
 | --- | --- | --- |
-| 1 | Worktree, branch e roadmap | ⬜ |
+| 1 | Worktree, branch e roadmap | ✅ |
 | 2 | Reprodução e conferências | ⬜ |
 | 3 | Erro tipado e classificação no publisher | ⬜ |
 | 4 | Prazo do publish e `Queue` quebrada | ⬜ |
