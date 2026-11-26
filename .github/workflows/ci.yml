@@ -77,8 +77,9 @@ jobs:
         run: npm test -- ${{ env.VITEST_ARGS }}
       - if: matrix.coverage
         run: npm run test:coverage
-      # Também quando a meta falha, que grava o relatório antes; sem relatório (um teste falhou), não roda
-      - if: always() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''
+      # Também quando a meta falha, que grava o relatório antes; sem relatório (um teste falhou) ou numa
+      # execução cancelada, não roda
+      - if: "!cancelled() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''"
         run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
   integration:
