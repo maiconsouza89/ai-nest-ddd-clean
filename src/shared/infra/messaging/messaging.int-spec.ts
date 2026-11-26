@@ -4,6 +4,7 @@ import { Global, Injectable, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { metrics } from '@opentelemetry/api';
+import { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startTestMetrics } from '#test/helpers/metrics';
@@ -121,6 +122,22 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
     await new Promise((r) => setTimeout(r, 500));
 
     expect(await effectCount(e)).toBe(1);
+  });
+
+  it('o publish repetido para uma fila que já existe cria um job só, com o jobId de sempre', async () => {
+    const e = event();
+    const queue = new Queue<IntegrationEvent>('events.test.writes-effect', {
+      connection: { url: redisUrl },
+    });
+    try {
+      await publisher.publish(e);
+      await publisher.publish(e);
+
+      const jobs = (await queue.getJobs()).filter((job) => job.data.eventId === e.eventId);
+      expect(jobs.map((job) => job.id)).toEqual([`${e.eventId}__test.writes-effect`]);
+    } finally {
+      await queue.close();
+    }
   });
 
   it('evento sem assinante é aceito sem enfileirar nada', async () => {

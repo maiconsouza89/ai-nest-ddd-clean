@@ -89,7 +89,7 @@ Leia a página antes de agir no assunto.
 | Mexer na conexão com o Redis, no cache ou no rate limit, ou entender o que acontece com o Redis fora do ar | `docs/explanation/redis.md` |
 | Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` e `docs/how-to/integrar-um-servico-externo.md` |
 | Mexer em transação, concorrência ou `Idempotency-Key` | `docs/explanation/transacoes-e-concorrencia.md` |
-| Mexer na outbox, nas filas ou no consumidor idempotente | `docs/explanation/entrega-de-eventos.md` e `docs/reference/outbox-e-filas.md` |
+| Mexer na outbox, nas filas ou no consumidor idempotente | `docs/explanation/entrega-de-eventos.md`, `docs/reference/outbox-e-filas.md` e, para devolver eventos mortos à entrega, `docs/how-to/reprocessar-eventos-mortos.md` |
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md`, `docs/explanation/modelagem-do-dominio.md` e, para um erro novo, `docs/how-to/lancar-um-erro-de-dominio.md` |
 | Escrever ou mudar um teste | `docs/reference/testes.md` e, para o porquê da cobertura e do isolamento, `docs/explanation/estrategia-de-testes.md` |

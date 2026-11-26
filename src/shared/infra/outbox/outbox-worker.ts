@@ -1,9 +1,14 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventTransportUnavailableError } from '../../application/ports/event-publisher.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
-import { OutboxRelay } from './outbox-relay.js';
+import { backoffDelayMs, OutboxRelay } from './outbox-relay.js';
 
 const POLL_INTERVAL_MS = 1_000;
+// pausa com o transporte fora: 1 s, 2 s, 4 s... até 30 s; com o Redis de volta, a entrega recomeça em até 30 s
+const PAUSE_BASE_MS = 1_000;
+const PAUSE_MAX_MS = 30_000;
+const PAUSE_BACKOFF = { baseDelayMs: PAUSE_BASE_MS, maxDelayMs: PAUSE_MAX_MS };
 const CLEANUP_INTERVAL_MS = 60 * 60_000;
 
 /** Laço em segundo plano: entrega lotes da outbox e, de tempos em tempos, limpa os antigos. */
@@ -36,11 +41,31 @@ export class OutboxWorker implements OnApplicationBootstrap, OnModuleDestroy {
   }
 
   private async run() {
+    // rodadas seguidas com o transporte fora; 0 fora da pausa
+    let pausedRounds = 0;
     while (this.running) {
       let handled = 0;
+      let error: unknown;
       try {
         handled = await this.relay.runOnce();
-      } catch (error) {
+      } catch (caught) {
+        error = caught;
+      }
+      if (error instanceof EventTransportUnavailableError) {
+        // só a entrada na pausa loga: as rodadas seguintes falham pelo mesmo motivo
+        if (pausedRounds === 0) {
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause);
+          this.logger.warn({ error: cause }, 'outbox relay paused: event transport unavailable');
+        }
+        await this.sleep(backoffDelayMs(++pausedRounds, PAUSE_BACKOFF));
+        continue;
+      }
+      // a primeira rodada sem a falha de transporte, mesmo com outro erro, encerra a pausa
+      if (pausedRounds > 0) {
+        this.logger.log('outbox relay resumed');
+        pausedRounds = 0;
+      }
+      if (error !== undefined) {
         this.logger.error('Outbox batch failed', error instanceof Error ? error.stack : error);
       }
       // lote cheio: ainda deve haver pendentes, volta logo

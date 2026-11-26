@@ -2,9 +2,14 @@ import { Injectable, BeforeApplicationShutdown } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { IntegrationEvent } from '../../application/integration-event.js';
 import { Logger } from '../../application/ports/logger.js';
-import { EventPublisher } from '../../application/ports/event-publisher.js';
+import {
+  EventPublisher,
+  EventTransportUnavailableError,
+} from '../../application/ports/event-publisher.js';
+import { withTimeout } from '../resilience/with-timeout.js';
 import { BullMqConnection } from './bullmq-connection.js';
 import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
+import { isTransportFailure } from './transport-failure.js';
 
 const QUEUE_JOB_OPTIONS = {
   // 10 tentativas com 2s, 4s, 8s...: cerca de 17 min até o job ir para `failed`
@@ -16,12 +21,20 @@ const QUEUE_JOB_OPTIONS = {
   removeOnFail: { age: 7 * 24 * 3600 },
 } as const;
 
+/**
+ * Prazo de cada `add`. Protege a transação do lote do relay, que fica aberta durante o publish: um Redis
+ * congelado (sem RST) penduraria o `add` sem fim, e a fila criada com o Redis fora espera a conexão. O `add` não é
+ * cancelado: se terminar depois do prazo, a próxima rodada o encontra pelo `jobId` e não duplica o job.
+ */
+const ENQUEUE_TIMEOUT_MS = 5_000;
+
 /** `jobId` do BullMQ não aceita `:`. */
 const jobIdOf = (eventId: string, consumer: string) => `${eventId}__${consumer}`;
 
 /**
  * Enfileira o evento em uma fila por consumidor assinante. A outbox continua sendo a fonte da verdade:
- * se enfileirar falha, o evento fica pendente e o relay repete (o `jobId` evita o job duplicado).
+ * se enfileirar falha, o evento fica pendente e o relay repete (o `jobId` evita o job duplicado). Com o Redis
+ * fora do ar, o publish rejeita com `EventTransportUnavailableError`, e o relay pausa sem contar a falha.
  * A ordem por agregado vale só até a fila: o retry com backoff pode reordenar dentro dela, então
  * nenhum consumidor pode depender da ordem.
  */
@@ -41,18 +54,46 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
     // `jobId` ignora o que já foi enfileirado
     const results = await Promise.allSettled(
       consumers.map((consumer) =>
-        this.queueFor(consumer.name).add(event.type, event, {
-          ...QUEUE_JOB_OPTIONS,
-          jobId: jobIdOf(event.eventId, consumer.name),
-        }),
+        withTimeout(
+          () =>
+            this.queueFor(consumer.name).add(event.type, event, {
+              ...QUEUE_JOB_OPTIONS,
+              jobId: jobIdOf(event.eventId, consumer.name),
+            }),
+          ENQUEUE_TIMEOUT_MS,
+        ),
       ),
     );
-    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
-    if (failed) throw failed.reason;
+    // lido depois do allSettled: é o estado da conexão quando os erros chegaram
+    const status = this.connection.producer.status;
+    let transportError: { error: unknown } | undefined;
+    let firstError: { error: unknown } | undefined;
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') return;
+      const error = result.reason as unknown;
+      firstError ??= { error };
+      if (!isTransportFailure(error, status)) return;
+      transportError ??= { error };
+      this.discardQueue(consumers[i].name);
+    });
+    // basta um consumidor fora por transporte: o relay repete o evento inteiro, e o `jobId` ignora o que entrou
+    if (transportError) throw new EventTransportUnavailableError(transportError.error);
+    if (firstError) throw firstError.error;
   }
 
   async beforeApplicationShutdown() {
     await Promise.all([...this.queues.values()].map((q) => q.close()));
+  }
+
+  /**
+   * Tira a fila do consumidor depois de uma queda do Redis, e o próximo publish cria outra. Se a conexão cai no
+   * meio da inicialização da `Queue`, ela fica rejeitada para sempre, mesmo com o Redis de volta. Fechar não fecha
+   * o `producer`: o BullMQ não fecha uma conexão recebida pronta.
+   */
+  private discardQueue(consumer: string) {
+    const queue = this.queues.get(consumer);
+    this.queues.delete(consumer);
+    void queue?.close().catch(() => undefined);
   }
 
   private queueFor(consumer: string) {

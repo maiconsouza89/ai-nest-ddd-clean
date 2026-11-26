@@ -5,6 +5,7 @@ import { FakeEventPublisher } from '#test/fakes/fake-event-publisher';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
 import { IntegrationEvent } from '../../application/integration-event.js';
+import { EventTransportUnavailableError } from '../../application/ports/event-publisher.js';
 import { DEFAULT_OUTBOX_OPTIONS, OutboxOptions, OutboxRelay } from './outbox-relay.js';
 import { TypeOrmOutbox } from './typeorm-outbox.js';
 
@@ -150,6 +151,66 @@ describe('OutboxRelay (integração)', () => {
     await relay.runOnce();
 
     expect(publisher.delivered.map((e) => e.eventId)).toEqual([second.eventId]);
+  });
+
+  it('transporte fora: rejeita com o erro tipado e a linha fica como estava', async () => {
+    const publisher = new FakeEventPublisher();
+    const relay = relayWith(publisher, { maxAttempts: 2 });
+    const event = await add('t1');
+    publisher.unavailable = true;
+
+    await expect(relay.runOnce()).rejects.toBeInstanceOf(EventTransportUnavailableError);
+
+    const pending = await row(event.eventId);
+    expect(pending).toMatchObject({
+      attempts: 0,
+      deadAt: null,
+      lastError: null,
+      publishedAt: null,
+    });
+    expect(pending.nextAttemptAt.getTime()).toBeLessThanOrEqual(now.getTime());
+    // quem loga a pausa é o worker
+    expect(logger.entries.filter((e) => e.level !== 'info')).toEqual([]);
+  });
+
+  it('transporte fora no meio do lote: o anterior fica publicado e o seguinte não é tentado', async () => {
+    const publisher = new FakeEventPublisher();
+    const relay = relayWith(publisher, { maxAttempts: 2 });
+    const [first, second, third] = [await add('t2'), await add('t3'), await add('t4')];
+    // o transporte cai depois da primeira entrega
+    const publish = publisher.publish.bind(publisher);
+    publisher.publish = async (e) => {
+      await publish(e);
+      publisher.unavailable = true;
+    };
+
+    await expect(relay.runOnce()).rejects.toBeInstanceOf(EventTransportUnavailableError);
+
+    expect((await row(first.eventId)).publishedAt).toEqual(now);
+    expect(publisher.delivered.map((e) => e.eventId)).toEqual([first.eventId]);
+    for (const { eventId } of [second, third]) {
+      expect(await row(eventId)).toMatchObject({ attempts: 0, publishedAt: null, deadAt: null });
+    }
+    // o terceiro nem foi tentado: só dois logs de entrega
+    expect(logger.entries.filter((e) => e.message === 'delivering event')).toHaveLength(2);
+  });
+
+  it('transporte fora por muitas rodadas não mata a linha, e ela sai quando ele volta', async () => {
+    const publisher = new FakeEventPublisher();
+    const relay = relayWith(publisher, { maxAttempts: 2 });
+    const event = await add('t5');
+    publisher.unavailable = true;
+
+    for (let i = 0; i < 10; i++) {
+      await expect(relay.runOnce()).rejects.toBeInstanceOf(EventTransportUnavailableError);
+      now = new Date(now.getTime() + relay.options.maxDelayMs);
+    }
+    expect(await row(event.eventId)).toMatchObject({ attempts: 0, deadAt: null });
+
+    publisher.unavailable = false;
+    expect(await relay.runOnce()).toBe(1);
+    expect(publisher.delivered.map((e) => e.eventId)).toEqual([event.eventId]);
+    expect((await row(event.eventId)).publishedAt).toEqual(now);
   });
 
   it('dois workers em paralelo entregam cada evento uma única vez', async () => {

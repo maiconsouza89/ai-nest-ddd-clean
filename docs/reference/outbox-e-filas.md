@@ -25,12 +25,16 @@ Os valores padrão ficam em `DEFAULT_OUTBOX_OPTIONS` (`src/shared/infra/outbox/o
 | Espera entre buscas | 1 s | `POLL_INTERVAL_MS`, `outbox-worker.ts` | Só depois de um lote com menos de `batchSize` linhas. Lote cheio busca de novo na hora |
 | Primeira espera após falha | 1 s | `baseDelayMs` | Espera depois da primeira falha de uma linha |
 | Teto da espera | 5 min | `maxDelayMs` | Limite da espera entre tentativas |
-| Falhas até morrer | 8 | `maxAttempts` | Na 8ª falha, a linha ganha `deadAt` e sai da busca |
+| Falhas até morrer | 8 | `maxAttempts` | Na 8ª falha, a linha ganha `deadAt` e sai da busca. A falha de transporte não conta |
+| Prazo do enfileiramento | 5 s | `ENQUEUE_TIMEOUT_MS`, `bullmq-publisher.ts` | Prazo de cada `add`. Estourado, conta como falha de transporte |
+| Pausa com o transporte fora | 1 s a 30 s | `PAUSE_BASE_MS` e `PAUSE_MAX_MS`, `outbox-worker.ts` | Espera entre as rodadas da pausa, dobrando a cada rodada. Volta a 1 s na primeira rodada sem a falha |
 
-- **Espera após a n-ésima falha:** `min(baseDelayMs × 2^(n − 1), maxDelayMs)` (`backoffDelayMs`, `outbox-relay.ts`). Com os padrões: 1 s, 2 s, 4 s, 8 s, 16 s, 32 s e 64 s depois das sete primeiras falhas, cerca de 2 min até a 8ª. O teto de 5 min não é atingido com os padrões.
+- **Espera após a n-ésima falha:** `min(baseDelayMs × 2^(n − 1), maxDelayMs)` (`backoffDelayMs`, `outbox-relay.ts`). Com os padrões: 1 s, 2 s, 4 s, 8 s, 16 s, 32 s e 64 s depois das sete primeiras falhas. O teto de 5 min não é atingido com os padrões.
 - **Busca** (`CLAIM_SQL`, `outbox-relay.ts`): linhas com `publishedAt` e `deadAt` nulos e `nextAttemptAt` vencido, sem linha anterior (`seq` menor) do mesmo `aggregateId` com `publishedAt` e `deadAt` nulos, em ordem de `seq`, com `FOR UPDATE OF o SKIP LOCKED`.
 - **Sucesso:** a linha ganha `publishedAt`.
-- **Falha:** a linha ganha `attempts + 1`, `lastError` e `nextAttemptAt`, e `deadAt` na última falha. Uma falha ao enfileirar em qualquer fila conta como falha da linha.
+- **Falha:** a linha ganha `attempts + 1`, `lastError` e `nextAttemptAt`, e `deadAt` na última falha. Uma falha ao enfileirar em qualquer fila conta como falha da linha, menos a de transporte. As linhas mortas voltam à busca pelo [reprocesso](../how-to/reprocessar-eventos-mortos.md).
+- **Falha de transporte:** o `publish` rejeita com `EventTransportUnavailableError` (`src/shared/application/ports/event-publisher.ts`) quando algum consumidor falhou por transporte. O `BullMqPublisher` decide por `isTransportFailure` (`src/shared/infra/messaging/transport-failure.ts`): o prazo de 5 s estourado, o `producer` fora de `ready`, um erro de conexão, ou uma resposta `READONLY`, `LOADING`, `MASTERDOWN` ou `OOM` do Redis. A `Queue` do consumidor que falhou é descartada e recriada no próximo publish.
+- **Pausa:** na primeira falha de transporte do lote, o relay para de percorrer as linhas, não grava nada na linha que falhou (`attempts`, `nextAttemptAt` e `lastError` ficam como estavam), confirma as linhas já publicadas e rejeita. O `OutboxWorker` espera a pausa e tenta de novo. Logs: `warn` `outbox relay paused: event transport unavailable`, com o campo `error`, na entrada, e `info` `outbox relay resumed` na saída. As rodadas no meio da pausa não logam.
 
 ## Limpeza da outbox
 
@@ -40,7 +44,7 @@ Os valores padrão ficam em `DEFAULT_OUTBOX_OPTIONS` (`src/shared/infra/outbox/o
 | Retenção | 7 dias | `retentionMs`, `DEFAULT_OUTBOX_OPTIONS` | Apaga as linhas com `publishedAt` mais antigo que isso |
 | Lote do `DELETE` | 10.000 linhas | `cleanupBatchSize`, `DEFAULT_OUTBOX_OPTIONS` | Repete o `DELETE` até um lote vir incompleto |
 
-Nada apaga as linhas mortas (`deadAt`) da outbox nem as linhas de `shared.processed_events` ([Evoluções com gatilho](evolucoes-com-gatilho.md#infraestrutura-e-dados)).
+Nada apaga as linhas mortas (`deadAt`) da outbox nem as linhas de `shared.processed_events` ([Evoluções com gatilho](evolucoes-com-gatilho.md#infraestrutura-e-dados)). Para devolver as mortas à entrega: [Como reprocessar eventos mortos](../how-to/reprocessar-eventos-mortos.md).
 
 ## Tabela `shared.outbox`
 
@@ -56,7 +60,7 @@ Nada apaga as linhas mortas (`deadAt`) da outbox nem as linhas de `shared.proces
 | `occurredAt` | `timestamptz` | Hora do fato |
 | `createdAt` | `timestamptz` | Hora da gravação |
 | `publishedAt` | `timestamptz`, nulo | Hora em que o relay enfileirou o evento |
-| `attempts` | `int`, padrão `0` | Falhas de entrega |
+| `attempts` | `int`, padrão `0` | Falhas de entrega, sem contar as de transporte |
 | `nextAttemptAt` | `timestamptz`, padrão `now()` | Hora a partir da qual a linha volta à busca |
 | `deadAt` | `timestamptz`, nulo | Hora em que a linha passou do limite de falhas |
 | `lastError` | `text`, nulo | Mensagem da última falha |
@@ -72,7 +76,7 @@ Nada apaga as linhas mortas (`deadAt`) da outbox nem as linhas de `shared.proces
 | `jobId` | `<eventId>__<consumidor>` (o BullMQ não aceita `:` no id) | `jobIdOf`, `bullmq-publisher.ts` |
 | Dados do job | O evento de integração inteiro | `BullMqPublisher.publish` |
 
-- **Fan-out:** o `BullMqPublisher` enfileira uma cópia em cada fila de consumidor que assina o `type`, com `Promise.allSettled`, e lança a primeira falha. Um evento sem assinante não enfileira nada.
+- **Fan-out:** o `BullMqPublisher` enfileira uma cópia em cada fila de consumidor que assina o `type`, com `Promise.allSettled`. Se algum consumidor falhou por transporte, lança `EventTransportUnavailableError`; senão, a primeira falha. Um evento sem assinante não enfileira nada.
 - **Workers:** um `Worker` do BullMQ por consumidor (`event-workers.ts`), sem `concurrency` nas opções.
 
 ### Opções dos jobs

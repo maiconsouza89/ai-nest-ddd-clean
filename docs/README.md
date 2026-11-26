@@ -26,6 +26,7 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como criar um módulo](how-to/criar-um-modulo.md): do `plop module` ao helper dos testes de integração, e o que conferir antes do PR.
 - [Como gerar uma migration](how-to/gerar-uma-migration.md): depois de mudar uma ORM entity, do generate ao helper dos testes de integração.
 - [Como publicar e consumir um evento de integração](how-to/publicar-um-evento-de-integracao.md): do evento de domínio à outbox, o teste de contrato e o handler no módulo consumidor.
+- [Como reprocessar eventos mortos](how-to/reprocessar-eventos-mortos.md): devolver à entrega as linhas da outbox com `deadAt`, por SQL, depois de corrigida a causa.
 - [Como paginar uma listagem](how-to/paginar-uma-listagem.md): do `PaginationQuery` à query com desempate estável.
 - [Como cachear uma leitura](how-to/cachear-uma-leitura.md): o decorator da query com chave por geração, a ligação no módulo, o handler de invalidação e os testes.
 - [Como agendar um job](how-to/agendar-um-job.md): o processor sobre o `ScheduledJobProcessor`, a fila própria e o teste com duas instâncias.
@@ -108,6 +109,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0013: Hooks do git com lefthook e commitlint no título do PR](adr/0013-hooks-do-git-com-lefthook-e-commitlint.md)
 - [0014: Hook síncrono do tracing](adr/0014-hook-sincrono-do-tracing.md)
 - [0015: Eventos de integração pela outbox, com uma fila por consumidor](adr/0015-outbox-e-filas-por-consumidor.md)
+- [0016: Falha de transporte não conta para a morte do evento da outbox](adr/0016-falha-de-transporte-nao-mata-evento-da-outbox.md)
 
 ## Fora dos quadrantes
 
@@ -115,6 +117,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 | Plano | Status | Registro |
 | --- | --- | --- |
+| Outbox com o Redis fora do ar | Concluído | [issue #62](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/62) (o comentário de registro aguarda o ok do dono) |
 | Tag do Mailpit no `test:int` | Concluído | registro da issue #49 pendente: o comentário aguarda o ok do dono |
 | How-tos de erro de domínio, serviço externo e rota protegida | Concluído | [issue #60](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/60) (o comentário de registro aguarda o ok do dono) |
 | Respostas de sucesso no OpenAPI | Concluído | [registro da issue #56](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/56#issuecomment-7192073212) |
