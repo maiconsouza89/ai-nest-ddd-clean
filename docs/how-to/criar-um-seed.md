@@ -4,10 +4,11 @@ type: how-to
 
 # Como criar um seed
 
-Use este guia para dar a um módulo dados de desenvolvimento e teste manual, como os usuários do identity e os produtos do catalog. Dados que o sistema precisa para funcionar em qualquer ambiente (um tipo fixo, uma categoria padrão) não são seed: vão numa migration ([Como gerar uma migration](gerar-uma-migration.md)), porque o seed não roda em produção.
+Use este guia para dar a um módulo dados de desenvolvimento e teste manual, como os usuários do identity e os produtos do catalog.
 
 ## Pré-requisitos
 
+- Os dados servem só para desenvolvimento. Um dado que o sistema precisa em qualquer ambiente (um tipo fixo, uma categoria padrão) vai numa migration ([Como gerar uma migration](gerar-uma-migration.md)).
 - As migrations do módulo aplicadas: `npm run mig:<módulo>:run`.
 - O DataSource da CLI do módulo, `<módulo>.data-source.ts`, com as entidades que o seed grava. O `plop module` já o cria.
 
@@ -55,7 +56,7 @@ Use este guia para dar a um módulo dados de desenvolvimento e teste manual, com
 
    O `npm run db:seed` roda todo script `seed:<módulo>` do `package.json`, então o seed novo já entra nele.
 
-4. Descreva o que o seed cria na seção "Schema e migrations" da doc do módulo, em `docs/reference/modules/<módulo>.md`, como faz o [inventory](../reference/modules/inventory.md#schema-e-migrations).
+4. Descreva o que o seed cria na seção "Seed" da doc do módulo, em `docs/reference/modules/<módulo>.md`, como faz o [inventory](../reference/modules/inventory.md#seed).
 
 ## Como verificar
 

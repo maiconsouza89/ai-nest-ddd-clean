@@ -4,7 +4,7 @@ type: how-to
 
 # Como adicionar uma variável de ambiente
 
-Use este guia quando um prazo, um limite, um endereço ou um interruptor precisa mudar por ambiente sem mudar o código. O que cada variável existente faz está em [Variáveis de ambiente](../reference/variaveis-de-ambiente.md).
+Use este guia quando um prazo, um limite, um endereço ou um interruptor precisa mudar por ambiente sem mudar o código.
 
 ## Pré-requisitos
 
@@ -47,15 +47,11 @@ Use este guia quando um prazo, um limite, um endereço ou um interruptor precisa
 
 4. Se a variável substitui outra, acrescente o nome antigo ao `RENAMED` do mesmo arquivo: `{ NOME_ANTIGO: 'NOME_NOVO' }`. Um ambiente que ainda define o nome antigo passa a barrar a subida, em vez de o valor ser ignorado e o padrão do nome novo valer sem aviso.
 
-5. Se a variável é obrigatória, defina um valor em `test/setup-env.ts` (com `??=`, para não sobrescrever o ambiente). Sem ele, os testes que sobem o `AppModule` falham na validação.
+5. Se a variável é obrigatória, defina um valor em `test/setup-env.ts` (com `??=`, para não sobrescrever o ambiente). Sem ele, os testes que sobem o `AppModule` falham na validação. A variável obrigatória também precisa estar no ambiente das migrations e dos seeds ([Variáveis de ambiente](../reference/variaveis-de-ambiente.md)).
 
 6. Acrescente um caso em `src/shared/infra/config/env.validation.spec.ts`: o padrão, a conversão ou a recusa de um valor inválido.
 
 7. Documente a variável na tabela da seção certa de `docs/reference/variaveis-de-ambiente.md`, com o padrão, os valores aceitos e o efeito.
-
-Uma variável obrigatória também passa a ser exigida pelos scripts de migration e de seed: o DataSource de cada módulo, usado pela CLI fora do Nest, carrega os arquivos `.env` com o `loadEnvFiles()` (`src/shared/infra/config/load-env-files.ts`), pela mesma regra da app, e chama o mesmo `validateEnv`.
-
-Se a configuração de um módulo crescer a ponto de poluir a classe única, o `@nestjs/config` separa por módulo com `registerAs` e `ConfigModule.forFeature`. O projeto não usa essa forma.
 
 ## Como verificar
 

@@ -14,7 +14,7 @@ x-app-env: &app-env
 
 services:
   # Profile `prod`: roda as migrations da imagem e depois sobe a app, na ordem do deploy. Fora do `up`
-  # de sempre. Como usar: docs/how-to/fazer-o-deploy.md#testar-a-imagem-localmente
+  # de sempre. Como usar: docs/how-to/testar-a-imagem-de-producao-localmente.md
   migrate:
     profiles: [prod]
     build: .
@@ -27,7 +27,7 @@ services:
 
   # Mesma porta do start:dev, de propósito: com ele no ar, este não sobe, em vez de duas instâncias
   # disputarem as filas do BullMQ no mesmo Redis. O profile só roda no checkout principal: o stack de
-  # desenvolvimento é o de todos os worktrees (docs/how-to/fazer-o-deploy.md#testar-a-imagem-localmente)
+  # desenvolvimento é o de todos os worktrees (docs/how-to/testar-a-imagem-de-producao-localmente.md)
   app:
     profiles: [prod]
     image: ai-nest-ddd-clean:local

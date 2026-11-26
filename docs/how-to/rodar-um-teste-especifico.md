@@ -30,7 +30,7 @@ Use este guia para rodar um arquivo de teste, ou um teste dentro dele, sem esper
    npm test -- money.vo
    ```
 
-   Roda todo arquivo cujo caminho contém o trecho, sem diferenciar maiúsculas: `order` pega 15 arquivos. Vários trechos rodam a união: `npm test -- money.vo order-item`.
+   Roda todo arquivo cujo caminho contém o trecho, sem diferenciar maiúsculas. Vários trechos rodam a união: `npm test -- money.vo order-item`.
 
 3. Para um teste só dentro do arquivo, filtre pelo nome com `-t`:
 

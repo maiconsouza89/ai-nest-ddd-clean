@@ -4,19 +4,18 @@ type: how-to
 
 # Como remover os módulos de exemplo
 
-Use este guia para tirar do projeto os módulos de exemplo (orders, catalog e inventory, mais o aviso de pedido pago do notifications) e ficar só com a base: o `shared`, o identity e o notifications. Os três exemplos saem juntos, porque o orders chama o catalog e o inventory, e o inventory consome os eventos do orders.
-
-O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `shared` continua com a paginação e o cache, mas nenhum módulo da base os usa. Os how-tos de [paginação](paginar-uma-listagem.md) e de [cache](cachear-uma-leitura.md) mostram o código do orders. Se for precisar de um desses recursos, guarde o código do orders antes de apagar, ou recupere depois pelo histórico do git.
+Use este guia para tirar do projeto os módulos de exemplo (orders, catalog e inventory, mais o aviso de pedido pago do notifications) e ficar só com a base: o `shared`, o identity e o notifications.
 
 ## Pré-requisitos
 
+- Se for usar a paginação, o cache ou a `Idempotency-Key`, copie antes o código do orders que os usa: os how-tos de [paginação](paginar-uma-listagem.md) e de [cache](cachear-uma-leitura.md) seguem esse código, e a `Idempotency-Key` (port, store e tabela) sai junto com o orders. Depois de apagar, o código só volta pelo histórico do git.
 - Nenhum `start:dev` nem e2e rodando.
 - Terminal na raiz do repositório.
 - Postgres, Redis e Mailpit no ar, para os testes do fim: `docker compose up -d --wait postgres redis mailpit`.
 
 ## Passos
 
-1. Apague as pastas dos módulos:
+1. Apague as pastas dos três módulos, juntas: o orders chama o catalog e o inventory, e o inventory consome os eventos do orders.
 
    ```bash
    rm -r src/modules/orders src/modules/catalog src/modules/inventory
@@ -87,46 +86,38 @@ O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `sh
 
 14. Se o seu banco local já rodou as migrations dos exemplos, os schemas `orders`, `catalog` e `inventory` continuam lá. Para apagá-los, siga [Como resetar o ambiente local](resetar-o-ambiente-local.md). Num clone novo, não há nada a fazer.
 
-## Páginas que continuam citando os exemplos
+15. Apague o tutorial, que cria um pedido, ou reescreva-o sobre um módulo seu. Para apagar:
 
-As páginas com "sim" têm links para as páginas de referência apagadas. As com "não" passam no `docs:check`, mas usam os exemplos como modelo ou citam um fato deles que deixa de valer. As ADRs ficam como estão: são registros imutáveis. Para conferir as menções: `grep -rlE "orders|catalog|inventory|pedido" docs`.
+    ```bash
+    rm docs/tutorials/01-do-clone-ao-primeiro-pedido.md
+    ```
 
-| Página | Falha no `docs:check` | O que fazer |
-| --- | --- | --- |
-| `tutorials/01-do-clone-ao-primeiro-pedido.md` | não | Apagar e tirar do índice do `docs/README.md`, ou reescrever sobre um módulo seu. O tutorial cria um pedido |
-| `docs/README.md` | não | As descrições de `arquitetura.md` e `agregados.md` no índice citam o orders e o inventory. Ajustar junto com o que for feito nessas páginas |
-| `explanation/agregados.md` | sim | Apagar, tirando os links em `consistencia-e-eventos.md`, `comunicacao-entre-modulos.md` e `camadas.md`, a linha do índice e a rota do `AGENTS.md`. Ou manter como leitura, trocando os links por texto. O assunto inteiro é o pedido e o estoque |
-| `explanation/arquitetura.md` | sim | Manter como leitura e trocar os dois links por texto. O código citado é do orders |
-| `explanation/consistencia-e-eventos.md` | sim | Manter e apontar o link para [identity](../reference/modules/identity.md#eventos-publicados). Os exemplos de concorrência são do pedido e do estoque |
-| `explanation/persistencia.md` | sim | Manter e trocar o link do catalog por texto |
-| `explanation/autenticacao.md` | não | Reescrever o exemplo de regra de dono (`order-access.ts`, `NOT_ORDER_OWNER`) quando houver a primeira regra de dono sua |
-| `explanation/observabilidade.md` | não | Trocar o exemplo do trace que atravessa a outbox (`POST /v1/orders/:id/pay`) pelo `POST /v1/auth/register` |
-| `explanation/servicos-externos.md` | não | Reescrever com o `SmtpEmailSender` da base. A maior parte da página usa o pagamento simulado do orders (`SimulatedPaymentGateway`, `ResilientPaymentGateway`) |
-| `explanation/shared-kernel.md` | não | Reescrever a frase "Só o orders o usa" sobre o `Money`: nenhum módulo da base o usa |
-| `how-to/cachear-uma-leitura.md` | sim | Tirar o item do orders em "Veja também". Os passos mostram o código do orders: reescrever quando houver o primeiro cache seu |
-| `how-to/paginar-uma-listagem.md` | sim | Tirar o item do orders e do catalog em "Veja também". Os passos mostram o código do orders e do catalog: reescrever quando houver a primeira listagem sua |
-| `how-to/criar-um-seed.md` | sim | Apontar o link para [identity](../reference/modules/identity.md#schema-e-migrations) |
-| `how-to/adicionar-uma-variavel-de-ambiente.md` | não | Reescrever com uma variável da base, como a `EMAIL_VERIFICATION_CODE_TTL_SECONDS`. O exemplo é a `ORDER_EXPIRATION_MINUTES` |
-| `how-to/publicar-um-evento-de-integracao.md` | não | Reescrever com o `identity.email-verified`, que segue os mesmos passos. O exemplo inteiro é o `orders.order-paid` |
-| `how-to/agendar-um-job.md` | não | Reescrever com o job de limpeza de refresh tokens do identity. O exemplo é o `expire-pending-orders` |
-| `how-to/criar-um-modulo.md` | não | Trocar os exemplos de rota (`orders`, `products`) e a menção ao catalog |
-| `how-to/rodar-um-teste-especifico.md` | não | Trocar os exemplos de filtro (`order`, `order-item`) por arquivos da base e recontar |
-| `reference/camadas.md` | sim | Reescrever, sem os links, os itens do módulo CRUD (catalog) e do módulo sem entidade (inventory) |
-| `reference/convencoes.md` | não | Trocar o exemplo de rota versionada (`/v1/orders`) |
-| `reference/evolucoes-com-gatilho.md` | não | Tirar a `orders.idempotency_keys` da linha da limpeza de tabelas e o `PAYMENT_UNAVAILABLE` da linha do `Retry-After` |
-| `reference/operacao.md` | não | Trocar as tags (`orders`, `products`) e a linha de log de exemplo (`GET /v1/orders`) |
-| `reference/respostas-de-erro.md` | não | Trocar os exemplos de corpo (`ORDER_ALREADY_PAID`, `POST /v1/orders`, `GET /v1/products/:id`) por rotas da base, como o `/v1/auth` |
-| `reference/testes.md` | não | Trocar os arquivos de exemplo de cada tipo de teste (`order.entity.spec.ts`, `cached-order.queries.int-spec.ts` e outros) por arquivos da base |
-| `reference/glossario.md` | sim | Apagar as linhas e os termos do orders, do catalog e do inventory. Reescrever "Idempotency key" e "Usuário, ator e cliente" sem o pedido |
+    No `docs/README.md`, apague a seção "Tutoriais".
 
-Ficam como leitura, sem mudança: `explanation/comunicacao-entre-modulos.md` (facade e eventos com o orders e o inventory), `explanation/modelagem-do-dominio.md` (dinheiro, erros e exclusão no orders) e `explanation/redis.md` (o cache da listagem e o job de expiração do orders).
+16. Rode `npm run docs:check`. Ele acusa cada link para as páginas apagadas nos passos 8 e 15. Corrija cada um e rode de novo até passar:
+    - **Link numa lista que só aponta para a página apagada** (como um "Veja também"): apague a linha.
+    - **Link no meio do texto:** troque-o por texto simples, ou aponte-o para a seção equivalente do identity, como [Eventos publicados](../reference/modules/identity.md#eventos-publicados) ou [Schema e migrations](../reference/modules/identity.md#schema-e-migrations).
+    - **`docs/reference/camadas.md`:** reescreva, sem os links, os itens do módulo CRUD (o catalog) e do módulo sem entidade (o inventory).
+    - **`docs/reference/glossario.md`:** apague as linhas e os termos do orders, do catalog e do inventory, e reescreva "Idempotency key" e "Usuário, ator e cliente" sem o pedido.
+    - **`docs/explanation/agregados.md`:** o assunto inteiro é o pedido e o estoque. Apague a página, com a linha do índice, a rota do `AGENTS.md` e os links para ela, ou mantenha-a como leitura, com os links trocados por texto.
+
+17. Ache as menções que sobram, fora das ADRs, que são registros imutáveis:
+
+    ```bash
+    grep -rlE "orders|catalog|inventory|Order|Product|pedido|produto|estoque" docs README.md AGENTS.md --exclude-dir=adr
+    ```
+
+    Para cada menção, conforme o tipo:
+    - **Descrição no índice do `docs/README.md`:** ajuste junto com a página que ela descreve.
+    - **Fato dos exemplos que deixa de valer** (o `Money` que "só o orders usa", a tabela `orders.idempotency_keys`, o código `PAYMENT_UNAVAILABLE`): reescreva ou apague a frase.
+    - **Rota, arquivo ou código de erro de exemplo numa referência ou num how-to** (`/v1/orders`, `order.entity.spec.ts`, `ORDER_ALREADY_PAID`): troque por um da base, como as rotas de `/v1/auth` e os arquivos do identity.
+    - **Código do orders como modelo numa explicação ou num how-to** (evento, job, cache, paginação, variável, fornecedor externo, regra de dono): mantenha enquanto nenhum módulo seu tiver o equivalente, e troque o exemplo quando tiver. A base já tem um evento (`identity.email-verified`), um job (`purge-expired-refresh-tokens`), uma variável (`EMAIL_VERIFICATION_CODE_TTL_SECONDS`) e uma rota que atravessa a outbox (`POST /v1/auth/register`).
 
 ## Como verificar
 
-- `npm run typecheck`, `npm run lint`, `npm run arch`, `npm run openapi:check` e `npm test` passam.
+- `npm run ci` passa.
 - `npm run test:int` e `npm run test:e2e` passam.
 - `grep -rnE "#modules/(orders|catalog|inventory)" src test` não encontra nada.
-- `npm run docs:check` falha só nas páginas da tabela acima marcadas com "sim", até elas serem ajustadas.
 
 ## Veja também
 

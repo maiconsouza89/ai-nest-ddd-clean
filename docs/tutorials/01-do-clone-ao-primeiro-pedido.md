@@ -156,7 +156,7 @@ curl -s localhost:3000/v1/orders/$ORDER -H "Authorization: Bearer $TOKEN"
 
 Você deve ver `204` e o pedido com `"status":"PLACED"`, os itens e o total. Ao fechar, o pedido reservou duas unidades no estoque.
 
-A consulta de um pedido lê direto do banco. A listagem do passo 9 vem de um cache, descartado pelo evento do fechamento cerca de um segundo depois. Por isso, logo depois de uma ação, consulte o pedido, e não a listagem.
+Logo depois de uma ação, consulte o pedido, não a listagem: a listagem vem de um cache que leva cerca de um segundo para ser descartado ([Redis](../explanation/redis.md#cache-da-leitura)).
 
 ### 11. Pague o pedido
 
@@ -183,6 +183,6 @@ Para parar, use `Ctrl+C` no terminal da API. Para apagar o que o tutorial criou,
 - **Conta verificada antes do login:** o identity guardou só o hash do código, e o notifications enviou o e-mail avisado por um evento do identity ([módulo identity](../reference/modules/identity.md)).
 - **O dono vem do token:** o pedido pertence ao usuário autenticado, e só ele pode fechá-lo e pagá-lo ([Autenticação e ownership](../explanation/autenticacao.md)).
 - **Dinheiro em centavos:** preços e totais são inteiros ([Modelagem do domínio](../explanation/modelagem-do-dominio.md)).
-- **Eventos pela outbox:** o pagamento gravou o evento `orders.order-paid` junto com o pedido, e o notifications reagiu a ele depois, uma vez só ([Consistência e eventos](../explanation/consistencia-e-eventos.md#o-evento-sai-pela-outbox)).
+- **Eventos pela outbox:** o pagamento gravou o evento `orders.order-paid` junto com o pedido, e o notifications reagiu a ele depois, uma vez só ([Entrega de eventos](../explanation/entrega-de-eventos.md#o-evento-sai-pela-outbox)).
 - **Duas leituras, dois compromissos:** a listagem vem de um cache que o evento invalida e pode mostrar o estado anterior por um instante. A consulta de um pedido lê o banco e mostra a última escrita ([Redis](../explanation/redis.md#cache-da-leitura)).
-- **Pagamento idempotente:** a `Idempotency-Key` torna seguro repetir a chamada ([Consistência e eventos](../explanation/consistencia-e-eventos.md#idempotency-key-no-pagamento)).
+- **Pagamento idempotente:** a `Idempotency-Key` torna seguro repetir a chamada ([Transações e concorrência](../explanation/transacoes-e-concorrencia.md#idempotency-key-no-pagamento)).

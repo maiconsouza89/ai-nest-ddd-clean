@@ -4,11 +4,11 @@ type: how-to
 
 # Como gerar uma migration
 
-Use este guia depois de mudar uma ORM entity de um módulo que já existe (coluna, tabela, índice). Para criar um módulo, o `npm run plop module` já gera a primeira migration, a que cria o schema. Sem o gerador, crie essa primeira vazia com `npx typeorm-ts-node-esm migration:create <pasta migrations do módulo>/create-<módulo>-schema` e escreva o `CREATE SCHEMA IF NOT EXISTS <módulo>` no `up`.
+Use este guia depois de mudar uma ORM entity de um módulo que já existe (coluna, tabela, índice).
 
 ## Pré-requisitos
 
-- Postgres no ar: `docker compose up -d postgres` ([Comandos](../reference/comandos.md#setup-do-zero)).
+- Postgres no ar: `docker compose up -d postgres` ([Como preparar o ambiente local](preparar-o-ambiente-local.md)).
 - Todas as migrations do módulo aplicadas: `npm run mig:<módulo>:run`. O generate compara as entidades com o banco, e um banco atrasado faz a migration nova repetir as antigas.
 - A ORM entity alterada seguindo as [convenções do TypeORM](../reference/convencoes.md#typeorm). Uma entity nova também precisa entrar no `entities` do DataSource do módulo (`<módulo>.data-source.ts`) e no `TypeOrmModule.forFeature` do módulo Nest.
 
@@ -43,14 +43,27 @@ Use este guia depois de mudar uma ORM entity de um módulo que já existe (colun
 
 6. Se o schema mudou o que a doc do módulo descreve, atualize a seção "Schema e migrations" em `docs/reference/modules/<módulo>.md`.
 
-As pastas `migrations/` ficam fora do Prettier e do ESLint. O arquivo gerado entra como está.
+### Sem o gerador
+
+O `npm run plop module` já gera a primeira migration de um módulo, a que cria o schema. Num módulo criado sem ele:
+
+1. Crie a primeira migration vazia:
+
+   ```bash
+   npx typeorm-ts-node-esm migration:create <pasta migrations do módulo>/create-<módulo>-schema
+   ```
+
+2. Escreva o `CREATE SCHEMA IF NOT EXISTS <módulo>` no `up` e o `DROP SCHEMA IF EXISTS <módulo>` no `down`.
+3. Aplique-a e acrescente-a ao helper dos testes, como nos passos 4 e 5.
 
 ## Como verificar
 
 - `npm run mig:<módulo>:gen` de novo responde "No changes in database schema were found": o banco bate com as entidades.
 - `npm run test:int -- <módulo>` passa. Os testes de integração montam o template do módulo aplicando do zero as migrations listadas no helper do passo 5.
 
-Para desfazer a última migration aplicada no banco local, antes do commit:
+## Desfazer uma migration
+
+Para desfazer a última migration aplicada no banco local, antes do commit, rode:
 
 ```bash
 NODE_OPTIONS=--conditions=@app/source npx typeorm-ts-node-esm migration:revert -d <caminho do DataSource do módulo>
