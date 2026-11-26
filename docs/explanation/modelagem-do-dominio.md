@@ -4,7 +4,7 @@ type: explanation
 
 # Modelagem do domínio
 
-Por que o dinheiro é um inteiro em centavos, por que o id e a hora chegam por ports, por que os erros são exceptions com um `code`, por que a mesma regra é validada em mais de um lugar e o que fazer com regras e dados que não cabem num agregado. Em qual pasta fica cada peça está em [Camadas](../reference/camadas.md#domain).
+Por que o dinheiro é um inteiro em centavos, por que o id e a hora chegam por ports, por que os erros são exceptions com um `code`, por que a mesma regra é validada em mais de um lugar e o que fazer com regras e dados que não cabem num agregado. Em qual pasta fica cada peça está em [Camadas](../reference/camadas.md#domain). Os passos para um erro novo estão em [Como lançar um erro de domínio](../how-to/lancar-um-erro-de-dominio.md).
 
 ## Contexto
 

@@ -4,7 +4,7 @@ type: explanation
 
 # Autenticação e ownership
 
-Por que a autenticação fica na infra e o ownership no caso de uso, por que a sessão vive num refresh token rotativo, e por que o e-mail é verificado e o login limitado por conta. Rotas, prazos e respostas estão em [Autenticação](../reference/autenticacao.md). A decisão de carregar o ator a cada requisição está na [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md).
+Por que a autenticação fica na infra e o ownership no caso de uso, por que a sessão vive num refresh token rotativo, e por que o e-mail é verificado e o login limitado por conta. Rotas, prazos e respostas estão em [Autenticação](../reference/autenticacao.md). A decisão de carregar o ator a cada requisição está na [ADR 0002](../adr/0002-ator-carregado-por-requisicao.md). Os passos estão em [Como proteger uma rota](../how-to/proteger-uma-rota.md).
 
 ## Contexto
 
