@@ -70,7 +70,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | Passo | Entrega | Status |
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
-| 2 | How-to de erro de domínio | ⬜ |
+| 2 | How-to de erro de domínio | ✅ |
 | 3 | How-to de serviço externo | ⬜ |
 | 4 | How-to de rota protegida | ⬜ |
 | 5 | Índice, rotas e links de volta | ⬜ |
