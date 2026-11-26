@@ -1,9 +1,13 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventTransportUnavailableError } from '../../application/ports/event-publisher.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
 import { OutboxRelay } from './outbox-relay.js';
 
 const POLL_INTERVAL_MS = 1_000;
+// pausa com o transporte fora: 1 s, 2 s, 4 s... até 30 s; com o Redis de volta, a entrega recomeça em até 30 s
+const PAUSE_BASE_MS = 1_000;
+const PAUSE_MAX_MS = 30_000;
 const CLEANUP_INTERVAL_MS = 60 * 60_000;
 
 /** Laço em segundo plano: entrega lotes da outbox e, de tempos em tempos, limpa os antigos. */
@@ -36,11 +40,27 @@ export class OutboxWorker implements OnApplicationBootstrap, OnModuleDestroy {
   }
 
   private async run() {
+    // espera da próxima rodada em pausa; 0 fora da pausa
+    let pauseMs = 0;
     while (this.running) {
       let handled = 0;
       try {
         handled = await this.relay.runOnce();
+        if (pauseMs > 0) {
+          this.logger.log('outbox relay resumed');
+          pauseMs = 0;
+        }
       } catch (error) {
+        if (error instanceof EventTransportUnavailableError) {
+          // só a entrada na pausa loga: as rodadas seguintes falham pelo mesmo motivo
+          if (pauseMs === 0) {
+            const cause = error.cause instanceof Error ? error.cause.message : String(error.cause);
+            this.logger.warn({ error: cause }, 'outbox relay paused: event transport unavailable');
+          }
+          pauseMs = pauseMs === 0 ? PAUSE_BASE_MS : Math.min(pauseMs * 2, PAUSE_MAX_MS);
+          await this.sleep(pauseMs);
+          continue;
+        }
         this.logger.error('Outbox batch failed', error instanceof Error ? error.stack : error);
       }
       // lote cheio: ainda deve haver pendentes, volta logo

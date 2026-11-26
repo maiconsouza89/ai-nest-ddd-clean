@@ -1,13 +1,19 @@
 import { DataSource, EntityManager } from 'typeorm';
 import { EventMetadata, IntegrationEvent } from '../../application/integration-event.js';
 import { Clock } from '../../application/ports/clock.js';
-import { EventPublisher } from '../../application/ports/event-publisher.js';
+import {
+  EventPublisher,
+  EventTransportUnavailableError,
+} from '../../application/ports/event-publisher.js';
 import { Logger } from '../../application/ports/logger.js';
 import { runInEventTrace } from '../observability/trace-context.js';
 
 export type OutboxOptions = {
   batchSize: number;
-  /** Depois de tantas falhas, o evento vai para a fila de mortos (`deadAt`). */
+  /**
+   * Depois de tantas falhas, o evento vai para a fila de mortos (`deadAt`). A falha de transporte
+   * (`EventTransportUnavailableError`) não conta.
+   */
   maxAttempts: number;
   baseDelayMs: number;
   maxDelayMs: number;
@@ -67,11 +73,15 @@ export class OutboxRelay {
     readonly options: OutboxOptions = DEFAULT_OUTBOX_OPTIONS,
   ) {}
 
-  /** Entrega um lote. Devolve quantos eventos foram tentados. */
+  /**
+   * Entrega um lote. Devolve quantos eventos foram tentados. Com o transporte fora do ar, para o lote na
+   * linha que falhou, sem contar a falha dela, e rejeita com `EventTransportUnavailableError`.
+   */
   async runOnce(): Promise<number> {
     const now = this.clock.now();
+    let unavailable: EventTransportUnavailableError | undefined;
     // as linhas ficam travadas até o commit; esta transação não é propagada aos handlers
-    return this.dataSource.transaction(async (em) => {
+    const tried = await this.dataSource.transaction(async (em) => {
       const rows = await em.query<PendingRow[]>(CLAIM_SQL, [now, this.options.batchSize]);
       for (const row of rows) {
         try {
@@ -93,11 +103,19 @@ export class OutboxRelay {
             now,
           ]);
         } catch (error) {
+          // transporte fora: as próximas linhas falhariam igual; a linha fica como estava
+          if (error instanceof EventTransportUnavailableError) {
+            unavailable = error;
+            break;
+          }
           await this.recordFailure(em, row, error, now);
         }
       }
       return rows.length;
     });
+    // só depois do commit: as linhas publicadas antes da falha ficam marcadas, e não voltam no próximo lote
+    if (unavailable) throw unavailable;
+    return tried;
   }
 
   /**
