@@ -8,7 +8,7 @@ Use este guia quando uma regra do domínio precisa recusar uma operação com um
 
 ## Pré-requisitos
 
-- O módulo tem o mapa de status em `infra/http/error-statuses.ts`, registrado nos `providers` do módulo Nest com `provideErrorStatuses(...)`. O `plop module` gera os dois ([Como criar um módulo](criar-um-modulo.md)).
+- O módulo tem o mapa de status em `infra/http/error-statuses.ts`, registrado nos `providers` do módulo Nest com `provideErrorStatuses(...)`. O `plop module` gera os dois ([Como criar um módulo](criar-um-modulo.md)). Se o módulo não tem o mapa, crie os dois no molde do `IDENTITY_ERROR_STATUSES` e do `identity.module.ts`.
 - Um `code` para o erro, em `UPPER_SNAKE`, que nenhum outro módulo usa com outro status. Os que já existem estão na seção "Códigos de erro" de cada página de [Módulos](../README.md#módulos).
 
 ## Passos
@@ -35,6 +35,8 @@ Use este guia quando uma regra do domínio precisa recusar uma operação com um
      ```ts
      if (await this.users.findByEmail(email)) throw new EmailAlreadyInUseError();
      ```
+
+     Se a regra é de unicidade, a checagem não basta: duas requisições simultâneas passam juntas por ela. Crie também a constraint `UNIQUE` na tabela e faça o repositório traduzir a violação (código `23505` do Postgres) no mesmo erro, como o `TypeOrmUserRepository`. Sem a tradução, a corrida responde 500.
 
    Não use `HttpException` no domínio nem na application: o status entra no passo seguinte.
 

@@ -86,10 +86,11 @@ Use este guia quando um módulo precisa chamar um fornecedor fora da aplicação
      ```
 
      Cumpra estas regras:
+     - **Retry só em falha transitória:** o modelo repete tudo (`shouldRetry: () => true`) porque o fornecedor simulado só falha por indisponibilidade. Com um fornecedor real, repita só o timeout, a falha de rede, o 5xx e o 429. Uma recusa definitiva, como um cartão recusado, não se repete e vira um erro 4xx próprio do módulo, e não o de indisponível.
      - **Retry só no que é idempotente:** se a operação não é idempotente, use `attempts: 1`, ou só o `withTimeout`, e mantenha a tradução do erro ([Serviços externos](../explanation/servicos-externos.md#retry-só-no-que-é-idempotente)).
      - **Erro do módulo com status 5xx:** crie o erro (`PaymentUnavailableError`, 503 no mapa do orders) seguindo [Como lançar um erro de domínio](lancar-um-erro-de-dominio.md).
      - **A causa vai para o log:** registre-a pelo port `Logger` antes de lançar o erro do módulo. O filtro de erros não loga um `DomainError` 5xx ([Respostas de erro](../reference/respostas-de-erro.md#log)).
-     - **Pior caso curto:** some os prazos e as esperas de todas as tentativas. A requisição fica presa por esse tempo.
+     - **Pior caso curto:** some os prazos e as esperas de todas as tentativas. A requisição fica presa por esse tempo e, se a chamada roda dentro de uma transação, como o pagamento, a conexão do pool e o lock da linha também. O prazo de cada tentativa é o menor entre o do decorator e o `withTimeout` do adapter: some esse.
 
 4. Se o endereço ou a credencial do fornecedor muda por ambiente, crie as variáveis ([Como adicionar uma variável de ambiente](adicionar-uma-variavel-de-ambiente.md)). Os prazos e as tentativas ficam em constantes, no adapter ou no módulo Nest.
 

@@ -52,7 +52,7 @@ Use este guia quando uma rota nova precisa de login, de uma role ou de ser restr
    }
    ```
 
-   Com mais de uma role, basta o ator ter uma delas. No controller, e não num método, o decorator vale para todas as rotas dele.
+   Com mais de uma role, basta o ator ter uma delas. No controller, e não num método, o decorator vale para todas as rotas dele. Um `@Roles` no método substitui o do controller, e não soma a ele. Não ponha um `@Public()` num controller com `@Roles`: a rota pública não carrega o ator e responde 403 para todos.
 
 4. Para restringir ao dono do recurso, ponha a regra no caso de uso, e não num guard ([Autenticação e ownership](../explanation/autenticacao.md#ownership-no-caso-de-uso)):
    1. Crie o erro de dono, com status 403 no mapa do módulo, como o `NotOrderOwnerError` (`NOT_ORDER_OWNER`), seguindo [Como lançar um erro de domínio](lancar-um-erro-de-dominio.md).
@@ -96,15 +96,15 @@ Use este guia quando uma rota nova precisa de login, de uma role ou de ser restr
 
    Cubra os três casos:
    - **401 sem token:** a chamada sem o cabeçalho `Authorization` responde 401, com o `code` `UNAUTHORIZED`.
-   - **403 de role:** um usuário do `registerAndLogin` nasce sem roles e recebe 403, com o `code` `FORBIDDEN`. Depois de `setRoles(app, user.id, ['admin'])`, o mesmo token passa. O modelo é o bloco "guard global" do `auth.e2e-spec.ts`:
+   - **403 de role:** um usuário do `registerAndLogin` nasce sem roles e recebe 403, com o `code` `FORBIDDEN`. Depois de `setRoles(app, user.id, ['admin'])`, o mesmo token passa. O modelo é o bloco "guard global" do `auth.e2e-spec.ts`, que usa uma rota só de teste; troque-a pela sua:
 
      ```ts
      const user = await registerAndLogin(app);
-     const adminOnly = () => request(server()).post('/v1/guard-probe/admin').set(user.auth);
+     const adminOnly = () => request(server()).post('/v1/<rota de admin>').set(user.auth);
 
      await adminOnly().expect(403);
      await setRoles(app, user.id, ['admin']);
-     await adminOnly().expect(204);
+     await adminOnly().expect(200); // o status de sucesso da rota
      ```
 
    - **403 de dono:** dois usuários, o recurso criado por um e pedido pelo outro, com o `code` do erro de dono. O modelo é o `orders.e2e-spec.ts`:
