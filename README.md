@@ -55,7 +55,7 @@ Detalhes em [Comandos → Requisitos](docs/reference/comandos.md#requisitos).
 
 Na raiz do repositório:
 
-1. Instale as dependências: `npm install`. O aviso sobre scripts de instalação não aprovados pode ser ignorado ([Setup do zero](docs/reference/comandos.md#setup-do-zero)).
+1. Instale as dependências: `npm install`. O aviso sobre scripts de instalação não aprovados pode ser ignorado ([Como preparar o ambiente local](docs/how-to/preparar-o-ambiente-local.md)).
 2. Crie o `.env` a partir do exemplo: `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](docs/reference/variaveis-de-ambiente.md).
 3. Suba o Postgres, o Redis e o Mailpit: `docker compose up -d postgres redis mailpit`. Os e-mails da app, como o código de verificação, aparecem em <http://localhost:8025>.
 4. Rode as migrations e os seeds de cada módulo:
@@ -70,7 +70,7 @@ Na raiz do repositório:
 5. Suba a API: `npm run start:dev`.
 6. Confira: `http://localhost:3000/health/live` responde, e o Swagger abre em `http://localhost:3000/docs`. Os usuários de teste estão em [Seeds](docs/reference/comandos.md#seeds).
 
-O passo a passo completo, com os endereços da app, está em [Comandos → Setup do zero](docs/reference/comandos.md#setup-do-zero).
+O passo a passo completo está em [Como preparar o ambiente local](docs/how-to/preparar-o-ambiente-local.md), e os endereços da app, em [Comandos → Endereços](docs/reference/comandos.md#endereços).
 
 ## Deploy
 
@@ -86,9 +86,9 @@ O fluxo, o formato dos commits, a versão e o que conferir antes do PR estão em
 | --- | --- |
 | [docs/](docs/README.md) | Índice da documentação, organizada no modelo Diátaxis, e como escrever uma página |
 | [docs/tutorials/](docs/README.md#tutoriais) | Do clone ao primeiro pedido pago pela API |
-| [docs/how-to/](docs/README.md#how-to) | Passos para tarefas concretas, como criar um módulo, remover os módulos de exemplo, gerar uma migration, publicar um evento de integração, paginar uma listagem, cachear uma leitura, agendar um job, rodar um teste específico, resetar o ambiente local e fazer o deploy |
-| [docs/explanation/](docs/README.md#explicação) | O porquê do desenho: monólito modular, camadas, persistência, comunicação entre módulos, agregados, consistência e eventos, modelagem do domínio, Redis e cache, serviços externos, shared kernel, autenticação e observabilidade |
-| [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, testes, operação, autenticação, glossário e uma página por módulo |
+| [docs/how-to/](docs/README.md#how-to) | Passos para tarefas concretas, como preparar o ambiente local, criar um módulo, remover os módulos de exemplo, gerar uma migration, publicar e consumir um evento de integração, paginar uma listagem, cachear uma leitura, agendar um job, atualizar uma dependência, rodar um teste específico, resetar o ambiente local e fazer o deploy |
+| [docs/explanation/](docs/README.md#explicação) | O porquê do desenho: monólito modular, camadas, persistência, comunicação entre módulos, agregados, transações e concorrência, entrega de eventos, modelagem do domínio, Redis e cache, serviços externos, shared kernel, autenticação, observabilidade e estratégia de testes |
+| [docs/reference/](docs/README.md#referência) | Comandos, variáveis de ambiente, versões, convenções, testes, operação, outbox e filas, observabilidade, autenticação, glossário e uma página por módulo |
 | [docs/adr/](docs/README.md#decisões-adr) | As decisões de arquitetura e o porquê de cada uma |
 | [AGENTS.md](AGENTS.md) | Instruções para agentes de código: armadilhas e rotas para `docs/` |
 | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) | Como contribuir: fluxo, commits, versão e verificação |

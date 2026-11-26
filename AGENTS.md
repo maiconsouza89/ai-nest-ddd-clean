@@ -27,7 +27,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Injeção de dependência:** uma classe injetada pelo construtor entra com import de valor (`import { X }`). Com `import type`, ela some da decorator metadata e o Nest quebra em tempo de execução, sem aviso do `tsc`. Por isso a regra `consistent-type-imports` fica desligada.
 - **oxc nos testes:** "can't resolve dependencies" num construtor costuma ser um parâmetro tipado com type alias ou utility type. O oxc emite `Object` para eles. Tipe o parâmetro com a classe.
 - **Condição `@app/source`:** um script que roda o TypeScript direto (migrations, seeds) precisa de `--conditions=@app/source`. Sem ela, os aliases `#...` carregam o `dist/`, talvez velho, sem erro. O `plop module` já gera os scripts com ela.
-- **OpenAPI:** mudou controller, DTO ou decorator do Swagger, rode `npm run openapi:generate` e commite o `openapi.json`. Nunca o edite à mão.
+- **OpenAPI:** mudou controller, DTO ou decorator do Swagger, rode `npm run openapi:generate` e commite o `openapi.json`. Nunca o edite à mão (`docs/how-to/atualizar-o-contrato-openapi.md`).
 - **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
 - **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
 - **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.
@@ -68,11 +68,11 @@ Leia a página antes de agir no assunto.
 
 | Vai fazer | Leia |
 | --- | --- |
-| Rodar, testar, migrar, semear, gerar módulo ou página, subir ou baixar o ambiente | `docs/reference/comandos.md` |
+| Rodar, testar, migrar, semear, gerar módulo ou página, subir ou baixar o ambiente | `docs/reference/comandos.md` e, para montar o ambiente do zero, `docs/how-to/preparar-o-ambiente-local.md` |
 | Criar ou limpar um worktree, ou rodar dois ambientes em paralelo | `docs/how-to/trabalhar-com-worktrees-em-paralelo.md` |
 | Ler ou acrescentar variável de ambiente | `docs/reference/variaveis-de-ambiente.md` e `docs/how-to/adicionar-uma-variavel-de-ambiente.md` |
-| Adicionar ou atualizar dependência | `docs/reference/versoes-e-excecoes.md` |
-| Mexer num workflow ou action do CI, no Dependabot, no CodeQL ou no dependency review | `docs/reference/comandos.md#ci` e `docs/adr/0012-cadeia-de-suprimentos-do-ci.md` |
+| Adicionar ou atualizar dependência | `docs/how-to/atualizar-uma-dependencia.md` e `docs/reference/versoes-e-excecoes.md` |
+| Mexer num workflow ou action do CI, no Dependabot, no CodeQL ou no dependency review | `docs/reference/comandos.md#ci`, `docs/how-to/mudar-uma-action-do-ci.md` e `docs/adr/0012-cadeia-de-suprimentos-do-ci.md` |
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
 | Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md` e `docs/explanation/autenticacao.md` |
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
@@ -88,11 +88,12 @@ Leia a página antes de agir no assunto.
 | Criar ou mudar um seed | `docs/how-to/criar-um-seed.md` |
 | Mexer na conexão com o Redis, no cache ou no rate limit, ou entender o que acontece com o Redis fora do ar | `docs/explanation/redis.md` |
 | Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` |
-| Mexer em transação, concorrência, outbox, filas, consumidor idempotente ou `Idempotency-Key` | `docs/explanation/consistencia-e-eventos.md` |
+| Mexer em transação, concorrência ou `Idempotency-Key` | `docs/explanation/transacoes-e-concorrencia.md` |
+| Mexer na outbox, nas filas ou no consumidor idempotente | `docs/explanation/entrega-de-eventos.md` e `docs/reference/outbox-e-filas.md` |
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
 | Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md` e `docs/explanation/modelagem-do-dominio.md` |
-| Escrever ou mudar um teste | `docs/reference/testes.md` |
-| Mexer no tracing, nas métricas, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` |
+| Escrever ou mudar um teste | `docs/reference/testes.md` e, para o porquê da cobertura e do isolamento, `docs/explanation/estrategia-de-testes.md` |
+| Mexer no tracing, nas métricas, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` e `docs/reference/observabilidade.md` |
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |
 | Entender um termo do domínio ou um termo comum aos módulos | `docs/reference/glossario.md` |
 | Criar um módulo novo | `docs/how-to/criar-um-modulo.md` |
@@ -100,4 +101,5 @@ Leia a página antes de agir no assunto.
 | Escrever ou mover documentação | `docs/README.md` |
 | Escrever commit, título ou descrição de PR | `.github/CONTRIBUTING.md` |
 | Continuar um plano em andamento | `docs/plan/` |
-| Mexer no `Dockerfile`, no `.dockerignore`, no profile `prod` do compose ou nos scripts `:run:prod` | `docs/how-to/fazer-o-deploy.md` |
+| Mexer no `Dockerfile`, no `.dockerignore`, no profile `prod` do compose ou nos scripts `:run:prod` | `docs/how-to/fazer-o-deploy.md` e `docs/how-to/testar-a-imagem-de-producao-localmente.md` |
+| Usar um Postgres gerenciado ou o PgBouncer | `docs/how-to/usar-um-postgres-gerenciado.md` |
