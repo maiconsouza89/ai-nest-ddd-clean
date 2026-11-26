@@ -74,7 +74,7 @@ Leia a página antes de agir no assunto.
 | Adicionar ou atualizar dependência | `docs/how-to/atualizar-uma-dependencia.md` e `docs/reference/versoes-e-excecoes.md` |
 | Mexer num workflow ou action do CI, no Dependabot, no CodeQL ou no dependency review | `docs/reference/comandos.md#ci`, `docs/how-to/mudar-uma-action-do-ci.md` e `docs/adr/0012-cadeia-de-suprimentos-do-ci.md` |
 | Escrever imports, mover arquivos entre módulos ou escrever uma ORM entity | `docs/reference/convencoes.md` |
-| Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md` e `docs/explanation/autenticacao.md` |
+| Mexer em login, tokens, guards, roles ou regra de dono | `docs/reference/autenticacao.md`, `docs/explanation/autenticacao.md` e, para proteger uma rota nova, `docs/how-to/proteger-uma-rota.md` |
 | Mudar um módulo existente: contrato, eventos, invariantes, schema | `docs/reference/modules/<módulo>.md` |
 | Criar entidade, caso de uso, repositório ou outra classe, ou decidir em qual camada e pasta ela fica | `docs/reference/camadas.md` |
 | Entender por que o projeto é um monólito modular em camadas | `docs/explanation/arquitetura.md` |
@@ -87,11 +87,11 @@ Leia a página antes de agir no assunto.
 | Criar ou mudar um job agendado | `docs/how-to/agendar-um-job.md` |
 | Criar ou mudar um seed | `docs/how-to/criar-um-seed.md` |
 | Mexer na conexão com o Redis, no cache ou no rate limit, ou entender o que acontece com o Redis fora do ar | `docs/explanation/redis.md` |
-| Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` |
+| Integrar um fornecedor externo, ou mexer em timeout ou retry de uma chamada externa | `docs/explanation/servicos-externos.md` e `docs/how-to/integrar-um-servico-externo.md` |
 | Mexer em transação, concorrência ou `Idempotency-Key` | `docs/explanation/transacoes-e-concorrencia.md` |
 | Mexer na outbox, nas filas ou no consumidor idempotente | `docs/explanation/entrega-de-eventos.md` e `docs/reference/outbox-e-filas.md` |
 | Modelar valor, dinheiro, erro de domínio, validação, domain service ou exclusão | `docs/explanation/modelagem-do-dominio.md` e `docs/reference/camadas.md` |
-| Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md` e `docs/explanation/modelagem-do-dominio.md` |
+| Lançar ou mudar um erro, ou mudar a resposta de erro da API | `docs/reference/respostas-de-erro.md`, `docs/explanation/modelagem-do-dominio.md` e, para um erro novo, `docs/how-to/lancar-um-erro-de-dominio.md` |
 | Escrever ou mudar um teste | `docs/reference/testes.md` e, para o porquê da cobertura e do isolamento, `docs/explanation/estrategia-de-testes.md` |
 | Mexer no tracing, nas métricas, no `main.ts` ou no `tracing.ts` | `docs/explanation/observabilidade.md` e `docs/reference/observabilidade.md` |
 | Mexer no `app.setup.ts`, no Swagger, no health, no rate limit, nos logs de acesso ou no desligamento | `docs/reference/operacao.md` |

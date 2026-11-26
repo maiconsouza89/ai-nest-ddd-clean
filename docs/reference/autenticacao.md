@@ -4,7 +4,7 @@ type: reference
 
 # Autenticação
 
-As rotas de autenticação, o código de verificação, o access token, o refresh token, as rotas protegidas e os usuários de teste. O porquê do desenho está em [Autenticação e ownership](../explanation/autenticacao.md).
+As rotas de autenticação, o código de verificação, o access token, o refresh token, as rotas protegidas e os usuários de teste. O porquê do desenho está em [Autenticação e ownership](../explanation/autenticacao.md). Os passos estão em [Como proteger uma rota](../how-to/proteger-uma-rota.md).
 
 ## Rotas
 

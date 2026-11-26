@@ -4,7 +4,7 @@ type: explanation
 
 # Serviços externos
 
-Por que cada serviço de fora do processo entra por um port, por que o adapter traduz os erros do fornecedor, e por que a resiliência da chamada fica num decorator com timeout e retry. Os ports e adapters de cada módulo estão em [Camadas](../reference/camadas.md#application).
+Por que cada serviço de fora do processo entra por um port, por que o adapter traduz os erros do fornecedor, e por que a resiliência da chamada fica num decorator com timeout e retry. Os ports e adapters de cada módulo estão em [Camadas](../reference/camadas.md#application). Os passos estão em [Como integrar um serviço externo](../how-to/integrar-um-servico-externo.md).
 
 ## Contexto
 

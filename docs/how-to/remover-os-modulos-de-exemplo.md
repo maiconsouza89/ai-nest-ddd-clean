@@ -8,7 +8,7 @@ Use este guia para tirar do projeto os módulos de exemplo (orders, catalog e in
 
 ## Pré-requisitos
 
-- Se for usar a paginação, o cache ou a `Idempotency-Key`, copie antes o código do orders que os usa: os how-tos de [paginação](paginar-uma-listagem.md) e de [cache](cachear-uma-leitura.md) seguem esse código, e a `Idempotency-Key` (port, store e tabela) sai junto com o orders. Depois de apagar, o código só volta pelo histórico do git.
+- Se for usar a paginação, o cache ou a `Idempotency-Key`, copie antes o código do orders que os usa: os how-tos de [paginação](paginar-uma-listagem.md) e de [cache](cachear-uma-leitura.md) seguem esse código, e a `Idempotency-Key` (port, store e tabela) sai junto com o orders. O mesmo vale para os modelos dos how-tos de [serviço externo](integrar-um-servico-externo.md) (o `ResilientPaymentGateway` e o teste dele) e de [rota protegida](proteger-uma-rota.md) (o `order-access.ts`, o `@Roles` do catalog e o `orders.e2e-spec.ts`). Depois de apagar, o código só volta pelo histórico do git.
 - Nenhum `start:dev` nem e2e rodando.
 - Terminal na raiz do repositório.
 - Postgres, Redis e Mailpit no ar, para os testes do fim: `docker compose up -d --wait postgres redis mailpit`.
