@@ -85,7 +85,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | 1 | Worktree, branch e roadmap | ✅ |
 | 2 | Envelope da paginação, guarda do gerador e health | ✅ |
 | 3 | Respostas dos módulos e template do plop | ✅ |
-| 4 | Testes e prova local com o `oasdiff` | ⬜ |
+| 4 | Testes e prova local com o `oasdiff` | ✅ |
 | 5 | Documentação | ⬜ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
 
@@ -124,6 +124,8 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 3. Prova local com o binário do `oasdiff` na versão do `ci.yml` e `--config .github/oasdiff/config.yaml`, como no registro da #23:
    - `oasdiff breaking main:openapi.json HEAD:openapi.json`: nenhuma quebra. As mudanças esperadas são schema onde não havia, `{ "type": "object" }` trocado por um schema com propriedades e o `ProductOrmEntity` trocado pelo `ProductResponse`. Se acusar alguma, entenda antes de qualquer linha no `err-ignore.txt`, e registre aqui;
    - num commit temporário que tira o `refreshToken` do `SessionResponse` e gera o documento de novo (o `tsc` passa: o resultado continua atribuível à classe): `response-required-property-removed` e saída 1. Desfaça o commit.
+
+   **Feito, com duas mudanças.** O `main` → branch deu dois `response-body-type-changed` (`WARN`) nas listagens, porque o `allOf` não declarava `type: object` no topo; o `ApiPageResponse` passou a declarar, e a comparação ficou sem nenhuma mudança acusada. Na prova, tirar o `refreshToken` do `SessionResponse` deu `ERR`, mas tirar o `itemCount` do `OrderListItemResponse` ou o `total` do `PageResponse` deu só `WARN`, e o job não falharia: o `oasdiff` compara os ramos do `allOf` um a um. Com `flatten-allof: true` no `.github/oasdiff/config.yaml`, as cinco remoções viram `ERR` (saída 1), e o `main` → branch continua sem quebra. O `ci.yml` não muda: a opção vem do config, que o job já lê.
 4. Commit: `test(docs): toda resposta 200 e 201 do OpenAPI tem schema (#56)`.
 
 ### Passo 5: documentação

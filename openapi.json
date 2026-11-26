@@ -517,6 +517,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "object",
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/PageResponse"
@@ -864,6 +865,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "object",
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/PageResponse"

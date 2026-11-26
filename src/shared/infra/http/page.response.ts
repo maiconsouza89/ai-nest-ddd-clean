@@ -22,6 +22,7 @@ export function ApiPageResponse(model: Type) {
     ApiExtraModels(PageResponse, model),
     ApiOkResponse({
       schema: {
+        type: 'object',
         allOf: [
           { $ref: getSchemaPath(PageResponse) },
           {

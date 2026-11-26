@@ -69,6 +69,30 @@ describe('Docs (e2e)', () => {
     expect(missing).toEqual([]);
   });
 
+  // sem o plugin da CLI (o oxc não o roda), os schemas não têm propriedades, mas o decorator de
+  // sucesso explícito registra o $ref. O schema completo é conferido no gerador do openapi.json.
+  it('toda operação documenta a resposta de sucesso, e o 200 e o 201 com schema', () => {
+    type Success = { content?: Record<string, { schema?: object }> };
+    const missing = Object.entries(document.paths).flatMap(([path, item]) =>
+      methods
+        .filter((m) => item[m])
+        .flatMap((m) => {
+          const { responses } = item[m]!;
+          const label = `${m.toUpperCase()} ${path}`;
+          if (!Object.keys(responses).some((status) => status.startsWith('2'))) {
+            return [`${label} 2xx`];
+          }
+          return ['200', '201']
+            .filter((status) => status in responses)
+            .filter(
+              (status) => !(responses[status] as Success).content?.['application/json']?.schema,
+            )
+            .map((status) => `${label} ${status}`);
+        }),
+    );
+    expect(missing).toEqual([]);
+  });
+
   it('o login documenta o 401 em application/problem+json', () => {
     const responses = document.paths['/v1/auth/login']?.post?.responses as Responses;
     expect(problemSchemaOf(responses, '401')).toBe(problemRef);
