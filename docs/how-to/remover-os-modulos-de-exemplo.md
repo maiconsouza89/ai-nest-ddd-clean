@@ -83,7 +83,9 @@ O `Idempotency-Key` sai junto: o port, o store e a tabela ficam no orders. O `sh
 
 12. No `README.md`, apague a seção "Módulos de exemplo" e as menções ao orders, ao catalog e ao inventory.
 
-13. Se o seu banco local já rodou as migrations dos exemplos, os schemas `orders`, `catalog` e `inventory` continuam lá. Para apagá-los, siga [Como resetar o ambiente local](resetar-o-ambiente-local.md). Num clone novo, não há nada a fazer.
+13. Rode `npm run openapi:generate` e commite o `openapi.json`, que perde as rotas `/v1/orders` e `/v1/products`. No PR, o job `openapi` do CI acusa cada rota removida como quebra do contrato: siga a quebra intencional de [Comandos → CI](../reference/comandos.md#ci), com uma linha por operação removida no `.github/oasdiff/err-ignore.txt`.
+
+14. Se o seu banco local já rodou as migrations dos exemplos, os schemas `orders`, `catalog` e `inventory` continuam lá. Para apagá-los, siga [Como resetar o ambiente local](resetar-o-ambiente-local.md). Num clone novo, não há nada a fazer.
 
 ## Páginas que continuam citando os exemplos
 
@@ -121,7 +123,7 @@ Ficam como leitura, sem mudança: `explanation/comunicacao-entre-modulos.md` (fa
 
 ## Como verificar
 
-- `npm run typecheck`, `npm run lint`, `npm run arch` e `npm test` passam.
+- `npm run typecheck`, `npm run lint`, `npm run arch`, `npm run openapi:check` e `npm test` passam.
 - `npm run test:int` e `npm run test:e2e` passam.
 - `grep -rnE "#modules/(orders|catalog|inventory)" src test` não encontra nada.
 - `npm run docs:check` falha só nas páginas da tabela acima marcadas com "sim", até elas serem ajustadas.

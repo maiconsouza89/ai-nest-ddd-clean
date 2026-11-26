@@ -1,0 +1,8 @@
+# Quebras do contrato HTTP aceitas de propósito. Formato e exemplo: docs/reference/comandos.md#ci
+# - Uma linha por quebra: o método e o caminho mais a mensagem, como o oasdiff os escreve, e o número
+#   do PR na mesma linha. Não é regex: maiúsculas não importam e o texto a mais é permitido, mas o
+#   caminho e a mensagem precisam aparecer inteiros. Uma quebra acusada em N rotas pede N linhas.
+# - O oasdiff lê também estes comentários: nunca escreva aqui um método seguido de caminho.
+# - O PR que acrescenta a linha tem `!` no título e o parágrafo BREAKING CHANGE (.github/CONTRIBUTING.md).
+# - Quem acrescenta uma linha apaga as de PRs já mergeados: elas não casam com mais nada e poderiam
+#   esconder uma quebra igual no futuro.

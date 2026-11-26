@@ -19,7 +19,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - `npm test` roda os unitários, sem banco. Um arquivo: `npm test -- money.vo` (padrão de caminho). O mesmo vale para `npm run test:int -- register-user` e `npm run test:e2e -- auth`.
 - `npm run test:int` sobe Postgres e Redis descartáveis pelo Testcontainers, isolados do docker-compose. Só precisa do Docker.
 - `npm run test:e2e` sobe a app inteira contra o Postgres, o Redis e o Mailpit do docker-compose, no banco do checkout (ver a armadilha do E2E abaixo).
-- `npm run ci` roda typecheck, lint, format:check, docs:check, arch e os unitários com a meta de cobertura (`test:coverage`). Integração e e2e ficam fora: rode-os quando a mudança tocar banco, Redis, filas ou HTTP.
+- `npm run ci` roda typecheck, lint, format:check, docs:check, arch, openapi:check e os unitários com a meta de cobertura (`test:coverage`). Integração e e2e ficam fora: rode-os quando a mudança tocar banco, Redis, filas ou HTTP.
 
 ## Armadilhas
 
@@ -27,6 +27,7 @@ API em NestJS: monólito modular com DDD e Clean Architecture, em ESM, com TypeO
 - **Injeção de dependência:** uma classe injetada pelo construtor entra com import de valor (`import { X }`). Com `import type`, ela some da decorator metadata e o Nest quebra em tempo de execução, sem aviso do `tsc`. Por isso a regra `consistent-type-imports` fica desligada.
 - **oxc nos testes:** "can't resolve dependencies" num construtor costuma ser um parâmetro tipado com type alias ou utility type. O oxc emite `Object` para eles. Tipe o parâmetro com a classe.
 - **Condição `@app/source`:** um script que roda o TypeScript direto (migrations, seeds) precisa de `--conditions=@app/source`. Sem ela, os aliases `#...` carregam o `dist/`, talvez velho, sem erro. O `plop module` já gera os scripts com ela.
+- **OpenAPI:** mudou controller, DTO ou decorator do Swagger, rode `npm run openapi:generate` e commite o `openapi.json`. Nunca o edite à mão.
 - **Migrations:** não rodam ao subir a app. Rode `npm run db:setup` (todos os módulos) ou `npm run mig:<módulo>:run`.
 - **Worktree novo:** rode `npm run worktree:setup` antes de qualquer outro comando. Sem ele, o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` param.
 - **E2E:** grava no banco do checkout. Encerre o `start:dev` deste checkout antes: outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. Worktrees com `worktree:setup` não interferem entre si.

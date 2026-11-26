@@ -1,0 +1,6 @@
+# Config do oasdiff breaking, no job openapi do ci.yml e no comando local: docs/reference/comandos.md#ci
+# Os caminhos abaixo são relativos a esta pasta. O severity-levels.txt não aceita comentário: o motivo
+# de cada linha dele fica na página.
+fail-on: ERR
+severity-levels: severity-levels.txt
+err-ignore: err-ignore.txt

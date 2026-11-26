@@ -26,7 +26,9 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | --- | --- |
 | Interface | `/docs`. O documento em `/docs-json` e `/docs-yaml` |
 | Quando existe | Fora de `NODE_ENV=production` (`src/bootstrap.ts`) |
-| Montagem | `setupSwagger` (`src/shared/infra/http/swagger.setup.ts`), com `addBearerAuth()` |
+| Montagem | `createSwaggerDocument` (`src/shared/infra/http/swagger.setup.ts`) monta o documento, com `addBearerAuth()`. O `setupSwagger` o chama e serve o `/docs`. O `/docs-json` e o `openapi.json` saem da mesma configuração |
+| Documento guardado | `openapi.json` na raiz, gerado pelo `src/openapi.ts` a partir do `dist/` (`npm run openapi:generate`). Sobe o `AppModule` no modo preview do Nest, que monta o grafo de módulos sem chamar construtor nem hook de provider: nada conecta no Postgres nem no Redis. As variáveis obrigatórias que faltam vêm do `.env.example`. As chaves de `paths` e de `components.schemas` saem em ordem alfabética. O `npm run openapi:check` confere que o arquivo está atualizado, e o CI compara o do PR com o da base ([Comandos → CI](comandos.md#ci)) |
+| Fora do documento | O corpo das respostas de sucesso: os controllers devolvem o resultado do caso de uso sem tipo de resposta, e o documento traz `{ "type": "object" }`, um schema sem propriedades ou nenhuma resposta de sucesso. O que ele descreve: rotas, parâmetros, corpos de requisição, status e o `ProblemDetailsResponse` de toda resposta de erro |
 | Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
 | Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
 | Respostas de erro | Schema `ProblemDetailsResponse`, em `application/problem+json`. Cada rota documenta os próprios erros com `@ApiProblemResponse(status, descrição)`, e o `setupSwagger` acrescenta o 429 e o 500 em toda operação |
@@ -40,7 +42,7 @@ O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs e as resposta
 | `classValidatorShim` | `true` | Os decorators do `class-validator` viram regras no schema (`minLength`, `maximum`) |
 | `introspectComments` | `true` | O comentário `/** */` da rota vira o resumo, e o da propriedade, a descrição |
 
-O plugin roda no `nest build` e no `nest start`. Os testes do Vitest compilam com o oxc, sem o plugin, então o documento dos testes não tem os schemas gerados.
+O plugin roda no `nest build` e no `nest start`. O `openapi.json` sai do build e por isso tem os schemas. Os testes do Vitest compilam com o oxc, sem o plugin, então o documento dos testes não tem os schemas gerados.
 
 ## Health
 

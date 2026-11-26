@@ -141,14 +141,54 @@ jobs:
       - run: npm run db:setup
       - run: npm run test:e2e -- ${{ env.VITEST_ARGS }}
 
+  # Quebra do contrato HTTP: compara o openapi.json do PR com o da base (docs/reference/comandos.md#ci).
+  # O HEAD^1 é a ponta da base, como no VITEST_ARGS, e os dois arquivos são os guardados: o check
+  # garante, pelo openapi:check, que o do PR está atualizado. Na main não há base para comparar.
+  # O binário do release, e não a oasdiff/oasdiff-action: ela monta a imagem de uma tag Docker mutável,
+  # que o actions.lock não cobre, e manda os documentos para o oasdiff.com por padrão. O Dependabot não
+  # atualiza o binário: a versão e o SHA-256 ficam no env abaixo, e se conferem à mão
+  # (docs/reference/versoes-e-excecoes.md#atualização-automática).
+  openapi:
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    env:
+      OASDIFF_VERSION: 1.41.0
+      # SHA-256 do oasdiff_<versão>_linux_amd64.tar.gz, igual ao do checksums.txt do release
+      OASDIFF_SHA256: 96365453163118e6503eb71742643d9ee67f91aedbaadd1a1ce9c6213e3b71c7
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - id: base
+        run: |
+          if git cat-file -e HEAD^1:openapi.json 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::A base não tem o openapi.json: nada para comparar."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.base.outputs.exists == 'true'
+        run: |
+          tarball="oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$tarball" \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/$tarball"
+          echo "$OASDIFF_SHA256  $RUNNER_TEMP/$tarball" | sha256sum -c
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" oasdiff
+      - if: steps.base.outputs.exists == 'true'
+        run: >-
+          "$RUNNER_TEMP/oasdiff" breaking HEAD^1:openapi.json HEAD:openapi.json
+          --config .github/oasdiff/config.yaml -f githubactions
+
   # Um dos três checks obrigatórios do PR, com o dependency-review e o verify-lockfile; a regra
   # code_scanning do ruleset também espera o CodeQL. Tem nome fixo, e um job pulado (PR só de docs)
   # conta como aprovado: a matriz do unit pulada não expande, e o nome dela não serve como check
-  # obrigatório. O ruleset de scripts/setup-github.mjs exige este nome: ao renomear o job, mude lá e
-  # rode npm run github:setup.
+  # obrigatório. Cobre também o openapi, que só roda em PR. O ruleset de scripts/setup-github.mjs exige
+  # este nome: ao renomear o job, mude lá e rode npm run github:setup.
   ci:
     if: always()
-    needs: [changes, check, unit, integration, e2e]
+    needs: [changes, check, unit, integration, e2e, openapi]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

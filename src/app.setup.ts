@@ -4,6 +4,15 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 
+/**
+ * O que muda as rotas, e por isso o documento do Swagger. Fica fora do resto do configureApp, que lê o
+ * ConfigService, porque o gerador do openapi.json (src/openapi.ts) também a chama.
+ */
+export function configureRoutes(app: INestApplication) {
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+  return app;
+}
+
 export function configureApp(app: INestApplication) {
   const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);
   const trustProxy = config.get('TRUST_PROXY', { infer: true });
@@ -21,7 +30,7 @@ export function configureApp(app: INestApplication) {
     .map((o) => o.trim())
     .filter(Boolean);
   if (origins.length) app.enableCors({ origin: origins });
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+  configureRoutes(app);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

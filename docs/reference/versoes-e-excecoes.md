@@ -57,4 +57,6 @@ O Dependabot (`.github/dependabot.yml`) abre os PRs de atualização. O porquê 
 
   Numa major do Postgres, o volume de dados não abre na versão nova e precisa ser recriado: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 - **Node:** o `.nvmrc`, o `ARG NODE_VERSION` do `Dockerfile` e o `engines` do `package.json` ficam fora do Dependabot e são conferidos à mão.
+- **`oasdiff`:** o binário do job `openapi` também fica fora do Dependabot e é conferido à mão. A versão e o SHA-256 do `oasdiff_<versão>_linux_amd64.tar.gz` ficam no `env` do job, no `.github/workflows/ci.yml`; o SHA-256 vem do `checksums.txt` do release ([Comandos → CI](comandos.md#ci)).
+- **`@nestjs/swagger` e grupo `nestjs`:** se o PR do Dependabot muda o documento, o `check` falha no `openapi:check`. Quem fecha o PR roda o `npm run openapi:generate` na mesma branch e commita o `openapi.json`, como faz com as imagens.
 - **Conferência manual:** o `npm outdated` continua valendo, com o resultado descrito na [Regra](#regra).

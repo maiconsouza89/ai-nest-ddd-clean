@@ -21,7 +21,7 @@ O título do PR e cada commit da branch seguem o [Conventional Commits 1.0.0](ht
 - **Escopo:** o módulo (`identity`, `orders`) ou a área (`http`, `deploy`, `ci`), opcional.
 - **Descrição:** em português, no imperativo ou no presente, sem ponto final. Pode começar com maiúscula quando a primeira palavra é um nome próprio (`ci: Dependabot …`).
 - **Tamanho:** o cabeçalho tem até 100 caracteres, sem contar o `(#<PR>)` que o squash acrescenta.
-- **Quebra:** `!` depois do tipo ou do escopo (`feat(identity)!: …`) e um parágrafo `BREAKING CHANGE: …` na descrição do PR, dizendo o que quem usa precisa mudar.
+- **Quebra:** `!` depois do tipo ou do escopo (`feat(identity)!: …`) e um parágrafo `BREAKING CHANGE: …` na descrição do PR, dizendo o que quem usa precisa mudar. Uma quebra do contrato HTTP aceita de propósito leva também a linha no `.github/oasdiff/err-ignore.txt` ([Comandos → CI](../docs/reference/comandos.md#ci)).
 
 Os PRs do Dependabot ficam com o título que ele gera, em inglês: `build(deps): bump …`, `build(deps-dev): bump …` ou `ci(deps): bump …`. O tipo e o escopo seguem o Conventional Commits. Uma major que quebre quem usa o template (ver [Versão](#versão)) ganha o `!` à mão no título do squash.
 

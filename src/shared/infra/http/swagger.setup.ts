@@ -2,7 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ProblemDetailsResponse, problemContent } from './problem-details.response.js';
 
-export function setupSwagger(app: INestApplication) {
+/** O documento do /docs e do openapi.json guardado (src/openapi.ts): os dois saem desta configuração. */
+export function createSwaggerDocument(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('AI NestJS DDD/Clean')
     .setDescription('API em NestJS: monólito modular com DDD e Clean Architecture.')
@@ -18,9 +19,11 @@ export function setupSwagger(app: INestApplication) {
       { status: 500, description: 'INTERNAL_ERROR: erro inesperado.', content: problemContent },
     )
     .build();
-  const document = SwaggerModule.createDocument(app, config, {
-    extraModels: [ProblemDetailsResponse],
-  });
+  return SwaggerModule.createDocument(app, config, { extraModels: [ProblemDetailsResponse] });
+}
+
+export function setupSwagger(app: INestApplication) {
+  const document = createSwaggerDocument(app);
   SwaggerModule.setup('docs', app, document);
   return document;
 }
