@@ -9,8 +9,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Actor } from '#shared/application/actor';
+import type { Page } from '#shared/application/page';
+import { ApiPageResponse } from '#shared/infra/http/page.response';
 import { PaginationQuery } from '#shared/infra/http/pagination.query';
 import { CurrentUser } from '#shared/infra/auth/current-user.decorator';
 import { OrderQueries } from '../../../application/queries/order.queries.js';
@@ -20,6 +28,11 @@ import { GetOrderUseCase } from '../../../application/use-cases/get-order.use-ca
 import { PayOrderUseCase } from '../../../application/use-cases/pay-order.use-case.js';
 import { PlaceOrderUseCase } from '../../../application/use-cases/place-order.use-case.js';
 import { CreateOrderRequest } from '../dtos/create-order.request.js';
+import {
+  CreatedOrderResponse,
+  OrderDetailsResponse,
+  OrderListItemResponse,
+} from '../dtos/order.responses.js';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -35,17 +48,29 @@ export class OrdersController {
   ) {}
 
   @Get()
-  list(@Query() query: PaginationQuery, @CurrentUser() actor: Actor) {
+  @ApiPageResponse(OrderListItemResponse)
+  list(
+    @Query() query: PaginationQuery,
+    @CurrentUser() actor: Actor,
+  ): Promise<Page<OrderListItemResponse>> {
     return this.orderQueries.listByCustomer(actor.id, query);
   }
 
   @Get(':id')
-  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() actor: Actor) {
+  @ApiOkResponse({ type: OrderDetailsResponse })
+  get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: Actor,
+  ): Promise<OrderDetailsResponse> {
     return this.getOrder.execute({ orderId: id, actor });
   }
 
   @Post()
-  create(@Body() body: CreateOrderRequest, @CurrentUser() actor: Actor) {
+  @ApiCreatedResponse({ type: CreatedOrderResponse, description: 'Pedido criado em `DRAFT`.' })
+  create(
+    @Body() body: CreateOrderRequest,
+    @CurrentUser() actor: Actor,
+  ): Promise<CreatedOrderResponse> {
     return this.createOrder.execute({ customerId: actor.id, items: body.items });
   }
 

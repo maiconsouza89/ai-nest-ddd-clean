@@ -13,18 +13,26 @@ Use este guia para expor uma rota `GET` que devolve uma lista em páginas, como 
 
 ## Passos
 
-1. No controller, receba a página com o `PaginationQuery` do shared e repasse o ator, se a lista for por dono:
+1. No controller, receba a página com o `PaginationQuery` do shared e repasse o ator, se a lista for por dono. Documente a resposta com o `@ApiPageResponse(<Item>Response)` e declare o retorno como `Page<<Item>Response>`. A classe do item fica em `infra/http/dtos/<nome>.responses.ts` ([Camadas](../reference/camadas.md#infra)):
 
    ```ts
+   import type { Page } from '#shared/application/page';
+   import { ApiPageResponse } from '#shared/infra/http/page.response';
    import { PaginationQuery } from '#shared/infra/http/pagination.query';
 
    @Get()
-   list(@Query() query: PaginationQuery, @CurrentUser() actor: Actor) {
+   @ApiPageResponse(OrderListItemResponse)
+   list(
+     @Query() query: PaginationQuery,
+     @CurrentUser() actor: Actor,
+   ): Promise<Page<OrderListItemResponse>> {
      return this.orderQueries.listByCustomer(actor.id, query);
    }
    ```
 
    O `PaginationQuery` aceita `page` a partir de 1 (padrão 1) e `limit` de 1 a 100 (padrão 20). Fora disso, a resposta é 400. Os padrões e a conversão de texto para número vêm do `ValidationPipe` com `transform: true`, que o `configureApp` já liga.
+
+   O `ApiPageResponse` documenta o 200 com o envelope `PageResponse` (`total`, `page` e `limit`) e os `items` do modelo passado. O tipo de retorno faz o `tsc` conferir que o item da query tem todo campo da classe de resposta.
 
 2. Declare a query em `application/queries/<nome>.queries.ts`, com o item no formato da tela e o `Page` e o `PageRequest` de `#shared/application/page`:
 

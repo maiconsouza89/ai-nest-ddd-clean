@@ -1,8 +1,11 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import type { Page } from '#shared/application/page';
 import { Roles } from '#shared/infra/auth/roles.decorator';
+import { ApiPageResponse } from '#shared/infra/http/page.response';
 import { PaginationQuery } from '#shared/infra/http/pagination.query';
 import { CreateProductRequest, UpdateProductRequest } from './dtos/product.request.js';
+import { ProductResponse } from './dtos/product.response.js';
 import { ProductsService } from './products.service.js';
 
 @ApiTags('products')
@@ -12,24 +15,31 @@ export class ProductsController {
   constructor(private readonly products: ProductsService) {}
 
   @Get()
-  list(@Query() query: PaginationQuery) {
+  @ApiPageResponse(ProductResponse)
+  list(@Query() query: PaginationQuery): Promise<Page<ProductResponse>> {
     return this.products.list(query);
   }
 
   @Get(':id')
-  get(@Param('id', ParseUUIDPipe) id: string) {
+  @ApiOkResponse({ type: ProductResponse })
+  get(@Param('id', ParseUUIDPipe) id: string): Promise<ProductResponse> {
     return this.products.get(id);
   }
 
   @Post()
   @Roles('admin')
-  create(@Body() body: CreateProductRequest) {
+  @ApiCreatedResponse({ type: ProductResponse, description: 'Produto criado.' })
+  create(@Body() body: CreateProductRequest): Promise<ProductResponse> {
     return this.products.create(body);
   }
 
   @Patch(':id')
   @Roles('admin')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateProductRequest) {
+  @ApiOkResponse({ type: ProductResponse })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateProductRequest,
+  ): Promise<ProductResponse> {
     return this.products.update(id, body);
   }
 }

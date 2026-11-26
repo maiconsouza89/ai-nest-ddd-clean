@@ -6,6 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { NestFactory } from '@nestjs/core';
 import { loadEnvFiles } from '#shared/infra/config/load-env-files';
 import { createSwaggerDocument } from '#shared/infra/http/swagger.setup';
+import { findUndocumentedSuccessResponses } from '#shared/infra/http/undocumented-success-responses';
 import { configureRoutes } from './app.setup.js';
 
 const OUTPUT = 'openapi.json';
@@ -26,6 +27,18 @@ const app = await NestFactory.create(AppModule, {
 configureRoutes(app);
 
 const document = createSwaggerDocument(app);
+await app.close();
+
+// Toda resposta 200 e 201 descreve o corpo: sem isso, o oasdiff não protege os campos dela.
+const undocumented = findUndocumentedSuccessResponses(document);
+if (undocumented.length > 0) {
+  console.error(
+    'Resposta de sucesso sem schema: documente com @ApiOkResponse, @ApiCreatedResponse ou @ApiPageResponse (docs/reference/operacao.md#swagger)',
+  );
+  for (const operation of undocumented) console.error(`  ${operation}`);
+  process.exit(1);
+}
+
 // Sem ordenar, as chaves seguem a ordem dos imports do AppModule, e reordenar um módulo mexeria no arquivo.
 // Ordem por code unit, e não localeCompare: o arquivo sai igual em qualquer locale.
 const sorted = <T>(record: Record<string, T>) =>
@@ -43,5 +56,3 @@ if (process.argv.includes('--check')) {
 } else {
   await writeFile(OUTPUT, content);
 }
-
-await app.close();
