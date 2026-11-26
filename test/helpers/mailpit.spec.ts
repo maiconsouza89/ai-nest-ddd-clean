@@ -7,7 +7,7 @@ describe('emailsTo', () => {
     vi.unstubAllEnvs();
   });
 
-  /** Troca o `fetch` e devolve a URL e a busca (o `query` decodificado) de cada chamada. */
+  /** Troca o `fetch` e devolve a origem e a busca (o `query` decodificado) de cada chamada. */
   function stubFetch() {
     const fetchMock = vi.fn<(url: string) => Promise<Response>>(() =>
       Promise.resolve(new Response(JSON.stringify({ messages: [] }))),
