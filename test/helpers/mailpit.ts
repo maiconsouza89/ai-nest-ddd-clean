@@ -1,18 +1,19 @@
 import { waitFor } from './wait-for.js';
 
-// O Mailpit do docker-compose: os e2e enviam por SMTP de verdade e leem pela API dele.
+// O Mailpit do docker-compose: os e2e enviam por SMTP de verdade e leem pela API dele. Ele é compartilhado
+// entre checkouts: num worktree (`npm run worktree:setup`), o usuário SMTP dele marca os e-mails com a
+// `MAILPIT_TAG`, e a busca filtra por ela. Um Mailpit que o teste sobe (Testcontainers) não conhece esse
+// usuário, e a busca numa `api` passada pelo teste não leva a tag.
 export const MAILPIT_API = process.env.MAILPIT_API_URL ?? 'http://127.0.0.1:8025';
 
 export type EmailSummary = { id: string; subject: string; from: string };
 
 type Summary = { messages: { ID: string; Subject: string; From: { Address: string } }[] };
 
-// Num worktree, a tag do usuário SMTP dele (`npm run worktree:setup`): o Mailpit é compartilhado entre checkouts.
-const TAG = process.env.MAILPIT_TAG;
-
 /** Os e-mails recebidos pelo endereço, do mais recente para o mais antigo, sem o corpo. */
 export async function emailsTo(address: string, api = MAILPIT_API): Promise<EmailSummary[]> {
-  const search = TAG ? `tag:"${TAG}" to:"${address}"` : `to:"${address}"`;
+  const tag = api === MAILPIT_API ? process.env.MAILPIT_TAG : undefined;
+  const search = tag ? `tag:"${tag}" to:"${address}"` : `to:"${address}"`;
   const query = encodeURIComponent(search);
   const res = await fetch(`${api}/api/v1/search?query=${query}`);
   if (!res.ok)

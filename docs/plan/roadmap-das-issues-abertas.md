@@ -28,7 +28,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | ✅ (#53) |
 | 2 | G | #23 Mudanças do OpenAPI que quebram clientes | baixa | #13 | ✅ (#54) |
 | 3 | H | #56 Respostas de sucesso no OpenAPI | baixa | #23 | ✅ (#59) |
-| 4 | I | #49 `test:int` falha em worktree pelo `MAILPIT_TAG` | média | — | ⬜ |
+| 4 | I | #49 `test:int` falha em worktree pelo `MAILPIT_TAG` | média | — | ✅ (#64) |
 | 4 | J | #62 Eventos da outbox morrem com o Redis fora do ar | média | — | ⬜ |
 | 4 | K | #48 Secret scanning e push protection | média | #13 | ⬜ |
 | 4 | L | #60 How-tos de erro de domínio, serviço externo e rota protegida | baixa | — | ✅ (#65) |
