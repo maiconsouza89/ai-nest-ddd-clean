@@ -66,22 +66,19 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
     );
     // lido depois do allSettled: é o estado da conexão quando os erros chegaram
     const status = this.connection.producer.status;
-    const failures = results.flatMap((result, i) =>
-      result.status === 'rejected'
-        ? [
-            {
-              consumer: consumers[i].name,
-              error: result.reason as unknown,
-              transport: isTransportFailure(result.reason, status),
-            },
-          ]
-        : [],
-    );
-    for (const failure of failures) if (failure.transport) this.discardQueue(failure.consumer);
+    let transportError: { error: unknown } | undefined;
+    let firstError: { error: unknown } | undefined;
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') return;
+      const error = result.reason as unknown;
+      firstError ??= { error };
+      if (!isTransportFailure(error, status)) return;
+      transportError ??= { error };
+      this.discardQueue(consumers[i].name);
+    });
     // basta um consumidor fora por transporte: o relay repete o evento inteiro, e o `jobId` ignora o que entrou
-    const transport = failures.find((failure) => failure.transport);
-    if (transport) throw new EventTransportUnavailableError(transport.error);
-    if (failures.length > 0) throw failures[0].error;
+    if (transportError) throw new EventTransportUnavailableError(transportError.error);
+    if (firstError) throw firstError.error;
   }
 
   async beforeApplicationShutdown() {

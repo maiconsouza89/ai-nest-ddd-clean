@@ -33,7 +33,10 @@ export const DEFAULT_OUTBOX_OPTIONS: OutboxOptions = {
 };
 
 /** Espera após a n-ésima falha: base, 2x, 4x... limitada a `maxDelayMs`. */
-export function backoffDelayMs(failures: number, { baseDelayMs, maxDelayMs }: OutboxOptions) {
+export function backoffDelayMs(
+  failures: number,
+  { baseDelayMs, maxDelayMs }: Pick<OutboxOptions, 'baseDelayMs' | 'maxDelayMs'>,
+) {
   return Math.min(baseDelayMs * 2 ** (failures - 1), maxDelayMs);
 }
 
