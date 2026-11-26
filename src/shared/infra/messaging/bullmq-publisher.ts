@@ -6,6 +6,7 @@ import {
   EventPublisher,
   EventTransportUnavailableError,
 } from '../../application/ports/event-publisher.js';
+import { withTimeout } from '../resilience/with-timeout.js';
 import { BullMqConnection } from './bullmq-connection.js';
 import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
 import { isTransportFailure } from './transport-failure.js';
@@ -19,6 +20,13 @@ const QUEUE_JOB_OPTIONS = {
   // o conjunto `failed` é a fila de mortos de cada consumidor
   removeOnFail: { age: 7 * 24 * 3600 },
 } as const;
+
+/**
+ * Prazo de cada `add`. Protege a transação do lote do relay, que fica aberta durante o publish: um Redis
+ * congelado (sem RST) penduraria o `add` sem fim, e a fila criada com o Redis fora espera a conexão. O `add` não é
+ * cancelado: se terminar depois do prazo, a próxima rodada o encontra pelo `jobId` e não duplica o job.
+ */
+const ENQUEUE_TIMEOUT_MS = 5_000;
 
 /** `jobId` do BullMQ não aceita `:`. */
 const jobIdOf = (eventId: string, consumer: string) => `${eventId}__${consumer}`;
@@ -46,26 +54,49 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
     // `jobId` ignora o que já foi enfileirado
     const results = await Promise.allSettled(
       consumers.map((consumer) =>
-        this.queueFor(consumer.name).add(event.type, event, {
-          ...QUEUE_JOB_OPTIONS,
-          jobId: jobIdOf(event.eventId, consumer.name),
-        }),
+        withTimeout(
+          () =>
+            this.queueFor(consumer.name).add(event.type, event, {
+              ...QUEUE_JOB_OPTIONS,
+              jobId: jobIdOf(event.eventId, consumer.name),
+            }),
+          ENQUEUE_TIMEOUT_MS,
+        ),
       ),
     );
-    const failures = results
-      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map((r) => r.reason as unknown);
-    if (failures.length === 0) return;
     // lido depois do allSettled: é o estado da conexão quando os erros chegaram
     const status = this.connection.producer.status;
-    const transport = failures.find((error) => isTransportFailure(error, status));
+    const failures = results.flatMap((result, i) =>
+      result.status === 'rejected'
+        ? [
+            {
+              consumer: consumers[i].name,
+              error: result.reason as unknown,
+              transport: isTransportFailure(result.reason, status),
+            },
+          ]
+        : [],
+    );
+    for (const failure of failures) if (failure.transport) this.discardQueue(failure.consumer);
     // basta um consumidor fora por transporte: o relay repete o evento inteiro, e o `jobId` ignora o que entrou
-    if (transport !== undefined) throw new EventTransportUnavailableError(transport);
-    throw failures[0];
+    const transport = failures.find((failure) => failure.transport);
+    if (transport) throw new EventTransportUnavailableError(transport.error);
+    if (failures.length > 0) throw failures[0].error;
   }
 
   async beforeApplicationShutdown() {
     await Promise.all([...this.queues.values()].map((q) => q.close()));
+  }
+
+  /**
+   * Tira a fila do consumidor depois de uma queda do Redis, e o próximo publish cria outra. Se a conexão cai no
+   * meio da inicialização da `Queue`, ela fica rejeitada para sempre, mesmo com o Redis de volta. Fechar não fecha
+   * o `producer`: o BullMQ não fecha uma conexão recebida pronta.
+   */
+  private discardQueue(consumer: string) {
+    const queue = this.queues.get(consumer);
+    this.queues.delete(consumer);
+    void queue?.close().catch(() => undefined);
   }
 
   private queueFor(consumer: string) {
