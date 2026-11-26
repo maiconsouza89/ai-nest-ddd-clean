@@ -88,7 +88,7 @@ export default defineConfig({
           // Os arquivos rodam em paralelo: cada um tem o próprio banco clonado e cada worker o seu banco
           // lógico no Redis. Um teste instável se corrige na espera dele, sem voltar ao modo serial.
           testTimeout: 60_000,
-          hookTimeout: 30_000, // os containers sobem no globalSetup; só os dois arquivos com container próprio passam disso
+          hookTimeout: 30_000, // os containers sobem no globalSetup; só os arquivos com container próprio passam disso
         },
       },
       {
