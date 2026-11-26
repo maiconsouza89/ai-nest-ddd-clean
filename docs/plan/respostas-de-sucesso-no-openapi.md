@@ -148,6 +148,8 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 
 ### Passo 6: verificação, revisão, registro e PR
 
+**Revisão (`/simplify`).** O teste novo do `docs.e2e-spec.ts` repetia, mais fraco, o percurso da guarda e saiu: a guarda roda no `openapi:check` do CI e tem spec própria. A lista dos métodos HTTP passou a sair da guarda (`HTTP_METHODS`), e o `docs.e2e-spec.ts` a importa. A guarda ficou só com o `allOf`, sem os ramos `oneOf` e `anyOf`, que nada gera. Ficaram de fora: renomear o `ApiProblemResponse` para o plugin não o tomar por decorator de sucesso (a resposta explícita continuaria necessária para o `Page<T>`), e tirar o `type: 'object'` do `allOf` da paginação (ele evita o `response-body-type-changed`).
+
 1. `npm run ci`, `npm run test:e2e` (com o `start:dev` deste worktree parado) e `npm run test:int`.
 2. `/simplify` e depois `/code-review` sobre as mudanças (fluxo de entrega do `AGENTS.md`).
 3. Registro: o resumo do que foi feito, as mudanças em relação ao plano, a verificação e o plano final num comentário da issue, com o ok do dono. Link para o comentário no `docs/README.md` ("Fora dos quadrantes").

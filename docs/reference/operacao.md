@@ -34,7 +34,7 @@ O `configureApp` (`src/app.setup.ts`) liga estes itens, na subida e nos testes e
 | Tags | Uma por controller: `auth`, `orders`, `products`, `health` |
 | Rotas com token | `@ApiBearerAuth()` no controller (`orders`, `products`) |
 | Respostas de erro | Schema `ProblemDetailsResponse`, em `application/problem+json`. Cada rota documenta os próprios erros com `@ApiProblemResponse(status, descrição)`, e o `setupSwagger` acrescenta o 429 e o 500 em toda operação |
-| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa. O schema de erro existe, e toda operação documenta o 429 e o 500 com ele. Toda operação tem uma resposta 2xx, e o 200 e o 201 têm schema. Sem o plugin, os testes não veem as propriedades: quem confere que o schema descreve o corpo é o gerador |
+| Teste | `test/docs.e2e-spec.ts`: `/docs` responde 200 sem token, toda rota tem exatamente uma tag, e as do auth e do health caem na tag certa. O schema de erro existe, e toda operação documenta o 429 e o 500 com ele. A resposta de sucesso não é conferida aqui: sem o plugin, os testes não veem as propriedades, e quem confere é o gerador (`findUndocumentedSuccessResponses`, com spec) |
 
 O plugin da CLI do Nest (`nest-cli.json`) gera os schemas dos DTOs de requisição e de resposta.
 
