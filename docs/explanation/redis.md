@@ -29,7 +29,7 @@ O `docker-compose.yml` sobe uma instância só, com `noeviction` e AOF (`appendo
 O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, cada uma configurada para o seu papel:
 
 - **Workers do BullMQ:** esperam o Redis voltar, sem limite de tentativas por comando, como o BullMQ exige. Ele só configura isso sozinho quando cria a conexão, e o projeto lhe passa uma conexão pronta.
-- **Quem enfileira e o rate limit:** sem fila offline. Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera um pouco por essa conexão e, sem ela, segue.
+- **Quem enfileira e o rate limit:** sem fila offline. Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. A exceção é a fila do BullMQ criada com o Redis já fora: ela espera a conexão antes do primeiro comando, e por isso o enfileiramento dos eventos tem um prazo. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera um pouco por essa conexão e, sem ela, segue.
 - **Cache e health check:** também sem fila offline, com reconexão em segundo plano.
 
 Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão vira exceção não tratada e derruba o processo.
@@ -42,7 +42,7 @@ Nenhum uso espera o Redis voltar segurando uma requisição. Cada um falha confo
 
 - **Cache:** a leitura vai direto ao banco. O cache é otimização: perdê-lo deixa a API mais lenta, não errada.
 - **Rate limit:** responde 503 em toda rota limitada, e o guard é global. Falha fechada: deixar passar abriria o limite de tentativas de login justo quando não dá para contá-las.
-- **Outbox:** os eventos ficam na tabela e o relay tenta de novo. A outbox existe para isso ([Entrega de eventos](entrega-de-eventos.md#o-evento-sai-pela-outbox)).
+- **Outbox:** os eventos ficam na tabela, e o relay pausa sem contar a falha deles, até o Redis voltar. A outbox existe para isso ([Entrega de eventos](entrega-de-eventos.md#redis-fora-do-ar-não-mata-evento)).
 - **Workers:** esperam a reconexão e voltam sozinhos. Não há requisição esperando por eles.
 - **Agendador de jobs:** a subida falha. Sem o agendador, o job nunca rodaria, e ninguém perceberia ([Jobs agendados](#jobs-agendados)).
 - **Readiness:** responde 503, e o orquestrador tira a instância do tráfego. A liveness não depende do Redis.

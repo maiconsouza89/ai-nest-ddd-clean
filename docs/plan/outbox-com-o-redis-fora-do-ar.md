@@ -94,7 +94,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | 5 | Pausa do relay e espera do worker | ✅ |
 | 6 | Teste da queda do Redis | ✅ |
 | 7 | Reprocesso: teste e how-to | ✅ |
-| 8 | ADR 0016 e documentação | ⬜ |
+| 8 | ADR 0016 e documentação | ✅ |
 | 9 | Verificação, revisão, registro e PR | ⬜ |
 
 ### Passo 1: worktree, branch e roadmap

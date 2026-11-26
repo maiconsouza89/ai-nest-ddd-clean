@@ -80,3 +80,4 @@ As métricas que a app exporta, as próprias e as da auto-instrumentação, como
 | Erros de HTTP | `http.server.request.duration` | Taxa de respostas 5xx por `http.route` acima do normal |
 | Outbox parada | `outbox.oldest_pending.age` | Acima de alguns minutos: o relay não está publicando, ou um evento está preso |
 | Consumidor esgotando tentativas | `bullmq.queue.jobs` | `failed` crescendo numa fila |
+| Eventos mortos | `outbox.events` | `outbox.event.state=dead` acima de 0. Uma queda do Redis não mata evento, então um morto indica defeito: o `lastError` da linha diz qual, e [Como reprocessar eventos mortos](../how-to/reprocessar-eventos-mortos.md) a devolve à entrega |

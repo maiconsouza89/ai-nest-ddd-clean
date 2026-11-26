@@ -69,3 +69,4 @@ WHERE id IN ('<id do passo 1>');
 
 - [Outbox e filas](../reference/outbox-e-filas.md): a tabela `shared.outbox`, o limite de falhas e as filas.
 - [Entrega de eventos](../explanation/entrega-de-eventos.md): por que a falha de transporte não mata a linha e por que a entrega repetida não duplica o efeito.
+- [ADR 0016: Falha de transporte não conta para a morte do evento da outbox](../adr/0016-falha-de-transporte-nao-mata-evento-da-outbox.md)
