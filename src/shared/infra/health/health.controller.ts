@@ -1,5 +1,5 @@
 import { Controller, Get, Res, ServiceUnavailableException, VERSION_NEUTRAL } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import {
   HealthCheck,
@@ -30,7 +30,11 @@ export class HealthController {
   @Get('live')
   // sem a documentação do Terminus, que anunciaria um 503 que esta rota não responde
   @HealthCheck({ swaggerDocumentation: false })
-  @ApiOkResponse({ description: 'O processo está vivo' })
+  // o schema que o @HealthCheck() do ready registra
+  @ApiOkResponse({
+    description: 'O processo está vivo',
+    schema: { $ref: getSchemaPath('TerminusHealthCheckResult') },
+  })
   live() {
     return { status: 'ok', info: {}, error: {}, details: {} } satisfies HealthCheckResult;
   }

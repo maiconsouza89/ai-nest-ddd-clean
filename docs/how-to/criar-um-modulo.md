@@ -32,7 +32,8 @@ Use este guia para criar um módulo de negócio com regras próprias, a partir d
    - **Erro novo:** acrescente o `code` e o status HTTP no `<NOME>_ERROR_STATUSES` do `infra/http/error-statuses.ts`. Um `code` fora do mapa responde 422 ([Respostas de erro](../reference/respostas-de-erro.md)). Uma resposta de erro nova da rota entra no Swagger com `@ApiProblemResponse(status, descrição)`.
    - **Rota:** o controller sai com `@Controller('<nome>')`, no singular. Troque o caminho se o recurso pedir outro (`orders`, `products`).
    - **Schema:** cada mudança numa ORM entity segue [Como gerar uma migration](gerar-uma-migration.md).
-   - **Contrato:** depois de criar o controller e os DTOs, rode `npm run openapi:generate` e commite o `openapi.json` ([Operação → Swagger](../reference/operacao.md#swagger)).
+   - **Resposta de sucesso:** a rota com corpo tem uma classe em `infra/http/dtos/<nome>.responses.ts`, o decorator `@ApiOkResponse({ type })` ou `@ApiCreatedResponse({ type })` e a classe no tipo de retorno do método. O gerador já cria o `Created<Nome>Response` e o `<Nome>Response`: mude os campos junto com o retorno dos casos de uso ([Camadas](../reference/camadas.md#infra)).
+   - **Contrato:** depois de criar o controller e os DTOs, rode `npm run openapi:generate` e commite o `openapi.json` ([Operação → Swagger](../reference/operacao.md#swagger)). O gerador falha se uma rota não documenta a resposta de sucesso, ou se um 200 ou 201 não descreve o corpo.
 
 4. Se outro módulo vai usar este, crie a facade em `contracts/<nome>.facade.ts`, ligue-a no módulo Nest e exporte só ela. Quem consome declara o `<Nome>Module` no `imports` ([ADR 0003](../adr/0003-imports-explicitos-entre-modulos.md)). Para avisar outros módulos de um fato, siga [Como publicar e consumir um evento de integração](publicar-um-evento-de-integracao.md).
 

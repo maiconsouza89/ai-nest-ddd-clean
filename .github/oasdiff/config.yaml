@@ -4,3 +4,6 @@
 fail-on: ERR
 severity-levels: severity-levels.txt
 err-ignore: err-ignore.txt
+# Junta os ramos do allOf antes de comparar. Sem isso, um campo tirado de dentro de um allOf (o envelope
+# da paginação, ApiPageResponse) só dá WARN e não falha o job.
+flatten-allof: true

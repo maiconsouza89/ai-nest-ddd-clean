@@ -112,6 +112,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 | Plano | Status | Registro |
 | --- | --- | --- |
+| Respostas de sucesso no OpenAPI | Concluído | [registro da issue #56](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/56#issuecomment-7192073212) |
 | Detecção de quebra do contrato OpenAPI | Concluído | [registro da issue #23](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/23#issuecomment-7180881367) |
 | Hooks de pre-commit e do commitlint | Concluído | [registro da issue #22](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/22#issuecomment-7180712061) |
 | Relatório de cobertura de testes | Concluído | [registro da issue #21](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/21#issuecomment-7179948024) |

@@ -13,13 +13,19 @@ Use este guia para expor uma rota `GET` que devolve uma lista em páginas, como 
 
 ## Passos
 
-1. No controller, receba a página com o `PaginationQuery` do shared e repasse o ator, se a lista for por dono:
+1. No controller, receba a página com o `PaginationQuery` do shared e repasse o ator, se a lista for por dono. Documente a resposta com o `@ApiPageResponse(<Item>Response)` e declare o retorno como `Page<<Item>Response>`. A classe do item fica em `infra/http/dtos/<nome>.responses.ts` ([Camadas](../reference/camadas.md#infra)):
 
    ```ts
+   import type { Page } from '#shared/application/page';
+   import { ApiPageResponse } from '#shared/infra/http/page.response';
    import { PaginationQuery } from '#shared/infra/http/pagination.query';
 
    @Get()
-   list(@Query() query: PaginationQuery, @CurrentUser() actor: Actor) {
+   @ApiPageResponse(OrderListItemResponse)
+   list(
+     @Query() query: PaginationQuery,
+     @CurrentUser() actor: Actor,
+   ): Promise<Page<OrderListItemResponse>> {
      return this.orderQueries.listByCustomer(actor.id, query);
    }
    ```

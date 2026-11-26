@@ -21,6 +21,8 @@ Use este guia depois de mudar um controller, um DTO ou um decorator do Swagger, 
 
    Nunca edite o `openapi.json` à mão: o `openapi:check` compara o arquivo com o que o gerador produz.
 
+   Se o gerador falhar com a lista de rotas sem resposta de sucesso, documente o corpo de cada uma com a classe de resposta e o decorator ([Camadas → Infra](../reference/camadas.md#infra)) e rode de novo.
+
 2. Commite o `openapi.json` no mesmo commit, ou no mesmo PR, da mudança no código.
 
 3. Se a mudança quebra o contrato de propósito e o job `openapi` do PR acusa a quebra:

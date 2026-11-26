@@ -8,7 +8,13 @@
         "options": {
           "classValidatorShim": true,
           "introspectComments": true,
-          "dtoFileNameSuffix": [".request.ts", ".requests.ts", ".query.ts"]
+          "dtoFileNameSuffix": [
+            ".request.ts",
+            ".requests.ts",
+            ".query.ts",
+            ".response.ts",
+            ".responses.ts"
+          ]
         }
       }
     ]

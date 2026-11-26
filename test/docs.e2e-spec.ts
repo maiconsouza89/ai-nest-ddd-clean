@@ -6,6 +6,7 @@ import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { PROBLEM_JSON } from '#shared/infra/http/problem-details.response';
 import { setupSwagger } from '#shared/infra/http/swagger.setup';
+import { HTTP_METHODS } from '#shared/infra/http/undocumented-success-responses';
 
 describe('Docs (e2e)', () => {
   let app: TestApp;
@@ -32,7 +33,6 @@ describe('Docs (e2e)', () => {
     expect(tagsOf('/health/live', 'get')).toEqual(['health']);
   });
 
-  const methods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
   const problemRef = '#/components/schemas/ProblemDetailsResponse';
   type Responses = Record<string, { content?: Record<string, { schema?: { $ref?: string } }> }>;
   const problemSchemaOf = (responses: Responses | undefined, status: string) =>
@@ -40,9 +40,9 @@ describe('Docs (e2e)', () => {
 
   it('toda rota tem exatamente uma tag', () => {
     const untagged = Object.entries(document.paths).flatMap(([path, item]) =>
-      methods
-        .filter((m) => item[m] && item[m].tags?.length !== 1)
-        .map((m) => `${m.toUpperCase()} ${path}`),
+      HTTP_METHODS.filter((m) => item[m] && item[m].tags?.length !== 1).map(
+        (m) => `${m.toUpperCase()} ${path}`,
+      ),
     );
     expect(untagged).toEqual([]);
   });
@@ -57,8 +57,7 @@ describe('Docs (e2e)', () => {
 
   it('toda operação documenta o 429 e o 500 em application/problem+json', () => {
     const missing = Object.entries(document.paths).flatMap(([path, item]) =>
-      methods
-        .filter((m) => item[m])
+      HTTP_METHODS.filter((m) => item[m])
         .filter((m) =>
           ['429', '500'].some(
             (status) => problemSchemaOf(item[m]!.responses as Responses, status) !== problemRef,
