@@ -104,6 +104,7 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | Fase | Quem | O que faz |
 | --- | --- | --- |
 | 1. `onModuleDestroy` | Workers das filas de eventos, `ScheduledJobProcessor` e `OutboxWorker` | Param de pegar trabalho e esperam o job ou o lote em andamento, com as conexões ainda abertas |
+| | `OutboxMetrics` e `QueueMetrics` | Tiram o callback das métricas da outbox e das filas, para a última exportação da fase 4 não consultar o banco e o Redis já fechados. O `QueueMetrics` fecha as filas que lê |
 | 2. `beforeApplicationShutdown` | `BullMqPublisher` | Fecha as filas em que enfileira. Só o worker da outbox publica, e ele já parou na fase 1 |
 | | Terminus | Só no `SIGTERM`: espera `SHUTDOWN_GRACE_MS`, com o `/health/ready` em 503. Ver [Atraso do desligamento](#atraso-do-desligamento) |
 | | `RedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
@@ -111,7 +112,7 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | 4. `onApplicationShutdown` | `BullMqConnection` | Desconecta o `producer` e o `worker` |
 | | Cache | Desconecta o cliente do cache |
 | | TypeORM | Fecha o `DataSource` |
-| | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans pendentes |
+| | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans e as métricas pendentes |
 
 Até a fase 3, o servidor aceita requisições. Os módulos rodam cada hook em sequência, os mais próximos do `AppModule` primeiro e os `@Global` por último, então o `RedisConnection` só age depois do atraso do Terminus.
 
@@ -136,4 +137,4 @@ Teste: `test/shutdown.e2e-spec.ts`.
 
 Na imagem Docker, o PID 1 é o `tini` (`ENTRYPOINT` do `Dockerfile`), que repassa o sinal ao node. Com o node como PID 1, o kernel ignora o sinal que o Nest reenvia a si mesmo no fim, porque o PID 1 não tem handler padrão. Se sobrar um handle aberto, o container só sai no `SIGKILL` da plataforma, com código 137. Com o `tini`, ele sai com 143, término por `SIGTERM`. O passo a passo está em [Como fazer o deploy](../how-to/fazer-o-deploy.md).
 
-Com `OTEL_METRICS_EXPORTER` ou `OTEL_LOGS_EXPORTER` no padrão (`otlp`) e sem coletor, a fase 4 espera o timeout da exportação, uns 8 s, no `TracingShutdown`. Sem coletor, deixe os dois em `none` ([Variáveis de ambiente](variaveis-de-ambiente.md#tracing-opentelemetry)).
+Com `OTEL_METRICS_EXPORTER` ou `OTEL_LOGS_EXPORTER` no padrão (`otlp`) e sem coletor, a fase 4 espera o timeout da exportação, uns 8 s, no `TracingShutdown`. Sem coletor, deixe os dois em `none` ([Variáveis de ambiente](variaveis-de-ambiente.md#opentelemetry)).

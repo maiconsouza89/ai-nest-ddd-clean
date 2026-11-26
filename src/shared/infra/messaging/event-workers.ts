@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Worker } from 'bullmq';
+import { metrics } from '@opentelemetry/api';
+import { MetricNames, TelemetryAttributes, Worker } from 'bullmq';
 import { IntegrationEvent } from '../../application/integration-event.js';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
@@ -22,6 +23,16 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
 
   onApplicationBootstrap() {
     if (this.config.get('QUEUE_WORKERS_ENABLED') !== 'true') return;
+    // pedido aqui, e não no topo do arquivo: um meter pedido antes do `MeterProvider` do SDK fica noop
+    const meter = metrics.getMeter('messaging');
+    const retried = meter.createCounter(MetricNames.JobsRetried, {
+      description: 'Falhas de job que vão ser tentadas de novo.',
+      unit: '{job}',
+    });
+    const failed = meter.createCounter(MetricNames.JobsFailed, {
+      description: 'Jobs que esgotaram as tentativas e foram para a fila de mortos.',
+      unit: '{job}',
+    });
     this.workers = this.subscriptions.all().map((consumer) => {
       const worker = new Worker<IntegrationEvent>(
         queueNameOf(consumer.name),
@@ -53,6 +64,10 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
           type: job?.data.type,
           err,
         };
+        (exhausted ? failed : retried).add(1, {
+          [TelemetryAttributes.QueueName]: worker.name,
+          [TelemetryAttributes.JobName]: job?.name,
+        });
         if (exhausted) this.logger.error(fields, 'event dead-lettered after max attempts');
         else this.logger.warn(fields, 'event processing failed, will retry');
       });

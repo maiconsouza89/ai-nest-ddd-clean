@@ -3,8 +3,10 @@ import 'reflect-metadata';
 import { Global, Injectable, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { metrics } from '@opentelemetry/api';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
+import { startTestMetrics } from '#test/helpers/metrics';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
 import { startRedis } from '#test/helpers/redis';
 import { waitFor } from '#test/helpers/wait-for';
@@ -52,6 +54,7 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
   let redisUrl: string;
   let app: TestingModule;
   let publisher: EventPublisher;
+  let collectPoints: ReturnType<typeof startTestMetrics>;
 
   beforeAll(async () => {
     ({ ds, stop: stopDb } = await startOutboxDatabase());
@@ -62,6 +65,8 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
       logger,
     );
     redisUrl = await startRedis();
+    // antes do app.init(): as métricas pedem o meter na subida
+    collectPoints = startTestMetrics();
     app = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -80,6 +85,7 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
 
   afterAll(async () => {
     await app?.close();
+    metrics.disable();
     await stopDb?.();
   });
 
@@ -121,5 +127,30 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
     await expect(
       publisher.publish({ ...event(), type: 'test.nobody-listens' }),
     ).resolves.toBeUndefined();
+  });
+
+  it('a falha que vai ser repetida conta em bullmq.jobs.retried, na fila do consumidor', async () => {
+    await publisher.publish(event());
+    const retriedIn = async (queue: string) =>
+      (await collectPoints('bullmq.jobs.retried'))
+        .filter((p) => p.attributes['bullmq.queue.name'] === queue)
+        .reduce((sum, p) => sum + p.value, 0);
+
+    await waitFor(async () => (await retriedIn('events.test.always-fails')) > 0);
+    expect(await retriedIn('events.test.writes-effect')).toBe(0);
+  });
+
+  it('bullmq.queue.jobs traz cada fila de eventos com os quatro estados', async () => {
+    const points = await collectPoints('bullmq.queue.jobs');
+
+    const seen = points.map(
+      (p) =>
+        `${String(p.attributes['bullmq.queue.name'])} ${String(p.attributes['bullmq.queue.jobs.state'])}`,
+    );
+    expect(seen.sort()).toEqual(
+      ['events.test.always-fails', 'events.test.writes-effect']
+        .flatMap((queue) => ['active', 'delayed', 'failed', 'waiting'].map((s) => `${queue} ${s}`))
+        .sort(),
+    );
   });
 });

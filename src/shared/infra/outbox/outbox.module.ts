@@ -4,6 +4,7 @@ import { Clock } from '../../application/ports/clock.js';
 import { EventPublisher } from '../../application/ports/event-publisher.js';
 import { Logger } from '../../application/ports/logger.js';
 import { MessagingModule } from '../messaging/messaging.module.js';
+import { OutboxMetrics } from './outbox-metrics.js';
 import { OutboxRelay } from './outbox-relay.js';
 import { OutboxWorker } from './outbox-worker.js';
 
@@ -17,6 +18,7 @@ import { OutboxWorker } from './outbox-worker.js';
       inject: [DataSource, EventPublisher, Clock, Logger],
     },
     OutboxWorker,
+    OutboxMetrics,
   ],
 })
 export class OutboxModule {}

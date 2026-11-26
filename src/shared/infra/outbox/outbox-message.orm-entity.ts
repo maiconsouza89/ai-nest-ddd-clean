@@ -4,6 +4,8 @@ import { Column, CreateDateColumn, Entity, Generated, Index, PrimaryColumn } fro
 @Index('IDX_shared_outbox_pending', ['nextAttemptAt'], {
   where: '"publishedAt" IS NULL AND "deadAt" IS NULL',
 })
+// só as mortas: a contagem delas na coleta das métricas, sem varrer a tabela
+@Index('IDX_shared_outbox_dead', ['deadAt'], { where: '"deadAt" IS NOT NULL' })
 @Entity({ name: 'outbox', schema: 'shared' })
 export class OutboxMessageOrmEntity {
   // o id do evento: a mesma identidade que os consumidores usam para idempotência

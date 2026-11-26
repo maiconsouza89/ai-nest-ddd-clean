@@ -1,6 +1,9 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner } from '@nestjs/core';
+import { Queue } from 'bullmq';
+import type { Redis } from 'ioredis';
 import { IntegrationEvent } from '../../application/integration-event.js';
+import { Logger } from '../../application/ports/logger.js';
 import { subscriptionOf } from './integration-event-handler.decorator.js';
 
 export type EventConsumer = {
@@ -11,6 +14,13 @@ export type EventConsumer = {
 };
 
 export const queueNameOf = (consumer: string) => `events.${consumer}`;
+
+/** A fila do consumidor sobre a conexão dada, com o listener de erro: sem ele, um erro de conexão derrubaria o processo. */
+export function openEventQueue(consumer: string, connection: Redis, logger: Logger) {
+  const queue = new Queue(queueNameOf(consumer), { connection });
+  queue.on('error', (err) => logger.warn({ err, consumer }, 'event queue error'));
+  return queue;
+}
 
 /** Varre os providers atrás de `@IntegrationEventHandler` e monta consumidor → eventos assinados. */
 @Injectable()
