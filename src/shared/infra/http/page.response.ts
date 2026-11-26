@@ -1,5 +1,5 @@
 import { applyDecorators, type Type } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
+import { ApiExtraModels, ApiOkResponse, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 /**
  * Metadados da página de uma listagem: o schema do `Page` de `#shared/application/page`. Os `items`
@@ -7,12 +7,15 @@ import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
  */
 export class PageResponse {
   /** Total de itens em todas as páginas. */
+  @ApiProperty({ type: 'integer' })
   total!: number;
 
   /** Página devolvida, a partir de 1. */
+  @ApiProperty({ type: 'integer' })
   page!: number;
 
   /** Tamanho máximo da página pedido. */
+  @ApiProperty({ type: 'integer' })
   limit!: number;
 }
 

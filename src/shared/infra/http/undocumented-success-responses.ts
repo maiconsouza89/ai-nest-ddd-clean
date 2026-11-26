@@ -31,16 +31,30 @@ const STATUSES_WITH_BODY = ['200', '201'];
 export function findUndocumentedSuccessResponses(document: OpenAPIObject): string[] {
   const schemas = document.components?.schemas ?? {};
 
-  const isDocumented = (schema: Schema | undefined): boolean => {
+  // Um $ref já visitado conta como documentado: um schema recursivo (`children: Node[]`) não entra em laço.
+  const isDocumented = (schema: Schema | undefined, seen = new Set<string>()): boolean => {
     if (!schema) return false;
     if ('$ref' in schema) {
-      return isDocumented(schemas[schema.$ref.replace('#/components/schemas/', '')]);
+      if (seen.has(schema.$ref)) return true;
+      const name = schema.$ref.replace('#/components/schemas/', '');
+      return isDocumented(schemas[name], new Set(seen).add(schema.$ref));
     }
-    if (schema.allOf) return schema.allOf.some(isDocumented);
-    if (schema.type === 'array') return isDocumented(schema.items);
-    if (schema.properties) return Object.keys(schema.properties).length > 0;
+    // todo ramo conta: o envelope da paginação não cobre um item sem schema
+    if (schema.allOf) return schema.allOf.every((branch) => isDocumented(branch, seen));
+    if (schema.type === 'array') return isDocumented(schema.items, seen);
+    if (schema.properties) {
+      const properties = Object.values(schema.properties);
+      return (
+        properties.length > 0 &&
+        properties.every((p) => !pointsElsewhere(p) || isDocumented(p, seen))
+      );
+    }
     return schema.type !== undefined && schema.type !== 'object';
   };
+  // Uma propriedade só é conferida a fundo quando aponta para outro schema. As outras, como os
+  // `example` que o health/ready sobrepõe ao schema do Terminus, valem como estão.
+  const pointsElsewhere = (schema: Schema) =>
+    '$ref' in schema || !!schema.allOf || schema.type === 'array';
 
   const hasDocumentedBody = (response: ResponseObject | ReferenceObject | undefined) =>
     !!response &&

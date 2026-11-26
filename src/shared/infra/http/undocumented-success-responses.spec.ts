@@ -15,6 +15,12 @@ const documentWith = (responses: Record<string, ResponseObject>): OpenAPIObject 
     schemas: {
       Thing: { type: 'object', properties: { id: { type: 'string' } } },
       Empty: { type: 'object', properties: {} },
+      Node: {
+        type: 'object',
+        properties: {
+          children: { type: 'array', items: { $ref: '#/components/schemas/Node' } },
+        },
+      },
     },
   },
 });
@@ -26,6 +32,23 @@ describe('findUndocumentedSuccessResponses', () => {
     ['com $ref para schema sem propriedades', json({ $ref: '#/components/schemas/Empty' })],
     ['com $ref para schema que não existe', json({ $ref: '#/components/schemas/Missing' })],
     ['com array de itens sem schema', json({ type: 'array', items: { type: 'object' } })],
+    [
+      'com allOf em que um ramo tem itens sem schema',
+      json({
+        allOf: [
+          { $ref: '#/components/schemas/Thing' },
+          {
+            properties: {
+              items: { type: 'array', items: { $ref: '#/components/schemas/Empty' } },
+            },
+          },
+        ],
+      }),
+    ],
+    [
+      'com propriedade que aponta para schema sem propriedades',
+      json({ type: 'object', properties: { item: { $ref: '#/components/schemas/Empty' } } }),
+    ],
   ])('acusa a resposta %s', (_, response) => {
     expect(findUndocumentedSuccessResponses(documentWith({ '201': response }))).toEqual([
       'POST /v1/things 201',
@@ -35,8 +58,22 @@ describe('findUndocumentedSuccessResponses', () => {
   it.each([
     ['com $ref para schema com propriedades', json({ $ref: '#/components/schemas/Thing' })],
     [
-      'com allOf de $ref',
-      json({ allOf: [{ $ref: '#/components/schemas/Thing' }, { properties: {} }] }),
+      'com allOf de $ref e itens documentados',
+      json({
+        allOf: [
+          { $ref: '#/components/schemas/Thing' },
+          {
+            properties: {
+              items: { type: 'array', items: { $ref: '#/components/schemas/Thing' } },
+            },
+          },
+        ],
+      }),
+    ],
+    ['com schema recursivo', json({ $ref: '#/components/schemas/Node' })],
+    [
+      'com propriedade só de exemplo',
+      json({ type: 'object', properties: { status: { example: 'ok' } } }),
     ],
     ['com array de $ref', json({ type: 'array', items: { $ref: '#/components/schemas/Thing' } })],
     ['com propriedades', json({ type: 'object', properties: { ok: { type: 'boolean' } } })],

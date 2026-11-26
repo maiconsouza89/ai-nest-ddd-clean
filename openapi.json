@@ -1193,6 +1193,10 @@
       "OrderDetailsResponse": {
         "type": "object",
         "properties": {
+          "totalCents": {
+            "type": "integer",
+            "description": "Total do pedido, em centavos."
+          },
           "id": {
             "type": "string"
           },
@@ -1210,36 +1214,32 @@
               "$ref": "#/components/schemas/OrderItemResponse"
             }
           },
-          "totalCents": {
-            "type": "number",
-            "description": "Total do pedido, em centavos."
-          },
           "currency": {
             "type": "string",
             "description": "Código ISO 4217 da moeda."
           }
         },
         "required": [
+          "totalCents",
           "id",
           "customerId",
           "status",
           "items",
-          "totalCents",
           "currency"
         ]
       },
       "OrderItemResponse": {
         "type": "object",
         "properties": {
-          "productId": {
-            "type": "string"
-          },
           "qty": {
-            "type": "number"
+            "type": "integer"
           },
           "unitPriceCents": {
-            "type": "number",
+            "type": "integer",
             "description": "Preço da unidade no momento em que o item entrou no pedido, em centavos."
+          },
+          "productId": {
+            "type": "string"
           },
           "currency": {
             "type": "string",
@@ -1247,29 +1247,29 @@
           }
         },
         "required": [
-          "productId",
           "qty",
           "unitPriceCents",
+          "productId",
           "currency"
         ]
       },
       "OrderListItemResponse": {
         "type": "object",
         "properties": {
+          "itemCount": {
+            "type": "integer",
+            "description": "Quantidade de linhas do pedido, sem somar as unidades."
+          },
+          "totalCents": {
+            "type": "integer",
+            "description": "Total do pedido, em centavos."
+          },
           "id": {
             "type": "string"
           },
           "status": {
             "type": "string",
             "description": "`DRAFT`, `PLACED`, `PAID` ou `CANCELLED`."
-          },
-          "itemCount": {
-            "type": "number",
-            "description": "Quantidade de linhas do pedido, sem somar as unidades."
-          },
-          "totalCents": {
-            "type": "number",
-            "description": "Total do pedido, em centavos."
           },
           "currency": {
             "type": "string",
@@ -1281,10 +1281,10 @@
           }
         },
         "required": [
-          "id",
-          "status",
           "itemCount",
           "totalCents",
+          "id",
+          "status",
           "currency",
           "createdAt"
         ]
@@ -1293,15 +1293,15 @@
         "type": "object",
         "properties": {
           "total": {
-            "type": "number",
+            "type": "integer",
             "description": "Total de itens em todas as páginas."
           },
           "page": {
-            "type": "number",
+            "type": "integer",
             "description": "Página devolvida, a partir de 1."
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "description": "Tamanho máximo da página pedido."
           }
         },
@@ -1370,15 +1370,15 @@
       "ProductResponse": {
         "type": "object",
         "properties": {
+          "priceCents": {
+            "type": "integer",
+            "description": "Preço em centavos."
+          },
           "id": {
             "type": "string"
           },
           "name": {
             "type": "string"
-          },
-          "priceCents": {
-            "type": "number",
-            "description": "Preço em centavos."
           },
           "currency": {
             "type": "string",
@@ -1394,9 +1394,9 @@
           }
         },
         "required": [
+          "priceCents",
           "id",
           "name",
-          "priceCents",
           "currency",
           "createdAt",
           "updatedAt"
@@ -1466,13 +1466,13 @@
       "SessionResponse": {
         "type": "object",
         "properties": {
+          "expiresIn": {
+            "type": "integer",
+            "description": "Validade do access token, em segundos."
+          },
           "accessToken": {
             "type": "string",
             "description": "JWT do header `Authorization: Bearer`."
-          },
-          "expiresIn": {
-            "type": "number",
-            "description": "Validade do access token, em segundos."
           },
           "refreshToken": {
             "type": "string",
@@ -1480,8 +1480,8 @@
           }
         },
         "required": [
-          "accessToken",
           "expiresIn",
+          "accessToken",
           "refreshToken"
         ]
       },
