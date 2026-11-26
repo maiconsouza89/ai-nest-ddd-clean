@@ -48,8 +48,8 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | Passo | Entrega | Status |
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
-| 2 | Reprodução | ⬜ |
-| 3 | Tag só no Mailpit compartilhado, com teste | ⬜ |
+| 2 | Reprodução | ✅ |
+| 3 | Tag só no Mailpit compartilhado, com teste | ✅ |
 | 4 | Documentação | ⬜ |
 | 5 | Verificação, revisão, registro e PR | ⬜ |
 
