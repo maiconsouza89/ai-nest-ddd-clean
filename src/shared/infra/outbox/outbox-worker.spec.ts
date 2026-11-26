@@ -98,6 +98,25 @@ describe('OutboxWorker', () => {
     expect(log).not.toHaveBeenCalled();
   });
 
+  it('um outro erro no meio da pausa a encerra: a pausa seguinte loga de novo e recomeça em 1 s', async () => {
+    const { relay, calls } = fakeRelay([
+      unavailable(),
+      new Error('postgres fora'),
+      unavailable(),
+      0,
+    ]);
+    const worker = new OutboxWorker(relay, config);
+
+    worker.onApplicationBootstrap();
+    await vi.advanceTimersByTimeAsync(1_000 + 1_000 + 1_000);
+    await worker.onModuleDestroy();
+
+    expect(gaps(calls).slice(0, 3)).toEqual([1_000, 1_000, 1_000]);
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(log).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
+  });
+
   it('o desligamento acorda o worker no meio da pausa', async () => {
     const { relay, calls } = fakeRelay(Array.from({ length: 20 }, unavailable));
     const worker = new OutboxWorker(relay, config);

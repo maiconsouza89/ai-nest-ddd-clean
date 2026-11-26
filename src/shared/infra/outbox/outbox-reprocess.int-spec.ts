@@ -94,8 +94,9 @@ describe('Reprocesso de eventos mortos (integração)', () => {
     });
 
     publisher.failing = false;
-    // o `nextAttemptAt` é o `now()` do banco; o relógio do relay avança até depois dele
-    now = new Date(Date.now() + 1_000);
+    // o `nextAttemptAt` é o `now()` do banco: o relógio do relay vai para depois dele, sem depender do relógio do host
+    const [{ dbNow }] = await ds.query<{ dbNow: Date }[]>(`SELECT now() AS "dbNow"`);
+    now = new Date(dbNow.getTime() + 1_000);
     expect(await relay.runOnce()).toBe(1);
 
     expect((await row()).publishedAt).toEqual(now);

@@ -45,22 +45,27 @@ export class OutboxWorker implements OnApplicationBootstrap, OnModuleDestroy {
     let pausedRounds = 0;
     while (this.running) {
       let handled = 0;
+      let error: unknown;
       try {
         handled = await this.relay.runOnce();
-        if (pausedRounds > 0) {
-          this.logger.log('outbox relay resumed');
-          pausedRounds = 0;
+      } catch (caught) {
+        error = caught;
+      }
+      if (error instanceof EventTransportUnavailableError) {
+        // só a entrada na pausa loga: as rodadas seguintes falham pelo mesmo motivo
+        if (pausedRounds === 0) {
+          const cause = error.cause instanceof Error ? error.cause.message : String(error.cause);
+          this.logger.warn({ error: cause }, 'outbox relay paused: event transport unavailable');
         }
-      } catch (error) {
-        if (error instanceof EventTransportUnavailableError) {
-          // só a entrada na pausa loga: as rodadas seguintes falham pelo mesmo motivo
-          if (pausedRounds === 0) {
-            const cause = error.cause instanceof Error ? error.cause.message : String(error.cause);
-            this.logger.warn({ error: cause }, 'outbox relay paused: event transport unavailable');
-          }
-          await this.sleep(backoffDelayMs(++pausedRounds, PAUSE_BACKOFF));
-          continue;
-        }
+        await this.sleep(backoffDelayMs(++pausedRounds, PAUSE_BACKOFF));
+        continue;
+      }
+      // a primeira rodada sem a falha de transporte, mesmo com outro erro, encerra a pausa
+      if (pausedRounds > 0) {
+        this.logger.log('outbox relay resumed');
+        pausedRounds = 0;
+      }
+      if (error !== undefined) {
         this.logger.error('Outbox batch failed', error instanceof Error ? error.stack : error);
       }
       // lote cheio: ainda deve haver pendentes, volta logo

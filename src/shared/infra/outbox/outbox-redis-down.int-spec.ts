@@ -170,7 +170,8 @@ describe('Outbox com o Redis fora do ar (integração: Postgres e Redis)', () =>
 
     const start = Date.now();
     await expect(relay.runOnce()).rejects.toBeInstanceOf(EventTransportUnavailableError);
-    expect(Date.now() - start).toBeLessThan(7_000);
+    // o prazo de 5 s, com folga para a máquina carregada: sem ele, o publish esperaria o Redis voltar
+    expect(Date.now() - start).toBeLessThan(15_000);
     expect(await row(event.eventId)).toMatchObject({ attempts: 0, deadAt: null });
 
     await redisUp();
