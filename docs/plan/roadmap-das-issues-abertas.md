@@ -27,6 +27,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 2 | E | #21 Relatório de cobertura de testes | baixa | #13 | ✅ (#52) |
 | 2 | F | #22 Hooks de pre-commit e commitlint | baixa | — | ✅ (#53) |
 | 2 | G | #23 Mudanças do OpenAPI que quebram clientes | baixa | #13 | ✅ (#54) |
+| 3 | H | #56 Respostas de sucesso no OpenAPI ([plano](respostas-de-sucesso-no-openapi.md)) | baixa | #23 | 🟡 |
 
 A #22 não depende de nenhuma e pode subir para a onda 1 se houver capacidade.
 
@@ -49,6 +50,7 @@ O conflito esperado entre trilhas, para resolver no rebase:
 | `.github/CONTRIBUTING.md` | #21, #22, #23 | Seções diferentes |
 | `Dockerfile` | #17, #22 | A #22 só acrescenta `--ignore-scripts` aos dois `npm ci` |
 | Auth (`auth.controller.ts`, throttler, docs de autenticação) | #19 | Nenhum |
+| `openapi.json`, controllers, `docs/reference/operacao.md` | #56 | Nenhum com trilha aberta. O `openapi.json` se refaz com `npm run openapi:generate` depois do rebase |
 
 ## Como usar
 
