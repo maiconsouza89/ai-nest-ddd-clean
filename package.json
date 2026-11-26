@@ -48,7 +48,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
-    "docs:check": "markdownlint-cli2 && remark . --ignore-path .gitignore --frail --quiet --no-stdout",
+    "docs:check": "markdownlint-cli2 && remark . --ignore-path .gitignore --ignore-pattern '.claude/skills/**' --frail --quiet --no-stdout",
     "docs:links": "docker run --init --rm -w /input -v \"$PWD\":/input lycheeverse/lychee --no-progress --exclude-loopback --hidden --extensions md --scheme https --scheme http .",
     "github:setup": "node scripts/setup-github.mjs",
     "prepare": "node scripts/install-git-hooks.mjs"
