@@ -6,14 +6,18 @@ type: reference
 
 Contas de usuário, verificação do e-mail, login e sessões, e o ator de cada requisição.
 
-Código em `src/modules/identity/`, registrado no `src/app.module.ts` em dois módulos Nest:
+Código em `src/modules/identity/`, registrado no `src/app.module.ts` como `IdentityModule` e `IdentityAuthModule`.
+
+Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta página não os repete.
+
+## Estrutura
+
+Dois módulos Nest:
 
 | Módulo | Fornece | Quem importa |
 | --- | --- | --- |
 | `IdentityModule` | Rotas de autenticação, casos de uso, job de limpeza, eventos publicados. Exporta só a `UserDirectoryFacade` | `AppModule` e [notifications](notifications.md) |
 | `IdentityAuthModule` | O `ActorResolver` do shared, implementado pelo `TypeOrmActorResolver` | Só o `AppModule`, que o entrega ao `AuthModule.forRoot` |
-
-Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta página não os repete.
 
 ## Linguagem ubíqua
 
@@ -33,24 +37,22 @@ Rotas, tokens e prazos estão em [Autenticação](../autenticacao.md). Esta pág
 
 ## Contrato público
 
-**Facade:** `UserDirectoryFacade`, em `src/modules/identity/contracts/user-directory.facade.ts`.
+- **Facade:** `UserDirectoryFacade`, em `src/modules/identity/contracts/user-directory.facade.ts`. `emailOf(userId: string)` devolve o e-mail do usuário, ou `null` se o id não existir ou não for um uuid.
+- **Port do shared:** `ActorResolver.resolve(userId)` devolve `{ id, roles }`, ou `null` para um usuário que não existe. Só o guard de autenticação o usa.
+- **HTTP:** `POST /v1/auth/register`, `/verify-email`, `/resend-verification-code`, `/login`, `/refresh` e `/logout`. Corpos, respostas, erros e limites em [Autenticação](../autenticacao.md#rotas). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)).
 
-| Método | Devolve |
-| --- | --- |
-| `emailOf(userId: string)` | O e-mail do usuário, ou `null` se o id não existir ou não for um uuid |
+## Códigos de erro
 
-**Port do shared:** `ActorResolver.resolve(userId)` devolve `{ id, roles }`, ou `null` para um usuário que não existe. Só o guard de autenticação o usa.
-
-**HTTP:** `POST /v1/auth/register`, `/verify-email`, `/resend-verification-code`, `/login`, `/refresh` e `/logout`. Corpos, respostas, erros e limites em [Autenticação](../autenticacao.md#rotas). Os status dos códigos de erro vêm do `IDENTITY_ERROR_STATUSES` (`infra/http/error-statuses.ts`), e a resposta sai em Problem Details ([Respostas de erro](../respostas-de-erro.md)).
+Os status vêm do `IDENTITY_ERROR_STATUSES` (`infra/http/error-statuses.ts`). Cada código, com o status e a rota que o devolve, está em [Autenticação](../autenticacao.md#rotas).
 
 ## Eventos publicados
 
 Contratos em `src/modules/identity/contracts/events/`, com um exemplo versionado de cada um (`*.v1.example.ts`). O teste de contrato do publicador é o `application/events/to-integration-event.contract.spec.ts`.
 
-| Evento | Quando | Payload | Consumido por |
-| --- | --- | --- | --- |
-| `identity.verification-code-issued` v1 | No register e em cada reenvio aceito | `userId`, `email`, `name`, `code`, `expiresAt` | [notifications](notifications.md#eventos-consumidos) (`notifications.email-on-verification-code-issued`) |
-| `identity.email-verified` v1 | Na verificação do e-mail | `userId`, `email`, `name` | [notifications](notifications.md#eventos-consumidos) (`notifications.email-on-email-verified`) |
+| Tipo | Versão | Quando | Payload | Exemplo | Consumido por |
+| --- | --- | --- | --- | --- | --- |
+| `identity.verification-code-issued` | 1 | No register e em cada reenvio aceito | `userId`, `email`, `name`, `code`, `expiresAt` | `verification-code-issued.v1.example.ts` | [notifications](notifications.md#eventos-consumidos) (`notifications.email-on-verification-code-issued`) |
+| `identity.email-verified` | 1 | Na verificação do e-mail | `userId`, `email`, `name` | `email-verified.v1.example.ts` | [notifications](notifications.md#eventos-consumidos) (`notifications.email-on-email-verified`) |
 
 - Os dois são gravados na outbox na mesma transação do usuário e do código, com o id do usuário como `aggregateId`.
 - O `code` viaja **em texto puro**: é o que o notifications envia. Ele fica na `shared.outbox` até a limpeza dos eventos publicados (7 dias) e, numa linha morta, até alguém apagá-la, e nos jobs do BullMQ, no Redis, por até 7 dias. O motivo e as alternativas estão na [ADR 0009](../../adr/0009-verificacao-de-email-com-codigo-no-evento.md).
@@ -78,13 +80,15 @@ Nenhum.
 | Um refresh token renova uma vez só. O reuso revoga a família inteira | `INVALID_REFRESH_TOKEN` |
 | Nenhum refresh token vence depois do prazo absoluto da família | — |
 
-## Job
+## Jobs e cache
 
-Scheduler `identity.purge-expired-refresh-tokens`, que apaga os refresh tokens vencidos. Fila, horário e chave de liga e desliga em [Refresh token](../autenticacao.md#refresh-token).
+- **Limpeza dos refresh tokens:** fila `jobs.identity`, scheduler `identity.purge-expired-refresh-tokens`, uma vez por dia, às 3h. Apaga os refresh tokens vencidos. Obedece ao `JOBS_ENABLED` ([Workers e jobs](../variaveis-de-ambiente.md#workers-e-jobs)).
 
 ## Dependências
 
 Nenhum módulo de negócio. Importa o `MessagingModule` do shared, para o job, e grava na `Outbox` do shared.
+
+## Adapters
 
 | Port | Adapter |
 | --- | --- |
@@ -100,7 +104,7 @@ O prazo do código vem de `EMAIL_VERIFICATION_CODE_TTL_SECONDS` ([Variáveis de 
 
 - Schema `identity`, migrations registradas em `identity_migrations`. Aplique com `npm run mig:identity:run`.
 - Migrations em `src/modules/identity/infra/database/typeorm/migrations/`.
-- A migration do e-mail verificado não preenche contas antigas: o template começa de um banco vazio. Num banco com contas, elas ficam por verificar e precisam pedir um código pelo reenvio.
+- A migration do e-mail verificado não preenche as contas que já existem: elas ficam por verificar e precisam pedir um código pelo reenvio.
 
 | Tabela | Conteúdo |
 | --- | --- |
@@ -108,7 +112,9 @@ O prazo do código vem de `EMAIL_VERIFICATION_CODE_TTL_SECONDS` ([Variáveis de 
 | `email_verification_codes` | `id`, `userId`, `codeHash` (SHA-256), `expiresAt`, `attempts` (padrão 0), `usedAt`, `createdAt`. Índice em `userId`. Apagada em cascata com o usuário. Como no `refresh_tokens`, as props da entidade são as colunas, sem mapper |
 | `refresh_tokens` | `id`, `familyId`, `userId`, `tokenHash` (SHA-256, único), `createdAt`, `expiresAt`, `familyExpiresAt`, `usedAt`, `revokedAt`. Índices em `expiresAt`, `userId` e `familyId`. Apagada em cascata com o usuário |
 
-**Seed** (`npm run seed:identity`): os [usuários de teste](../autenticacao.md#usuários-de-teste), já com o e-mail verificado. Insere só quem falta, sem trocar id, roles nem senha de conta existente. Numa conta de teste que já existia sem verificação, preenche só o `emailVerifiedAt`.
+## Seed
+
+`npm run seed:identity`: os [usuários de teste](../autenticacao.md#usuários-de-teste), já com o e-mail verificado. Insere só quem falta, sem trocar id, roles nem senha de conta existente. Numa conta de teste que já existia sem verificação, preenche só o `emailVerifiedAt`.
 
 ## Decisões
 

@@ -18,7 +18,7 @@ O que fica em cada camada de um módulo e em qual pasta. Os imports entre camada
 Exceções:
 
 - Um módulo CRUD sem regra de negócio dispensa as camadas, como o [catalog](modules/catalog.md#estrutura). As regras de fronteira entre módulos continuam valendo para ele.
-- O [inventory](modules/inventory.md) não tem entidade de domínio. O saldo é disputado demais para ler, conferir e gravar com versão, então o repositório é organizado por operações (`registerReservation`, `decrease`, `increase`...), e as invariantes ficam no banco: o `CHECK` de saldo não negativo, o `UNIQUE` da referência da reserva e o update condicional da baixa ([Consistência e eventos](../explanation/consistencia-e-eventos.md#estoque-update-condicional-sem-ler-antes)).
+- O [inventory](modules/inventory.md) não tem entidade de domínio. O repositório é organizado por operações (`registerReservation`, `decrease`, `increase`...), e as invariantes ficam no banco: o `CHECK` de saldo não negativo, o `UNIQUE` da referência da reserva e o update condicional da baixa ([Transações e concorrência](../explanation/transacoes-e-concorrencia.md)).
 
 ## Estrutura de pastas
 
@@ -126,16 +126,32 @@ src/
 
 ## Entre módulos
 
-Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/`, sem ciclo). Ele roda `depcruise src` e não olha o `test/`: a fronteira do `test/` só é conferida no code review, e os e2e importam `../src/app.module.js` de propósito. O resto:
+Os imports entre módulos são conferidos pelo `npm run arch` (só o `contracts/`, sem ciclo). A exceção é o arquivo do Nest module (`*.module.ts`), que pode importar também o Nest module de outro módulo, para declarar a dependência em `imports` (regra `modulo-nest-so-importa-modulo-nest` do `.dependency-cruiser.js`). O `npm run arch` roda `depcruise src` e não olha o `test/`: a fronteira do `test/` só é conferida no code review, e os e2e importam `../src/app.module.js`. O resto:
 
 | Situação | Convenção |
 | --- | --- |
 | Schema | Um por módulo: `@Entity({ name, schema: '<módulo>' })`. A primeira migration só faz o `CREATE SCHEMA` |
-| Migrations | DataSource da CLI por módulo (`<módulo>.data-source.ts`), só com as entidades do módulo e `migrationsTableName: '<módulo>_migrations'` |
+| Migrations | DataSource da CLI por módulo (`<módulo>.data-source.ts`), só com as entidades do módulo e `migrationsTableName: '<módulo>_migrations'`. A CLI não passa pelo Nest: o DataSource carrega e valida o `.env` (`loadEnvFiles` e `validateEnv`) e usa a `postgresOptions(env, { migrations: true })`, sem os timeouts de query |
 | Referência a dado de outro módulo | Só o id (`customerId`), sem FK |
 | Leitura de dado de outro módulo | Pela facade, ou por uma cópia local atualizada por eventos. Sem join |
 | Mudança que precisa refletir em outro módulo | Evento de integração pela outbox. Sem transação entre módulos, exceto a reserva de estoque do orders ([Agregados](../explanation/agregados.md#síncrono-dentro-da-transação-do-pedido)) |
 | Dependência nos dois sentidos | Uma direção pela facade, a volta por evento |
+
+## Checklist
+
+O que nenhum check confere num módulo novo ou alterado:
+
+| Regra | Ver |
+| --- | --- |
+| O `create` da entidade aplica as regras, e o `restore` só reconstrói | [Domain](#domain) |
+| Valor em dinheiro usa o `Money`, e o preço vem do servidor, nunca da requisição | [Modelagem do domínio](../explanation/modelagem-do-dominio.md) |
+| Um recurso com dono: o controller passa o `@CurrentUser()`, o caso de uso confere o dono e a query filtra pelo ator | [Autenticação e ownership](../explanation/autenticacao.md) |
+| Os filhos do agregado são salvos pela raiz | [Convenções](convencoes.md#typeorm) |
+| Uma gravação disputada usa a versão do repositório gerado ou um update condicional | [Transações e concorrência](../explanation/transacoes-e-concorrencia.md) |
+| Nenhuma FK, join ou transação com tabela de outro módulo | [Entre módulos](#entre-módulos) |
+| Toda listagem é paginada, com limite máximo | [Convenções](convencoes.md#paginação) |
+| Cada evento publicado tem teste de contrato | [Testes](testes.md#por-camada) |
+| Consumidor de evento, cache, job e chamada a fornecedor seguem a página de cada um | [Como publicar um evento de integração](../how-to/publicar-um-evento-de-integracao.md), [Como cachear uma leitura](../how-to/cachear-uma-leitura.md), [Como agendar um job](../how-to/agendar-um-job.md), [Serviços externos](../explanation/servicos-externos.md) |
 
 ## Shared
 

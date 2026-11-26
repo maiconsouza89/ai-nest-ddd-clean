@@ -11,23 +11,18 @@ Todos os comandos rodam na raiz do repositório.
 - Node 22.22.3 ou superior na linha 22, 24.11.1 ou superior na linha 24, ou 25.1.0 ou superior (`engines` do `package.json`). O `.nvmrc` recomenda o 24.
 - Docker, para o Postgres, o Redis e o Mailpit do `docker-compose.yml` e para os testes de integração.
 
-## Setup do zero
+## Serviços do docker-compose
 
-Nesta ordem:
+O passo a passo para subir o ambiente está em [Como preparar o ambiente local](../how-to/preparar-o-ambiente-local.md). Num `git worktree`, o setup é outro: [Worktrees](#worktrees).
 
-1. `npm install`. Instala também os [hooks do git](#hooks-do-git), pelo `prepare`. O npm pode avisar que pacotes como `argon2` e `ssh2` têm scripts de instalação não aprovados. O setup funciona sem aprová-los: o `argon2` usa um binário pronto (conferido em 2026-11-23, com o npm 11.20 e o Node 26).
-2. `cp .env.example .env`. Cada variável está em [Variáveis de ambiente](variaveis-de-ambiente.md).
-3. `docker compose up -d postgres redis mailpit`. Sobe o Postgres 19 em `127.0.0.1:5432`, com `max_connections=200` para caber os worktrees, o Redis 8 em `127.0.0.1:6379` e o Mailpit 1, o SMTP de desenvolvimento, em `127.0.0.1:1025`. O Mailpit aceita envio com ou sem usuário SMTP e marca cada e-mail com o usuário, que vira a tag de um [worktree](#worktrees).
-4. As [migrations](#migrations) de todos os módulos, depois os [seeds](#seeds):
+| Serviço | Imagem | Endereço | Observação |
+| --- | --- | --- | --- |
+| `postgres` | `postgres:19` | `127.0.0.1:5432` | `max_connections=200`, para caber os bancos dos worktrees. Usuário e senha `postgres`, banco `app` |
+| `redis` | `redis:8` | `127.0.0.1:6379` | `--appendonly yes` e `--maxmemory-policy noeviction` |
+| `mailpit` | `axllent/mailpit:v1` | `127.0.0.1:1025` (SMTP) e `127.0.0.1:8025` (interface web e API) | SMTP de desenvolvimento: guarda os e-mails, sem enviar para fora. Aceita envio com ou sem usuário SMTP e marca cada e-mail com o usuário, que vira a tag de um [worktree](#worktrees) |
+| `migrate` e `app` | `ai-nest-ddd-clean:local` | `127.0.0.1:3000` (`app`) | Só no profile `prod`: [Testar a imagem de produção](#testar-a-imagem-de-produção) |
 
-   ```sh
-   npm run db:setup
-   npm run db:seed
-   ```
-
-5. `npm run start:dev`.
-
-Num `git worktree`, o setup é outro: [Worktrees](#worktrees).
+## Endereços
 
 Com a app no ar:
 
@@ -59,10 +54,10 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run arch` | Regras de camadas e de fronteiras entre módulos, com o dependency-cruiser (`.dependency-cruiser.js`) |
 | `npm run docs:check` | Lint do Markdown, links e âncoras locais, `type:` das páginas de `docs/` e comentários de template que sobraram. Também confere que cada pasta de `src/modules/` está no índice de módulos do `docs/README.md` e que cada página de módulo tem um módulo; que o `AGENTS.md` não usa `@caminho`; e que os caminhos de `docs/` citados no `AGENTS.md` e nos arquivos de `.claude/` existem (`scripts/remark-docs-rules.mjs`) |
 | `npm run docs:links` | Links externos, com o lychee via Docker. Pula os endereços locais (`localhost`), que só respondem com a app ou o compose no ar. Fora do CI, porque depende da rede |
-| `npm run openapi:generate` | Compila (`nest build`) e grava o `openapi.json` da raiz a partir do `AppModule`, sem Postgres nem Redis ([Operação → Swagger](operacao.md#swagger)). Rode depois de mudar controller, DTO ou decorator do Swagger e commite o arquivo |
+| `npm run openapi:generate` | Compila (`nest build`) e grava o `openapi.json` da raiz a partir do `AppModule`, sem Postgres nem Redis ([Operação → Swagger](operacao.md#swagger)). Exigido depois de mudar controller, DTO ou decorator do Swagger, com o arquivo commitado: [Como atualizar o contrato OpenAPI](../how-to/atualizar-o-contrato-openapi.md) |
 | `npm run openapi:check` | Compila e compara o documento com o `openapi.json`. Diferente ou ausente, falha com a instrução de rodar o `openapi:generate`. Uns 10 s, pelo `nest build` |
 | `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check`, `arch` e `openapi:check`, nessa ordem. O job `check` do CI roda o `ci:static` e o `audit:signatures` |
-| `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures`. O `nest build` do `openapi:check` apaga e refaz o `dist/`: com o `start:dev` no ar no mesmo checkout, encerre-o antes ou espere ele recompilar |
+| `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures`. O `nest build` do `openapi:check` apaga e refaz o `dist/`, o mesmo do `start:dev` no ar no mesmo checkout, que só volta depois de recompilar |
 | `npm run audit:signatures` | `npm audit signatures`: confere a assinatura do registry e as attestations de cada pacote instalado. Precisa da rede. Não olha advisories: eles ficam com os Dependabot alerts e o dependency review ([CI](#ci)) |
 
 ## Hooks do git
@@ -101,7 +96,7 @@ Cuidados com o e2e:
 
 - O e2e lê `DATABASE_URL`, `REDIS_URL`, `SMTP_URL`, `MAILPIT_API_URL` e `MAILPIT_TAG` do ambiente, do `.env.local` e do `.env` do checkout, nessa precedência. Sem elas, apontam para o Postgres, o Redis e o Mailpit do `docker-compose.yml`, que precisam estar no ar. O endereço da API do Mailpit padrão é `http://127.0.0.1:8025`.
 - O e2e **grava dados** no banco do checkout: o `app` no principal, o `app_wt<N>` num worktree.
-- Encerre antes o `start:dev` deste checkout. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. O `start:dev` e o e2e de outro worktree com `worktree:setup` não interferem.
+- O e2e exige o `start:dev` deste checkout parado. Outra instância no mesmo Redis consome as filas do BullMQ e derruba os testes. O `start:dev` e o e2e de outro worktree com `worktree:setup` não interferem.
 
 ## Worktrees
 
@@ -109,7 +104,7 @@ Cada `git worktree` ganha a sua porta, o seu banco, o seu banco lógico do Redis
 
 | Comando | O que faz |
 | --- | --- |
-| `npm run worktree:setup` | Só num worktree. Reserva o slot `N` (de 1 a 15), gera o `.env` a partir do `.env` do principal (porta `3000 + N`, banco `app_wt<N>`, banco lógico `N` do Redis, usuário SMTP `wt<N>`), copia o `.env.local` do principal sem essas chaves, roda o `npm ci` se falta `node_modules` (`-- --install` força), sobe o stack do principal, cria o banco e roda o `db:setup` e o `db:seed`. Na primeira reserva, apaga o que um worktree removido deixou no slot. Rodado de novo, mantém o slot e os dados (`scripts/worktree.mjs`) |
+| `npm run worktree:setup` | Só num worktree. Reserva o slot `N` (de 1 a 15), gera o `.env` a partir do `.env` do principal (porta `3000 + N`, banco `app_wt<N>`, banco lógico `N` do Redis, usuário SMTP `wt<N>`), copia o `.env.local` do principal sem essas chaves (sem um no principal, filtra o do worktree), roda o `npm ci` se falta `node_modules` (`-- --install` força), sobe o stack do principal, cria o banco e roda o `db:setup` e o `db:seed`. Na primeira reserva, apaga o que um worktree removido deixou no slot. Um `.env` copiado de outro worktree, com o slot dele, ganha um slot próprio. Rodado de novo, mantém o slot e os dados e regera o `.env` e o `.env.local` (`scripts/worktree.mjs`) |
 | `npm run worktree:down` | Só num worktree com slot. Apaga o banco `app_wt<N>`, esvazia o banco lógico `N` do Redis e as mensagens da tag `wt<N>`. Não toca em containers nem volumes. O slot fica reservado até o `git worktree remove` |
 
 - **Trava:** o `start:dev`, o `test:e2e`, o `db:setup` e o `db:seed` rodam antes o `scripts/worktree-guard.mjs`. Num worktree (o `.git` da raiz é um arquivo) sem `WORKTREE_SLOT` no ambiente, no `.env.local` ou no `.env`, ele para com "rode `npm run worktree:setup`". No principal e no CI, não faz nada.
@@ -140,36 +135,29 @@ O `ci.yml`: num PR, um push novo cancela a execução anterior do mesmo PR. Na `
 | `openapi` | Compara o `openapi.json` do PR com o da base pelo `oasdiff` (Quebra do contrato, abaixo). Sem o arquivo na base, avisa e passa. Pulado em PR só de Markdown | Não roda | — |
 | `ci` | Falha se um dos outros falhou ou foi cancelado. Um job pulado conta como aprovado. É o check obrigatório do PR | O mesmo | — |
 
-- **PR só de Markdown:** quando todos os arquivos do PR são `*.md` ou estão em `docs/`, o `unit`, o `integration` e o `e2e` são pulados, e o `ci` passa. O filtro fica num job, e não no gatilho do workflow, para o check obrigatório continuar aparecendo no PR.
-- **Só os testes afetados:** em PR, o checkout é o merge do PR na branch de destino, e `HEAD^1` é a ponta da branch de destino. O `--changed HEAD^1` roda os testes ligados por import aos arquivos do PR, ou a suíte inteira quando o PR muda um arquivo do `forceRerunTriggers` do `vitest.config.ts`. Um PR verde pode não ter rodado um teste que o grafo de imports não liga à mudança. A `main` roda tudo e pega o que escapou. O que o `--changed` enxerga: [Testes](testes.md#só-os-testes-afetados).
-- **Cobertura:** só a entrada `.nvmrc` do `unit` mede, e roda os unitários inteiros também em PR: com o `--changed`, o relatório e a meta ficariam só com os arquivos do diff. Um step com `if: "!cancelled() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''"` roda o `node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"`, que acrescenta a tabela por camada (`domain`, `application`, `contracts`, infra e o resto, e o total) ao resumo dos testes que o reporter `github-actions` do Vitest já escreve. A tabela aparece também quando a meta falha, porque o Vitest grava o relatório antes de conferir a meta, e não aparece quando um teste falha, que não gera relatório, nem numa execução cancelada, que poderia deixar um relatório pela metade. O que é medido e a meta: [Testes](testes.md#cobertura).
-- **Quebra do contrato:** o job `openapi` roda `oasdiff breaking HEAD^1:openapi.json HEAD:openapi.json --config .github/oasdiff/config.yaml -f githubactions`. O `HEAD^1` é a ponta da base, como no `--changed HEAD^1`. Compara os dois arquivos guardados, sem compilar a base: o `check` garante, pelo `openapi:check`, que o do PR está atualizado. Cada quebra vira uma anotação no PR.
+- **PR só de Markdown:** quando todos os arquivos do PR são `*.md` ou estão em `docs/`, o `unit`, o `integration` e o `e2e` são pulados, e o `ci` passa. O filtro fica no job `changes`, e não no gatilho do workflow.
+- **Só os testes afetados:** em PR, o checkout é o merge do PR na branch de destino, e `HEAD^1` é a ponta da branch de destino. O `--changed HEAD^1` roda os testes ligados por import aos arquivos do PR, ou a suíte inteira quando o PR muda um arquivo do `forceRerunTriggers` do `vitest.config.ts`. Um PR verde pode não ter rodado um teste que o grafo de imports não liga à mudança. A `main` roda tudo. O que o `--changed` enxerga: [Testes](testes.md#só-os-testes-afetados).
+- **Cobertura:** só a entrada `.nvmrc` do `unit` mede, e roda os unitários inteiros também em PR. Um step com `if: "!cancelled() && matrix.coverage && hashFiles('coverage/coverage-summary.json') != ''"` roda o `node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"`, que acrescenta a tabela por camada (`domain`, `application`, `contracts`, infra e o resto, e o total) ao resumo dos testes que o reporter `github-actions` do Vitest já escreve. A tabela aparece também quando a meta falha, porque o Vitest grava o relatório antes de conferir a meta, e não aparece quando um teste falha, que não gera relatório, nem numa execução cancelada. O que é medido e a meta: [Testes](testes.md#cobertura).
+- **Quebra do contrato:** o job `openapi` roda `oasdiff breaking HEAD^1:openapi.json HEAD:openapi.json --config .github/oasdiff/config.yaml -f githubactions`. O `HEAD^1` é a ponta da base, como no `--changed HEAD^1`. Compara os dois arquivos guardados, sem compilar a base: o `check` garante, pelo `openapi:check`, que o do PR está atualizado. Cada quebra vira uma anotação no PR. Como regerar o arquivo e aceitar uma quebra: [Como atualizar o contrato OpenAPI](../how-to/atualizar-o-contrato-openapi.md).
   - **Severidade:** o `fail-on: ERR` do `.github/oasdiff/config.yaml` falha numa mudança de nível `ERR`: rota removida sem `deprecated`, campo obrigatório removido da resposta, campo obrigatório novo na requisição. Um `WARN`, como um campo opcional removido da resposta, aparece na saída e passa.
-  - **`request-property-removed` e `request-parameter-removed` como `ERR`:** o `.github/oasdiff/severity-levels.txt` sobe de `WARN` para `ERR` o campo removido do corpo da requisição e o parâmetro removido da requisição. O `ValidationPipe` usa `forbidNonWhitelisted`, que vale para o corpo e para a query de um DTO de `@Query()`, como o `PaginationQuery`: o cliente que ainda manda o campo ou o parâmetro recebe 400 `VALIDATION_FAILED`. O `oasdiff` supõe que o servidor ignora o que sobra. O arquivo não aceita comentário, por isso o motivo fica aqui.
-  - **Quebra intencional:** uma linha no `.github/oasdiff/err-ignore.txt` por quebra aceita, no mesmo PR, que leva o `!` e o `BREAKING CHANGE` ([Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)). A linha traz o método e o caminho mais a mensagem do `oasdiff`, inteiros, e o número do PR: `` POST /v1/auth/login removed the request property `password` (#123) ``. Não é regex; maiúsculas e texto a mais não importam. Uma quebra acusada em várias rotas, como um campo do `ProblemDetailsResponse`, pede uma linha por rota e status. O `oasdiff` lê também as linhas de comentário, então um comentário com método e caminho libera a quebra. Quem acrescenta uma linha apaga as de PRs já mergeados. O caminho normal continua o da [convenção](convencoes.md#versionamento-da-api-http): uma `/v2` é aditiva.
-  - **Binário:** o job baixa o `oasdiff` do release do GitHub e confere o SHA-256 antes de extrair. A versão e o SHA-256 ficam no `env` do job, e o Dependabot não os atualiza ([Versões e exceções](versoes-e-excecoes.md#atualização-automática)). A `oasdiff/oasdiff-action` ficou de fora: monta a imagem a partir de uma tag Docker mutável, que o `actions.lock` não cobre, e manda os documentos para o oasdiff.com por padrão.
-  - **Local:** com o binário baixado à mão do release, `oasdiff breaking origin/main:openapi.json openapi.json --config .github/oasdiff/config.yaml`. A saída 1 é uma quebra.
-- **Conflito no `openapi.json`:** não resolva à mão. Depois do rebase, rode `npm run openapi:generate` e commite o arquivo.
+  - **`request-property-removed` e `request-parameter-removed` como `ERR`:** o `.github/oasdiff/severity-levels.txt` sobe de `WARN` para `ERR` o campo removido do corpo da requisição e o parâmetro removido da requisição. O `ValidationPipe` usa `forbidNonWhitelisted`, que vale para o corpo e para a query de um DTO de `@Query()`, como o `PaginationQuery`: o cliente que ainda manda o campo ou o parâmetro recebe 400 `VALIDATION_FAILED`. O `severity-levels.txt` não aceita comentário, e o motivo de cada linha fica aqui.
+  - **Quebras aceitas:** o `.github/oasdiff/err-ignore.txt` tem uma linha por quebra aceita de propósito, com o método e o caminho mais a mensagem do `oasdiff`, inteiros, e o número do PR: `` POST /v1/auth/login removed the request property `password` (#123) ``. Não é regex; maiúsculas e texto a mais não importam. Uma quebra acusada em várias rotas, como um campo do `ProblemDetailsResponse`, pede uma linha por rota e status. O `oasdiff` lê também as linhas de comentário, e um comentário com método e caminho libera a quebra. O PR que acrescenta a linha leva o `!` e o `BREAKING CHANGE` ([Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)).
+  - **Binário:** o job baixa o `oasdiff` do release do GitHub e confere o SHA-256 antes de extrair. A versão e o SHA-256 ficam no `env` do job, e o Dependabot não os atualiza ([Versões e exceções](versoes-e-excecoes.md#atualização-automática)).
 - **Instalação em cache:** os jobs `check`, `unit`, `integration` e `e2e` usam a composite action `.github/actions/setup`. Ela instala o Node e restaura o `node_modules` do `actions/cache`, com a chave `node-modules-<SO>-<versão do Node resolvida>-<hash do package-lock.json>`, e roda `npm ci` só quando o cache não acerta. Mudar o lockfile ou a versão do Node gera um cache novo.
 - **Sem fail-fast:** os jobs rodam em paralelo, a matriz do `unit` não cancela a outra versão quando uma falha, e o Vitest não para no primeiro erro. Todos os resultados saem de uma vez. Quando rever: [Evoluções com gatilho](evolucoes-com-gatilho.md#ci).
 - **E2E:** os `services:` usam as imagens do `docker-compose.yml`, nas portas que o `test/setup-env.ts` espera, com o Postgres sem durabilidade e em tmpfs, como o da integração. Sobem e esperam o healthcheck antes do primeiro step, o que custa uns 15 s ao job. Localmente, o e2e continua no docker-compose.
 - **Fora do CI:** o `docs:links`, que depende da rede.
 - **Checks obrigatórios:** o `ci`, o `dependency-review`, o `verify-lockfile` e o `pr-title`, todos do GitHub Actions. O nome de cada um é o do job: renomear um job exige mudar o `scripts/setup-github.mjs` e rodar o `npm run github:setup`. A matriz do `unit` pulada não expande, e o check dela fica com o nome cru da expressão, por isso o `ci` junta os jobs do `ci.yml`.
 - **Regra do CodeQL:** a regra `code_scanning` do ruleset barra o merge enquanto a análise do CodeQL do PR não termina e quando ela acha, nas linhas que o PR muda, um alerta de segurança `high` ou acima ou um alerta de severidade `error`. Os alertas antigos não barram, mas ficam abertos na aba Security.
-- **Falso positivo do CodeQL:** na aba Security → Code scanning, abra o alerta e use "Dismiss alert", com o motivo ("False positive", "Used in tests" ou "Won't fix") e um comentário que explique. Não desligue a regra nem tire o arquivo da análise.
-- **Lockfile das actions:** o `.github/workflows/actions.lock` guarda o commit, o `owner_id` e o `repo_id` de cada action, inclusive as transitivas e as da composite `.github/actions/setup`, que os workflows chamam por `$/.github/actions/setup` (a própria action no commit do workflow). O runner confere o lockfile no início do job.
-  - Instale a extensão uma vez: `gh extension install github/gh-actions-lock --pin v0.5.1`.
-  - Depois de adicionar ou mudar um `uses:`, num workflow ou na composite, rode `gh actions-lock` na raiz, revise o diff inteiro e commite o `actions.lock`. Uma troca de `commit` é uma troca de código; uma troca de `owner_id` ou `repo_id` indica outro repositório atrás do nome e precisa de investigação. Nunca edite o lockfile à mão.
-  - Para conferir sem rede se cada `uses:` tem entrada no lockfile: `gh actions-lock --verify-local`. O `gh actions-lock --verify` faz a conferência completa do CI.
-  - Numa action do próprio repositório, use `$/` e não `./`: o `./` não entra no lockfile.
-  - O actionlint local não conhece o `$/`: a exceção fica no `.github/actionlint.yaml`.
+- **Falso positivo do CodeQL:** é dispensado no próprio alerta, em Security → Code scanning → "Dismiss alert", com o motivo ("False positive", "Used in tests" ou "Won't fix") e um comentário. A regra e a análise do arquivo continuam ligadas.
+- **Lockfile das actions:** o `.github/workflows/actions.lock` guarda o commit, o `owner_id` e o `repo_id` de cada action, inclusive as transitivas e as da composite `.github/actions/setup`, que os workflows chamam por `$/.github/actions/setup` (a própria action no commit do workflow). O runner confere o lockfile no início do job. Ele sai do `gh actions-lock`, da extensão `github/gh-actions-lock`, e nunca é editado à mão. Uma action referenciada por `./` não entra no lockfile. O actionlint local não conhece o `$/`: a exceção fica no `.github/actionlint.yaml`. Como mudar um `uses:` e atualizar o lockfile: [Como mudar uma action do CI](../how-to/mudar-uma-action-do-ci.md).
 - **`npm run github:setup`** (`scripts/setup-github.mjs`): cria, ou atualiza, um ruleset na branch padrão do repositório do `origin` que exige os checks obrigatórios, inclusive em push direto, tem a regra do CodeQL e bloqueia force push e exclusão. Ao atualizar, mantém o bypass e as regras de outros tipos acrescentados pela interface. Também deixa o squash como único merge de PR, com o título e a descrição do PR como mensagem do commit (o título segue o Conventional Commits, ver [Como contribuir](../../.github/CONTRIBUTING.md#commits-e-título-do-pr)), e apaga o branch do PR depois do merge. Liga os Dependabot alerts, os Dependabot security updates e a exigência de action fixada por SHA (`sha_pinning_required`), mantendo o resto das permissões do GitHub Actions. Num repositório público, liga o relato privado de vulnerabilidade, o canal do `.github/SECURITY.md`. Num privado ou interno, o GitHub não oferece esse relato, e o script só avisa. A regra do CodeQL entra num repositório público, ou num privado ou interno com o GitHub Code Security; sem ele, o script avisa e segue sem a regra. Não liga o secret scanning. Pede o `gh` autenticado com admin no repositório. Num repositório privado, o GitHub pode exigir plano pago para rulesets.
 - **Dependabot:** abre os PRs de atualização do npm, das actions e das imagens, que passam pelos mesmos checks. A agenda, os grupos e o `ignore` estão em [Versões e exceções → Atualização automática](versoes-e-excecoes.md#atualização-automática).
-- **"Require lockfile", à mão:** a política que bloqueia um workflow sem lockfile não tem API. Depois do `npm run github:setup`, ligue-a em Settings → Actions → Policies, mirando todos os workflows, com o enforcement `Active`.
+- **"Require lockfile":** a política que bloqueia um workflow sem lockfile não tem API, e o `npm run github:setup` não a liga. Como ligá-la: [Como mudar uma action do CI](../how-to/mudar-uma-action-do-ci.md#ligar-o-require-lockfile-num-repositório-novo).
 
 ## Migrations
 
-Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app (`synchronize: false` e `migrationsRun: false`): rode-as antes, no setup local e no pipeline de deploy. Passo a passo para criar uma: [Como gerar uma migration](../how-to/gerar-uma-migration.md). Para aplicar todas e conferir o que falta: [Como rodar as migrations e os seeds](../how-to/rodar-as-migrations-e-os-seeds.md).
+Cada módulo tem as suas migrations e o seu script. Elas **não** rodam sozinhas ao subir a app (`synchronize: false` e `migrationsRun: false`): exigem um passo antes, no setup local e no pipeline de deploy. Passo a passo para criar uma: [Como gerar uma migration](../how-to/gerar-uma-migration.md). Para aplicar todas e conferir o que falta: [Como rodar as migrations e os seeds](../how-to/rodar-as-migrations-e-os-seeds.md).
 
 | Comando | O que faz |
 | --- | --- |
@@ -189,7 +177,7 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 - `npm run db:seed` roda todos: cada script `seed:<módulo>` do `package.json`, um depois do outro, e para no primeiro que falhar (`scripts/run-scripts.mjs`). Um seed novo entra sozinho.
 - `npm run seed:<módulo>` roda o de um módulo só. Só tem seed o módulo com um script `seed:<módulo>` no `package.json`. O que cada seed cria está na doc do módulo, em [Módulos](../README.md#módulos).
-- Rode as migrations antes.
+- Exigem as migrations aplicadas antes.
 - Só rodam com `NODE_ENV=development` ou `test`. Qualquer outro valor, ou nenhum, recusa.
 - Inserem só o que falta e não sobrescrevem o que existe, então podem rodar mais de uma vez.
 - Usuários de teste: `admin@example.com` e `user@example.com`, os dois com a senha `Senha@12345`.
@@ -198,15 +186,15 @@ Só para desenvolvimento. Dados que o sistema precisa para funcionar vão numa m
 
 | Comando | O que gera |
 | --- | --- |
-| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen`, `mig:<nome>:run` e `mig:<nome>:run:prod` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. Rode `npm run mig:<nome>:run` antes de subir a app. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
+| `npm run plop module <nome>` | Um módulo com todas as camadas, com o nome no singular. Registra o módulo no `src/app.module.ts`, cria os scripts `mig:<nome>:gen`, `mig:<nome>:run` e `mig:<nome>:run:prod` e cria o helper dos testes de integração, `test/helpers/<nome>-database.ts`. Gera também `docs/reference/modules/<nome>.md`, que falha no `docs:check` até os comentários do template serem apagados, e a lista o módulo no índice de `docs/README.md`, onde falta escrever a descrição de uma linha. A app exige o `npm run mig:<nome>:run` antes de subir. Os passos seguintes estão em [Como criar um módulo](../how-to/criar-um-modulo.md). Templates em `plop-templates/module/` e `plop-templates/doc/module.md.hbs` |
 | `npm run plop doc <tipo> "<nome>"` | Uma página de `docs/` do tipo `tutorial`, `how-to`, `reference` ou `explanation`. Templates em `plop-templates/doc/`. A página falha no `docs:check` até os comentários do template serem apagados |
 
 ## Testar a imagem de produção
 
-O profile `prod` do `docker-compose.yml` gera a imagem, roda as migrations dela e sobe a app na porta 3000. Fica fora do `docker compose up` de sempre. Os comandos estão em [Como fazer o deploy](../how-to/fazer-o-deploy.md#testar-a-imagem-localmente).
+O profile `prod` do `docker-compose.yml` gera a imagem, roda as migrations dela e sobe a app na porta 3000. Fica fora do `docker compose up` de sempre e só roda no checkout principal. Os comandos estão em [Como testar a imagem de produção localmente](../how-to/testar-a-imagem-de-producao-localmente.md).
 
 ## Baixar o ambiente
 
-`docker compose down -v --remove-orphans`, só na raiz do checkout principal. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Apaga também os dados de todos os worktrees, que usam esse stack. Num worktree, use o `npm run worktree:down` ([Worktrees](#worktrees)). Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
+`docker compose down -v --remove-orphans`, só na raiz do checkout principal. Remove os containers, a rede e os volumes `<pasta>_*`: o Compose usa o nome da pasta do repositório como nome do projeto. Apaga também os dados de todos os worktrees, que usam esse stack. Num worktree, o equivalente é o `npm run worktree:down` ([Worktrees](#worktrees)). Para voltar a um ambiente limpo e no ar: [Como resetar o ambiente local](../how-to/resetar-o-ambiente-local.md).
 
 Nunca use `docker volume prune` nem `docker system prune`, e não remova volumes, containers ou redes de outros projetos.

@@ -5,54 +5,107 @@ type: reference
 # Módulo {{kebabCase name}}
 
 <!-- O propósito do módulo, em uma frase. Referência: fatos do código, sem passo a passo (docs/how-to/) e sem
-porquê (vai para um ADR). Ao mudar o módulo, mude esta página junto. Apague os comentários ao preencher. -->
+porquê (docs/explanation/ ou um ADR). Ao mudar o módulo, mude esta página junto. As seções marcadas como
+opcionais saem quando não se aplicam; as outras ficam, com "Nenhum." quando vazias. Os nomes das seções e as
+colunas das tabelas são os mesmos em toda página de módulo. Apague os comentários ao preencher. -->
 
 Código em `src/modules/{{kebabCase name}}/`, registrado no `src/app.module.ts` como `{{pascalCase name}}Module`.
 
+## Estrutura
+
+<!-- Opcional: só quando o módulo foge das camadas de docs/reference/camadas.md (sem domain/, CRUD direto, mais
+de um Nest module). O fato e o link para a explicação. Apague se não se aplica. -->
+
 ## Linguagem ubíqua
 
-<!-- Um termo do negócio por linha, com o nome igual ao do código. Se o nome no código for outro, diga qual e
-por quê. Termo que outro módulo usa com outro sentido também vai para o docs/reference/glossario.md. -->
+<!-- Um termo do negócio por linha, com o nome igual ao do código. Se o nome no código for outro, diga qual.
+Termo que outro módulo usa com outro sentido também vai para o docs/reference/glossario.md. -->
 
 | Termo | No código | Significado |
 | --- | --- | --- |
 | {{sentenceCase name}} | `{{pascalCase name}}` | |
 
+## Ciclo de vida
+
+<!-- Opcional: só quando o agregado tem status. Uma transição por linha, com colunas De | Para | Ação | Evento |
+Recusada com. Apague se não se aplica. -->
+
 ## Contrato público
 
-<!-- Para outros módulos: a facade em contracts/, cada método e o que ele devolve. Para clientes: as rotas HTTP.
--->
+<!-- Em lista. Para outros módulos: a facade em contracts/, cada método e o que ele devolve. Para clientes: as
+rotas HTTP, numa tabela com as colunas Rota | Role | Corpo | Sucesso ("—" quando a rota não exige role). -->
 
 - **Facade:** nenhuma. Nenhum módulo consome este.
-- **HTTP:** `POST /v1/{{kebabCase name}}` devolve `{ id }`. `GET /v1/{{kebabCase name}}/:id` devolve `{ id, name }`.
+- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)).
+
+| Rota | Role | Corpo | Sucesso |
+| --- | --- | --- | --- |
+| `POST /v1/{{kebabCase name}}` | — | `name` (até 200 caracteres, não vazio) | 201 `{ id }` |
+| `GET /v1/{{kebabCase name}}/:id` | — | — | 200 `{ id, name }` |
+
+## Códigos de erro
+
+<!-- Opcional: só quando o módulo tem rotas HTTP. Os status vêm do mapa infra/http/error-statuses.ts. Colunas
+Código | HTTP | Quando. Se outra página já lista os códigos, um link para ela no lugar da tabela. Apague se não
+se aplica. -->
+
+Os status vêm do `{{constantCase name}}_ERROR_STATUSES` (`infra/http/error-statuses.ts`).
+
+| Código | HTTP | Quando |
+| --- | --- | --- |
+| `{{constantCase name}}_NOT_FOUND` | 404 | O registro não existe |
 
 ## Eventos publicados
 
-<!-- Um evento de integração por linha: nome, versão, quando é publicado, o exemplo em
-contracts/events/*.example.ts e os módulos que o consomem, com link para a seção "Eventos consumidos" deles. -->
+<!-- Um evento de integração por linha, com as colunas Tipo | Versão | Quando | Payload | Exemplo | Consumido
+por. O exemplo é o arquivo contracts/events/*.v<N>.example.ts, e cada consumidor tem link para a seção "Eventos
+consumidos" do módulo dele. -->
 
 Nenhum.
 
 ## Eventos consumidos
 
-<!-- Um evento por linha: o módulo que publica, o consumidor (nome e handler) e o que ele faz. -->
+<!-- Um evento por linha, com as colunas Evento | Publicado por | Consumidor | Efeito: o consumidor com o nome e
+o handler. -->
 
 Nenhum.
 
 ## Invariantes
 
-<!-- As regras que o agregado garante, cada uma com o erro de domínio que a viola. -->
+<!-- As regras que o módulo garante, com as colunas Regra | Erro ("—" quando a regra não tem erro). -->
+
+Nenhuma.
+
+## Jobs e cache
+
+<!-- Opcional: jobs agendados (fila, scheduler, frequência, variáveis) e caches (chave, TTL, invalidação), um item
+por linha. Apague se não se aplica. -->
 
 ## Dependências
 
-<!-- Os módulos de negócio no `imports` do módulo Nest e o que cada um fornece. -->
+<!-- Os módulos de negócio no `imports` do módulo Nest, com as colunas Módulo | Facade | Port do <módulo> | Uso,
+e os módulos do shared que ele importa. -->
 
 Nenhum módulo de negócio.
 
+## Adapters
+
+<!-- Opcional: os ports da application que não falam com outro módulo, com as colunas Port | Adapter. Abaixo da
+tabela, o prazo e o retry de cada chamada a fornecedor. Apague se não se aplica. -->
+
 ## Schema e migrations
 
-- Schema `{{snakeCase name}}`, tabela `{{snakeCase name}}`. As migrations deste módulo ficam registradas em `{{snakeCase name}}_migrations`.
-- Migrations em `src/modules/{{kebabCase name}}/infra/database/typeorm/migrations/`. Aplique com `npm run mig:{{kebabCase name}}:run` e gere com `npm run mig:{{kebabCase name}}:gen`.
+- Schema `{{snakeCase name}}`, migrations registradas em `{{snakeCase name}}_migrations`. Aplique com `npm run mig:{{kebabCase name}}:run` e gere com `npm run mig:{{kebabCase name}}:gen`.
+- Migrations em `src/modules/{{kebabCase name}}/infra/database/typeorm/migrations/`.
+
+| Tabela | Conteúdo |
+| --- | --- |
+| `{{snakeCase name}}` | `id`, `name`, `version`, `createdAt`, `updatedAt` |
+
+## Seed
+
+<!-- Opcional: o script (`npm run seed:<módulo>`), os dados que ele cria e o que faz com os que já existem.
+Apague se não se aplica. -->
 
 ## Decisões
 
