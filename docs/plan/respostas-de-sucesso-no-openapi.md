@@ -83,8 +83,8 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | Passo | Entrega | Status |
 | --- | --- | --- |
 | 1 | Worktree, branch e roadmap | ✅ |
-| 2 | Envelope da paginação, guarda do gerador e health | ⬜ |
-| 3 | Respostas dos módulos e template do plop | ⬜ |
+| 2 | Envelope da paginação, guarda do gerador e health | ✅ |
+| 3 | Respostas dos módulos e template do plop | ✅ |
 | 4 | Testes e prova local com o `oasdiff` | ⬜ |
 | 5 | Documentação | ⬜ |
 | 6 | Verificação, revisão, registro e PR | ⬜ |
@@ -99,10 +99,10 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 
 ### Passo 2: envelope da paginação, guarda do gerador e health
 
-1. `nest-cli.json`: `.response.ts` e `.responses.ts` no `dtoFileNameSuffix`. Rode `npm run openapi:generate` e confira que o `ProblemDetailsResponse`, que passa a ser lido também pelo plugin, não muda no `openapi.json`. Se mudar, avalie a diferença e registre-a aqui antes de seguir.
+1. `nest-cli.json`: `.response.ts` e `.responses.ts` no `dtoFileNameSuffix`. Rode `npm run openapi:generate` e confira que o `ProblemDetailsResponse`, que passa a ser lido também pelo plugin, não muda no `openapi.json`. Se mudar, avalie a diferença e registre-a aqui antes de seguir. **Feito:** só a ordem das chaves do `type` muda (`enum` antes de `type`), sem diferença de significado.
 2. `src/shared/infra/http/page.response.ts`: `PageResponse` e `ApiPageResponse(model)` (decisão "Envelope da paginação").
 3. `src/shared/infra/http/undocumented-success-responses.ts`, com spec: `findUndocumentedSuccessResponses(document)` devolve `"<MÉTODO> <caminho> <status>"` de cada resposta 200 ou 201 sem schema com propriedades. Casos da spec: sem `content`; `{ "type": "object" }`; `$ref` para schema sem propriedades; `$ref` com propriedades; `allOf` com `$ref`; 204 sem corpo, que não conta.
-4. `src/openapi.ts`: chama a função depois do `createSwaggerDocument` e, com a lista não vazia, falha com ela e não grava nem compara. Nesse passo a lista ainda tem as rotas dos módulos: o `openapi:generate` só volta a passar no fim do passo 3. Para o commit do passo 2 passar no `openapi:check`, a chamada entra no fim do passo 3, ou o passo 2 e o 3 viram um commit só. Decida na hora e anote aqui.
+4. `src/openapi.ts`: chama a função depois do `createSwaggerDocument` e, com a lista não vazia, falha com ela e não grava nem compara. Nesse passo a lista ainda tem as rotas dos módulos: o `openapi:generate` só volta a passar no fim do passo 3. Para o commit do passo 2 passar no `openapi:check`, a chamada entra no fim do passo 3, ou o passo 2 e o 3 viram um commit só. Decida na hora e anote aqui. **Feito:** o passo 2 e o 3 viraram um commit só. A guarda também acusa a operação sem nenhuma 2xx (`"POST /v1/auth/login 2xx"`): sem isso, o login e o refresh passavam, porque não tinham 200 para conferir.
 5. `src/shared/infra/health/health.controller.ts`: o schema do `live` (decisão "`GET /health/live`").
 6. `npm run typecheck`, `npm run lint`, `npm test -- undocumented-success-responses`.
 7. Commit: `docs(api): envelope da paginação e guarda de resposta sem schema no OpenAPI (#56)`.
@@ -112,7 +112,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 1. identity: `src/modules/identity/infra/http/dtos/identity.responses.ts`, com `RegisteredUserResponse` (`id`) e `SessionResponse` (`accessToken`, `expiresIn` e `refreshToken`, com o `/** */` de cada um). No `auth.controller.ts`: `register` com `@ApiCreatedResponse({ type: RegisteredUserResponse })`, `signIn` e `refresh` com `@ApiOkResponse({ type: SessionResponse })`, e o tipo de retorno em cada um.
 2. orders: `src/modules/orders/infra/http/dtos/order.responses.ts`, com `CreatedOrderResponse`, `OrderListItemResponse`, `OrderItemResponse` e `OrderDetailsResponse`, com os campos do `OrderListItem` e do `OrderDetails`. No `orders.controller.ts`: `list` com `@ApiPageResponse(OrderListItemResponse)` e `Promise<Page<OrderListItemResponse>>`, `get` com `@ApiOkResponse`, `create` com `@ApiCreatedResponse`.
 3. catalog: `src/modules/catalog/dtos/product.response.ts`, com `ProductResponse` (os campos do `ProductOrmEntity`). No `products.controller.ts`: `list` com `@ApiPageResponse(ProductResponse)`, `create` com `@ApiCreatedResponse`, `get` e `update` com `@ApiOkResponse`. O `ProductOrmEntity` sai dos schemas do documento.
-4. `plop-templates/module/response.hbs`, com `Created<Nome>Response` e `<Nome>Response`, a entrada no `plopfile.mjs` (`infra/http/dtos/{{kebabCase name}}.responses.ts`) e o `controller.hbs` com os decorators e os tipos de retorno. Gere um módulo de teste com o `plop module`, rode `npm run typecheck` e apague-o.
+4. `plop-templates/module/response.hbs`, com `Created<Nome>Response` e `<Nome>Response`, a entrada no `plopfile.mjs` (`infra/http/dtos/{{kebabCase name}}.responses.ts`) e o `controller.hbs` com os decorators e os tipos de retorno. Gere um módulo de teste com o `plop module`, rode `npm run typecheck` e apague-o. **Feito** com o `widget`: typecheck e lint passam, e as duas rotas saem com schema.
 5. `npm run openapi:generate`. A guarda do passo 2 não acusa nenhuma rota. Confira no `openapi.json` que cada rota da tabela do início tem o schema certo, e que o `required` de cada classe bate com os campos sem `?`.
 6. `npm run typecheck`, `npm run lint`, `npm run arch` e `npm run openapi:check`.
 7. Commit: `docs(api): documenta as respostas de sucesso do identity, do orders e do catalog (#56)`.

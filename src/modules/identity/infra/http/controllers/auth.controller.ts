@@ -1,5 +1,11 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { ApiAcceptedResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiAcceptedResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { seconds, Throttle } from '@nestjs/throttler';
 import { Public } from '#shared/infra/auth/public.decorator';
 import { ApiProblemResponse } from '#shared/infra/http/problem-details.response';
@@ -18,6 +24,7 @@ import {
   ResendVerificationCodeRequest,
   VerifyEmailRequest,
 } from '../dtos/identity.requests.js';
+import { RegisteredUserResponse, SessionResponse } from '../dtos/identity.responses.js';
 
 @ApiTags('auth')
 @Public()
@@ -35,7 +42,8 @@ export class AuthController {
   /** Cria a conta com o e-mail por verificar e envia o código de verificação por e-mail. */
   @Post('register')
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
-  register(@Body() body: RegisterRequest) {
+  @ApiCreatedResponse({ type: RegisteredUserResponse, description: 'Conta criada.' })
+  register(@Body() body: RegisterRequest): Promise<RegisteredUserResponse> {
     return this.registerUser.execute(body);
   }
 
@@ -72,9 +80,10 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @ThrottleByAccount(loginAccountTracker)
   @HttpCode(200)
+  @ApiOkResponse({ type: SessionResponse, description: 'Sessão aberta.' })
   @ApiProblemResponse(401, 'INVALID_CREDENTIALS: e-mail ou senha errados.')
   @ApiProblemResponse(403, 'EMAIL_NOT_VERIFIED: senha certa, e-mail por verificar.')
-  signIn(@Body() body: LoginRequest) {
+  signIn(@Body() body: LoginRequest): Promise<SessionResponse> {
     return this.login.execute(body);
   }
 
@@ -85,8 +94,9 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @HttpCode(200)
+  @ApiOkResponse({ type: SessionResponse, description: 'Par de tokens novo.' })
   @ApiProblemResponse(401, 'Refresh token desconhecido, vencido, revogado ou reusado.')
-  refresh(@Body() body: RefreshTokenRequest) {
+  refresh(@Body() body: RefreshTokenRequest): Promise<SessionResponse> {
     return this.refreshSession.execute(body.refreshToken);
   }
 

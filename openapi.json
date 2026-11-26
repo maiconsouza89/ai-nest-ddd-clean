@@ -7,7 +7,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "O processo está vivo"
+            "description": "O processo está vivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminusHealthCheckResult"
+                }
+              }
+            }
           },
           "429": {
             "description": "TOO_MANY_REQUESTS: passou do limite de requisições.",
@@ -162,6 +169,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Sessão aberta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "INVALID_CREDENTIALS: e-mail ou senha errados.",
             "content": {
@@ -269,6 +286,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Par de tokens novo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Refresh token desconhecido, vencido, revogado ou reusado.",
             "content": {
@@ -322,7 +349,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Conta criada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisteredUserResponse"
+                }
+              }
+            }
           },
           "429": {
             "description": "TOO_MANY_REQUESTS: passou do limite de requisições.",
@@ -483,7 +517,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PageResponse"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrderListItemResponse"
+                          }
+                        }
+                      },
+                      "required": [
+                        "items"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -533,7 +584,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Pedido criado em `DRAFT`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedOrderResponse"
+                }
+              }
+            }
           },
           "429": {
             "description": "TOO_MANY_REQUESTS: passou do limite de requisições.",
@@ -585,7 +643,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/OrderDetailsResponse"
                 }
               }
             }
@@ -806,7 +864,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PageResponse"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductResponse"
+                          }
+                        }
+                      },
+                      "required": [
+                        "items"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -856,11 +931,11 @@
         },
         "responses": {
           "201": {
-            "description": "",
+            "description": "Produto criado.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductOrmEntity"
+                  "$ref": "#/components/schemas/ProductResponse"
                 }
               }
             }
@@ -915,7 +990,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductOrmEntity"
+                  "$ref": "#/components/schemas/ProductResponse"
                 }
               }
             }
@@ -978,7 +1053,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductOrmEntity"
+                  "$ref": "#/components/schemas/ProductResponse"
                 }
               }
             }
@@ -1084,6 +1159,18 @@
           "priceCents"
         ]
       },
+      "CreatedOrderResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id do pedido criado, em `DRAFT`."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "LoginRequest": {
         "type": "object",
         "properties": {
@@ -1101,14 +1188,135 @@
           "password"
         ]
       },
+      "OrderDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Dono do pedido."
+          },
+          "status": {
+            "type": "string",
+            "description": "`DRAFT`, `PLACED`, `PAID` ou `CANCELLED`."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponse"
+            }
+          },
+          "totalCents": {
+            "type": "number",
+            "description": "Total do pedido, em centavos."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Código ISO 4217 da moeda."
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "status",
+          "items",
+          "totalCents",
+          "currency"
+        ]
+      },
+      "OrderItemResponse": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number"
+          },
+          "unitPriceCents": {
+            "type": "number",
+            "description": "Preço da unidade no momento em que o item entrou no pedido, em centavos."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Código ISO 4217 da moeda."
+          }
+        },
+        "required": [
+          "productId",
+          "qty",
+          "unitPriceCents",
+          "currency"
+        ]
+      },
+      "OrderListItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "`DRAFT`, `PLACED`, `PAID` ou `CANCELLED`."
+          },
+          "itemCount": {
+            "type": "number",
+            "description": "Quantidade de linhas do pedido, sem somar as unidades."
+          },
+          "totalCents": {
+            "type": "number",
+            "description": "Total do pedido, em centavos."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Código ISO 4217 da moeda."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "itemCount",
+          "totalCents",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "PageResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Total de itens em todas as páginas."
+          },
+          "page": {
+            "type": "number",
+            "description": "Página devolvida, a partir de 1."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Tamanho máximo da página pedido."
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "limit"
+        ]
+      },
       "ProblemDetailsResponse": {
         "type": "object",
         "properties": {
           "type": {
-            "type": "string",
             "enum": [
               "about:blank"
             ],
+            "type": "string",
             "example": "about:blank"
           },
           "title": {
@@ -1157,9 +1365,40 @@
           "code"
         ]
       },
-      "ProductOrmEntity": {
+      "ProductResponse": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "priceCents": {
+            "type": "number",
+            "description": "Preço em centavos."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Código ISO 4217 da moeda."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "priceCents",
+          "currency",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "RefreshTokenRequest": {
         "type": "object",
@@ -1197,6 +1436,18 @@
           "password"
         ]
       },
+      "RegisteredUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id da conta criada."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "ResendVerificationCodeRequest": {
         "type": "object",
         "properties": {
@@ -1208,6 +1459,28 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT do header `Authorization: Bearer`."
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Validade do access token, em segundos."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Token opaco para o `POST /v1/auth/refresh` e o `POST /v1/auth/logout`. Vale uma vez."
+          }
+        },
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "refreshToken"
         ]
       },
       "TerminusHealthCheckResult": {
