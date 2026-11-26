@@ -31,7 +31,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 4 | I | #49 `test:int` falha em worktree pelo `MAILPIT_TAG` | média | — | ⬜ |
 | 4 | J | #62 Eventos da outbox morrem com o Redis fora do ar | média | — | ⬜ |
 | 4 | K | #48 Secret scanning e push protection | média | #13 | ⬜ |
-| 4 | L | #60 How-tos de erro de domínio, serviço externo e rota protegida | baixa | — | ⬜ |
+| 4 | L | #60 How-tos de erro de domínio, serviço externo e rota protegida | baixa | — | ✅ (#65) |
 
 A #22 não depende de nenhuma e pode subir para a onda 1 se houver capacidade.
 
