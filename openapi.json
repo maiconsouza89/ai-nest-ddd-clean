@@ -1130,11 +1130,6 @@
             "description": "Caminho da requisição, sem a query string.",
             "example": "/v1/auth/login"
           },
-          "code": {
-            "type": "string",
-            "description": "Código de erro: o do erro de domínio, `VALIDATION_FAILED`, `INTERNAL_ERROR` ou o nome do status (`NOT_FOUND`, `TOO_MANY_REQUESTS`).",
-            "example": "INVALID_CREDENTIALS"
-          },
           "traceId": {
             "type": "string",
             "description": "Id do trace da requisição. Ausente com o tracing desligado.",
@@ -1153,8 +1148,7 @@
           "title",
           "status",
           "detail",
-          "instance",
-          "code"
+          "instance"
         ]
       },
       "ProductOrmEntity": {

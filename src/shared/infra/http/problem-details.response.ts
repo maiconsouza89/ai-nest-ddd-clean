@@ -47,11 +47,6 @@ export class ProblemDetailsResponse {
   })
   instance!: string;
 
-  @ApiProperty({
-    description:
-      'Código de erro: o do erro de domínio, `VALIDATION_FAILED`, `INTERNAL_ERROR` ou o nome do status (`NOT_FOUND`, `TOO_MANY_REQUESTS`).',
-    example: 'INVALID_CREDENTIALS',
-  })
   code!: string;
 
   @ApiPropertyOptional({
