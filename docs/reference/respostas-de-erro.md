@@ -4,7 +4,7 @@ type: reference
 
 # Respostas de erro
 
-O formato de toda resposta de erro da API, os códigos que a base gera e como cada erro vira status HTTP. O porquê está na [ADR 0010](../adr/0010-erros-em-problem-details-com-code.md).
+O formato de toda resposta de erro da API, os códigos que a base gera e como cada erro vira status HTTP. O porquê está na [ADR 0010](../adr/0010-erros-em-problem-details-com-code.md). Os passos estão em [Como lançar um erro de domínio](../how-to/lancar-um-erro-de-dominio.md).
 
 ## Formato
 

@@ -31,6 +31,9 @@ Uma pasta de quadrante só existe a partir da primeira página dela.
 - [Como agendar um job](how-to/agendar-um-job.md): o processor sobre o `ScheduledJobProcessor`, a fila própria e o teste com duas instâncias.
 - [Como adicionar uma variável de ambiente](how-to/adicionar-uma-variavel-de-ambiente.md): da validação ao `useFactory` do módulo, com o `.env.example`, o `RENAMED` e os testes.
 - [Como criar um seed](how-to/criar-um-seed.md): dados de desenvolvimento com ids fixos e `orIgnore`, o `runSeed` e o script.
+- [Como lançar um erro de domínio](how-to/lancar-um-erro-de-dominio.md): a subclasse do `DomainError`, o status no mapa do módulo, o `@ApiProblemResponse` e os testes.
+- [Como integrar um serviço externo](how-to/integrar-um-servico-externo.md): o port, o adapter com prazo, o decorator de retry, a ligação no módulo, o fake e os testes.
+- [Como proteger uma rota](how-to/proteger-uma-rota.md): o guard global, o `@CurrentUser`, o `@Roles`, a regra de dono no caso de uso e o e2e do 401 e do 403.
 - [Como rodar as migrations e os seeds](how-to/rodar-as-migrations-e-os-seeds.md): o `db:setup`, o `db:seed`, como conferir o que falta e os erros comuns.
 - [Como fazer o deploy](how-to/fazer-o-deploy.md): a imagem Docker, as migrations num passo antes da app, as variáveis, as probes e o tempo de desligamento.
 - [Como testar a imagem de produção localmente](how-to/testar-a-imagem-de-producao-localmente.md): a imagem de produção com o profile `prod` do compose, isolada do ambiente de desenvolvimento.

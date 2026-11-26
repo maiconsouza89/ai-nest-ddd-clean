@@ -73,7 +73,7 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-26, ant
 | 2 | How-to de erro de domínio | ✅ |
 | 3 | How-to de serviço externo | ✅ |
 | 4 | How-to de rota protegida | ✅ |
-| 5 | Índice, rotas e links de volta | ⬜ |
+| 5 | Índice, rotas e links de volta | ✅ |
 | 6 | Ensaio, verificação, revisão, registro e PR | ⬜ |
 
 ### Passo 1: worktree, branch e roadmap
