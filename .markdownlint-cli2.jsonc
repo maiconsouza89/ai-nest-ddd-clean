@@ -2,6 +2,8 @@
 {
   "globs": ["**/*.md"],
   "gitignore": true,
+  // Skills de terceiros, travadas pelo skills-lock.json: ficam iguais à origem para atualizar sem retrabalho.
+  "ignores": [".claude/skills/**"],
   "config": {
     // Um parágrafo por linha, e tabelas largas. Quebrar linhas não ajuda a leitura nem o diff.
     "MD013": false,

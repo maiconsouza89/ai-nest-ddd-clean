@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "skills": {
+    "clean-ddd-hexagonal": {
+      "source": "ccheney/robust-skills",
+      "commit": "0eea7b060d12e3520556a73b15fbfa79480987d1",
+      "sourceType": "github",
+      "skillPath": "skills/clean-ddd-hexagonal/SKILL.md",
+      "computedHash": "8a985ccd4691b4d3a2f95069be2302e9927ac13592b4d1906520a599a7e31b8d",
+      "installMode": "copy"
+    },
+    "documentation-writer": {
+      "source": "github/awesome-copilot",
+      "commit": "93fc8b9ee3ef56b9b5e7261e6ce92d314cb2c1cf",
+      "sourceType": "github",
+      "skillPath": "skills/documentation-writer/SKILL.md",
+      "computedHash": "b2de0a266264b7a994d9bf1b771d3b35ab3780d16ccd658ffceb2936d3df1db6",
+      "installMode": "copy"
+    }
+  }
+}
