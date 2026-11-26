@@ -8,7 +8,9 @@ Por que o projeto é um monólito modular, por que cada módulo tem camadas e po
 
 ## Contexto
 
-O sistema funciona como um monólito modular. É monólito porque tudo sobe em um único deploy e roda em um processo. É modular só enquanto as fronteiras forem respeitadas na prática: cada módulo é dono dos seus dados, os módulos conversam só por [contratos](../reference/glossario.md#contrato), e regras no CI (`npm run arch`) barram os imports proibidos. Pastas por módulo, sozinhas, não bastam. [Agregados](../reference/glossario.md#agregado) e `AggregateRoot` organizam o código dentro de cada módulo, mas não são o que torna o sistema modular.
+O projeto é feito para um time que entrega por um deploy só e ainda está descobrindo o domínio. Microsserviços cobrariam rede, deploy e observabilidade distribuída antes de o domínio pedir. Um monólito sem fronteiras resolve o deploy, mas vira um emaranhado em que tudo depende de tudo, e nenhuma parte sai dele depois sem reescrita. O desenho precisa subir num deploy só e, ainda assim, deixar extrair um módulo para um serviço quando o domínio pedir.
+
+Por isso o sistema é um monólito modular. É monólito porque tudo sobe em um único deploy e roda em um processo. É modular só enquanto as fronteiras forem respeitadas na prática: cada módulo é dono dos seus dados, os módulos conversam só por [contratos](../reference/glossario.md#contrato), e regras no CI (`npm run arch`) barram os imports proibidos. Pastas por módulo, sozinhas, não bastam. [Agregados](../reference/glossario.md#agregado) e `AggregateRoot` organizam o código dentro de cada módulo, mas não são o que torna o sistema modular.
 
 Dentro de um módulo com regra de negócio, o código fica em camadas: domain guarda as regras, application orquestra, e a infra liga tudo ao Nest, ao banco e ao HTTP. Os exemplos abaixo vêm do módulo [orders](../reference/modules/orders.md), resumidos.
 
@@ -58,11 +60,11 @@ O caso de uso não tem `@Injectable()`, então o módulo Nest o cria por `useFac
 export class OrdersModule {}
 ```
 
-O `inject` entrega as dependências na mesma ordem dos parâmetros da factory.
+A regra da ordem do `inject` e de quando usar `useClass` ou `useFactory` está em [Camadas](../reference/camadas.md#infra).
 
 ### A entidade guarda as regras
 
-A entidade decide o que pode acontecer com ela e anota os fatos como [eventos de domínio](../reference/glossario.md#evento-de-domínio):
+Se a regra morasse no caso de uso, dois casos de uso que mudam o mesmo pedido repetiriam a checagem, e um dia um deles a esqueceria. Por isso a entidade decide o que pode acontecer com ela e anota os fatos como [eventos de domínio](../reference/glossario.md#evento-de-domínio):
 
 ```ts
 export class Order extends AggregateRoot {
@@ -98,7 +100,7 @@ export class Order extends AggregateRoot {
 
 ### O caso de uso orquestra
 
-O caso de uso carrega e cria agregados, busca o que precisa de fora por [ports](../reference/glossario.md#port-e-adapter) e salva:
+A entidade não busca nada fora dela, e o controller não deve conhecer regra. Quem junta as peças de uma operação é o caso de uso: carrega ou cria o agregado, busca o que precisa de fora por [ports](../reference/glossario.md#port-e-adapter) e salva:
 
 ```ts
 export class CreateOrderUseCase {
@@ -131,11 +133,11 @@ export class CreateOrderUseCase {
 }
 ```
 
-O preço nunca vem do cliente. A requisição traz só `productId` e quantidade, e o caso de uso busca o preço pelo port `PriceCatalog`. O caso de uso não sabe que, do outro lado, está a [facade](../reference/glossario.md#facade) do catalog.
+O preço nunca vem do cliente: o caso de uso o busca pelo port `PriceCatalog`, sem saber que, do outro lado, está a [facade](../reference/glossario.md#facade) do catalog.
 
 ### O controller traduz o HTTP
 
-O DTO HTTP tem `class-validator` e fica na infra. O controller valida o formato, converte para o input simples da application e repassa o [ator](../reference/glossario.md#usuário-ator-e-cliente) como dado:
+O formato da requisição muda com a API, e a regra não deve mudar junto. Por isso o DTO HTTP, com `class-validator`, fica na infra, e o controller só valida o formato, converte para o input simples da application e repassa o [ator](../reference/glossario.md#usuário-ator-e-cliente) como dado:
 
 ```ts
 @Controller('orders')
@@ -149,7 +151,7 @@ export class OrdersController {
 }
 ```
 
-No caminho de volta, o domain lança erros próprios, com um `code`. A infra do módulo registra o status HTTP de cada `code`, e um filtro global do `shared` monta a resposta em Problem Details ([Respostas de erro](../reference/respostas-de-erro.md)), assim o domain nunca conhece `HttpException`.
+No caminho de volta, o domain lança erros com um `code` e nunca conhece HTTP: a infra traduz o erro na resposta ([Modelagem do domínio](modelagem-do-dominio.md#erros-são-exceptions-com-um-code)).
 
 ### Cada módulo é dono dos seus dados
 

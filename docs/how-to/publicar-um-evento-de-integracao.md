@@ -2,9 +2,9 @@
 type: how-to
 ---
 
-# Como publicar um evento de integração
+# Como publicar e consumir um evento de integração
 
-Use este guia quando um agregado precisa avisar outros módulos de um fato, por exemplo "pedido pago", e quando um módulo precisa reagir a esse aviso. Os exemplos usam o `orders.order-paid` e o consumidor dele no notifications. O porquê da outbox, das filas e do consumidor idempotente está em [Consistência e eventos](../explanation/consistencia-e-eventos.md).
+Use este guia quando um agregado precisa avisar outros módulos de um fato, como o `orders.order-paid`, e quando um módulo precisa reagir a esse aviso, como o notifications.
 
 ## Pré-requisitos
 
@@ -56,7 +56,11 @@ Use este guia quando um agregado precisa avisar outros módulos de um fato, por 
 
 4. Crie o exemplo versionado em `contracts/events/<nome>.v1.example.ts`, um objeto `OrderPaidV1` com valores plausíveis. O teste de quem publica e o de quem consome usam o mesmo exemplo.
 
-5. Converta o evento de domínio no contrato, em `application/events/to-integration-event.ts`. No orders, acrescente um `if (event instanceof OrderPaid)` que devolve o `OrderPaidV1` e inclua o tipo no retorno da função. Num módulo que ainda não publica eventos, crie esse arquivo e o `publish-<módulo>-events.ts` copiando os do orders e trocando o agregado.
+5. Converta o evento de domínio no contrato, em `application/events/`:
+   - **Num módulo que já publica eventos:** em `to-integration-event.ts`, acrescente um `if (event instanceof OrderPaid)` que devolve o `OrderPaidV1` e inclua o tipo no retorno da função.
+   - **Num módulo que ainda não publica eventos**, crie os dois arquivos:
+     - `to-integration-event.ts`, com a função `toIntegrationEvent(event, { eventId, occurredAt })`. Ela tem um `if (event instanceof <Evento>)` por evento, que devolve o contrato com `eventId`, `version`, `occurredAt` em ISO, `type` e `payload`, e lança um erro para o evento sem contrato.
+     - `publish-<módulo>-events.ts`, com a função `publish<Agregado>Events(agregado, { outbox, ids, clock })`. Ela tira os eventos do agregado com `pullDomainEvents()`, converte cada um com um `ids.next()` e o `clock.now()`, e grava todos com `outbox.add(<id do agregado>, eventos)`.
 
 6. No caso de uso, salve o agregado e grave os eventos na mesma transação:
 
@@ -75,7 +79,7 @@ Use este guia quando um agregado precisa avisar outros módulos de um fato, por 
 
 9. Acrescente o evento à tabela "Eventos publicados" em `docs/reference/modules/<módulo>.md`.
 
-### Consumir em outro módulo
+### Consumir
 
 1. Crie o handler em `infra/events/on-<fato>.handler.ts` do módulo consumidor. Importe só o tipo do contrato, com `import type`, e passe o efeito pelo `IdempotentConsumer`:
 
@@ -106,7 +110,7 @@ Use este guia quando um agregado precisa avisar outros módulos de um fato, por 
    }
    ```
 
-   O nome do consumidor segue `<módulo consumidor>.<efeito>`, é único na aplicação e vai igual no decorator e no `handle`. Ele dá nome à fila (`events.<consumidor>`) e à marca em `shared.processed_events`, então não o renomeie depois de publicado. Um efeito que pode se repetir sem dano, como descartar um cache, pode dispensar o `IdempotentConsumer`.
+   Dê ao consumidor um nome `<módulo consumidor>.<efeito>`, único na aplicação, igual no decorator e no `handle`, e não o renomeie depois de publicado ([Outbox e filas](../reference/outbox-e-filas.md)). Um efeito que pode se repetir sem dano, como descartar um cache, pode dispensar o `IdempotentConsumer`.
 
 2. Ponha o handler nos `providers` do módulo consumidor. A subida o encontra pelo decorator e cria a fila e o worker dele.
 
@@ -131,7 +135,8 @@ Use este guia quando um agregado precisa avisar outros módulos de um fato, por 
 
 ## Veja também
 
-- [Consistência e eventos](../explanation/consistencia-e-eventos.md): por que a outbox, a fila por consumidor e o consumidor idempotente.
+- [Entrega de eventos](../explanation/entrega-de-eventos.md): por que a outbox, a fila por consumidor e o consumidor idempotente.
+- [Outbox e filas](../reference/outbox-e-filas.md): a fila e a marca de entrega que o nome do consumidor determina.
 - [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#contratos-são-api-pública-e-têm-versão): quando um contrato muda de versão.
 - [Camadas](../reference/camadas.md): onde fica cada peça e as regras dos contratos de evento.
 - [Glossário](../reference/glossario.md#evento-de-integração): evento de domínio, evento de integração, consumidor e outbox.

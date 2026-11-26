@@ -16,22 +16,7 @@ Os módulos rodam no mesmo processo e no mesmo Postgres, e nada impede, tecnicam
 
 Cada módulo tem um schema no Postgres (`orders`, `inventory`, `identity`, `catalog`, e `shared` para a outbox), e as ORM entities dele declaram esse schema (`@Entity({ name: 'orders', schema: 'orders' })`). A primeira migration do módulo só faz o `CREATE SCHEMA`.
 
-As migrations também são por módulo. Cada módulo tem um DataSource usado só pela CLI, com uma tabela de controle própria:
-
-```ts
-// DataSource usado só pela CLI de migrations (não passa pelo Nest).
-loadEnvFiles();
-const env = validateEnv(process.env);
-
-export default new DataSource({
-  ...postgresOptions(env, { migrations: true }),
-  entities: [OrderOrmEntity, OrderItemOrmEntity, IdempotencyKeyOrmEntity],
-  migrations: [import.meta.dirname + '/migrations/*.{ts,js}'],
-  migrationsTableName: 'orders_migrations',
-});
-```
-
-Como o DataSource conhece só as entidades do módulo, o `migration:generate` do orders não enxerga as tabelas do inventory e não propõe mexer nelas. A CLI não passa pelo Nest, então o DataSource carrega e valida o `.env` por conta própria. A conexão vem da `postgresOptions`, a mesma da app, sem os timeouts de query ([Persistência](persistencia.md#pool-e-timeouts)).
+As migrations também são por módulo, cada uma com um DataSource próprio, que conhece só as entidades do módulo. Assim, o `migration:generate` do orders não enxerga as tabelas do inventory e não propõe mexer nelas. Onde fica cada arquivo está em [Camadas](../reference/camadas.md#entre-módulos), e os passos, em [Como gerar uma migration](../how-to/gerar-uma-migration.md).
 
 Com os dados separados, vêm três proibições, e todas têm o mesmo motivo: cada uma amarraria o schema de um módulo ao do outro.
 
@@ -119,7 +104,7 @@ As fronteiras também servem para que um módulo possa sair do processo sem mexe
 
 - **FK e joins entre schemas:** o banco garantiria a integridade, e uma listagem com dados de dois módulos sairia numa query. Em troca, mudar a tabela de um módulo quebraria o outro, e extrair um módulo exigiria desfazer as FKs. O projeto aceita perder joins e transações entre módulos e lidar com consistência eventual. Ganha isolamento e a possibilidade de extrair um módulo depois.
 - **`forwardRef` para aceitar o ciclo:** funciona, mas esconde a fronteira errada, e os dois módulos passam a ser um só na prática. O `npm run arch` barra o ciclo.
-- **Uma conexão por módulo:** `forRootAsync({ name: 'orders' })`, `forFeature([...], 'orders')` e `@InjectRepository(Entity, 'orders')`. Permite um usuário de banco por módulo, com permissão só no próprio schema, que é o isolamento máximo. O projeto usa uma conexão só (`autoLoadEntities: true`, e cada módulo registra as suas entidades com `forFeature`), que é mais simples. O schema por módulo e as regras de import mantêm a separação, e trocar para conexões separadas depois mexe só na infra.
+- **Uma conexão por módulo:** cada módulo registraria a sua conexão nomeada no TypeORM, e cada repositório pediria a conexão do seu módulo. Permite um usuário de banco por módulo, com permissão só no próprio schema, que é o isolamento máximo. O projeto usa uma conexão só, em que cada módulo registra as suas entidades, e que é mais simples. O schema por módulo e as regras de import mantêm a separação, e trocar para conexões separadas depois mexe só na infra.
 
 ## Decisões relacionadas
 

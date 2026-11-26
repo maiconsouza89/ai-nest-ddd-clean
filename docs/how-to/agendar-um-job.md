@@ -4,12 +4,12 @@ type: how-to
 
 # Como agendar um job
 
-Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, como a expiração de pedidos parados do orders. Por que o agendamento fica no BullMQ, e não num `@Cron`, está em [Redis](../explanation/redis.md#jobs-agendados).
+Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, como a expiração de pedidos parados do orders.
 
 ## Pré-requisitos
 
 - O caso de uso que o job vai rodar, testado sem o job. Ele recebe prazos e tamanho de lote pelo construtor, e trata um lote por execução: o que sobrar fica para o próximo disparo.
-- Redis no ar para rodar a app ou o teste de integração: `docker compose up -d redis` ([Comandos](../reference/comandos.md#setup-do-zero)). O teste de integração sobe um Redis próprio e só precisa do Docker.
+- Redis no ar para rodar a app ou o teste de integração: `docker compose up -d redis` ([Como preparar o ambiente local](preparar-o-ambiente-local.md)). O teste de integração sobe um Redis próprio e só precisa do Docker.
 
 ## Passos
 
@@ -55,18 +55,32 @@ Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, c
 
 4. Acrescente o job à doc do módulo, em `docs/reference/modules/<módulo>.md`: fila, agendador, frequência e as variáveis que ele obedece.
 
+### Renomear ou apagar um job
+
+O agendador antigo continua no Redis depois do deploy e segue gerando jobs na fila antiga, sem worker.
+
+1. Renomeie ou apague o processor e faça o deploy.
+2. Em cada ambiente em que o job antigo rodou, remova o agendador antigo, na raiz do repositório e com o `REDIS_URL` daquele ambiente:
+
+   ```bash
+   REDIS_URL=<REDIS_URL do ambiente> node --input-type=module -e "
+   import { Queue } from 'bullmq';
+   const queue = new Queue('<fila antiga>', { connection: { url: process.env.REDIS_URL } });
+   console.log(await queue.removeJobScheduler('<scheduler antigo>'));
+   await queue.close();
+   "
+   ```
+
+   A saída `true` confirma a remoção. `false` quer dizer que não havia agendador com esse nome nessa fila.
+
 ## Como verificar
 
 - `npm run test:int -- <tarefa>.processor` passa.
 - `npm run arch` passa: o processor está em `infra/jobs/` e não importa repositório nem TypeORM.
-- Com a app no ar, o log da subida não mostra `scheduler registration failed`. Com o Redis fora do ar, a subida falha com essa mensagem cerca de 15 s depois da primeira tentativa de conexão (até 5 s esperando a conexão das filas, mais os 10 segundos de timeout do registro), em vez de seguir sem o job.
-
-O `JOBS_ENABLED=false` desliga todos os jobs da instância, e os testes que sobem o `AppModule` já rodam assim. Uma falha em `run()` vai para o log como `<scheduler> failed`. O job não é repetido: a próxima tentativa é o próximo disparo.
-
-Ao renomear ou apagar um job, o agendador antigo continua no Redis e segue gerando jobs na fila antiga, sem worker. Remova-o com `queue.removeJobScheduler('<scheduler antigo>')` numa fila com o nome antigo.
+- Com a app no ar, o log da subida não mostra `scheduler registration failed`. Com o Redis fora do ar, a subida falha com essa mensagem, em vez de seguir sem o job ([Redis](../explanation/redis.md#jobs-agendados)).
 
 ## Veja também
 
 - [Redis](../explanation/redis.md#jobs-agendados): por que o agendador do BullMQ, a concorrência global de 1 e a fila por job.
-- [Variáveis de ambiente](../reference/variaveis-de-ambiente.md#workers-e-jobs): `JOBS_ENABLED`.
+- [Variáveis de ambiente](../reference/variaveis-de-ambiente.md): o `JOBS_ENABLED`, que liga e desliga os jobs da instância.
 - [Camadas](../reference/camadas.md#infra): a linha "Job".

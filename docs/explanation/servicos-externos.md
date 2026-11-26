@@ -44,7 +44,7 @@ O adapter de um fornecedor real só traduz chamadas e erros, e a política de ti
 
 ### Timeout em toda chamada
 
-Sem timeout, um fornecedor lento prende a requisição, a conexão com o banco e, no pagamento, a trava da linha do pedido, que fica aberta durante a cobrança ([Consistência e eventos](consistencia-e-eventos.md#trava-pessimista-quando-o-efeito-não-se-desfaz)). Algumas requisições lentas ao mesmo tempo esgotam o [pool de conexões](persistencia.md#pool-e-timeouts) e derrubam a API inteira. Por isso o pior caso do pagamento é curto de propósito, cerca de 6 segundos.
+Sem timeout, um fornecedor lento prende a requisição, a conexão com o banco e, no pagamento, a trava da linha do pedido, que fica aberta durante a cobrança ([Transações e concorrência](transacoes-e-concorrencia.md#trava-pessimista-quando-o-efeito-não-se-desfaz)). Algumas requisições lentas ao mesmo tempo esgotam o [pool de conexões](persistencia.md#pool-e-timeouts) e derrubam a API inteira. Por isso o pior caso do pagamento é curto de propósito, cerca de 6 segundos.
 
 O `withTimeout` desiste de esperar, mas não cancela a chamada, que pode terminar depois, do lado do fornecedor. No pagamento, isso é seguro pelo mesmo motivo do retry.
 
@@ -56,7 +56,7 @@ Repetir uma chamada que falhou pode repetir o efeito. Uma cobrança que deu time
 
 O retry espera entre as tentativas, e a espera dobra a cada uma (backoff exponencial). Um fornecedor sobrecarregado não recebe uma rajada de repetições na hora em que menos aguenta.
 
-O e-mail não tem retry no adapter. Ele roda num consumidor de evento, e se o envio falhar, a fila do consumidor tenta de novo, com backoff ([Consistência e eventos](consistencia-e-eventos.md#uma-fila-por-consumidor)). Um retry no adapter se somaria ao da fila. O preço é o que a página de consistência já registra: um e-mail pode sair duas vezes.
+O e-mail não tem retry no adapter. Ele roda num consumidor de evento, e se o envio falhar, a fila do consumidor tenta de novo, com backoff ([Entrega de eventos](entrega-de-eventos.md#uma-fila-por-consumidor)). Um retry no adapter se somaria ao da fila. O preço é o que a página de entrega de eventos já registra: um e-mail pode sair duas vezes.
 
 ### Circuit breaker, quando houver tráfego
 

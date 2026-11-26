@@ -39,18 +39,22 @@ Código em `src/modules/orders/`, registrado no `src/app.module.ts` como `Orders
 ## Contrato público
 
 - **Facade:** nenhuma. Nenhum módulo chama o orders. Os outros reagem aos [eventos publicados](#eventos-publicados).
-- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)). Os status da tabela abaixo vêm do `ORDERS_ERROR_STATUSES` (`infra/http/error-statuses.ts`), menos o `CONCURRENCY_CONFLICT`, o `INVALID_MONEY` e o `CURRENCY_MISMATCH`, que o `shared` registra.
+- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)).
 
-| Rota | Corpo | Sucesso |
-| --- | --- | --- |
-| `GET /v1/orders` | Query `page` (padrão 1) e `limit` (1 a 100, padrão 20) | 200 `{ items, total, page, limit }`, só os pedidos do próprio ator. Cada item tem `id`, `status`, `itemCount`, `totalCents`, `currency` e `createdAt`. Passa pelo [cache](#jobs-e-cache): logo depois de uma escrita, pode mostrar o estado anterior |
-| `GET /v1/orders/:id` | — | 200 `{ id, customerId, status, items, totalCents, currency }`, cada item com `productId`, `qty`, `unitPriceCents` e `currency`. Sem cache: mostra a última escrita |
-| `POST /v1/orders` | `items`: de 1 a 100 `{ productId, qty }`, `productId` uuid, `qty` inteiro ≥ 1 | 201 `{ id }` |
-| `POST /v1/orders/:id/place` | — | 204 |
-| `POST /v1/orders/:id/pay` | Cabeçalho opcional `Idempotency-Key` (1 a 255 caracteres) | 204 |
-| `POST /v1/orders/:id/cancel` | — | 204 |
+| Rota | Role | Corpo | Sucesso |
+| --- | --- | --- | --- |
+| `GET /v1/orders` | — | Query `page` (padrão 1) e `limit` (1 a 100, padrão 20) | 200 `{ items, total, page, limit }`, só os pedidos do próprio ator. Cada item tem `id`, `status`, `itemCount`, `totalCents`, `currency` e `createdAt`. Passa pelo [cache](#jobs-e-cache): logo depois de uma escrita, pode mostrar o estado anterior |
+| `GET /v1/orders/:id` | — | — | 200 `{ id, customerId, status, items, totalCents, currency }`, cada item com `productId`, `qty`, `unitPriceCents` e `currency`. Sem cache: mostra a última escrita |
+| `POST /v1/orders` | — | `items`: de 1 a 100 `{ productId, qty }`, `productId` uuid, `qty` inteiro ≥ 1 | 201 `{ id }` |
+| `POST /v1/orders/:id/place` | — | — | 204 |
+| `POST /v1/orders/:id/pay` | — | Cabeçalho opcional `Idempotency-Key` (1 a 255 caracteres) | 204 |
+| `POST /v1/orders/:id/cancel` | — | — | 204 |
 
 `GET /v1/orders/:id`, `place`, `pay` e `cancel` só valem para o dono do pedido ou para um ator com o role `admin`. Um `:id` que não é uuid responde 400 nas quatro. No `POST /v1/orders`, um `productId` que não é uuid também responde 400, de validação, e não `PRODUCT_NOT_FOUND`.
+
+## Códigos de erro
+
+Os status vêm do `ORDERS_ERROR_STATUSES` (`infra/http/error-statuses.ts`), menos o `CONCURRENCY_CONFLICT`, o `INVALID_MONEY` e o `CURRENCY_MISMATCH`, que o `shared` registra.
 
 | Código | HTTP | Quando |
 | --- | --- | --- |
@@ -101,14 +105,14 @@ As regras de cada transição estão no [Ciclo de vida](#ciclo-de-vida). Além d
 | O total soma itens na mesma moeda | `CURRENCY_MISMATCH` |
 | Duas gravações concorrentes do mesmo pedido: a segunda falha (coluna `version`) | `CONCURRENCY_CONFLICT` |
 | O pagamento trava a linha do pedido até o commit: um cancelamento ou expiração concorrente espera e depois falha | `CONCURRENCY_CONFLICT`, `ORDER_NOT_CANCELLABLE` |
+| O item guarda o preço unitário do catalog no momento da criação. Mudar o preço no catalog depois não muda os pedidos já criados | — |
 | O pagamento cobra com a chave `pay:<orderId>` no fornecedor. Repetir a cobrança do mesmo pedido não cobra duas vezes | — |
-| Com `Idempotency-Key`, repetir o pagamento do mesmo pedido responde 204 de novo sem cobrar. A chave é por ator e vale 24 horas | `IDEMPOTENCY_KEY_REUSED` |
+| Com `Idempotency-Key`, repetir o pagamento do mesmo pedido responde 204 de novo sem cobrar. A chave é por ator e vale 24 horas (`IDEMPOTENCY_KEY_TTL_MS`, em `orders.module.ts`). Vencida, ela volta a valer, inclusive para outro pedido | `IDEMPOTENCY_KEY_REUSED` |
 
 ## Jobs e cache
 
 - **Expiração:** fila `jobs.orders`, scheduler `orders.expire-pending-orders`, a cada 5 minutos. Cancela até 100 pedidos por execução, os parados há mais tempo primeiro, um por transação. Obedece ao `JOBS_ENABLED` e ao `ORDER_EXPIRATION_MINUTES` ([Workers e jobs](../variaveis-de-ambiente.md#workers-e-jobs)).
 - **Cache da listagem:** Redis, 60 segundos por página, chaveado pela geração do cliente (`orders:list-gen:<cliente>`). Um evento do pedido troca a geração. Falha do Redis vira leitura direta do banco.
-- **Pagamento:** fornecedor simulado (`SimulatedPaymentGateway`), que aprova tudo. Cada tentativa tem 3 segundos, com uma repetição após 200 ms.
 
 ## Dependências
 
@@ -118,6 +122,15 @@ As regras de cada transição estão no [Ciclo de vida](#ciclo-de-vida). Além d
 | [inventory](inventory.md) | `InventoryFacade.reserve` | `StockGateway` (`InventoryStockGateway`) | Reserva de estoque ao fechar, com o id do pedido como referência |
 
 Também importa o `MessagingModule` do shared, para o job de expiração.
+
+## Adapters
+
+| Port | Adapter |
+| --- | --- |
+| `PaymentGateway` | `ResilientPaymentGateway` em volta do `SimulatedPaymentGateway`, um fornecedor simulado que aprova tudo |
+| `IdempotencyStore` | `TypeOrmIdempotencyStore`, na tabela `idempotency_keys` |
+
+Cada tentativa de pagamento tem 3 segundos, com uma repetição após 200 ms.
 
 ## Schema e migrations
 
@@ -129,6 +142,8 @@ Também importa o `MessagingModule` do shared, para o job de expiração.
 | `orders` | `id`, `customerId`, `status`, `version`, `createdAt`, `updatedAt` |
 | `order_items` | `orderId` e `productId` (chave), `qty`, `unitPriceCents`, `currency`. Apagada em cascata com o pedido |
 | `idempotency_keys` | `actorId` e `key` (chave), `fingerprint`, `expiresAt` |
+
+A ORM entity do pedido (`order.orm-entity.ts`) salva os itens pela raiz: `cascade: true` no `@OneToMany` dos itens. O item (`order-item.orm-entity.ts`) tem chave composta (`orderId` e `productId`), e o `save()` atualiza o item existente em vez de apagar e inserir. Com `orphanedRowAction: 'delete'` no `@ManyToOne`, um item que sai do array é apagado no `save()` ([Convenções](../convencoes.md#typeorm)).
 
 Os eventos ficam na tabela `shared.outbox`, do shared (`npm run mig:outbox:run`).
 

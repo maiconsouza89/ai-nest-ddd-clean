@@ -4,14 +4,13 @@ type: how-to
 
 # Como resetar o ambiente local
 
-Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo: banco sujo do e2e, migration que falhou no meio, filas do BullMQ com jobs antigos. **Apaga todos os dados locais** deste projeto, inclusive os bancos e as chaves de todos os worktrees.
-
-Num worktree, não use este guia: `npm run worktree:down` e depois `npm run worktree:setup` voltam só o slot dele ao estado inicial ([Como trabalhar com worktrees em paralelo](trabalhar-com-worktrees-em-paralelo.md#limpar-e-remover)).
+Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo: banco sujo do e2e, migration que falhou no meio, filas do BullMQ com jobs antigos.
 
 ## Pré-requisitos
 
+- Aceite perder **todos os dados locais** deste projeto, inclusive os bancos e as chaves de todos os worktrees.
 - Nenhum `start:dev` nem e2e rodando, no principal ou em algum worktree.
-- Terminal na raiz do checkout principal, não de um worktree. O Docker Compose usa o nome da pasta como nome do projeto, e os volumes deste são `<pasta>_*` (num clone na pasta `ai-nest-ddd-clean`, `ai-nest-ddd-clean_*`).
+- Terminal na raiz do checkout principal. Num worktree, não use este guia: `npm run worktree:down` e depois `npm run worktree:setup` voltam só o slot dele ao estado inicial ([Como trabalhar com worktrees em paralelo](trabalhar-com-worktrees-em-paralelo.md#limpar-e-remover)).
 
 ## Passos
 

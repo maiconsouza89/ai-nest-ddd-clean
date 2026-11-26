@@ -4,12 +4,12 @@ type: how-to
 
 # Como cachear uma leitura
 
-Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pode ficar alguns segundos desatualizada. O exemplo é o cache da listagem de pedidos do orders (`CachedOrderQueries`). Por que o cache funciona assim está em [Redis](../explanation/redis.md#cache-da-leitura).
+Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pode ficar alguns segundos desatualizada, como a listagem de pedidos do orders (`CachedOrderQueries`).
 
 ## Pré-requisitos
 
 - A leitura é uma query, com port em `application/queries/` e implementação na infra ([Como paginar uma listagem](paginar-uma-listagem.md)). Cache nunca carrega um agregado que vai ser alterado.
-- Toda escrita que muda o resultado da leitura publica um evento de integração. Sem o evento, a leitura fica velha até o TTL. Se falta um, publique-o antes ([Como publicar um evento de integração](publicar-um-evento-de-integracao.md)).
+- Toda escrita que muda o resultado da leitura publica um evento de integração. Sem o evento, a leitura fica velha até o TTL. Se falta um, publique-o antes ([Como publicar e consumir um evento de integração](publicar-um-evento-de-integracao.md)).
 - Redis no ar para rodar a app: `docker compose up -d redis`.
 
 ## Passos
@@ -43,11 +43,11 @@ Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pod
    }
    ```
 
-   Siga o arquivo completo do orders. As regras que ele cumpre:
-   - **Chave com geração:** a geração do escopo fica em `<módulo>:<leitura>-gen:<escopo>`, e cada resultado em `<módulo>:<leitura>:<escopo>:<geração>:<parâmetros>`. O escopo é o que uma escrita invalida de uma vez (o cliente, no orders). Sem geração gravada, vale a inicial, `'0'`.
-   - **TTL em toda chave:** o resultado vive o TTL, e a geração vive o dobro. Se a geração expirasse antes, voltaria para a inicial, e um resultado antigo gravado nela reapareceria.
-   - **Falha do cache não derruba a leitura:** cada chamada ao cache fica num `try/catch` que registra um `warn` e segue para o banco. Se a leitura da geração falhar, não use o cache nem grave o resultado.
-   - **Datas:** o Redis guarda JSON e devolve `Date` como texto. Converta de volta ao ler.
+   Siga o arquivo completo do orders e cumpra estas regras:
+   - **Chave com geração:** guarde a geração do escopo em `<módulo>:<leitura>-gen:<escopo>` e cada resultado em `<módulo>:<leitura>:<escopo>:<geração>:<parâmetros>`. O escopo é o que uma escrita invalida de uma vez (o cliente, no orders). Sem geração gravada, use a inicial, `'0'`.
+   - **TTL em toda chave:** grave o resultado com o TTL e a geração com o dobro dele ([Redis](../explanation/redis.md#cache-da-leitura)).
+   - **Falha do cache não derruba a leitura:** ponha cada chamada ao cache num `try/catch` que registra um `warn` e segue para o banco. Se a leitura da geração falhar, não use o cache nem grave o resultado.
+   - **Datas:** converta de volta para `Date` as datas lidas do cache.
 
 2. Ligue o decorator no módulo Nest, no lugar da implementação. Quem injeta o port recebe a versão com cache:
 
@@ -86,7 +86,14 @@ Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pod
 
    Trocar a geração é idempotente, então o handler dispensa o `IdempotentConsumer`. Registre-o nos `providers` do módulo.
 
-4. Escreva os testes unitários em `infra/cache/cached-<leitura>.queries.spec.ts`, com o `FakeCache` de `#test/fakes/fake-cache` (`failing = true` simula o Redis fora do ar). Os casos do `cached-order.queries.spec.ts` servem de lista: a segunda leitura igual vem do cache, a data volta como `Date`, cada escopo e cada página têm a sua entrada, invalidar um escopo não mexe nos outros, invalidar duas vezes é inofensivo, toda chave tem TTL, e com o cache falhando a leitura responde, invalidar não lança e nada é gravado.
+4. Escreva os testes unitários em `infra/cache/cached-<leitura>.queries.spec.ts`, com o `FakeCache` de `#test/fakes/fake-cache` (`failing = true` simula o Redis fora do ar). Cubra os casos do `cached-order.queries.spec.ts`:
+   - a segunda leitura igual vem do cache;
+   - a data volta como `Date`;
+   - cada escopo e cada página têm a sua entrada;
+   - invalidar um escopo não mexe nos outros;
+   - invalidar duas vezes é inofensivo;
+   - toda chave tem TTL;
+   - com o cache falhando, a leitura responde, invalidar não lança e nada é gravado.
 
 5. Escreva o teste de integração em `infra/cache/cached-<leitura>.queries.int-spec.ts`, a partir do `cached-order.queries.int-spec.ts`. Ele sobe Postgres e Redis descartáveis e confere a invalidação pelo handler, o TTL real no Redis e a leitura com o Redis parado.
 
@@ -95,8 +102,8 @@ Use este guia quando uma query de listagem ou de consulta pesa no Postgres e pod
 ## Como verificar
 
 - `npm test -- cached-<leitura>` e `npm run test:int -- cached-<leitura>` passam.
-- Com a app no ar, depois de uma chamada à rota, a chave aparece no Redis: `docker compose exec redis redis-cli --scan --pattern '<módulo>:<leitura>:*'`. Uma escrita no recurso faz a chamada seguinte vir atualizada assim que o evento sai da outbox.
-- Com o Redis parado (`docker compose stop redis`) e a app rodando com `THROTTLE_ENABLED=false`, a rota continua respondendo, e o log mostra os avisos do Redis (`redis connection error`, `cache store error`). Com o rate limit ligado, toda rota responde 503 antes de chegar ao cache ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)). Suba o Redis de novo com `docker compose start redis`.
+- Com a app no ar, depois de uma chamada à rota, a chave aparece no Redis: `docker compose exec redis redis-cli --scan --pattern '<módulo>:<leitura>:*'` (num worktree, acrescente `-n <N>`, o slot dele). Uma escrita no recurso faz a chamada seguinte vir atualizada assim que o evento sai da outbox.
+- No checkout principal, com o Redis parado (`docker compose stop redis`) e a app rodando com `THROTTLE_ENABLED=false`, a rota continua respondendo, e o log mostra os avisos do Redis (`redis connection error`, `cache store error`). Suba o Redis de novo com `docker compose start redis`.
 
 ## Veja também
 

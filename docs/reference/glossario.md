@@ -8,6 +8,62 @@ Os termos que atravessam os módulos, os termos com sentidos diferentes conforme
 
 ## Termos compartilhados
 
+### Agregado
+
+Um grupo de objetos de domínio salvo e alterado como uma unidade, com uma raiz que garante as regras dele. Outro agregado o referencia só pelo id. Exemplo: o `Order`, com os seus `OrderItem`.
+
+### Código de erro
+
+O identificador estável de um erro, em maiúsculas com `_`, como `ORDER_ALREADY_PAID`. O cliente decide o que fazer pelo código, e não pela mensagem, que é para leitura e pode mudar. Um código não muda de sentido depois de publicado. Cada erro de domínio declara o seu, e os erros que não são de domínio também têm um, como `VALIDATION_FAILED`.
+
+### Concorrência otimista
+
+Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop module`, guarda a versão lida. A gravação confere se ela não mudou. Se outra requisição gravou antes, a segunda falha com `CONCURRENCY_CONFLICT` e precisa reler.
+
+### Consumidor
+
+Um handler de outro módulo, ou do próprio, que assina eventos de integração por tipo. Tem um nome no formato `<módulo>.<efeito>`, como `inventory.release-on-order-cancelled`, e uma fila própria.
+
+### Consumidor idempotente
+
+Um consumidor que produz o efeito uma vez só, mesmo que a outbox entregue o evento de novo. Ele marca o par `eventId` e consumidor na mesma transação do efeito (`IdempotentConsumer`). Um efeito que pode se repetir sem dano dispensa a marca.
+
+### Contrato
+
+Tudo o que um módulo expõe aos outros: as facades e os eventos de integração, em `contracts/`. Um módulo importa só o `contracts/` de outro e, no arquivo do Nest module, o Nest module dele, para declarar a dependência em `imports`.
+
+### Dinheiro
+
+O value object `Money`: um inteiro em centavos e uma moeda, `BRL` por padrão. Somar moedas diferentes dá `CURRENCY_MISMATCH`, e um valor que não é inteiro dá `INVALID_MONEY`.
+
+### Evento de domínio
+
+Um fato que um agregado anota quando o estado muda, como `OrderPaid`. Fica dentro do módulo e não sai do processo. O caso de uso converte cada um num evento de integração.
+
+### Evento de integração
+
+O contrato público de um fato, como `orders.order-paid`. Tem `eventId`, `type`, `version`, `occurredAt` e um `payload` só com primitivos. Mudança compatível acrescenta campos. Mudança que quebra cria uma versão nova (`V2`). Cada evento tem um exemplo versionado em `contracts/events/`.
+
+### Facade
+
+A única porta de entrada síncrona de um módulo para os outros, em `contracts/`. Recebe e devolve só primitivos e não expõe o domínio. Exemplos: `CatalogFacade`, `InventoryFacade`, `UserDirectoryFacade`.
+
+### Idempotency key
+
+O cabeçalho `Idempotency-Key` que o cliente HTTP envia para repetir uma requisição sem repetir o efeito. A mesma chave, do mesmo ator, para a mesma requisição, devolve a mesma resposta. Para outra requisição, é recusada. Usada no pagamento do [orders](modules/orders.md#invariantes).
+
+### Outbox
+
+A tabela onde o caso de uso grava os eventos de integração, na mesma transação do agregado. O evento só sai se a gravação confirmar, e um worker o entrega depois a cada consumidor, com nova tentativa em caso de falha. A entrega é "pelo menos uma vez".
+
+### Port e adapter
+
+O port é uma classe abstrata que a `application/` define com o que precisa de fora, como `PriceCatalog` ou `PaymentGateway`. O adapter, na `infra/`, implementa o port com uma tecnologia ou com a facade de outro módulo. Um adapter que chama outro módulo ou um serviço externo também é chamado de gateway.
+
+### Shared kernel
+
+O código comum a todos os módulos, em `src/shared/`: tipos de base (`AggregateRoot`, `DomainError`, `Money`, `Actor`), ports de infraestrutura (transação, outbox, relógio, ids, log) e a infraestrutura transversal. Não tem regra de negócio de nenhum módulo.
+
 ### Usuário, ator e cliente
 
 Três conceitos diferentes, que podem apontar para a mesma pessoa:
@@ -19,62 +75,6 @@ Três conceitos diferentes, que podem apontar para a mesma pessoa:
 | Cliente | `customerId` | [orders](modules/orders.md#linguagem-ubíqua) | O dono do pedido: o id do usuário que o criou |
 
 Os três usam o mesmo id, mas não se confundem. Quando um admin cancela o pedido de outro usuário, o ator é o admin, e o cliente continua sendo o dono do pedido. O pedido não muda de cliente, e o e-mail de pagamento vai para o cliente, não para o ator.
-
-### Agregado
-
-Um grupo de objetos de domínio salvo e alterado como uma unidade, com uma raiz que garante as regras dele. Outro agregado o referencia só pelo id. Exemplo: o `Order`, com os seus `OrderItem`.
-
-### Evento de domínio
-
-Um fato que um agregado anota quando o estado muda, como `OrderPaid`. Fica dentro do módulo e não sai do processo. O caso de uso converte cada um num evento de integração.
-
-### Evento de integração
-
-O contrato público de um fato, como `orders.order-paid`. Tem `eventId`, `type`, `version`, `occurredAt` e um `payload` só com primitivos. Mudança compatível acrescenta campos. Mudança que quebra cria uma versão nova (`V2`). Cada evento tem um exemplo versionado em `contracts/events/`.
-
-### Outbox
-
-A tabela onde o caso de uso grava os eventos de integração, na mesma transação do agregado. O evento só sai se a gravação confirmar, e um worker o entrega depois a cada consumidor, com nova tentativa em caso de falha. A entrega é "pelo menos uma vez".
-
-### Consumidor
-
-Um handler de outro módulo, ou do próprio, que assina eventos de integração por tipo. Tem um nome no formato `<módulo>.<efeito>`, como `inventory.release-on-order-cancelled`, e uma fila própria.
-
-### Consumidor idempotente
-
-Um consumidor que produz o efeito uma vez só, mesmo que a outbox entregue o evento de novo. Ele marca o par `eventId` e consumidor na mesma transação do efeito (`IdempotentConsumer`). Um efeito que pode se repetir sem dano dispensa a marca.
-
-### Idempotency key
-
-O cabeçalho `Idempotency-Key` que o cliente HTTP envia para repetir uma requisição sem repetir o efeito. A mesma chave, do mesmo ator, para a mesma requisição, devolve a mesma resposta. Para outra requisição, é recusada. Usada no pagamento do [orders](modules/orders.md#invariantes).
-
-### Facade
-
-A única porta de entrada síncrona de um módulo para os outros, em `contracts/`. Recebe e devolve só primitivos e não expõe o domínio. Exemplos: `CatalogFacade`, `InventoryFacade`, `UserDirectoryFacade`.
-
-### Port e adapter
-
-O port é uma classe abstrata que a `application/` define com o que precisa de fora, como `PriceCatalog` ou `PaymentGateway`. O adapter, na `infra/`, implementa o port com uma tecnologia ou com a facade de outro módulo. Um adapter que chama outro módulo ou um serviço externo também é chamado de gateway.
-
-### Contrato
-
-Tudo o que um módulo expõe aos outros: as facades e os eventos de integração, em `contracts/`. Um módulo importa só o `contracts/` de outro e, no arquivo do Nest module, o Nest module dele, para declarar a dependência em `imports`. O `.dependency-cruiser.js` permite esse segundo import de propósito, na regra `modulo-nest-so-importa-modulo-nest`.
-
-### Shared kernel
-
-O código comum a todos os módulos, em `src/shared/`: tipos de base (`AggregateRoot`, `DomainError`, `Money`, `Actor`), ports de infraestrutura (transação, outbox, relógio, ids, log) e a infraestrutura transversal. Não tem regra de negócio de nenhum módulo.
-
-### Dinheiro
-
-O value object `Money`: um inteiro em centavos e uma moeda, `BRL` por padrão. Somar moedas diferentes dá `CURRENCY_MISMATCH`, e um valor que não é inteiro dá `INVALID_MONEY`.
-
-### Concorrência otimista
-
-Um agregado com a coluna `version`, como o `Order` e os gerados pelo `plop module`, guarda a versão lida. A gravação confere se ela não mudou. Se outra requisição gravou antes, a segunda falha com `CONCURRENCY_CONFLICT` e precisa reler.
-
-### Código de erro
-
-O identificador estável de um erro, em maiúsculas com `_`, como `ORDER_ALREADY_PAID`. O cliente decide o que fazer pelo código, e não pela mensagem, que é para leitura e pode mudar. Um código não muda de sentido depois de publicado. Cada erro de domínio declara o seu, e os erros que não são de domínio também têm um, como `VALIDATION_FAILED`.
 
 ## Mesmo termo, sentidos diferentes
 
@@ -92,9 +92,9 @@ O identificador estável de um erro, em maiúsculas com `_`, como `ORDER_ALREADY
 | Ator | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Cancelar | [orders](modules/orders.md#linguagem-ubíqua) |
 | Chave de idempotência | [Idempotency key](#idempotency-key) |
+| Cliente | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Código de erro | [Código de erro](#código-de-erro) |
 | Código de verificação | [identity](modules/identity.md#linguagem-ubíqua) |
-| Cliente | [Usuário, ator e cliente](#usuário-ator-e-cliente) |
 | Concorrência otimista | [Concorrência otimista](#concorrência-otimista) |
 | Consultar (pedido) | [orders](modules/orders.md#linguagem-ubíqua) |
 | Consumidor | [Consumidor](#consumidor) |
@@ -121,6 +121,7 @@ O identificador estável de um erro, em maiúsculas com `_`, como `ORDER_ALREADY
 | Preço | [catalog](modules/catalog.md#linguagem-ubíqua) |
 | Preço do produto | [catalog](modules/catalog.md#linguagem-ubíqua) |
 | Produto | [catalog](modules/catalog.md#linguagem-ubíqua) |
+| Reenviar o código | [identity](modules/identity.md#linguagem-ubíqua) |
 | Referência | [inventory](modules/inventory.md#linguagem-ubíqua) |
 | Refresh token | [identity](modules/identity.md#linguagem-ubíqua) |
 | Registrar | [identity](modules/identity.md#linguagem-ubíqua) |

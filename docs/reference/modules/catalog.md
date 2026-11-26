@@ -10,7 +10,7 @@ Código em `src/modules/catalog/`, registrado no `src/app.module.ts` como `Catal
 
 ## Estrutura
 
-O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as pastas `domain/`, `application/` e `infra/`. É intencional. O módulo só valida campos e não tem regra de negócio, e nesse caso o projeto usa CRUD e passa para a estrutura completa quando surgir regra ([Nem todo módulo precisa das camadas](../../explanation/arquitetura.md#nem-todo-módulo-precisa-das-camadas)). O isolamento vale do mesmo jeito: o módulo exporta só a `CatalogFacade`, de `contracts/`.
+O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as pastas `domain/`, `application/` e `infra/` ([Nem todo módulo precisa das camadas](../../explanation/arquitetura.md#nem-todo-módulo-precisa-das-camadas)). O módulo exporta só a `CatalogFacade`, de `contracts/`.
 
 ## Linguagem ubíqua
 
@@ -22,13 +22,8 @@ O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as 
 
 ## Contrato público
 
-**Facade:** `CatalogFacade`, em `src/modules/catalog/contracts/catalog.facade.ts`.
-
-| Método | Devolve |
-| --- | --- |
-| `pricesOf(productIds: string[])` | `ProductPrice[]`, só dos produtos que existem. Ids desconhecidos ou que não são uuid ficam de fora, e uma lista vazia devolve `[]` |
-
-**HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)).
+- **Facade:** `CatalogFacade`, em `src/modules/catalog/contracts/catalog.facade.ts`. `pricesOf(productIds: string[])` devolve `ProductPrice[]`, só dos produtos que existem. Ids desconhecidos ou que não são uuid ficam de fora, e uma lista vazia devolve `[]`.
+- **HTTP:** todas as rotas exigem autenticação ([Rotas protegidas](../autenticacao.md#rotas-protegidas)). Um erro responde em Problem Details, com o `code` ([Respostas de erro](../respostas-de-erro.md)).
 
 | Rota | Role | Corpo | Sucesso |
 | --- | --- | --- | --- |
@@ -37,11 +32,19 @@ O catalog é CRUD direto: controller, service e repositório do TypeORM, sem as 
 | `POST /v1/products` | `admin` | `name` (1 a 120), `priceCents` (inteiro de 0 a 1.000.000.000) | 201 com o produto |
 | `PATCH /v1/products/:id` | `admin` | `name` e `priceCents`, os dois opcionais, com os mesmos limites. Um campo enviado como `null` dá 400 | 200 com o produto |
 
-O produto tem `id`, `name`, `priceCents`, `currency`, `createdAt` e `updatedAt`. Um `:id` que não é uuid dá 400, e um produto inexistente dá 404 com `code: NOT_FOUND`, em Problem Details ([Respostas de erro](../respostas-de-erro.md)). O catalog não tem erro de domínio nem mapa de status: usa a `NotFoundException` do Nest.
+O produto tem `id`, `name`, `priceCents`, `currency`, `createdAt` e `updatedAt`. Um `:id` que não é uuid dá 400.
+
+## Códigos de erro
+
+O catalog não tem erro de domínio nem mapa de status: usa a `NotFoundException` do Nest.
+
+| Código | HTTP | Quando |
+| --- | --- | --- |
+| `NOT_FOUND` | 404 | O produto não existe, no `GET` e no `PATCH` de `/v1/products/:id` |
 
 ## Eventos publicados
 
-Nenhum. Mudar o preço não afeta pedidos já criados, que guardam o preço unitário do momento da criação.
+Nenhum.
 
 ## Eventos consumidos
 
@@ -49,10 +52,12 @@ Nenhum.
 
 ## Invariantes
 
-- O nome é gravado sem espaços nas pontas.
-- O preço é um inteiro de centavos, de 0 a 1.000.000.000 (a coluna é `int` de 32 bits).
+As duas regras ficam na validação do corpo e no service.
 
-As duas regras ficam na validação do corpo e no service. Não há erro de domínio.
+| Regra | Erro |
+| --- | --- |
+| O nome é gravado sem espaços nas pontas | — |
+| O preço é um inteiro de centavos, de 0 a 1.000.000.000 (a coluna é `int` de 32 bits) | 400 de validação |
 
 ## Dependências
 
@@ -67,7 +72,9 @@ Nenhum módulo de negócio.
 | --- | --- |
 | `products` | `id`, `name` (até 120), `priceCents`, `currency` (padrão `BRL`), `createdAt`, `updatedAt` |
 
-**Seed** (`npm run seed:catalog`): três produtos com ids fixos, os mesmos do seed do [inventory](inventory.md#schema-e-migrations). Insere só o que falta.
+## Seed
+
+`npm run seed:catalog`: três produtos com ids fixos, os mesmos do seed do [inventory](inventory.md#seed). Insere só o que falta.
 
 ## Decisões
 

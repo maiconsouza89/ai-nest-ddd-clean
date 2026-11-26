@@ -4,6 +4,8 @@ type: reference
 
 # Convenções
 
+As convenções de código que valem em todo módulo: imports ESM e aliases, versão da API HTTP, paginação das listagens, as regras das ORM entities do TypeORM e as migrations.
+
 ## Imports (ESM)
 
 O projeto é ESM (`"type": "module"`, [ADR 0001](../adr/0001-vitest-e-esm.md)).
@@ -56,6 +58,17 @@ app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 | Mudança aditiva | Um campo opcional novo na resposta fica na mesma versão. Um campo obrigatório novo na requisição não é aditivo: quebra o cliente que não o manda, e o CI acusa |
 | Mudança que quebra | Versão nova, mantendo a anterior até os clientes migrarem. As respostas da antiga avisam o fim com os headers `Deprecation` (RFC 9745) e `Sunset` (RFC 8594). O CI acusa a quebra pelo `oasdiff` ([Comandos → CI](comandos.md#ci)). Uma rota `deprecated` removida sem `x-sunset` passa como `INFO`; com o `x-sunset` no futuro, falha |
 
+## Paginação
+
+Toda listagem recebe o `PaginationQuery` (`src/shared/infra/http/pagination.query.ts`) na query e responde `{ items, total, page, limit }`.
+
+| Parâmetro | Padrão | Valores |
+| --- | --- | --- |
+| `page` | `1` | Inteiro ≥ 1 |
+| `limit` | `20` | Inteiro de 1 a 100 |
+
+Fora desses valores, a resposta é 400 `VALIDATION_FAILED`. Os padrões e a conversão de texto para número dependem do `ValidationPipe` global com `transform: true`, que o `configureApp` liga ([Operação](operacao.md#configuração-http)). Os passos para criar uma listagem estão em [Como paginar uma listagem](../how-to/paginar-uma-listagem.md).
+
 ## TypeORM
 
 Cada agregado tem uma entidade de domínio e uma ORM entity, convertidas por um mapper. O porquê está em [Persistência](../explanation/persistencia.md).
@@ -87,3 +100,7 @@ import type { OrderOrmEntity } from './order.orm-entity.js';
 @JoinColumn({ name: 'orderId' })
 order!: Relation<OrderOrmEntity>;
 ```
+
+### Migrations
+
+As pastas `migrations/` ficam fora do Prettier (`.prettierignore`) e do ESLint (`globalIgnores` do `eslint.config.mjs`). O arquivo gerado pelo `mig:<módulo>:gen` entra como está ([Como gerar uma migration](../how-to/gerar-uma-migration.md)).

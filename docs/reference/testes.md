@@ -4,7 +4,7 @@ type: reference
 
 # Testes
 
-Que tipo de teste cobre cada parte do código, onde ele fica e com o que roda. Os comandos para rodar estão em [Comandos](comandos.md#testes).
+Que tipo de teste cobre cada parte do código, onde ele fica e com o que roda. Os comandos para rodar estão em [Comandos](comandos.md#testes), e o porquê da cobertura e do isolamento dos testes em [Estratégia de testes](../explanation/estrategia-de-testes.md).
 
 ## Runner
 
@@ -56,8 +56,6 @@ Em PR, o CI roda os unitários, os de integração e os e2e com `vitest run --ch
 | Não enxerga | Um import usado só como tipo, que some na compilação. Mudar `catalog/contracts/catalog.facade.ts` não roda o `catalog-price.adapter.spec.ts` do orders, que só anota tipos com a `CatalogFacade`. Uma mudança de tipo quebra no `typecheck`, que o job `check` roda no projeto inteiro |
 | Roda tudo | Quando o diff tem um arquivo do `forceRerunTriggers` do `vitest.config.ts`, o arquivo do `setupFiles` ou o do `globalSetup` (e o que ele importa, como os helpers de banco) |
 
-Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o padrão dele ao `forceRerunTriggers`, começando por `**/` (o Vitest compara com o caminho absoluto), com um comentário dizendo por quê. Sem isso, um PR que muda só esse arquivo passa sem rodar os testes que dependem dele.
-
 ## Cobertura
 
 `npm run test:coverage` roda os unitários com a cobertura do `@vitest/coverage-v8`, configurada em `test.coverage` no `vitest.config.ts`. O `npm test` não mede. Cada relatório sai num lugar:
@@ -68,22 +66,22 @@ Ao criar um arquivo que o código carrega por glob ou por caminho, acrescente o 
 | `html` | `coverage/index.html` | Navegar arquivo por arquivo, localmente |
 | `json-summary` | `coverage/coverage-summary.json` | A tabela por camada do resumo do job no CI (`scripts/coverage-summary.mjs`) |
 
-A pasta `coverage/` fica no `.gitignore`. Não há relatório `text` por arquivo, que encheria o log com uma linha por arquivo do `src/`, nem `lcov` ou `cobertura`. Com um teste falhando, o Vitest não gera relatório: a cobertura de uma execução quebrada não é o número que se quer ler.
+A pasta `coverage/` fica no `.gitignore`. Não há relatório `text` por arquivo, nem `lcov` ou `cobertura`. Com um teste falhando, o Vitest não gera relatório.
 
-**O que é medido.** Só os unitários, sobre todo o `src/**/*.ts`: um arquivo sem teste aparece com 0%, em vez de sumir. A integração e o e2e rodam em jobs próprios no CI, e juntar a cobertura deles pediria passar relatórios entre jobs como artefato ([Evoluções com gatilho](evolucoes-com-gatilho.md#ci)). Por isso a infra aparece baixa: quem a cobre é a integração e o e2e. Os arquivos de teste dos três projetos não entram no relatório.
+**O que é medido.** Só os unitários, sobre todo o `src/**/*.ts`: um arquivo sem teste aparece com 0%. A integração e o e2e não entram ([Evoluções com gatilho](evolucoes-com-gatilho.md#ci)). Os arquivos de teste dos três projetos não entram no relatório.
 
-**O que fica fora do relatório** (`coverage.exclude`), por não ser código da aplicação em execução:
+**O que fica fora do relatório** (`coverage.exclude`):
 
-| Padrão | Por quê |
+| Padrão | O que é |
 | --- | --- |
-| `**/migrations/**`, `**/*.data-source.ts`, `**/seeds/**` | Rodam pela CLI do TypeORM ou por script, e não dentro da aplicação |
+| `**/migrations/**`, `**/*.data-source.ts`, `**/seeds/**` | Migrations, data sources da CLI do TypeORM e seeds |
 | `**/in-memory/**` | Repositórios em memória, só dos testes |
 | `src/**/contracts/events/*.example.ts` | Exemplos dos testes de contrato |
 | `src/shared/testing/**` | Utilitários dos testes |
 
-O `main.ts`, o `bootstrap.ts`, o `tracing.ts` e os `*.module.ts` ficam no relatório: rodam em produção, e o 0% deles é real.
+O `main.ts`, o `bootstrap.ts`, o `tracing.ts` e os `*.module.ts` ficam no relatório.
 
-**Meta.** Piso de 90% nas quatro métricas (linhas, statements, branches e funções), só nos globs `src/**/domain/**` e `src/**/application/**`, onde a cobertura reflete regra de negócio. Não há meta global nem `thresholds.autoUpdate`. O piso barra uma regressão grande sem obrigar a subir a cobertura. Um arquivo novo em `domain/` ou `application/` sem teste pode derrubá-la. O `npm run ci` roda o `test:coverage`, então a falha aparece antes do push.
+**Meta.** Piso de 90% nas quatro métricas (linhas, statements, branches e funções), só nos globs `src/**/domain/**` e `src/**/application/**`. Não há meta global nem `thresholds.autoUpdate`. Um arquivo novo em `domain/` ou `application/` sem teste pode derrubar a cobertura abaixo do piso. O `npm run ci` roda o `test:coverage`, então a falha aparece antes do push.
 
 Um `npm run test:coverage -- <padrão>` falha a meta, porque mede só parte da suíte. Para rodar um arquivo, use `npm test -- <padrão>`.
 
@@ -101,9 +99,10 @@ A meta continua valendo, e o `domain/` sobe um pouco, porque a integração exer
 
 | Convenção | Detalhe |
 | --- | --- |
-| Um Postgres e um Redis por execução da integração | O `globalSetup` sobe os dois uma vez, e os arquivos rodam em paralelo. O Postgres roda sem durabilidade (`fsync`, `synchronous_commit` e `full_page_writes` desligados, dados em tmpfs): ele é descartado no fim |
-| Um banco por arquivo, clonado de template | O `start<Módulo>Database` faz `CREATE DATABASE ... TEMPLATE tpl_<módulo>` no `beforeAll`, e o `stop` o apaga. Um template por conjunto de migrations, para a migration de um módulo continuar sem poder depender do schema de outro. Schema por arquivo não serve (as migrations criam schemas fixos), rollback por teste quebra os testes de transação, concorrência e outbox, que abrem conexões próprias, e `TRUNCATE` entre arquivos obrigaria a rodar em série |
-| Um banco lógico do Redis por worker | `redis://host:port/<VITEST_POOL_ID>`, limpo com `FLUSHDB` no `startRedis`. O Redis sobe com `--databases 128`, porque os 16 do padrão colidiriam em máquinas com mais de 16 workers. Os arquivos de um mesmo worker rodam um depois do outro. Um teste que limpa o Redis usa `FLUSHDB`, nunca `FLUSHALL` |
+| Um Postgres e um Redis por execução da integração | O `globalSetup` sobe os dois uma vez, e os arquivos rodam em paralelo. O Postgres roda sem durabilidade (`fsync`, `synchronous_commit` e `full_page_writes` desligados, dados em tmpfs) |
+| Um banco por arquivo, clonado de template | O `start<Módulo>Database` faz `CREATE DATABASE ... TEMPLATE tpl_<módulo>` no `beforeAll`, e o `stop` o apaga. Um template por conjunto de migrations de cada módulo |
+| Um banco lógico do Redis por worker | `redis://host:port/<VITEST_POOL_ID>`, limpo com `FLUSHDB` no `startRedis`. O Redis sobe com `--databases 128`. Os arquivos de um mesmo worker rodam um depois do outro. Um teste que limpa o Redis usa `FLUSHDB`, nunca `FLUSHALL` |
 | Container próprio só quando o teste mexe nele | O `cached-order.queries.int-spec.ts` derruba o Redis no meio (`startRedisContainer`), e o `smtp-email-sender.int-spec.ts` sobe o Mailpit. Um hook que sobe container passa o prazo dele; os outros ficam no `hookTimeout` de 30 s |
+| Arquivo carregado por glob ou por caminho | O padrão dele entra no `forceRerunTriggers` do `vitest.config.ts`, começando por `**/` (o Vitest compara com o caminho absoluto), com um comentário dizendo por quê. Sem ele, um PR que muda só esse arquivo passa sem rodar os testes que dependem dele ([Só os testes afetados](#só-os-testes-afetados)) |
 | Imports nos testes | Os specs ficam fora do `npm run arch`, então a convenção de imports depende de revisão ([Convenções](convencoes.md#relativos-e-aliases)) |
 | Lint nos testes | Algumas regras com tipos ficam desligadas. Quais e por quê: [ADR 0004](../adr/0004-lint-e-formatacao.md#regras-desligadas-na-adoção) |

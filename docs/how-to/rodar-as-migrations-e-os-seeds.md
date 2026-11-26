@@ -4,7 +4,7 @@ type: how-to
 
 # Como rodar as migrations e os seeds
 
-Use este guia depois de clonar o repositório, de puxar mudanças que trazem migrations novas ou de [resetar o ambiente local](resetar-o-ambiente-local.md). Para criar uma migration, siga [Como gerar uma migration](gerar-uma-migration.md). Para as migrations em produção, com o `db:migrate:prod` da imagem Docker, siga [Como fazer o deploy](fazer-o-deploy.md).
+Use este guia depois de clonar o repositório, de puxar mudanças que trazem migrations novas ou de [resetar o ambiente local](resetar-o-ambiente-local.md).
 
 ## Pré-requisitos
 
@@ -25,7 +25,7 @@ Use este guia depois de clonar o repositório, de puxar mudanças que trazem mig
    npm run db:setup
    ```
 
-   Um módulo em dia responde "No migrations are pending", então o comando pode rodar de novo sem risco. Para um módulo só: `npm run mig:<módulo>:run`.
+   Para um módulo só: `npm run mig:<módulo>:run`.
 
 2. Rode os seeds de todos os módulos:
 
@@ -33,7 +33,7 @@ Use este guia depois de clonar o repositório, de puxar mudanças que trazem mig
    npm run db:seed
    ```
 
-   Os seeds inserem só o que falta e não sobrescrevem o que existe, então o comando também pode rodar de novo. Para um módulo só: `npm run seed:<módulo>`. Os usuários de teste estão em [Comandos](../reference/comandos.md#seeds).
+   Para um módulo só: `npm run seed:<módulo>`. Os usuários de teste estão em [Comandos](../reference/comandos.md#seeds).
 
 ## Como verificar
 
@@ -52,11 +52,13 @@ Se algo falhar:
 | Sintoma | Causa e saída |
 | --- | --- |
 | `Seeds de desenvolvimento só rodam com NODE_ENV=development ou test.` | O `NODE_ENV` do shell vence o do `.env`. Confira `echo $NODE_ENV` e o `.env` |
-| Uma migration falhou no meio e o `run` seguinte falha de novo | No banco local, [resete o ambiente](resetar-o-ambiente-local.md). Numa migration sua ainda sem commit, veja o revert em [Como gerar uma migration](gerar-uma-migration.md#como-verificar) |
+| Uma migration falhou no meio e o `run` seguinte falha de novo | No banco local, [resete o ambiente](resetar-o-ambiente-local.md). Numa migration sua ainda sem commit, veja o revert em [Como gerar uma migration](gerar-uma-migration.md#desfazer-uma-migration) |
 
 ## Veja também
 
 - [Comandos](../reference/comandos.md#migrations): o `db:setup`, os scripts `mig:<módulo>:*` e a condição `@app/source`.
 - [Comandos](../reference/comandos.md#seeds): o `db:seed` e os scripts `seed:<módulo>`.
+- [Como gerar uma migration](gerar-uma-migration.md): criar uma migration depois de mudar uma ORM entity.
 - [Como criar um seed](criar-um-seed.md): o seed de um módulo novo.
+- [Como fazer o deploy](fazer-o-deploy.md): as migrations em produção, com o `db:migrate:prod` da imagem Docker.
 - [Comunicação entre módulos](../explanation/comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios): por que cada módulo tem migrations próprias.

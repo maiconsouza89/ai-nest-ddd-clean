@@ -4,7 +4,7 @@ type: reference
 
 # Operação
 
-O que a app liga na subida e no desligamento: a configuração HTTP, o Swagger, o health check, o rate limit, os logs de acesso e a ordem de desligamento. As variáveis que mudam cada item estão em [Variáveis de ambiente](variaveis-de-ambiente.md), e os endereços com a app no ar em [Comandos](comandos.md#setup-do-zero).
+O que a app liga na subida e no desligamento: a configuração HTTP, o Swagger, o health check, o rate limit, os logs de acesso, o comportamento com o Redis fora do ar e a ordem de desligamento. As variáveis que mudam cada item estão em [Variáveis de ambiente](variaveis-de-ambiente.md), e os endereços com a app no ar em [Como preparar o ambiente local](../how-to/preparar-o-ambiente-local.md).
 
 ## Configuração HTTP
 
@@ -72,7 +72,7 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 | Resposta bloqueada | 429 `TOO_MANY_REQUESTS` em Problem Details, com `Retry-After` sem sufixo, seja qual for o throttler que bloqueou |
 | Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida. Cada throttler nomeado tem os seus, com o nome no fim: `X-RateLimit-Limit-account-minute`, `X-RateLimit-Remaining-account-hour` |
 | Contadores | No Redis, pelo `RedisThrottlerStorage` (`src/shared/infra/http/`): janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
-| Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis](../explanation/redis.md#redis-fora-do-ar-cada-uso-falha-do-seu-jeito)) |
+| Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis fora do ar](#redis-fora-do-ar)) |
 | Desligar | `THROTTLE_ENABLED=false` |
 | Teste | `redis-throttler-storage.int-spec.ts` |
 
@@ -100,6 +100,22 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 | Sem header, ou fora desse formato | Um UUID aleatório |
 
 O id vai para o `req.id` do log e volta na resposta, no header `x-request-id`.
+
+## Redis fora do ar
+
+Nenhum uso espera o Redis voltar segurando uma requisição. O porquê de cada comportamento está em [Redis](../explanation/redis.md).
+
+| Uso | Comportamento | Mensagem de log |
+| --- | --- | --- |
+| Cache | A leitura vai direto ao banco | `warn`: `redis connection error`, `cache store error` |
+| Rate limit | 503 `SERVICE_UNAVAILABLE` (`Rate limiting unavailable`) na hora, em toda rota com rate limit. Com o rate limit ligado, a API inteira responde 503, menos o health, antes de chegar ao cache ou à outbox | `error`: `rate limit storage unavailable` |
+| Outbox | Os eventos ficam na tabela, e o relay tenta de novo com backoff. Depois de 8 falhas, o evento é marcado como morto (`deadAt`). O primeiro envio a uma fila desde a subida não falha: a `Queue` do BullMQ espera a conexão, e o relay fica parado nesse lote, com a transação aberta, até o Redis voltar | `warn`: `event delivery failed, will retry`. `error`: `event dead-lettered after max attempts` |
+| Workers das filas de eventos | Esperam a reconexão e voltam a processar sozinhos | `warn`: `bullmq redis connection error`, `queue worker error` |
+| Agendador de jobs | A subida falha cerca de 15 s depois da primeira tentativa de conexão: até 5 s esperando a conexão das filas, mais 10 s de timeout do registro dos jobs agendados. Com `JOBS_ENABLED=false`, nada é registrado, e a subida segue | Erro da subida: `<scheduler>: scheduler registration failed` |
+| Métricas das filas | A coleta falha e a rodada fica sem os valores das filas. Se o Redis já estava fora na subida, a falha vem no prazo da coleta ([Observabilidade](observabilidade.md#coleta)) | `warn`: `queue metrics collection failed` |
+| `/health/ready` | 503, com o `redis` `down` (`The client is offline`). Volta a 200 quando o Redis volta. O `/health/live` não depende do Redis | O do Terminus |
+
+A conexão do cache não bloqueia a subida: a app sobe sem cache, com o `warn` `redis connect failed`, e o `/health/ready` responde 503.
 
 ## Desligamento
 
@@ -129,16 +145,10 @@ O `HealthModule` registra o `TerminusModule.forRootAsync` com `gracefulShutdownT
 3. Durante `SHUTDOWN_GRACE_MS`, a app atende as requisições que chegarem, com o banco e o Redis abertos. O Terminus loga `Awaiting <ms>ms before shutdown`.
 4. Passado o atraso, o servidor HTTP fecha (fase 3) e o resto do desligamento segue.
 
-Outros sinais, como o `SIGINT` do Ctrl+C, não esperam. O padrão é `0`: sem atraso, como no desenvolvimento.
-
-| Ajuste | Regra |
-| --- | --- |
-| `SHUTDOWN_GRACE_MS` | No mínimo o tempo para a readiness ser marcada como falha (`periodSeconds` × `failureThreshold` da readiness probe), mais a margem para o balanceador propagar a remoção. Com `periodSeconds: 5` e `failureThreshold: 2`, `15000` |
-| `terminationGracePeriodSeconds` do Kubernetes (padrão 30 s) | Maior que `SHUTDOWN_GRACE_MS` somado ao tempo das fases 1, 3 e 4 (o job em andamento, as requisições em andamento e o fechamento das conexões). Se não couber, a plataforma manda o `SIGKILL` e o container sai com 137 |
-| Outras plataformas | O mesmo prazo tem outro nome: o `stop_grace_period` do Compose (padrão 10 s) e o `stopTimeout` do ECS (padrão 30 s) |
+Outros sinais, como o `SIGINT` do Ctrl+C, não esperam. O padrão é `0`: sem atraso, como no desenvolvimento. Como escolher o valor e o prazo da plataforma está em [Como fazer o deploy](../how-to/fazer-o-deploy.md#tempo-de-desligamento).
 
 Teste: `test/shutdown.e2e-spec.ts`.
 
-Na imagem Docker, o PID 1 é o `tini` (`ENTRYPOINT` do `Dockerfile`), que repassa o sinal ao node. Com o node como PID 1, o kernel ignora o sinal que o Nest reenvia a si mesmo no fim, porque o PID 1 não tem handler padrão. Se sobrar um handle aberto, o container só sai no `SIGKILL` da plataforma, com código 137. Com o `tini`, ele sai com 143, término por `SIGTERM`. O passo a passo está em [Como fazer o deploy](../how-to/fazer-o-deploy.md).
+Na imagem Docker, o PID 1 é o `tini` (`ENTRYPOINT` do `Dockerfile`), que repassa o sinal ao node. No `SIGTERM`, o container sai com 143.
 
-Com `OTEL_METRICS_EXPORTER` ou `OTEL_LOGS_EXPORTER` no padrão (`otlp`) e sem coletor, a fase 4 espera o timeout da exportação, uns 8 s, no `TracingShutdown`. Sem coletor, deixe os dois em `none` ([Variáveis de ambiente](variaveis-de-ambiente.md#opentelemetry)).
+Com `OTEL_METRICS_EXPORTER` ou `OTEL_LOGS_EXPORTER` no padrão (`otlp`) e sem coletor, a fase 4 espera o timeout da exportação, uns 8 s, no `TracingShutdown` ([Variáveis de ambiente](variaveis-de-ambiente.md#opentelemetry)).

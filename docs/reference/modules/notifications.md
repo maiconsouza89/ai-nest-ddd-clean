@@ -8,7 +8,9 @@ E-mails ao usuário disparados por eventos de outros módulos: o código de veri
 
 Código em `src/modules/notifications/`, registrado no `src/app.module.ts` como `NotificationsModule`.
 
-O módulo não tem `domain/` nem tabelas: só reage a eventos. A lógica fica em `application/`, e os adapters e o handler em `infra/`.
+## Estrutura
+
+O módulo não tem `domain/` nem tabelas: só reage a eventos. A lógica fica em `application/`, e os adapters e os handlers em `infra/`.
 
 ## Linguagem ubíqua
 
@@ -16,7 +18,7 @@ O módulo não tem `domain/` nem tabelas: só reage a eventos. A lógica fica em
 | --- | --- | --- |
 | Destinatário | `RecipientDirectory` | O e-mail do cliente do pedido, lido do identity pelo `customerId`. Só o e-mail de pagamento confirmado o usa: os eventos do identity já trazem o endereço no payload. |
 | E-mail | `Email` (`to`, `subject`, `body`), `EmailSender` | A mensagem enviada. Não é o value object `Email` do identity. |
-| E-mail de código de verificação | `SendVerificationCodeEmailUseCase` | "Seu código de verificação": o código e a validade em minutos, enviado no register e em cada reenvio. Não leva o nome do cadastro: o endereço ainda não foi verificado, e o nome poderia ser de quem usou o e-mail de outra pessoa. |
+| E-mail de código de verificação | `SendVerificationCodeEmailUseCase` | "Seu código de verificação": o código e a validade em minutos, enviado no register e em cada reenvio. Não leva o nome do cadastro. |
 | E-mail de boas-vindas | `SendWelcomeEmailUseCase` | "Boas-vindas, `<nome>`": enviado quando o usuário verifica o e-mail. |
 | E-mail de pagamento confirmado | `SendOrderPaidEmailUseCase` | O aviso enviado quando um pedido é pago. Exemplo, sai junto com o orders. |
 
@@ -44,13 +46,15 @@ Nenhum.
 
 ## Invariantes
 
-Nenhuma regra de domínio.
+Nenhuma.
 
 ## Dependências
 
 | Módulo | Facade | Port do notifications | Uso |
 | --- | --- | --- | --- |
 | [identity](identity.md) | `UserDirectoryFacade.emailOf` | `RecipientDirectory` (`IdentityRecipientDirectory`) | E-mail do cliente do pedido pago. Sai junto com o exemplo |
+
+## Adapters
 
 | Port | Adapter |
 | --- | --- |

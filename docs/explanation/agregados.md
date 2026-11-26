@@ -51,7 +51,7 @@ addItem(productId: string, qty: number, unitPrice: Money) {
 O getter `items` devolve uma cópia readonly, e só a raiz mexe na lista interna. Quem quer um item novo chama `addItem`, que confere o status. Daí saem três consequências:
 
 - **Não existe `OrderItemRepository`.** O `OrderRepository` salva o pedido e os itens juntos, na mesma transação. Um repositório de item permitiria gravar um item sem passar pela regra do status.
-- **A ORM entity espelha o agregado:** `@OneToMany` com `cascade: true` no pedido, chave composta (`orderId`, `productId`) e `orphanedRowAction: 'delete'` no item. O mapper converte os dois lados ([Persistência](persistencia.md)).
+- **A ORM entity espelha o agregado:** gravar o pedido grava os itens, e um item tirado da lista some da tabela, sem um repositório próprio. O mapper converte os dois lados ([Persistência](persistencia.md)), e o mapeamento está na página do [orders](../reference/modules/orders.md).
 - **O item guarda só o `productId` e uma cópia do preço.** O produto é de outro módulo e é referenciado pelo id. O preço é copiado do catalog quando o pedido é criado. Se o catalog mudar o preço depois, o pedido continua com o preço da compra.
 
 ### O estoque entra por um port do orders
@@ -100,21 +100,14 @@ await this.tx.run(async () => {
 
 O `ReserveStockUseCase` do inventory também roda em `tx.run`, e o `TransactionManager` reaproveita a transação ativa em vez de abrir outra. Os dois módulos usam a mesma conexão, então a reserva entra na transação do pedido. Se o `save` falhar, por exemplo num conflito de concorrência, a reserva é desfeita junto, e não sobra estoque reservado para um pedido que não fechou.
 
-Isso tem um preço. É a única transação que grava no schema de dois módulos, contra a regra "sem transação entre módulos" ([Comunicação entre módulos](comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios)) e contra o "um agregado por transação". As linhas de saldo baixadas ficam travadas até o pedido confirmar. E a garantia depende da conexão compartilhada: com uma conexão por módulo, ou com o inventory num serviço à parte, a reserva confirma sozinha, e um `save` que falha depois deixa estoque reservado sem pedido. Aí é preciso compensar, liberando a reserva, ou passar para eventos.
-
-| Abordagem | Como funciona | Prós | Contras |
-| --- | --- | --- | --- |
-| Síncrona (implementada) | O caso de uso reserva pelo port e depois fecha e salva o pedido, na mesma transação | Simples, resposta imediata, sem reserva órfã enquanto a conexão é compartilhada | Acopla a transação dos dois módulos e trava o saldo durante o fechamento. Separada a conexão, precisa de compensação |
-| Por eventos (não implementada) | O pedido salvo num estado de espera publica `OrderPlaced`, o inventory responde com reserva feita ou recusada, e o pedido confirma ou cancela | Módulos desacoplados, cada transação num módulo só | Consistência eventual, um estado a mais no pedido e mais peças (outbox, handlers, timeout da espera) |
-
-O síncrono serve enquanto os módulos rodam no mesmo processo e no mesmo banco. A troca para eventos se paga quando o inventory precisar de conexão própria, virar um serviço, ou quando a trava do saldo durante o fechamento virar gargalo. Ela mexe mais do que o adapter: o `Order` ganha o estado de espera, o fechamento passa a terminar num handler da resposta do inventory, e o `StockGateway` deixa de ser chamado no `PlaceOrderUseCase`.
+Isso tem um preço. É a única transação que grava no schema de dois módulos, contra a regra "sem transação entre módulos" ([Comunicação entre módulos](comunicacao-entre-modulos.md#cada-módulo-tem-schema-e-migrations-próprios)) e contra o "um agregado por transação". As linhas de saldo baixadas ficam travadas até o pedido confirmar. E a garantia depende da conexão compartilhada: com uma conexão por módulo, ou com o inventory num serviço à parte, a reserva confirma sozinha, e um `save` que falha depois deixa estoque reservado sem pedido. Aí é preciso compensar, liberando a reserva, ou passar para a reserva por eventos (em [Alternativas e trade-offs](#alternativas-e-trade-offs)). Em troca, o síncrono é simples, responde na hora e não deixa reserva órfã enquanto a conexão é compartilhada.
 
 ## Alternativas e trade-offs
 
 - **`OrderItem` como agregado próprio, com repositório:** permitiria alterar um item sem carregar o pedido. Em troca, o total e a regra "não editar depois de fechar" deixariam de ter um dono, e cada caso de uso que mexe em item teria de repeti-las.
 - **Estoque dentro do `Order`:** a reserva e o fechamento seriam uma regra só, num agregado só. Mas o saldo é compartilhado: o agregado teria de incluir o saldo de cada produto do pedido, e dois pedidos do mesmo produto, de clientes diferentes, entrariam em conflito ao fechar.
 - **Caso de uso chamando a `InventoryFacade` direto, sem port:** o `npm run arch` permite, porque é um import de `contracts/`. Mas a application do orders passaria a tratar o resultado do inventory e a depender do nome e do formato do contrato dele, e levar o inventory para um serviço à parte mexeria no caso de uso.
-- **Reserva por eventos desde o início:** desacopla as transações, mas cobra o estado de espera e o tratamento de recusa e de timeout antes de o sistema precisar disso.
+- **Reserva por eventos:** o pedido é salvo num estado de espera e publica `OrderPlaced`, o inventory responde com reserva feita ou recusada, e o pedido confirma ou cancela. Os módulos ficam desacoplados, e cada transação grava num módulo só. Em troca, vem a consistência eventual, um estado a mais no pedido e mais peças: handlers dos dois lados e o timeout da espera. Adotá-la desde o início cobraria o estado de espera e o tratamento de recusa e de timeout antes de o sistema precisar disso. O síncrono serve enquanto os módulos rodam no mesmo processo e no mesmo banco. A troca se paga quando o inventory precisar de conexão própria, virar um serviço, ou quando a trava do saldo durante o fechamento virar gargalo. Ela mexe mais do que o adapter: o `Order` ganha o estado de espera, o fechamento passa a terminar num handler da resposta do inventory, e o `StockGateway` deixa de ser chamado no `PlaceOrderUseCase`.
 
 ## Decisões relacionadas
 

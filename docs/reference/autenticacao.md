@@ -4,7 +4,7 @@ type: reference
 
 # Autenticação
 
-O porquê do desenho está em [Autenticação e ownership](../explanation/autenticacao.md): o token só identifica o usuário, o ator é carregado a cada requisição ([ADR 0002](../adr/0002-ator-carregado-por-requisicao.md)), a sessão vive num refresh token rotativo e o ownership fica no caso de uso.
+As rotas de autenticação, o código de verificação, o access token, o refresh token, as rotas protegidas e os usuários de teste. O porquê do desenho está em [Autenticação e ownership](../explanation/autenticacao.md).
 
 ## Rotas
 
@@ -22,17 +22,17 @@ Todas são `POST`, públicas e com rate limit próprio, por IP. O login também 
 - **Register:** o usuário nasce sem roles e com o e-mail por verificar. O register não abre sessão. Ele emite um código de verificação, que chega por e-mail ([Código de verificação](#código-de-verificação)).
 - **Verify-email:** confere o código e marca o e-mail como verificado. Não abre sessão: depois dele, chame o login. Código errado, vencido, já usado ou esgotado e e-mail desconhecido dão o mesmo 400.
 - **Resend-verification-code:** emite um código novo, que invalida o anterior, e o envia por e-mail. Responde 202 sempre, sem dizer se o e-mail saiu: e-mail desconhecido, conta já verificada, pedido antes de 60 segundos do último código e cota de códigos esgotada terminam em silêncio.
-- **Login:** e-mail desconhecido e senha errada dão a mesma resposta. Os dois casos pagam uma verificação de hash, então o tempo de resposta também não revela quais e-mails estão cadastrados. Com a senha certa e o e-mail por verificar, a resposta é 403 `EMAIL_NOT_VERIFIED`. A senha é conferida antes, para o 403 não revelar a quem não a tem que a conta existe. O limite por conta conta toda tentativa, certa ou errada, pelo e-mail normalizado (sem espaços nas pontas e em minúsculas). O contador vale para qualquer e-mail, cadastrado ou não, e o 429 sai igual nos dois casos: não revela se a conta existe. Um corpo sem e-mail válido não conta por conta, só por IP.
+- **Login:** e-mail desconhecido e senha errada dão a mesma resposta, no mesmo tempo: os dois casos passam por uma verificação de hash. Com a senha certa e o e-mail por verificar, a resposta é 403 `EMAIL_NOT_VERIFIED`. Com a senha errada, a resposta é 401 `INVALID_CREDENTIALS`, com o e-mail verificado ou não. O limite por conta conta toda tentativa, certa ou errada, pelo e-mail normalizado (sem espaços nas pontas e em minúsculas). O contador vale para qualquer e-mail, cadastrado ou não, e o 429 sai igual nos dois casos. Um corpo sem e-mail válido não conta por conta, só por IP.
 - **Refresh:** o token recebido deixa de valer. Use o `refreshToken` da resposta na próxima renovação. Token desconhecido, vencido, revogado ou reusado dão o mesmo 401.
-- **Logout:** revoga a sessão inteira do refresh token (a família, ver abaixo). Responde 204 mesmo para um token desconhecido, para não revelar quais tokens existem.
+- **Logout:** revoga a sessão inteira do refresh token (a família, ver abaixo). Responde 204 mesmo para um token desconhecido.
 
 ## Código de verificação
 
 - 6 dígitos aleatórios (`crypto.randomInt`). O banco guarda só o hash SHA-256, na tabela `identity.email_verification_codes`.
 - Vale `EMAIL_VERIFICATION_CODE_TTL_SECONDS`, 600 segundos (10 minutos) por padrão e no mínimo 60, contados da emissão.
 - Uso único. Aceita até 5 tentativas erradas: a quinta esgota o código, e depois dela nem o código certo vale. Tentativas simultâneas contam uma a uma.
-- Só o código mais recente do usuário vale: emitir um novo invalida os anteriores. Entre dois códigos, no mínimo 60 segundos, e no máximo 10 códigos por usuário em 24 horas, contando o do register. Com 5 tentativas por código, são até 50 palpites por dia por conta, abaixo do teto de 100 falhas do [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html).
-- O e-mail do código leva só o código e a validade, sem o nome do cadastro: o endereço ainda não foi verificado, e o nome poderia ser de quem usou o e-mail de outra pessoa.
+- Só o código mais recente do usuário vale: emitir um novo invalida os anteriores. Entre dois códigos, no mínimo 60 segundos, e no máximo 10 códigos por usuário em 24 horas, contando o do register.
+- O e-mail do código leva só o código e a validade, sem o nome do cadastro.
 - O código viaja em texto puro no evento `identity.verification-code-issued`, que o notifications usa para enviar o e-mail, e fica na outbox e nos jobs do Redis até a limpeza ([ADR 0009](../adr/0009-verificacao-de-email-com-codigo-no-evento.md)).
 
 ## Access token
@@ -41,13 +41,13 @@ Todas são `POST`, públicas e com rate limit próprio, por IP. O login também 
 - Leva só o `sub` (id do usuário) e o `exp`. Não leva roles.
 - Vale `JWT_ACCESS_TTL_SECONDS`, 900 segundos (15 minutos) por padrão. O `expiresIn` da resposta é esse valor em segundos, para o cliente saber quando renovar.
 - Vai no cabeçalho `Authorization: Bearer <accessToken>`.
-- Não pode ser revogado antes de vencer. Por isso a validade é curta.
+- Não pode ser revogado antes de vencer.
 
 ## Refresh token
 
 - Opaco: 32 bytes aleatórios em base64url (43 caracteres). O banco guarda só o hash SHA-256.
 - **Rotativo e de uso único.** Cada renovação troca o token por um sucessor, na mesma sessão (a família).
-- **Reuso revoga a sessão inteira.** Se um token já trocado aparece de novo, duas partes têm o mesmo token (o cliente e quem o roubou), e a família inteira é revogada. Duas renovações concorrentes com o mesmo token contam como reuso.
+- **Reuso revoga a sessão inteira.** Se um token já trocado aparece de novo, a família inteira é revogada. Duas renovações concorrentes com o mesmo token contam como reuso.
 - Cada token vale `REFRESH_TOKEN_TTL_SECONDS` (30 dias por padrão).
 - A sessão tem um prazo absoluto, `REFRESH_FAMILY_MAX_AGE_SECONDS` (90 dias por padrão), contado do login. Renovar não o estende, e nenhum sucessor vence depois dele. Passado o prazo, só com a senha de novo.
 - Um job apaga os refresh tokens vencidos uma vez por dia, às 3h (fila `jobs.identity`). Ele obedece ao `JOBS_ENABLED`.
