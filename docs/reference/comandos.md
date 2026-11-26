@@ -62,7 +62,7 @@ O health não tem versão na URL, não pede token e fica fora do rate limit. O q
 | `npm run openapi:generate` | Compila (`nest build`) e grava o `openapi.json` da raiz a partir do `AppModule`, sem Postgres nem Redis ([Operação → Swagger](operacao.md#swagger)). Rode depois de mudar controller, DTO ou decorator do Swagger e commite o arquivo |
 | `npm run openapi:check` | Compila e compara o documento com o `openapi.json`. Diferente ou ausente, falha com a instrução de rodar o `openapi:generate`. Uns 10 s, pelo `nest build` |
 | `npm run ci:static` | `typecheck`, `lint`, `format:check`, `docs:check`, `arch` e `openapi:check`, nessa ordem. O job `check` do CI roda o `ci:static` e o `audit:signatures` |
-| `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures` |
+| `npm run ci` | `ci:static` e depois `test:coverage`: os unitários com a meta de cobertura ([Testes](testes.md#cobertura)). **Não** roda integração nem e2e, nem o `audit:signatures`. O `nest build` do `openapi:check` apaga e refaz o `dist/`: com o `start:dev` no ar no mesmo checkout, encerre-o antes ou espere ele recompilar |
 | `npm run audit:signatures` | `npm audit signatures`: confere a assinatura do registry e as attestations de cada pacote instalado. Precisa da rede. Não olha advisories: eles ficam com os Dependabot alerts e o dependency review ([CI](#ci)) |
 
 ## Hooks do git
