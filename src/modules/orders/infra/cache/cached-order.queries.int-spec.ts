@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { HealthIndicatorService, TerminusModule } from '@nestjs/terminus';
+import { TerminusModule } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartedRedisContainer } from '@testcontainers/redis';
 import { DataSource } from 'typeorm';
@@ -15,7 +15,6 @@ import { Money } from '#shared/domain/money.vo';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
 import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
 import { CacheRedisConnection } from '#shared/infra/redis/cache-redis.connection';
-import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OrderQueries } from '../../application/queries/order.queries.js';
 import { Order } from '../../domain/entities/order.entity.js';
@@ -69,15 +68,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
           inject: [CACHE_MANAGER],
         },
         InvalidateOrderListCacheHandler,
-        {
-          provide: RedisHealthIndicator,
-          useFactory: (
-            indicators: HealthIndicatorService,
-            cacheConnection: CacheRedisConnection,
-            queueConnection: QueueRedisConnection,
-          ) => new RedisHealthIndicator(indicators, cacheConnection, queueConnection),
-          inject: [HealthIndicatorService, CacheRedisConnection, QueueRedisConnection],
-        },
+        RedisHealthIndicator,
       ],
     }).compile();
     await app.init();

@@ -11,16 +11,15 @@ import { fakePing } from './helpers/health.js';
 describe('Health (e2e)', () => {
   let app: TestApp;
   let dbUp = true;
-  let redisUp = { cache: true, queue: true };
+  const REDIS_KEYS = ['redis-cache', 'redis-queue'] as const;
+  let redisUp: Record<string, boolean> = { 'redis-cache': true, 'redis-queue': true };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(TypeOrmHealthIndicator)
       .useValue({ pingCheck: fakePing(() => dbUp) })
       .overrideProvider(RedisHealthIndicator)
-      .useValue({
-        pingCheck: fakePing((key) => (key === 'redis-cache' ? redisUp.cache : redisUp.queue)),
-      })
+      .useValue({ pingCheck: fakePing((key) => redisUp[key]) })
       .compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();
@@ -30,7 +29,7 @@ describe('Health (e2e)', () => {
 
   it('live e ready respondem 200 sem token e sem prefixo de versão', async () => {
     dbUp = true;
-    redisUp = { cache: true, queue: true };
+    redisUp = { 'redis-cache': true, 'redis-queue': true };
     await request(app.getHttpServer()).get('/health/live').expect(200);
     const res = await request(app.getHttpServer()).get('/health/ready').expect(200);
     expect(res.body).toMatchObject({
@@ -52,14 +51,12 @@ describe('Health (e2e)', () => {
     await request(app.getHttpServer()).get('/health/live').expect(200);
   });
 
-  it.each([
-    { down: 'cache', key: 'redis-cache', other: 'redis-queue' },
-    { down: 'queue', key: 'redis-queue', other: 'redis-cache' },
-  ] as const)(
-    'com a conexão $down do Redis fora, ready falha só nela e live continua respondendo',
-    async ({ down, key, other }) => {
+  it.each(REDIS_KEYS)(
+    'com %s fora, ready falha só nela e live continua respondendo',
+    async (key) => {
+      const other = REDIS_KEYS.find((k) => k !== key)!;
       dbUp = true;
-      redisUp = { cache: true, queue: true, [down]: false };
+      redisUp = { [key]: false, [other]: true };
       const res = await request(app.getHttpServer()).get('/health/ready').expect(503);
       expect(res.body).toMatchObject({
         status: 'error',
