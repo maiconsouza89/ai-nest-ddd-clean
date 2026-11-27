@@ -25,6 +25,7 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
 
 @Module({
   imports: [
+    // fundação: portas que todo módulo usa. Sobe primeiro e, por ser global, desliga por último
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -32,17 +33,21 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
       ignoreEnvFile: ignoresEnvFiles(),
       validate: validateEnv,
     }),
-    ThrottlerModule.forRootAsync(rateLimitOptions),
     ObservabilityModule,
+    RuntimeModule,
+    // conexões: criam os clientes do Postgres e do Redis e os fecham no desligamento
+    DatabaseModule,
+    RedisModule,
+    // capacidades: usam as conexões e nunca as criam
+    OutboxModule,
+    AppCacheModule,
+    ThrottlerModule.forRootAsync(rateLimitOptions),
+    // HTTP: respostas de erro, autenticação e sondas do orquestrador
     ProblemDetailsModule,
     JwtConfigModule,
     AuthModule.forRoot({ imports: [IdentityAuthModule] }),
-    RuntimeModule,
-    DatabaseModule,
-    RedisModule,
-    AppCacheModule,
     HealthModule,
-    OutboxModule,
+    // negócio
     CatalogModule,
     IdentityModule,
     InventoryModule,
