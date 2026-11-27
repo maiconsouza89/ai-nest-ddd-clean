@@ -85,6 +85,40 @@ const rules = [
     to: { path: '^src/$1/', dependencyTypes: ['aliased-subpath-import'] },
   },
   {
+    name: 'shared-infra-so-pela-superficie',
+    comment:
+      'Um módulo só importa do `src/shared/infra/` os arquivos da superfície pública (o `pathNot` desta ' +
+      'regra): decorators, helpers e as peças que o código do módulo usa direto. Um `*.module.ts` ou um ' +
+      'adapter do shared entra pelo Nest (`@Global` ou `imports`), e não por import de arquivo: injete o ' +
+      'port. Acrescentar um arquivo à lista pede o ok na revisão do PR. ' +
+      `Ver ${CAMADAS}#superfície-pública-da-infra.`,
+    from: { path: '^src/modules/' },
+    to: {
+      path: '^src/shared/infra/',
+      pathNot: [
+        'auth/current-user\\.decorator',
+        'auth/public\\.decorator',
+        'auth/roles\\.decorator',
+        'config/env\\.validation',
+        'config/load-env-files',
+        'database/postgres-options',
+        'database/run-seed',
+        'database/transaction-context',
+        'http/error-status\\.registry',
+        'http/page\\.response',
+        'http/pagination\\.query',
+        'http/problem-details\\.response',
+        'http/rate-limit/throttle-by-account\\.decorator',
+        'http/trim\\.decorator',
+        'jobs/scheduled-job\\.processor',
+        'redis/queue-redis\\.connection',
+        'messaging/integration-event-handler\\.decorator',
+        'resilience/retry',
+        'resilience/with-timeout',
+      ].map((file) => `^src/shared/infra/${file}\\.ts$`),
+    },
+  },
+  {
     name: 'modulos-so-via-contracts',
     comment:
       'De outro módulo, importe só o `contracts/` (facade ou evento). ' +
