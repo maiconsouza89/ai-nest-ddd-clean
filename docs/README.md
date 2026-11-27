@@ -113,7 +113,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 ## Fora dos quadrantes
 
-- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Em andamento: o [roadmap das issues abertas](plan/roadmap-das-issues-abertas.md). Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro de um plano encerrado fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue:
+- Planos (`docs/plan/`): trabalho interno em andamento, um arquivo por plano. Em andamento: o [roadmap das issues abertas](plan/roadmap-das-issues-abertas.md) e a [organização da infra do shared](plan/organizacao-da-infra-do-shared.md). Ao criar o primeiro, acrescente a rota "Continuar um plano em andamento" (`docs/plan/`) na tabela do `AGENTS.md`, e tire-a ao apagar o último. Um plano concluído ou descartado sai da pasta. O registro de um plano encerrado fica no histórico do git da `main` ou, se o plano nasceu e foi apagado no mesmo PR (o merge por squash descarta os commits da branch), num comentário da issue:
 
 | Plano | Status | Registro |
 | --- | --- | --- |
