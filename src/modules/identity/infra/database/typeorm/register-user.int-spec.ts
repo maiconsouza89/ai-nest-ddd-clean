@@ -8,7 +8,7 @@ import { startIdentityDatabase } from '#test/helpers/identity-database';
 import { IntegrationEvent } from '#shared/application/integration-event';
 import { Outbox } from '#shared/application/ports/outbox';
 import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { UuidV7Generator } from '#shared/infra/runtime/uuid-v7.generator';
 import { TypeOrmOutbox } from '#shared/infra/outbox/typeorm-outbox';
 import { RegisterUserUseCase } from '../../../application/use-cases/register-user.use-case.js';
 import { VerificationCodeIssuer } from '../../../application/verification-code-issuer.js';

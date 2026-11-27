@@ -9,7 +9,6 @@ import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { CatalogModule } from '#modules/catalog/catalog.module';
 import { CatalogFacade } from '#modules/catalog/contracts/catalog.facade';
 import { InventoryModule } from '#modules/inventory/infra/inventory.module';
@@ -90,7 +89,6 @@ const PAYMENT_RESILIENCE = { timeoutMs: 3_000, attempts: 2, baseDelayMs: 200 };
         new ResilientPaymentGateway(new SimulatedPaymentGateway(), PAYMENT_RESILIENCE, logger),
       inject: [Logger],
     },
-    { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: CreateOrderUseCase,
       useFactory: (

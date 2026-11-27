@@ -9,7 +9,7 @@ import { InventoryModule } from '#modules/inventory/infra/inventory.module';
 import { NotificationsModule } from '#modules/notifications/infra/notifications.module';
 import { OrdersModule } from '#modules/orders/infra/orders.module';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
-import { ClockModule } from '#shared/infra/clock/clock.module';
+import { RuntimeModule } from '#shared/infra/runtime/runtime.module';
 import { AuthModule } from '#shared/infra/auth/auth.module';
 import { JwtConfigModule } from '#shared/infra/auth/jwt-config.module';
 import { EnvironmentVariables, validateEnv } from '#shared/infra/config/env.validation';
@@ -55,7 +55,7 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
     ProblemDetailsModule,
     JwtConfigModule,
     AuthModule.forRoot({ imports: [IdentityAuthModule] }),
-    ClockModule,
+    RuntimeModule,
     DatabaseModule,
     RedisModule,
     AppCacheModule,

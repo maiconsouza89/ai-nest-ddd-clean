@@ -5,7 +5,7 @@ import { FakeTokenIssuer } from '#test/fakes/fake-token-issuer';
 import { FixedClock } from '#test/fakes/fixed-clock';
 import { uniqueEmail } from '#test/helpers/auth';
 import { startIdentityDatabase } from '#test/helpers/identity-database';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { UuidV7Generator } from '#shared/infra/runtime/uuid-v7.generator';
 import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
 import { SessionIssuer } from '../../../application/session-issuer.js';
 import { LogoutUseCase } from '../../../application/use-cases/logout.use-case.js';

@@ -7,7 +7,6 @@ import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { Outbox } from '#shared/application/ports/outbox';
 import { OpaqueTokenGenerator } from '../application/ports/opaque-token-generator.js';
 import { PasswordHasher } from '../application/ports/password-hasher.js';
@@ -63,7 +62,6 @@ type Config = ConfigService<EnvironmentVariables, true>;
         new JwtTokenIssuer(jwt, config.getOrThrow('JWT_ACCESS_TTL_SECONDS', { infer: true })),
       inject: [JwtService, ConfigService],
     },
-    { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: SessionIssuer,
       useFactory: (

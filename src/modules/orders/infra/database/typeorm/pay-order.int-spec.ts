@@ -7,7 +7,7 @@ import { startOrdersDatabase } from '#test/helpers/orders-database';
 import { Outbox } from '#shared/application/ports/outbox';
 import { Money } from '#shared/domain/money.vo';
 import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { UuidV7Generator } from '#shared/infra/runtime/uuid-v7.generator';
 import { TypeOrmOutbox } from '#shared/infra/outbox/typeorm-outbox';
 import { PaymentUnavailableError } from '../../../domain/errors/payment-unavailable.error.js';
 import { ConcurrencyError } from '#shared/domain/concurrency.error';
