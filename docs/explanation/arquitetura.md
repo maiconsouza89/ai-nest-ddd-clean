@@ -38,7 +38,7 @@ O caso de uso não tem `@Injectable()`, então o módulo Nest o cria por `useFac
 
 ```ts
 @Module({
-  imports: [CatalogModule, InventoryModule, MessagingModule, TypeOrmModule.forFeature([/* ... */])],
+  imports: [CatalogModule, InventoryModule, TypeOrmModule.forFeature([/* ... */])],
   controllers: [OrdersController],
   providers: [
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },

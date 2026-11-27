@@ -71,7 +71,7 @@ Use este guia quando um agregado precisa avisar outros módulos de um fato, como
    });
    ```
 
-   O caso de uso recebe `Outbox`, `IdGenerator`, `Clock` e `TransactionManager` no construtor. No módulo Nest, acrescente os quatro ao `useFactory` e ao `inject`, na ordem dos parâmetros. `Outbox`, `Clock` e `TransactionManager` vêm de módulos globais do shared. O `IdGenerator` é um provider de cada módulo (`{ provide: IdGenerator, useClass: UuidV7Generator }`), que o `plop module` já gera.
+   O caso de uso recebe `Outbox`, `IdGenerator`, `Clock` e `TransactionManager` no construtor. No módulo Nest, acrescente os quatro ao `useFactory` e ao `inject`, na ordem dos parâmetros. Os quatro vêm de módulos globais do shared: o `Outbox` do `OutboxModule`, o `TransactionManager` do `DatabaseModule`, e o `IdGenerator` e o `Clock` do `RuntimeModule`.
 
 7. No teste unitário do caso de uso, passe os fakes de `#test/fakes` para os parâmetros novos (`FakeOutbox`, `SequentialIdGenerator` para o `IdGenerator`, `FixedClock` e `FakeTransactionManager`) e confira o evento gravado em `outbox.events`. O `create-order.use-case.spec.ts` é o modelo.
 

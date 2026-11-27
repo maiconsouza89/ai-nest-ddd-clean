@@ -86,7 +86,7 @@ Nenhum.
 
 ## Dependências
 
-Nenhum módulo de negócio. Importa o `MessagingModule` do shared, para o job, e grava na `Outbox` do shared.
+Nenhum módulo de negócio. Grava na `Outbox` do shared.
 
 ## Adapters
 

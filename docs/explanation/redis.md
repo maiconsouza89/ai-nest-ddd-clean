@@ -26,13 +26,15 @@ O `docker-compose.yml` sobe uma instância só, com `noeviction` e AOF (`appendo
 
 ### Dois clientes para o mesmo endereço
 
-O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, cada uma configurada para o seu papel:
+O BullMQ usa o `ioredis`, e o `@keyv/redis`, store do cache, usa o cliente `redis`. São conexões diferentes para o mesmo `REDIS_URL`, cada uma configurada para o seu papel. Todas ficam em `src/shared/infra/redis/`, com o nome do papel, e não da biblioteca que as usa: o `RedisModule` cria os clientes e os fecha no desligamento, e quem usa recebe a conexão por injeção.
 
-- **Workers do BullMQ:** esperam o Redis voltar, sem limite de tentativas por comando, como o BullMQ exige. Ele só configura isso sozinho quando cria a conexão, e o projeto lhe passa uma conexão pronta.
-- **Quem enfileira e o rate limit:** sem fila offline. Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. A exceção é a fila do BullMQ criada com o Redis já fora: ela espera a conexão antes do primeiro comando, e por isso o enfileiramento dos eventos tem um prazo. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera um pouco por essa conexão e, sem ela, segue.
-- **Cache e health check:** também sem fila offline, com reconexão em segundo plano.
+- **`QueueRedisConnection.blocking`, dos workers do BullMQ:** espera o Redis voltar, sem limite de tentativas por comando, como o BullMQ exige. Ele só configura isso sozinho quando cria a conexão, e o projeto lhe passa uma conexão pronta.
+- **`QueueRedisConnection.commands`, de quem enfileira (o relay da outbox e o agendador de jobs), do rate limit e da readiness:** sem fila offline. Com o Redis fora do ar, o comando falha na hora, em vez de esperar a reconexão segurando a requisição. A exceção é a fila do BullMQ criada com o Redis já fora: ela espera a conexão antes do primeiro comando, e por isso o enfileiramento dos eventos tem um prazo. Pelo mesmo motivo, um comando enviado antes de a conexão ficar pronta também falharia, e o rate limit responderia 503 nas primeiras requisições. Por isso a subida espera um pouco por essa conexão e, sem ela, segue.
+- **`CacheRedisConnection.client`, do cache e da readiness:** também sem fila offline, com reconexão em segundo plano.
 
 Todas as conexões têm um listener de `error`. Sem ele, uma queda de conexão vira exceção não tratada e derruba o processo.
+
+A readiness faz `PING` em duas delas: no `client` do cache (`redis-cache`) e no `commands` das filas (`redis-queue`). Hoje as duas apontam para a mesma instância, mas a separação das instâncias em produção ([Evoluções com gatilho](../reference/evolucoes-com-gatilho.md#infraestrutura-e-dados)) faria cada chave acusar a sua. O `blocking` fica sem `PING`: aponta para a mesma instância do `commands` e espera a reconexão por desenho.
 
 Cada worktree usa um banco lógico próprio do Redis do checkout principal, pela URL, então nada muda na app ([ADR 0011](../adr/0011-worktrees-compartilham-o-stack-do-checkout-principal.md) e [Como trabalhar com worktrees em paralelo](../how-to/trabalhar-com-worktrees-em-paralelo.md)).
 
@@ -45,7 +47,7 @@ Nenhum uso espera o Redis voltar segurando uma requisição. Cada um falha confo
 - **Outbox:** os eventos ficam na tabela, e o relay pausa sem contar a falha deles, até o Redis voltar. A outbox existe para isso ([Entrega de eventos](entrega-de-eventos.md#redis-fora-do-ar-não-mata-evento)).
 - **Workers:** esperam a reconexão e voltam sozinhos. Não há requisição esperando por eles.
 - **Agendador de jobs:** a subida falha. Sem o agendador, o job nunca rodaria, e ninguém perceberia ([Jobs agendados](#jobs-agendados)).
-- **Readiness:** responde 503, e o orquestrador tira a instância do tráfego. A liveness não depende do Redis.
+- **Readiness:** responde 503, com a chave da conexão que caiu em `down`, e o orquestrador tira a instância do tráfego. A liveness não depende do Redis.
 
 A conexão do cache não bloqueia a subida. A app sobe sem cache, e a readiness acusa a falta. Já o registro dos jobs bloqueia, porque um job que não roda é um erro silencioso, e um cache ausente não é. As respostas, as mensagens de log e os prazos de cada uso estão em [Operação](../reference/operacao.md#redis-fora-do-ar).
 

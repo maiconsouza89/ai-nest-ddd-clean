@@ -36,7 +36,7 @@ Use este guia para atualizar ou adicionar um pacote do npm, ou para fechar um PR
 
 6. Ao destravar uma exceção, tire a linha da tabela e o `ignore` do `.github/dependabot.yml` no mesmo PR, e faça o ajuste do pacote:
 
-   - `ioredis` 6: revise `BullMqConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle. `protocol: 2` mantém o formato do 5.
+   - `ioredis` 6: revise `QueueRedisConnection`, `RedisThrottlerStorage` e o `keys` do e2e de throttle. `protocol: 2` mantém o formato do 5.
    - `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express` e `@nestjs/testing`: volte os quatro ao `^`, juntos, na latest.
 
 7. Na descrição do PR, informe a versão consultada e por que ela é a recomendada.

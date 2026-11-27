@@ -110,6 +110,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0014: Hook síncrono do tracing](adr/0014-hook-sincrono-do-tracing.md)
 - [0015: Eventos de integração pela outbox, com uma fila por consumidor](adr/0015-outbox-e-filas-por-consumidor.md)
 - [0016: Falha de transporte não conta para a morte do evento da outbox](adr/0016-falha-de-transporte-nao-mata-evento-da-outbox.md)
+- [0017: Infra do shared em pastas de conexão e de capacidade](adr/0017-infra-do-shared-em-pastas-de-conexao-e-de-capacidade.md)
 
 ## Fora dos quadrantes
 

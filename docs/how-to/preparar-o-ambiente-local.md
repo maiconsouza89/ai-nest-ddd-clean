@@ -54,7 +54,7 @@ Use este guia para ter a app no ar no checkout principal, depois de clonar o rep
 
 ## Como verificar
 
-- `http://localhost:3000/health/ready` responde 200, com `database` e `redis` em `up`.
+- `http://localhost:3000/health/ready` responde 200, com `database`, `redis-cache` e `redis-queue` em `up`.
 - `http://localhost:3000/docs` abre o Swagger.
 - O login de `admin@example.com`, com a senha `Senha@12345`, em `POST /v1/auth/login` devolve um `accessToken`.
 

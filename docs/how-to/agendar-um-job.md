@@ -20,7 +20,7 @@ Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, c
    export class ExpirePendingOrdersProcessor extends ScheduledJobProcessor {
      constructor(
        private readonly useCase: ExpirePendingOrdersUseCase,
-       connection: BullMqConnection,
+       connection: QueueRedisConnection,
        logger: Logger,
        config: ConfigService<EnvironmentVariables, true>,
      ) {
@@ -45,7 +45,7 @@ Use este guia para rodar um caso de uso num horário fixo ou a cada intervalo, c
    - **`run()`:** só chama o caso de uso e registra o resultado. Nenhuma regra de negócio fica aqui.
    - **Imports:** classes injetadas com import de valor, nunca `import type` ([Convenções](../reference/convencoes.md)).
 
-2. Registre o processor nos `providers` do módulo Nest. O módulo precisa importar o `MessagingModule`, que exporta o `BullMqConnection`. O caso de uso entra por `useFactory`, como os outros.
+2. Registre o processor nos `providers` do módulo Nest. A `QueueRedisConnection` vem do `RedisModule`, que é global: o módulo não importa nada para recebê-la. Importe a classe de `#shared/infra/redis/queue-redis.connection`. O caso de uso entra por `useFactory`, como os outros.
 
 3. Escreva o teste de integração em `infra/jobs/<tarefa>.processor.int-spec.ts`, a partir do `expire-pending-orders.processor.int-spec.ts`. Ele sobe um Redis descartável, liga duas instâncias do processor e confere quatro coisas:
    - um só agendador registrado, com o `pattern` certo;

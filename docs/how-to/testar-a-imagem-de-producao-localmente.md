@@ -62,7 +62,7 @@ Antes do passo 6:
   docker compose -p ai-nest-deploy-check --profile prod run --rm migrate
   ```
 
-- `GET /health/ready` responde 200, com `database` e `redis` em `up`.
+- `GET /health/ready` responde 200, com `database`, `redis-cache` e `redis-queue` em `up`.
 - O desligamento sai por `SIGTERM`. Com `SHUTDOWN_GRACE_MS` no padrão, `0`, o `stop` termina em menos de 1 s, e o código de saída é `143`, e não `137` (`SIGKILL`):
 
   ```bash
