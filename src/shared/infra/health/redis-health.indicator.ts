@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { RedisConnection } from '../cache/redis.connection.js';
+import { CacheRedisConnection } from '../redis/cache-redis.connection.js';
 
 @Injectable()
 export class RedisHealthIndicator {
   constructor(
     private readonly indicators: HealthIndicatorService,
-    private readonly redis: RedisConnection,
+    private readonly redis: CacheRedisConnection,
   ) {}
 
   /**

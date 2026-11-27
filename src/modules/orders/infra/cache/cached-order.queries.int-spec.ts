@@ -13,8 +13,9 @@ import { startRedisContainer } from '#test/helpers/redis';
 import { Logger } from '#shared/application/ports/logger';
 import { Money } from '#shared/domain/money.vo';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
-import { RedisConnection } from '#shared/infra/cache/redis.connection';
 import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
+import { CacheRedisConnection } from '#shared/infra/redis/cache-redis.connection';
+import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OrderQueries } from '../../application/queries/order.queries.js';
 import { Order } from '../../domain/entities/order.entity.js';
 import { TypeOrmOrderQueries } from '../database/typeorm/typeorm-order.queries.js';
@@ -56,6 +57,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
         }),
         TerminusModule,
         TestLoggerModule,
+        RedisModule,
         AppCacheModule,
       ],
       providers: [
@@ -68,9 +70,9 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
         InvalidateOrderListCacheHandler,
         {
           provide: RedisHealthIndicator,
-          useFactory: (indicators: HealthIndicatorService, connection: RedisConnection) =>
+          useFactory: (indicators: HealthIndicatorService, connection: CacheRedisConnection) =>
             new RedisHealthIndicator(indicators, connection),
-          inject: [HealthIndicatorService, RedisConnection],
+          inject: [HealthIndicatorService, CacheRedisConnection],
         },
       ],
     }).compile();
@@ -134,10 +136,10 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
     await seed('ttl');
     await queries.listByCustomer('ttl', first);
 
-    const keys = await app.get(RedisConnection).client.keys('*ttl*');
+    const keys = await app.get(CacheRedisConnection).client.keys('*ttl*');
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
-      expect(await app.get(RedisConnection).client.ttl(key)).toBeGreaterThan(0);
+      expect(await app.get(CacheRedisConnection).client.ttl(key)).toBeGreaterThan(0);
     }
   });
 

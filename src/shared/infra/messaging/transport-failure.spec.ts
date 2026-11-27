@@ -11,7 +11,7 @@ describe('isTransportFailure', () => {
     expect(isTransportFailure(new TimeoutError(5_000), 'ready')).toBe(true);
   });
 
-  it('com o producer fora de ready, qualquer erro é do transporte', () => {
+  it('com o commands fora de ready, qualquer erro é do transporte', () => {
     for (const status of ['connecting', 'reconnecting', 'close', 'end']) {
       expect(isTransportFailure(new Error('qualquer coisa'), status)).toBe(true);
     }

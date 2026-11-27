@@ -7,14 +7,14 @@ import { EnvironmentVariables } from '../config/env.validation.js';
 const RECONNECT_MAX_DELAY_MS = 3_000;
 
 /**
- * Conexão única com o Redis, dona do ciclo de vida do cliente (conecta na subida, fecha no shutdown).
+ * Conexão do cache com o Redis, dona do ciclo de vida do cliente (conecta na subida, fecha no shutdown).
  * O cache e o health check compartilham este cliente. O cache fecha o cliente conectado no shutdown.
  *
  * Sem fila offline: com o Redis fora do ar, o comando falha na hora em vez de ficar pendurado, e quem
  * depende do cache cai para o Postgres. A reconexão acontece em segundo plano.
  */
 @Injectable()
-export class RedisConnection implements OnModuleInit, BeforeApplicationShutdown {
+export class CacheRedisConnection implements OnModuleInit, BeforeApplicationShutdown {
   readonly client;
 
   constructor(

@@ -6,7 +6,7 @@ import { MetricNames, TelemetryAttributes } from 'bullmq';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
 import { withTimeout } from '../resilience/with-timeout.js';
-import { BullMqConnection } from './bullmq-connection.js';
+import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
 import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
 
 const COLLECT_TIMEOUT_MS = 5_000;
@@ -24,7 +24,7 @@ export class QueueMetrics implements OnApplicationBootstrap, OnModuleDestroy {
 
   constructor(
     private readonly subscriptions: EventSubscriptions,
-    private readonly connection: BullMqConnection,
+    private readonly connection: QueueRedisConnection,
     private readonly logger: Logger,
     private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
@@ -36,7 +36,7 @@ export class QueueMetrics implements OnApplicationBootstrap, OnModuleDestroy {
     // o `all()` varre os providers se o EventSubscriptions ainda não o fez: a ordem dos hooks não importa
     const queues = this.subscriptions
       .all()
-      .map(({ name }) => openEventQueue(name, this.connection.producer, this.logger));
+      .map(({ name }) => openEventQueue(name, this.connection.commands, this.logger));
     const gauge = meter.createObservableGauge(MetricNames.QueueJobsCount, {
       description: 'Jobs por estado em cada fila de eventos.',
       unit: '{job}',

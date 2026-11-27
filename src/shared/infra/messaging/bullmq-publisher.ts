@@ -7,7 +7,7 @@ import {
   EventTransportUnavailableError,
 } from '../../application/ports/event-publisher.js';
 import { withTimeout } from '../resilience/with-timeout.js';
-import { BullMqConnection } from './bullmq-connection.js';
+import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
 import { EventSubscriptions, openEventQueue } from './event-subscriptions.js';
 import { isTransportFailure } from './transport-failure.js';
 
@@ -43,7 +43,7 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
   private readonly queues = new Map<string, Queue>();
 
   constructor(
-    private readonly connection: BullMqConnection,
+    private readonly connection: QueueRedisConnection,
     private readonly subscriptions: EventSubscriptions,
     private readonly logger: Logger,
   ) {}
@@ -65,7 +65,7 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
       ),
     );
     // lido depois do allSettled: é o estado da conexão quando os erros chegaram
-    const status = this.connection.producer.status;
+    const status = this.connection.commands.status;
     let transportError: { error: unknown } | undefined;
     let firstError: { error: unknown } | undefined;
     results.forEach((result, i) => {
@@ -88,7 +88,7 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
   /**
    * Tira a fila do consumidor depois de uma queda do Redis, e o próximo publish cria outra. Se a conexão cai no
    * meio da inicialização da `Queue`, ela fica rejeitada para sempre, mesmo com o Redis de volta. Fechar não fecha
-   * o `producer`: o BullMQ não fecha uma conexão recebida pronta.
+   * o `commands`: o BullMQ não fecha uma conexão recebida pronta.
    */
   private discardQueue(consumer: string) {
     const queue = this.queues.get(consumer);
@@ -99,7 +99,7 @@ export class BullMqPublisher implements EventPublisher, BeforeApplicationShutdow
   private queueFor(consumer: string) {
     let queue = this.queues.get(consumer);
     if (!queue) {
-      queue = openEventQueue(consumer, this.connection.producer, this.logger);
+      queue = openEventQueue(consumer, this.connection.commands, this.logger);
       this.queues.set(consumer, queue);
     }
     return queue;

@@ -18,6 +18,7 @@ import { EventPublisher } from '../../application/ports/event-publisher.js';
 import { currentManager } from '../database/transaction-context.js';
 import { TypeOrmTransactionManager } from '../database/typeorm-transaction-manager.js';
 import { TypeOrmProcessedEvents } from '../outbox/typeorm-processed-events.js';
+import { RedisModule } from '../redis/redis.module.js';
 import { IntegrationEventHandler } from './integration-event-handler.decorator.js';
 import { MessagingModule } from './messaging.module.js';
 
@@ -76,6 +77,7 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
           load: [() => ({ REDIS_URL: redisUrl, QUEUE_WORKERS_ENABLED: 'true' })],
         }),
         TestLoggerModule,
+        RedisModule,
         MessagingModule,
       ],
       providers: [WritesEffectHandler, AlwaysFailsHandler],

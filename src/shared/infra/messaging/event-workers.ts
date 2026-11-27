@@ -6,7 +6,7 @@ import { IntegrationEvent } from '../../application/integration-event.js';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
 import { runInEventTrace } from '../observability/trace-context.js';
-import { BullMqConnection } from './bullmq-connection.js';
+import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
 import { EventSubscriptions, queueNameOf } from './event-subscriptions.js';
 
 /** Um worker por consumidor. Cada um tem retry, backoff e fila de mortos próprios. */
@@ -16,7 +16,7 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
 
   constructor(
     private readonly subscriptions: EventSubscriptions,
-    private readonly connection: BullMqConnection,
+    private readonly connection: QueueRedisConnection,
     private readonly logger: Logger,
     private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
@@ -54,7 +54,7 @@ export class EventWorkers implements OnApplicationBootstrap, OnModuleDestroy {
               return consumer.handle(job.data);
             },
           ),
-        { connection: this.connection.worker },
+        { connection: this.connection.blocking },
       );
       worker.on('failed', (job, err) => {
         const exhausted = job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);

@@ -8,7 +8,6 @@ import { TransactionManager } from '#shared/application/ports/transaction-manage
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { provideErrorStatuses } from '#shared/infra/http/error-status.registry';
 import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
-import { MessagingModule } from '#shared/infra/messaging/messaging.module';
 import { Outbox } from '#shared/application/ports/outbox';
 import { OpaqueTokenGenerator } from '../application/ports/opaque-token-generator.js';
 import { PasswordHasher } from '../application/ports/password-hasher.js';
@@ -46,7 +45,6 @@ type Config = ConfigService<EnvironmentVariables, true>;
 
 @Module({
   imports: [
-    MessagingModule,
     TypeOrmModule.forFeature([UserOrmEntity, RefreshTokenOrmEntity, VerificationCodeOrmEntity]),
   ],
   controllers: [AuthController],

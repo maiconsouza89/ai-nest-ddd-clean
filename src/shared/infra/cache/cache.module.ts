@@ -2,8 +2,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { createKeyv } from '@keyv/redis';
 import { Logger } from '../../application/ports/logger.js';
-import { RedisConnection } from './redis.connection.js';
-import { RedisModule } from './redis.module.js';
+import { CacheRedisConnection } from '../redis/cache-redis.connection.js';
 
 /**
  * Cache compartilhado entre instâncias, em Redis. Global: os módulos injetam `CACHE_MANAGER`.
@@ -13,12 +12,10 @@ import { RedisModule } from './redis.module.js';
  */
 @Module({
   imports: [
-    RedisModule,
     CacheModule.registerAsync({
       isGlobal: true,
-      imports: [RedisModule],
-      inject: [RedisConnection, Logger],
-      useFactory: (redis: RedisConnection, logger: Logger) => {
+      inject: [CacheRedisConnection, Logger],
+      useFactory: (redis: CacheRedisConnection, logger: Logger) => {
         const store = createKeyv(redis.client, {
           throwOnErrors: false,
           throwOnConnectError: false,

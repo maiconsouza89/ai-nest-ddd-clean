@@ -22,8 +22,8 @@ import { ProblemDetailsModule } from '#shared/infra/http/problem-details.module'
 import { RedisThrottlerStorage } from '#shared/infra/http/redis-throttler-storage';
 import { accountThrottlers } from '#shared/infra/http/throttle-by-account.decorator';
 import { AppThrottlerGuard } from '#shared/infra/http/throttler.guard';
-import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
-import { MessagingModule } from '#shared/infra/messaging/messaging.module';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
+import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OutboxModule } from '#shared/infra/outbox/outbox.module';
 
 @Module({
@@ -36,18 +36,17 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
       validate: validateEnv,
     }),
     ThrottlerModule.forRootAsync({
-      imports: [MessagingModule],
-      inject: [ConfigService, BullMqConnection, Logger],
+      inject: [ConfigService, QueueRedisConnection, Logger],
       useFactory: (
         config: ConfigService<EnvironmentVariables, true>,
-        connection: BullMqConnection,
+        connection: QueueRedisConnection,
         logger: Logger,
       ) => {
         const enabled = () => config.get('THROTTLE_ENABLED', { infer: true }) !== 'false';
         return {
           throttlers: [{ ttl: seconds(60), limit: 100 }, ...accountThrottlers(enabled)],
           // contadores no Redis: com N instâncias, o limite vale para a soma, e não para cada uma
-          storage: new RedisThrottlerStorage(connection.producer, logger),
+          storage: new RedisThrottlerStorage(connection.commands, logger),
           skipIf: () => !enabled(),
         };
       },
@@ -58,6 +57,7 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
     AuthModule.forRoot({ imports: [IdentityAuthModule] }),
     ClockModule,
     DatabaseModule,
+    RedisModule,
     AppCacheModule,
     HealthModule,
     OutboxModule,
