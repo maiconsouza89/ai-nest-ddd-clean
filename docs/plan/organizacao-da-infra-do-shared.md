@@ -86,17 +86,17 @@ As decisões abaixo foram fechadas com o dono do repositório em 2026-11-27, ant
 
 | Passo | Entrega | Status |
 | --- | --- | --- |
-| 1 | Issue, worktree, branch e roadmap | ⬜ |
-| 2 | Linha de base | ⬜ |
-| 3 | Outbox dona da inbox | ⬜ |
-| 4 | `redis/` com as conexões por papel | ⬜ |
-| 5 | Health das duas conexões | ⬜ |
-| 6 | `RuntimeModule` | ⬜ |
-| 7 | Rate limit fora do `AppModule` | ⬜ |
-| 8 | `AppModule` em blocos | ⬜ |
-| 9 | Superfície pública no dependency-cruiser | ⬜ |
-| 10 | ADR 0017 e documentação | ⬜ |
-| 11 | Verificação, revisão, registro e PR | ⬜ |
+| 1 | Issue, worktree, branch e roadmap | ✅ |
+| 2 | Linha de base | ✅ |
+| 3 | Outbox dona da inbox | ✅ |
+| 4 | `redis/` com as conexões por papel | ✅ |
+| 5 | Health das duas conexões | ✅ |
+| 6 | `RuntimeModule` | ✅ |
+| 7 | Rate limit fora do `AppModule` | ✅ |
+| 8 | `AppModule` em blocos | ✅ |
+| 9 | Superfície pública no dependency-cruiser | ✅ |
+| 10 | ADR 0017 e documentação | ✅ |
+| 11 | Verificação, revisão, registro e PR | 🟡 |
 
 ### Passo 1: issue, worktree, branch e roadmap
 
