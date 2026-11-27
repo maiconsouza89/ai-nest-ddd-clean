@@ -15,6 +15,7 @@ import { Money } from '#shared/domain/money.vo';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
 import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
 import { CacheRedisConnection } from '#shared/infra/redis/cache-redis.connection';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OrderQueries } from '../../application/queries/order.queries.js';
 import { Order } from '../../domain/entities/order.entity.js';
@@ -70,9 +71,12 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
         InvalidateOrderListCacheHandler,
         {
           provide: RedisHealthIndicator,
-          useFactory: (indicators: HealthIndicatorService, connection: CacheRedisConnection) =>
-            new RedisHealthIndicator(indicators, connection),
-          inject: [HealthIndicatorService, CacheRedisConnection],
+          useFactory: (
+            indicators: HealthIndicatorService,
+            cacheConnection: CacheRedisConnection,
+            queueConnection: QueueRedisConnection,
+          ) => new RedisHealthIndicator(indicators, cacheConnection, queueConnection),
+          inject: [HealthIndicatorService, CacheRedisConnection, QueueRedisConnection],
         },
       ],
     }).compile();
@@ -145,8 +149,8 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
   it('com o Redis parado, a listagem continua respondendo e o health check falha', async () => {
     await seed('down');
-    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
-      redis: { status: 'up' },
+    expect(await health.pingCheck('redis-cache', 'cache').withTimeout(1000)).toMatchObject({
+      'redis-cache': { status: 'up' },
     });
 
     await redis.stop();
@@ -157,8 +161,8 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
     expect(page.items).toHaveLength(1);
     expect(spy).toHaveBeenCalledTimes(2); // sem cache, cada leitura vai ao banco
-    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
-      redis: { status: 'down' },
+    expect(await health.pingCheck('redis-cache', 'cache').withTimeout(1000)).toMatchObject({
+      'redis-cache': { status: 'down' },
     });
     // a escrita e a invalidação também não derrubam nada
     await expect(cache.set('x', 1)).resolves.toBeDefined();

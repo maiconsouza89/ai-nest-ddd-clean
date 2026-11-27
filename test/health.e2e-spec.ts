@@ -11,14 +11,16 @@ import { fakePing } from './helpers/health.js';
 describe('Health (e2e)', () => {
   let app: TestApp;
   let dbUp = true;
-  let redisUp = true;
+  let redisUp = { cache: true, queue: true };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(TypeOrmHealthIndicator)
       .useValue({ pingCheck: fakePing(() => dbUp) })
       .overrideProvider(RedisHealthIndicator)
-      .useValue({ pingCheck: fakePing(() => redisUp) })
+      .useValue({
+        pingCheck: fakePing((key) => (key === 'redis-cache' ? redisUp.cache : redisUp.queue)),
+      })
       .compile();
     app = configureApp(moduleRef.createNestApplication());
     await app.init();
@@ -28,9 +30,17 @@ describe('Health (e2e)', () => {
 
   it('live e ready respondem 200 sem token e sem prefixo de versão', async () => {
     dbUp = true;
-    redisUp = true;
+    redisUp = { cache: true, queue: true };
     await request(app.getHttpServer()).get('/health/live').expect(200);
-    await request(app.getHttpServer()).get('/health/ready').expect(200);
+    const res = await request(app.getHttpServer()).get('/health/ready').expect(200);
+    expect(res.body).toMatchObject({
+      status: 'ok',
+      info: {
+        database: { status: 'up' },
+        'redis-cache': { status: 'up' },
+        'redis-queue': { status: 'up' },
+      },
+    });
   });
 
   it('com o banco indisponível, ready falha e live continua respondendo', async () => {
@@ -42,10 +52,22 @@ describe('Health (e2e)', () => {
     await request(app.getHttpServer()).get('/health/live').expect(200);
   });
 
-  it('com o Redis indisponível, ready falha e live continua respondendo', async () => {
-    dbUp = true;
-    redisUp = false;
-    await request(app.getHttpServer()).get('/health/ready').expect(503);
-    await request(app.getHttpServer()).get('/health/live').expect(200);
-  });
+  it.each([
+    { down: 'cache', key: 'redis-cache', other: 'redis-queue' },
+    { down: 'queue', key: 'redis-queue', other: 'redis-cache' },
+  ] as const)(
+    'com a conexão $down do Redis fora, ready falha só nela e live continua respondendo',
+    async ({ down, key, other }) => {
+      dbUp = true;
+      redisUp = { cache: true, queue: true, [down]: false };
+      const res = await request(app.getHttpServer()).get('/health/ready').expect(503);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        error: { [key]: { status: 'down' } },
+        info: { [other]: { status: 'up' } },
+      });
+      expect(res.body.error).not.toHaveProperty(other);
+      await request(app.getHttpServer()).get('/health/live').expect(200);
+    },
+  );
 });
