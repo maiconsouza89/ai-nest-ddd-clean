@@ -32,7 +32,7 @@ As decisões abaixo foram fechadas antes do plano. Mudar uma delas é decisão d
 | 4 | J | #62 Eventos da outbox morrem com o Redis fora do ar | média | — | ✅ (#66) |
 | 4 | K | #48 Secret scanning e push protection | média | #13 | ⬜ |
 | 4 | L | #60 How-tos de erro de domínio, serviço externo e rota protegida | baixa | — | ✅ (#65) |
-| 5 | M | #68 Organização da infra do shared ([plano](organizacao-da-infra-do-shared.md)) | baixa | — | 🟡 |
+| 5 | M | #68 Organização da infra do shared | baixa | — | ✅ (#69) |
 
 A #22 não depende de nenhuma e pode subir para a onda 1 se houver capacidade.
 
@@ -69,7 +69,7 @@ O conflito esperado entre trilhas, para resolver no rebase:
 | `docs/README.md` | #13, #48, #60, #62 | Linhas novas em seções diferentes: how-tos (#60), ADRs (#48, #62) e "Fora dos quadrantes" (#13) |
 | `AGENTS.md` | #60, #62 | Linhas novas na tabela de rotas: a #60 com os três how-tos, a #62 se o reprocesso virar how-to |
 | `docs/reference/comandos.md` | #48, #62 | Seção CI na #48. A #62 só mexe nela se o reprocesso virar comando |
-| `src/shared/infra/`, `src/app.module.ts` e as páginas do passo 10 do [plano](organizacao-da-infra-do-shared.md#passo-10-adr-0017-e-documentação) | #48, #68 | A #48 pode criar uma ADR antes da 0017 da #68: quem entra depois renumera a própria ADR |
+| `src/shared/infra/`, `src/app.module.ts` e as páginas da infra do shared (`camadas.md`, `redis.md`, `operacao.md`, `outbox-e-filas.md`) | #48, #68 | A #48 pode criar uma ADR antes da 0017 da #68: quem entra depois renumera a própria ADR |
 
 ## Como usar
 
