@@ -88,7 +88,7 @@ O limite de falhas continua valendo para a falha que não é de transporte. Assi
 
 ### Pelo menos uma vez, efeito uma vez só
 
-A entrega é "pelo menos uma vez": um evento pode chegar de novo quando o job falha depois de produzir parte do efeito e é tentado outra vez, ou quando o worker cai antes de confirmar o job. O [`IdempotentConsumer`](../reference/glossario.md#consumidor-idempotente) faz o handler produzir o efeito uma vez só:
+A outbox e a inbox ficam juntas no `OutboxModule`, como no recorte do `@nestjs/outbox`: as duas tabelas no mesmo schema `shared` e o transporte à parte, no `MessagingModule`. A entrega é "pelo menos uma vez": um evento pode chegar de novo quando o job falha depois de produzir parte do efeito e é tentado outra vez, ou quando o worker cai antes de confirmar o job. O [`IdempotentConsumer`](../reference/glossario.md#consumidor-idempotente) faz o handler produzir o efeito uma vez só:
 
 ```ts
 // shared/application/idempotent-consumer.ts (sem o log)

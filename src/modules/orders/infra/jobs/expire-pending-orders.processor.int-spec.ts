@@ -6,7 +6,7 @@ import { FakeLogger } from '#test/fakes/fake-logger';
 import { startRedis } from '#test/helpers/redis';
 import { waitFor } from '#test/helpers/wait-for';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
-import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case.js';
 import {
   EXPIRE_PENDING_ORDERS_SCHEDULER,
@@ -19,7 +19,7 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
   let probe: Queue;
   let instances: {
     processor: ExpirePendingOrdersProcessor;
-    connection: BullMqConnection;
+    connection: QueueRedisConnection;
   }[] = [];
   const execute = vi.fn<() => Promise<number>>();
 
@@ -29,7 +29,7 @@ describe('Job de expiração de pedidos com BullMQ (integração: Redis)', () =>
       REDIS_URL: redisUrl,
       JOBS_ENABLED: jobsEnabled,
     }) as unknown as ConfigService<EnvironmentVariables, true>;
-    const connection = new BullMqConnection(config, logger);
+    const connection = new QueueRedisConnection(config, logger);
     const processor = new ExpirePendingOrdersProcessor(
       { execute } as unknown as ExpirePendingOrdersUseCase,
       connection,

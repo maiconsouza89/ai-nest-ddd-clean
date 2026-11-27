@@ -1,6 +1,8 @@
+import { Global, Module } from '@nestjs/common';
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis';
 import { Redis } from 'ioredis';
 import { inject } from 'vitest';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 
 // Um banco lógico por worker, sem módulo: o padrão do Redis (16) colidiria em máquinas com 18 threads ou mais,
 // onde o Vitest abre mais de 16 workers. O banco 0 fica sem uso (o VITEST_POOL_ID começa em 1).
@@ -39,3 +41,11 @@ export function startRedisContainer(): Promise<StartedRedisContainer> {
     ])
     .start();
 }
+
+/**
+ * Só a conexão das filas, global como no `RedisModule`, para o teste que monta o `MessagingModule` sem o cache.
+ * O `RedisModule` abriria também o cliente do cache, que só o cache fecha no desligamento.
+ */
+@Global()
+@Module({ providers: [QueueRedisConnection], exports: [QueueRedisConnection] })
+export class QueueRedisTestModule {}

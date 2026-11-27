@@ -7,8 +7,8 @@ const indicators = new HealthIndicatorService();
  * do Terminus: qualquer encadeamento do controller (`.withTimeout()` etc.) funciona.
  */
 export const fakePing =
-  (isUp: () => boolean = () => true) =>
+  (isUp: (key: string) => boolean = () => true) =>
   (key: string) =>
     indicators.check(key).attempt(() => {
-      if (!isUp()) throw new Error(`${key} down`);
+      if (!isUp(key)) throw new Error(`${key} down`);
     });

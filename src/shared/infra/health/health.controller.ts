@@ -50,14 +50,14 @@ export class HealthController {
   @HealthCheck()
   async ready(@Res() res: Response) {
     try {
-      res
-        .status(200)
-        .json(
-          await this.health.check([
-            () => this.db.pingCheck('database').withTimeout(1000),
-            () => this.redis.pingCheck('redis').withTimeout(1000),
-          ]),
-        );
+      res.status(200).json(
+        await this.health.check([
+          () => this.db.pingCheck('database').withTimeout(1000),
+          // as duas conexões com o Redis: a do cache e a das filas e do rate limit
+          () => this.redis.pingCheck('redis-cache', 'cache').withTimeout(1000),
+          () => this.redis.pingCheck('redis-queue', 'queue').withTimeout(1000),
+        ]),
+      );
     } catch (error) {
       if (!(error instanceof ServiceUnavailableException)) throw error;
       res.status(503).json(error.getResponse());

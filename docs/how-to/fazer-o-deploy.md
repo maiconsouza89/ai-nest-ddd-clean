@@ -86,7 +86,7 @@ A imagem já tem o `tini` como PID 1, que repassa o `SIGTERM` ao node. A ordem d
 ## Como verificar
 
 - O Job de migration do deploy termina com código 0.
-- A readiness em `GET /health/ready` responde 200 na plataforma, com `database` e `redis` em `up`, e a plataforma põe as instâncias novas na rota.
+- A readiness em `GET /health/ready` responde 200 na plataforma, com `database`, `redis-cache` e `redis-queue` em `up`, e a plataforma põe as instâncias novas na rota.
 - Num rollout, as instâncias antigas saem com código 143 (término por `SIGTERM`), e não 137 (`SIGKILL`).
 
 ## Veja também

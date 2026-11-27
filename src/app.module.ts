@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { seconds, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { CatalogModule } from '#modules/catalog/catalog.module';
 import { IdentityAuthModule } from '#modules/identity/infra/identity-auth.module';
 import { IdentityModule } from '#modules/identity/infra/identity.module';
@@ -9,25 +9,23 @@ import { InventoryModule } from '#modules/inventory/infra/inventory.module';
 import { NotificationsModule } from '#modules/notifications/infra/notifications.module';
 import { OrdersModule } from '#modules/orders/infra/orders.module';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
-import { ClockModule } from '#shared/infra/clock/clock.module';
+import { RuntimeModule } from '#shared/infra/runtime/runtime.module';
 import { AuthModule } from '#shared/infra/auth/auth.module';
 import { JwtConfigModule } from '#shared/infra/auth/jwt-config.module';
-import { EnvironmentVariables, validateEnv } from '#shared/infra/config/env.validation';
+import { validateEnv } from '#shared/infra/config/env.validation';
 import { HealthModule } from '#shared/infra/health/health.module';
 import { DatabaseModule } from '#shared/infra/database/database.module';
 import { ObservabilityModule } from '#shared/infra/observability/observability.module';
-import { Logger } from '#shared/application/ports/logger';
 import { ENV_FILES, ignoresEnvFiles } from '#shared/infra/config/load-env-files';
 import { ProblemDetailsModule } from '#shared/infra/http/problem-details.module';
-import { RedisThrottlerStorage } from '#shared/infra/http/redis-throttler-storage';
-import { accountThrottlers } from '#shared/infra/http/throttle-by-account.decorator';
-import { AppThrottlerGuard } from '#shared/infra/http/throttler.guard';
-import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
-import { MessagingModule } from '#shared/infra/messaging/messaging.module';
+import { rateLimitOptions } from '#shared/infra/http/rate-limit/rate-limit.options';
+import { AppThrottlerGuard } from '#shared/infra/http/rate-limit/throttler.guard';
+import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OutboxModule } from '#shared/infra/outbox/outbox.module';
 
 @Module({
   imports: [
+    // fundação: portas que todo módulo usa. Sobe primeiro e, por ser global, desliga por último
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -35,32 +33,21 @@ import { OutboxModule } from '#shared/infra/outbox/outbox.module';
       ignoreEnvFile: ignoresEnvFiles(),
       validate: validateEnv,
     }),
-    ThrottlerModule.forRootAsync({
-      imports: [MessagingModule],
-      inject: [ConfigService, BullMqConnection, Logger],
-      useFactory: (
-        config: ConfigService<EnvironmentVariables, true>,
-        connection: BullMqConnection,
-        logger: Logger,
-      ) => {
-        const enabled = () => config.get('THROTTLE_ENABLED', { infer: true }) !== 'false';
-        return {
-          throttlers: [{ ttl: seconds(60), limit: 100 }, ...accountThrottlers(enabled)],
-          // contadores no Redis: com N instâncias, o limite vale para a soma, e não para cada uma
-          storage: new RedisThrottlerStorage(connection.producer, logger),
-          skipIf: () => !enabled(),
-        };
-      },
-    }),
     ObservabilityModule,
+    RuntimeModule,
+    // conexões: criam os clientes do Postgres e do Redis e os fecham no desligamento
+    DatabaseModule,
+    RedisModule,
+    // capacidades: usam as conexões e nunca as criam
+    OutboxModule,
+    AppCacheModule,
+    ThrottlerModule.forRootAsync(rateLimitOptions),
+    // HTTP: respostas de erro, autenticação e sondas do orquestrador
     ProblemDetailsModule,
     JwtConfigModule,
     AuthModule.forRoot({ imports: [IdentityAuthModule] }),
-    ClockModule,
-    DatabaseModule,
-    AppCacheModule,
     HealthModule,
-    OutboxModule,
+    // negócio
     CatalogModule,
     IdentityModule,
     InventoryModule,

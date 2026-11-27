@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { Logger } from '../../application/ports/logger.js';
 import { EnvironmentVariables } from '../config/env.validation.js';
-import { BullMqConnection } from '../messaging/bullmq-connection.js';
+import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
 import { withTimeout } from '../resilience/with-timeout.js';
 
 // com o Redis fora do ar a chamada não rejeita, só fica pendente; sem limite a subida travaria calada
@@ -32,7 +32,7 @@ export abstract class ScheduledJobProcessor implements OnApplicationBootstrap, O
 
   protected constructor(
     private readonly job: ScheduledJob,
-    private readonly connection: BullMqConnection,
+    private readonly connection: QueueRedisConnection,
     protected readonly logger: Logger,
     private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
@@ -43,7 +43,7 @@ export abstract class ScheduledJobProcessor implements OnApplicationBootstrap, O
     if (this.config.get('JOBS_ENABLED', { infer: true }) !== 'true') return;
 
     const { queue: name, scheduler } = this.job;
-    const queue = new Queue(name, { connection: this.connection.producer });
+    const queue = new Queue(name, { connection: this.connection.commands });
     queue.on('error', (err) => this.logger.warn({ err }, `${name} queue error`));
     try {
       // sem o agendador o job nunca roda: com o Redis fora do ar, a subida falha em vez de seguir calada
@@ -54,7 +54,7 @@ export abstract class ScheduledJobProcessor implements OnApplicationBootstrap, O
     }
     this.queue = queue;
 
-    this.worker = new Worker(name, () => this.run(), { connection: this.connection.worker });
+    this.worker = new Worker(name, () => this.run(), { connection: this.connection.blocking });
     this.worker.on('failed', (job, err) =>
       // o próximo disparo tenta de novo; o BullMQ guarda o job falho no histórico
       this.logger.error({ err, jobId: job?.id }, `${scheduler} failed`),

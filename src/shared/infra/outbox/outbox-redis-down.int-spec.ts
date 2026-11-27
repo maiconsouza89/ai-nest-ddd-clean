@@ -8,7 +8,7 @@ import { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
-import { startRedisContainer } from '#test/helpers/redis';
+import { QueueRedisTestModule, startRedisContainer } from '#test/helpers/redis';
 import { startTcpProxy, TcpProxy } from '#test/helpers/tcp-proxy';
 import { waitFor } from '#test/helpers/wait-for';
 import { IntegrationEvent } from '../../application/integration-event.js';
@@ -17,9 +17,9 @@ import {
   EventTransportUnavailableError,
 } from '../../application/ports/event-publisher.js';
 import { Logger } from '../../application/ports/logger.js';
-import { BullMqConnection } from '../messaging/bullmq-connection.js';
 import { IntegrationEventHandler } from '../messaging/integration-event-handler.decorator.js';
 import { MessagingModule } from '../messaging/messaging.module.js';
+import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
 import { DEFAULT_OUTBOX_OPTIONS, OutboxRelay } from './outbox-relay.js';
 import { TypeOrmOutbox } from './typeorm-outbox.js';
 
@@ -52,7 +52,7 @@ describe('Outbox com o Redis fora do ar (integração: Postgres e Redis)', () =>
   let redis: StartedRedisContainer;
   let proxy: TcpProxy;
   let app: TestingModule;
-  let connection: BullMqConnection;
+  let connection: QueueRedisConnection;
   let relay: OutboxRelay;
   let outbox: TypeOrmOutbox;
 
@@ -78,12 +78,13 @@ describe('Outbox com o Redis fora do ar (integração: Postgres e Redis)', () =>
           ],
         }),
         TestLoggerModule,
+        QueueRedisTestModule,
         MessagingModule,
       ],
       providers: [WarmHandler, ColdHandler],
     }).compile();
     await app.init();
-    connection = app.get(BullMqConnection);
+    connection = app.get(QueueRedisConnection);
     relay = new OutboxRelay(ds, app.get(EventPublisher), clock, logger, DEFAULT_OUTBOX_OPTIONS);
   }, 180_000);
 
@@ -116,12 +117,12 @@ describe('Outbox com o Redis fora do ar (integração: Postgres e Redis)', () =>
 
   async function redisDown() {
     await proxy.close();
-    await waitFor(() => connection.producer.status !== 'ready');
+    await waitFor(() => connection.commands.status !== 'ready');
   }
 
   async function redisUp() {
     await proxy.open();
-    await waitFor(() => connection.producer.status === 'ready');
+    await waitFor(() => connection.commands.status === 'ready');
   }
 
   /** O job do evento na fila do consumidor, lido direto no Redis, sem passar pelo proxy. */

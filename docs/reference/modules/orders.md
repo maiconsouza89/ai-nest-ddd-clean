@@ -121,8 +121,6 @@ As regras de cada transição estão no [Ciclo de vida](#ciclo-de-vida). Além d
 | [catalog](catalog.md) | `CatalogFacade.pricesOf` | `PriceCatalog` (`CatalogPriceAdapter`) | Preço dos produtos ao criar o pedido |
 | [inventory](inventory.md) | `InventoryFacade.reserve` | `StockGateway` (`InventoryStockGateway`) | Reserva de estoque ao fechar, com o id do pedido como referência |
 
-Também importa o `MessagingModule` do shared, para o job de expiração.
-
 ## Adapters
 
 | Port | Adapter |

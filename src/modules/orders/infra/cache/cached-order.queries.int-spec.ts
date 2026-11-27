@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { HealthIndicatorService, TerminusModule } from '@nestjs/terminus';
+import { TerminusModule } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartedRedisContainer } from '@testcontainers/redis';
 import { DataSource } from 'typeorm';
@@ -13,8 +13,9 @@ import { startRedisContainer } from '#test/helpers/redis';
 import { Logger } from '#shared/application/ports/logger';
 import { Money } from '#shared/domain/money.vo';
 import { AppCacheModule } from '#shared/infra/cache/cache.module';
-import { RedisConnection } from '#shared/infra/cache/redis.connection';
 import { RedisHealthIndicator } from '#shared/infra/health/redis-health.indicator';
+import { CacheRedisConnection } from '#shared/infra/redis/cache-redis.connection';
+import { RedisModule } from '#shared/infra/redis/redis.module';
 import { OrderQueries } from '../../application/queries/order.queries.js';
 import { Order } from '../../domain/entities/order.entity.js';
 import { TypeOrmOrderQueries } from '../database/typeorm/typeorm-order.queries.js';
@@ -56,6 +57,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
         }),
         TerminusModule,
         TestLoggerModule,
+        RedisModule,
         AppCacheModule,
       ],
       providers: [
@@ -66,12 +68,7 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
           inject: [CACHE_MANAGER],
         },
         InvalidateOrderListCacheHandler,
-        {
-          provide: RedisHealthIndicator,
-          useFactory: (indicators: HealthIndicatorService, connection: RedisConnection) =>
-            new RedisHealthIndicator(indicators, connection),
-          inject: [HealthIndicatorService, RedisConnection],
-        },
+        RedisHealthIndicator,
       ],
     }).compile();
     await app.init();
@@ -134,17 +131,17 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
     await seed('ttl');
     await queries.listByCustomer('ttl', first);
 
-    const keys = await app.get(RedisConnection).client.keys('*ttl*');
+    const keys = await app.get(CacheRedisConnection).client.keys('*ttl*');
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
-      expect(await app.get(RedisConnection).client.ttl(key)).toBeGreaterThan(0);
+      expect(await app.get(CacheRedisConnection).client.ttl(key)).toBeGreaterThan(0);
     }
   });
 
   it('com o Redis parado, a listagem continua respondendo e o health check falha', async () => {
     await seed('down');
-    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
-      redis: { status: 'up' },
+    expect(await health.pingCheck('redis-cache', 'cache').withTimeout(1000)).toMatchObject({
+      'redis-cache': { status: 'up' },
     });
 
     await redis.stop();
@@ -155,8 +152,8 @@ describe('CachedOrderQueries (integração: Postgres e Redis)', () => {
 
     expect(page.items).toHaveLength(1);
     expect(spy).toHaveBeenCalledTimes(2); // sem cache, cada leitura vai ao banco
-    expect(await health.pingCheck('redis').withTimeout(1000)).toMatchObject({
-      redis: { status: 'down' },
+    expect(await health.pingCheck('redis-cache', 'cache').withTimeout(1000)).toMatchObject({
+      'redis-cache': { status: 'down' },
     });
     // a escrita e a invalidação também não derrubam nada
     await expect(cache.set('x', 1)).resolves.toBeDefined();

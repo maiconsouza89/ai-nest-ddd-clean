@@ -6,6 +6,8 @@ type: reference
 
 Os parâmetros da outbox transacional (`shared.outbox`), das filas de eventos do BullMQ e da marca de evento processado (`shared.processed_events`). O porquê está em [Entrega de eventos](../explanation/entrega-de-eventos.md), e as métricas em [Observabilidade](observabilidade.md).
 
+O `OutboxModule` (`src/shared/infra/outbox/`, global) liga a outbox e a inbox: registra as duas entities, liga `Outbox`, `ProcessedEvents` e `IdempotentConsumer`, e roda o relay, o worker e as métricas da outbox. Exporta o `Outbox` e o `IdempotentConsumer`. O transporte vem do `MessagingModule` (`src/shared/infra/messaging/`), e as conexões com o Redis, do `RedisModule` (`src/shared/infra/redis/`): as filas enfileiram pelo `commands` da `QueueRedisConnection`, e os workers esperam jobs pelo `blocking`.
+
 ## Interruptores
 
 | Variável | Padrão | Efeito |
@@ -33,7 +35,7 @@ Os valores padrão ficam em `DEFAULT_OUTBOX_OPTIONS` (`src/shared/infra/outbox/o
 - **Busca** (`CLAIM_SQL`, `outbox-relay.ts`): linhas com `publishedAt` e `deadAt` nulos e `nextAttemptAt` vencido, sem linha anterior (`seq` menor) do mesmo `aggregateId` com `publishedAt` e `deadAt` nulos, em ordem de `seq`, com `FOR UPDATE OF o SKIP LOCKED`.
 - **Sucesso:** a linha ganha `publishedAt`.
 - **Falha:** a linha ganha `attempts + 1`, `lastError` e `nextAttemptAt`, e `deadAt` na última falha. Uma falha ao enfileirar em qualquer fila conta como falha da linha, menos a de transporte. As linhas mortas voltam à busca pelo [reprocesso](../how-to/reprocessar-eventos-mortos.md).
-- **Falha de transporte:** o `publish` rejeita com `EventTransportUnavailableError` (`src/shared/application/ports/event-publisher.ts`) quando algum consumidor falhou por transporte. O `BullMqPublisher` decide por `isTransportFailure` (`src/shared/infra/messaging/transport-failure.ts`): o prazo de 5 s estourado, o `producer` fora de `ready`, um erro de conexão, ou uma resposta `READONLY`, `LOADING`, `MASTERDOWN` ou `OOM` do Redis. A `Queue` do consumidor que falhou é descartada e recriada no próximo publish.
+- **Falha de transporte:** o `publish` rejeita com `EventTransportUnavailableError` (`src/shared/application/ports/event-publisher.ts`) quando algum consumidor falhou por transporte. O `BullMqPublisher` decide por `isTransportFailure` (`src/shared/infra/messaging/transport-failure.ts`): o prazo de 5 s estourado, o `commands` da `QueueRedisConnection` fora de `ready`, um erro de conexão, ou uma resposta `READONLY`, `LOADING`, `MASTERDOWN` ou `OOM` do Redis. A `Queue` do consumidor que falhou é descartada e recriada no próximo publish.
 - **Pausa:** na primeira falha de transporte do lote, o relay para de percorrer as linhas, não grava nada na linha que falhou (`attempts`, `nextAttemptAt` e `lastError` ficam como estavam), confirma as linhas já publicadas e rejeita. O `OutboxWorker` espera a pausa e tenta de novo. Logs: `warn` `outbox relay paused: event transport unavailable`, com o campo `error`, na entrada, e `info` `outbox relay resumed` na saída. As rodadas no meio da pausa não logam.
 
 ## Limpeza da outbox

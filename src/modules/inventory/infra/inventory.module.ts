@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdGenerator } from '#shared/application/ports/id-generator';
 import { TransactionManager } from '#shared/application/ports/transaction-manager';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
 import { ReleaseStockUseCase } from '../application/use-cases/release-stock.use-case.js';
 import { ReserveStockUseCase } from '../application/use-cases/reserve-stock.use-case.js';
 import { InventoryFacade } from '../contracts/inventory.facade.js';
@@ -20,7 +19,6 @@ import { InventoryFacadeImpl } from './adapters/inventory-facade.impl.js';
   ],
   providers: [
     { provide: StockRepository, useClass: TypeOrmStockRepository },
-    { provide: IdGenerator, useClass: UuidV7Generator },
     {
       provide: ReserveStockUseCase,
       useFactory: (stock: StockRepository, ids: IdGenerator, tx: TransactionManager) =>

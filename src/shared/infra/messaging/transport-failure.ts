@@ -7,13 +7,13 @@ const UNAVAILABLE_REPLIES = ['READONLY', 'LOADING', 'MASTERDOWN', 'OOM'];
 /**
  * Diz se a falha ao enfileirar é do transporte (o Redis fora do ar), e não do evento.
  *
- * O status da conexão vem antes da mensagem: com o `producer` fora de `ready`, qualquer erro é da queda, seja
+ * O status da conexão vem antes da mensagem: com o `commands` fora de `ready`, qualquer erro é da queda, seja
  * qual for o texto. A mensagem muda entre versões do ioredis (`Stream isn't writeable...`,
  * `MaxRetriesPerRequestError`, `Connection is closed`) e só é lida quando a conexão diz que está no ar.
  */
-export function isTransportFailure(error: unknown, producerStatus: string): boolean {
+export function isTransportFailure(error: unknown, commandsStatus: string): boolean {
   if (error instanceof TimeoutError) return true;
-  if (producerStatus !== 'ready') return true;
+  if (commandsStatus !== 'ready') return true;
   if (!(error instanceof Error)) return false;
   if (!isNotConnectionError(error)) return true;
   return (

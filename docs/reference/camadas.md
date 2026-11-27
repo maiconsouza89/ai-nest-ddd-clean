@@ -166,3 +166,37 @@ O `src/shared/` segue as mesmas camadas e guarda só blocos técnicos com a mesm
 | Infra comum: auth, outbox, filas, cache, banco, configuração, o filtro das respostas de erro e o envelope da paginação no OpenAPI (`ApiPageResponse`) | Repositórios, entidades e o mapa de status dos códigos de erro de cada módulo |
 
 Na dúvida, o tipo fica duplicado em cada módulo, e não no `shared`. O porquê está em [Shared kernel](../explanation/shared-kernel.md).
+
+### Pastas da infra do shared
+
+Cada pasta de `src/shared/infra/` tem um tipo, e o tipo diz o que ela pode fazer ([ADR 0017](../adr/0017-infra-do-shared-em-pastas-de-conexao-e-de-capacidade.md)):
+
+- **Conexão:** cria os clientes de um serviço externo e cuida do ciclo de vida deles (conectar na subida, fechar no desligamento). Não tem regra.
+- **Capacidade:** uma função da infra sobre uma ou mais conexões. Recebe as conexões por injeção e nunca cria cliente: nada de `createClient` nem `new Redis` fora de uma pasta de conexão.
+- **Fundação:** portas e serviços que todo módulo usa, sem depender de conexão.
+- **Biblioteca:** funções e decorators sem módulo Nest.
+
+| Pasta | Tipo | O que guarda |
+| --- | --- | --- |
+| `database/` | Conexão | O `DatabaseModule` (`TypeOrmModule.forRootAsync` e o `TransactionManager`), as opções do Postgres, o contexto da transação e o executor dos seeds |
+| `redis/` | Conexão | O `RedisModule`, global, com a `CacheRedisConnection` (`client`) e a `QueueRedisConnection` (`commands` e `blocking`) ([Redis](../explanation/redis.md#dois-clientes-para-o-mesmo-endereço)) |
+| `outbox/` | Capacidade | O `OutboxModule`, global: a outbox e a inbox (`Outbox`, `ProcessedEvents`, `IdempotentConsumer`), o relay, o worker, as métricas e as migrations do schema `shared` |
+| `messaging/` | Capacidade | O `MessagingModule`: o publisher do BullMQ, os workers das filas por consumidor e o `@IntegrationEventHandler` |
+| `jobs/` | Capacidade | O `ScheduledJobProcessor`, base dos jobs agendados |
+| `cache/` | Capacidade | O `AppCacheModule`, sobre a `CacheRedisConnection` |
+| `http/rate-limit/` | Capacidade | O guard, o storage no Redis, o `@ThrottleByAccount` e as opções do `ThrottlerModule` |
+| `auth/` | Capacidade | O guard do JWT, o de roles e os decorators `@Public`, `@Roles` e `@CurrentUser` |
+| `health/` | Capacidade | O `HealthModule`: o `/health/live` e o `/health/ready`, com o `PING` nas conexões do Redis |
+| `config/` | Fundação | A validação das variáveis de ambiente e a leitura dos arquivos `.env` |
+| `observability/` | Fundação | O `Logger` (pino), o contexto do trace e o desligamento do OpenTelemetry |
+| `runtime/` | Fundação | O `RuntimeModule`, global: `Clock` (`SystemClock`) e `IdGenerator` (`UuidV7Generator`) |
+| `resilience/` | Biblioteca | `retry` e `withTimeout` para chamadas externas |
+| `http/` (o resto) | Biblioteca | Respostas de erro (Problem Details e o mapa de status), paginação, `@Trim` e a montagem do Swagger |
+
+Uma pasta nova escolhe um dos quatro tipos. Um uso novo do Redis ou do Postgres é uma capacidade que injeta a conexão existente. Uma conexão nova, como a URL própria do cache, fica na pasta de conexão do serviço. O `AppModule` lista a infra em blocos, nesta ordem: fundação, conexões, capacidades, HTTP e negócio.
+
+### Superfície pública da infra
+
+Um módulo importa de `src/shared/infra/` só os arquivos de uma lista, a regra `shared-infra-so-pela-superficie` do [`.dependency-cruiser.js`](../../.dependency-cruiser.js): decorators, helpers e as peças que o código do módulo usa direto, como o `ScheduledJobProcessor` e a `QueueRedisConnection` que um processor repassa a ele. Um `*.module.ts` ou um adapter do shared entra pelo Nest, como módulo global ou em `imports`, e o módulo injeta o port. Os testes ficam fora da regra: um teste de integração monta adapters reais de propósito ([Testes](testes.md)).
+
+Acrescentar um arquivo à lista pede o ok na revisão do PR.

@@ -6,7 +6,7 @@ import { startIdentityDatabase } from '#test/helpers/identity-database';
 import { FakeOutbox } from '#test/fakes/fake-outbox';
 import { FixedClock } from '#test/fakes/fixed-clock';
 import { TypeOrmTransactionManager } from '#shared/infra/database/typeorm-transaction-manager';
-import { UuidV7Generator } from '#shared/infra/ids/uuid-v7.generator';
+import { UuidV7Generator } from '#shared/infra/runtime/uuid-v7.generator';
 import { VerifyEmailUseCase } from '../../../application/use-cases/verify-email.use-case.js';
 import { CryptoVerificationCodeGenerator } from '../../adapters/crypto-verification-code-generator.js';
 import { User } from '../../../domain/entities/user.entity.js';

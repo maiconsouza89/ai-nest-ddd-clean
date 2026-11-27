@@ -110,6 +110,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 - [0014: Hook síncrono do tracing](adr/0014-hook-sincrono-do-tracing.md)
 - [0015: Eventos de integração pela outbox, com uma fila por consumidor](adr/0015-outbox-e-filas-por-consumidor.md)
 - [0016: Falha de transporte não conta para a morte do evento da outbox](adr/0016-falha-de-transporte-nao-mata-evento-da-outbox.md)
+- [0017: Infra do shared em pastas de conexão e de capacidade](adr/0017-infra-do-shared-em-pastas-de-conexao-e-de-capacidade.md)
 
 ## Fora dos quadrantes
 
@@ -117,6 +118,7 @@ Registros imutáveis. Uma decisão nova, ou que substitui outra, ganha um ADR no
 
 | Plano | Status | Registro |
 | --- | --- | --- |
+| Organização da infra do shared | Concluído | [registro da issue #68](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/68#issuecomment-7221403579) |
 | Outbox com o Redis fora do ar | Concluído | [issue #62](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/62) (o comentário de registro aguarda o ok do dono) |
 | Tag do Mailpit no `test:int` | Concluído | registro da issue #49 pendente: o comentário aguarda o ok do dono |
 | How-tos de erro de domínio, serviço externo e rota protegida | Concluído | [issue #60](https://github.com/maiconsouza89/ai-nest-ddd-clean/issues/60) (o comentário de registro aguarda o ok do dono) |

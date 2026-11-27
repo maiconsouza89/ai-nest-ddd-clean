@@ -70,7 +70,7 @@ As métricas que a app exporta, as próprias e as da auto-instrumentação, como
 
 | Redis fora do ar | Coleta das filas |
 | --- | --- |
-| Caiu com a app no ar | Falha na hora: a conexão `producer` não tem fila offline |
+| Caiu com a app no ar | Falha na hora: a conexão `commands` da `QueueRedisConnection` não tem fila offline |
 | Já estava fora na subida | Espera a conexão e falha no prazo de 5 s |
 
 ## Alertas de exemplo

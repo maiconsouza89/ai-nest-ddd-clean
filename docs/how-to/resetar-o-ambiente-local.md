@@ -36,7 +36,7 @@ Use este guia para voltar o Postgres e o Redis locais ao estado de um clone novo
 
 ## Como verificar
 
-- `http://localhost:3000/health/ready` responde 200, com `database` e `redis` como `up`.
+- `http://localhost:3000/health/ready` responde 200, com `database`, `redis-cache` e `redis-queue` como `up`.
 - O login de `admin@example.com` em `POST /v1/auth/login` devolve um `accessToken`.
 
 ## Veja também

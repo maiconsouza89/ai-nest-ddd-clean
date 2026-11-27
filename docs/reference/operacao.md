@@ -53,7 +53,7 @@ O plugin roda no `nest build` e no `nest start`. O `openapi.json` sai do build e
 | Rota | Confere | Responde |
 | --- | --- | --- |
 | `GET /health/live` | Nada: o processo responde. Não passa pelo `HealthCheckService` | 200, inclusive durante o [atraso do desligamento](#atraso-do-desligamento) |
-| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis`: `PING` pelo `RedisHealthIndicator`. Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`. 503 com algum `down` (`status: 'error'`) ou com a app desligando (`status: 'shutting_down'`). Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
+| `GET /health/ready` | `database`: `pingCheck` do TypeORM. `redis-cache` e `redis-queue`: `PING` pelo `RedisHealthIndicator`, no `client` da `CacheRedisConnection` e no `commands` da `QueueRedisConnection` ([Redis](../explanation/redis.md#dois-clientes-para-o-mesmo-endereço)). Cada um com limite de 1 s (`.withTimeout()`) | 200 com todos `up`. 503 com algum `down` (`status: 'error'`) ou com a app desligando (`status: 'shutting_down'`). Cada indicador traz `status` e `responseTime` (ms), e `message` quando falha |
 
 O 503 é o corpo do Terminus (`{ status, info, error, details }`), em `application/json`, e não Problem Details: o `HealthController` responde o resultado direto, e a falha não passa pelo `ProblemDetailsFilter`. O Terminus loga a falha.
 
@@ -61,7 +61,7 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 
 ## Rate limit
 
-`@nestjs/throttler`, com o `AppThrottlerGuard` global (`APP_GUARD` no `AppModule`), uma subclasse do `ThrottlerGuard` em `src/shared/infra/http/`.
+`@nestjs/throttler`, com o `AppThrottlerGuard` global (`APP_GUARD` no `AppModule`), uma subclasse do `ThrottlerGuard`. As peças ficam em `src/shared/infra/http/rate-limit/`: o guard, o storage, o `@ThrottleByAccount` e as opções do `ThrottlerModule.forRootAsync` (`rate-limit.options.ts`), que o `AppModule` só repassa.
 
 | Item | Valor |
 | --- | --- |
@@ -71,7 +71,7 @@ As duas rotas são públicas (`@Public()`), sem versão na URL (`VERSION_NEUTRAL
 | Bloqueio | Passado o limite, a chave fica bloqueada pelo mesmo prazo da janela (o `blockDuration` padrão é o `ttl`) |
 | Resposta bloqueada | 429 `TOO_MANY_REQUESTS` em Problem Details, com `Retry-After` sem sufixo, seja qual for o throttler que bloqueou |
 | Headers | `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` em cada resposta permitida. Cada throttler nomeado tem os seus, com o nome no fim: `X-RateLimit-Limit-account-minute`, `X-RateLimit-Remaining-account-hour` |
-| Contadores | No Redis, pelo `RedisThrottlerStorage` (`src/shared/infra/http/`): janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
+| Contadores | No Redis, pelo `RedisThrottlerStorage`, na conexão `commands` da `QueueRedisConnection`: janela fixa a partir do primeiro acesso, num script Lua. O limite vale para a soma das instâncias |
 | Redis fora do ar | 503 (`Rate limiting unavailable`) em toda rota com rate limit ([Redis fora do ar](#redis-fora-do-ar)) |
 | Desligar | `THROTTLE_ENABLED=false` |
 | Teste | `redis-throttler-storage.int-spec.ts` |
@@ -110,10 +110,10 @@ Nenhum uso espera o Redis voltar segurando uma requisição. O porquê de cada c
 | Cache | A leitura vai direto ao banco | `warn`: `redis connection error`, `cache store error` |
 | Rate limit | 503 `SERVICE_UNAVAILABLE` (`Rate limiting unavailable`) na hora, em toda rota com rate limit. Com o rate limit ligado, a API inteira responde 503, menos o health, antes de chegar ao cache ou à outbox | `error`: `rate limit storage unavailable` |
 | Outbox | Os eventos ficam na tabela, e o relay pausa: nenhuma linha conta a falha nem morre. Cada rodada da pausa falha na hora, ou no prazo de 5 s quando a fila do consumidor é nova (a `Queue` do BullMQ espera a conexão). A espera entre as rodadas dobra de 1 s até 30 s, e a entrega recomeça em até 30 s depois da volta do Redis ([Outbox e filas](outbox-e-filas.md#relay-da-outbox)) | `warn`: `outbox relay paused: event transport unavailable`, uma vez por pausa. `info`: `outbox relay resumed`, na volta |
-| Workers das filas de eventos | Esperam a reconexão e voltam a processar sozinhos | `warn`: `bullmq redis connection error`, `queue worker error` |
+| Workers das filas de eventos | Esperam a reconexão e voltam a processar sozinhos | `warn`: `queue redis connection error` (com `connection: 'commands'` ou `'blocking'`), `queue worker error` |
 | Agendador de jobs | A subida falha cerca de 15 s depois da primeira tentativa de conexão: até 5 s esperando a conexão das filas, mais 10 s de timeout do registro dos jobs agendados. Com `JOBS_ENABLED=false`, nada é registrado, e a subida segue | Erro da subida: `<scheduler>: scheduler registration failed` |
 | Métricas das filas | A coleta falha e a rodada fica sem os valores das filas. Se o Redis já estava fora na subida, a falha vem no prazo da coleta ([Observabilidade](observabilidade.md#coleta)) | `warn`: `queue metrics collection failed` |
-| `/health/ready` | 503, com o `redis` `down` (`The client is offline`). Volta a 200 quando o Redis volta. O `/health/live` não depende do Redis | O do Terminus |
+| `/health/ready` | 503, com o `redis-cache` e o `redis-queue` `down` (`The client is offline` e `Stream isn't writeable and enableOfflineQueue options is false`). Volta a 200 quando o Redis volta. O `/health/live` não depende do Redis | O do Terminus |
 
 A conexão do cache não bloqueia a subida: a app sobe sem cache, com o `warn` `redis connect failed`, e o `/health/ready` responde 503.
 
@@ -127,14 +127,14 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | | `OutboxMetrics` e `QueueMetrics` | Tiram o callback das métricas da outbox e das filas, para a última exportação da fase 4 não consultar o banco e o Redis já fechados. O `QueueMetrics` fecha as filas que lê |
 | 2. `beforeApplicationShutdown` | `BullMqPublisher` | Fecha as filas em que enfileira. Só o worker da outbox publica, e ele já parou na fase 1 |
 | | Terminus | Só no `SIGTERM`: espera `SHUTDOWN_GRACE_MS`, com o `/health/ready` em 503. Ver [Atraso do desligamento](#atraso-do-desligamento) |
-| | `RedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
+| | `CacheRedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
 | 3. Servidor HTTP | Nest | Para de aceitar conexões e espera as requisições em andamento |
-| 4. `onApplicationShutdown` | `BullMqConnection` | Desconecta o `producer` e o `worker` |
-| | Cache | Desconecta o cliente do cache |
+| 4. `onApplicationShutdown` | Cache | Desconecta o cliente do cache |
+| | `QueueRedisConnection` | Desconecta o `commands` e o `blocking` |
 | | TypeORM | Fecha o `DataSource` |
 | | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans e as métricas pendentes |
 
-Até a fase 3, o servidor aceita requisições. Os módulos rodam cada hook em sequência, os mais próximos do `AppModule` primeiro e os `@Global` por último, então o `RedisConnection` só age depois do atraso do Terminus.
+Até a fase 3, o servidor aceita requisições. Os módulos rodam cada hook em sequência, os mais próximos do `AppModule` primeiro e os `@Global` por último. Por isso o `RedisModule`, dono das duas conexões, é global: a `CacheRedisConnection` só age depois do atraso do Terminus, e a `QueueRedisConnection` fecha depois que os workers e o publisher pararam.
 
 ### Atraso do desligamento
 

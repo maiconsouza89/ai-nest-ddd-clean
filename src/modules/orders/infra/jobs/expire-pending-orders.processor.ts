@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '#shared/application/ports/logger';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { ScheduledJobProcessor } from '#shared/infra/jobs/scheduled-job.processor';
-import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 import { ExpirePendingOrdersUseCase } from '../../application/use-cases/expire-pending-orders.use-case.js';
 
 export const ORDERS_JOBS_QUEUE = 'jobs.orders';
@@ -13,7 +13,7 @@ export const EXPIRE_PENDING_ORDERS_SCHEDULER = 'orders.expire-pending-orders';
 export class ExpirePendingOrdersProcessor extends ScheduledJobProcessor {
   constructor(
     private readonly useCase: ExpirePendingOrdersUseCase,
-    connection: BullMqConnection,
+    connection: QueueRedisConnection,
     logger: Logger,
     config: ConfigService<EnvironmentVariables, true>,
   ) {

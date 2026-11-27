@@ -9,7 +9,7 @@ import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startTestMetrics } from '#test/helpers/metrics';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
-import { startRedis } from '#test/helpers/redis';
+import { QueueRedisTestModule, startRedis } from '#test/helpers/redis';
 import { waitFor } from '#test/helpers/wait-for';
 import { IdempotentConsumer } from '../../application/idempotent-consumer.js';
 import type { IntegrationEvent } from '../../application/integration-event.js';
@@ -76,6 +76,7 @@ describe('Mensageria com BullMQ (integração: Postgres e Redis)', () => {
           load: [() => ({ REDIS_URL: redisUrl, QUEUE_WORKERS_ENABLED: 'true' })],
         }),
         TestLoggerModule,
+        QueueRedisTestModule,
         MessagingModule,
       ],
       providers: [WritesEffectHandler, AlwaysFailsHandler],

@@ -3,14 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '#shared/application/ports/logger';
 import { EnvironmentVariables } from '#shared/infra/config/env.validation';
 import { ScheduledJobProcessor } from '#shared/infra/jobs/scheduled-job.processor';
-import { BullMqConnection } from '#shared/infra/messaging/bullmq-connection';
+import { QueueRedisConnection } from '#shared/infra/redis/queue-redis.connection';
 import { PurgeExpiredRefreshTokensUseCase } from '../../application/use-cases/purge-expired-refresh-tokens.use-case.js';
 
 @Injectable()
 export class PurgeExpiredRefreshTokensProcessor extends ScheduledJobProcessor {
   constructor(
     private readonly useCase: PurgeExpiredRefreshTokensUseCase,
-    connection: BullMqConnection,
+    connection: QueueRedisConnection,
     logger: Logger,
     config: ConfigService<EnvironmentVariables, true>,
   ) {
