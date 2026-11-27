@@ -130,8 +130,8 @@ Com o `enableShutdownHooks()`, o Nest captura os sinais de término (`SIGTERM`, 
 | | `CacheRedisConnection` | Destrói o cliente do cache se ele estiver reconectando, para o `QUIT` da fase 4 não travar |
 | 3. Servidor HTTP | Nest | Para de aceitar conexões e espera as requisições em andamento |
 | 4. `onApplicationShutdown` | Cache | Desconecta o cliente do cache |
-| | TypeORM | Fecha o `DataSource` |
 | | `QueueRedisConnection` | Desconecta o `commands` e o `blocking` |
+| | TypeORM | Fecha o `DataSource` |
 | | `TracingShutdown` | Espera o SDK do OpenTelemetry exportar os spans e as métricas pendentes |
 
 Até a fase 3, o servidor aceita requisições. Os módulos rodam cada hook em sequência, os mais próximos do `AppModule` primeiro e os `@Global` por último. Por isso o `RedisModule`, dono das duas conexões, é global: a `CacheRedisConnection` só age depois do atraso do Terminus, e a `QueueRedisConnection` fecha depois que os workers e o publisher pararam.

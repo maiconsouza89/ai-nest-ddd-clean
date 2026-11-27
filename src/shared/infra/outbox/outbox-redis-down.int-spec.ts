@@ -8,7 +8,7 @@ import { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { FakeLogger } from '#test/fakes/fake-logger';
 import { startOutboxDatabase } from '#test/helpers/outbox-database';
-import { startRedisContainer } from '#test/helpers/redis';
+import { QueueRedisTestModule, startRedisContainer } from '#test/helpers/redis';
 import { startTcpProxy, TcpProxy } from '#test/helpers/tcp-proxy';
 import { waitFor } from '#test/helpers/wait-for';
 import { IntegrationEvent } from '../../application/integration-event.js';
@@ -20,7 +20,6 @@ import { Logger } from '../../application/ports/logger.js';
 import { IntegrationEventHandler } from '../messaging/integration-event-handler.decorator.js';
 import { MessagingModule } from '../messaging/messaging.module.js';
 import { QueueRedisConnection } from '../redis/queue-redis.connection.js';
-import { RedisModule } from '../redis/redis.module.js';
 import { DEFAULT_OUTBOX_OPTIONS, OutboxRelay } from './outbox-relay.js';
 import { TypeOrmOutbox } from './typeorm-outbox.js';
 
@@ -79,7 +78,7 @@ describe('Outbox com o Redis fora do ar (integração: Postgres e Redis)', () =>
           ],
         }),
         TestLoggerModule,
-        RedisModule,
+        QueueRedisTestModule,
         MessagingModule,
       ],
       providers: [WarmHandler, ColdHandler],
