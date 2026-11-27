@@ -1,4 +1,4 @@
-import type { AccountTracker } from '#shared/infra/http/throttle-by-account.decorator';
+import type { AccountTracker } from '#shared/infra/http/rate-limit/throttle-by-account.decorator';
 import { Email } from '../../domain/value-objects/email.vo.js';
 
 /**

@@ -1,7 +1,7 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import type { Redis } from 'ioredis';
-import { Logger } from '../../application/ports/logger.js';
+import { Logger } from '../../../application/ports/logger.js';
 
 type ThrottleHit = [totalHits: number, ttlMs: number, blocked: number, blockTtlMs: number];
 type ThrottleRedis = Redis & {

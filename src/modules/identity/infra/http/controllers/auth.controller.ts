@@ -9,7 +9,7 @@ import {
 import { seconds, Throttle } from '@nestjs/throttler';
 import { Public } from '#shared/infra/auth/public.decorator';
 import { ApiProblemResponse } from '#shared/infra/http/problem-details.response';
-import { ThrottleByAccount } from '#shared/infra/http/throttle-by-account.decorator';
+import { ThrottleByAccount } from '#shared/infra/http/rate-limit/throttle-by-account.decorator';
 import { LoginUseCase } from '../../../application/use-cases/login.use-case.js';
 import { LogoutUseCase } from '../../../application/use-cases/logout.use-case.js';
 import { RefreshSessionUseCase } from '../../../application/use-cases/refresh-session.use-case.js';
